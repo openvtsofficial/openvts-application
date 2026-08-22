@@ -67,6 +67,43 @@ class AuthService {
     return response.data;
   }
 
+  Future<LoginResponse> googleLogin(String serverAuthCode) async {
+    if (serverAuthCode.trim().isEmpty) {
+      throw const ApiException(message: 'Google authorization code is empty');
+    }
+
+    final response = await _apiClient.post<LoginResponse>(
+      ApiEndpoints.auth.googleLogin,
+      data: {
+        'code': serverAuthCode,
+      },
+      parser: (json) {
+        if (json is! Map<String, dynamic>) {
+          throw const ApiException(
+            message: 'Invalid Google login response',
+          );
+        }
+
+        final data = json['data'];
+
+        if (data is Map<String, dynamic>) {
+          return LoginResponse.fromJson(data);
+        }
+
+        return LoginResponse.fromJson(json);
+      },
+    );
+
+    if (response.data.accessToken.isEmpty ||
+        response.data.refreshToken.isEmpty) {
+      throw const ApiException(
+        message: 'Google login response is missing tokens',
+      );
+    }
+
+    return response.data;
+  }
+
   Future<void> logout() async {
     // Role logout is handled by local session removal.
     // Keep this method as a no-op to mirror web behavior.

@@ -12,6 +12,8 @@ class _AuthEndpoints {
   const _AuthEndpoints();
 
   String get login => '/auth/login';
+  String get googleClientId => '/auth/google/client-id';
+  String get googleLogin => '/auth/google/login';
   String get refreshToken => '/auth/refresh-token';
   String get forgotPassword => '/auth/forgot-password';
   String get resetPassword => '/auth/reset-password';
