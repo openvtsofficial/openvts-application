@@ -13,6 +13,7 @@ import '../models/current_user.dart';
 import '../models/login_request.dart';
 import '../models/login_response.dart';
 import '../services/auth_service.dart';
+import '../services/google_auth_service.dart';
 import 'auth_state.dart';
 
 final authServiceProvider = Provider<AuthService>((ref) {
@@ -70,6 +71,29 @@ class AuthController extends StateNotifier<AuthState> {
         final response = await _authService.login(
           LoginRequest(identifier: identifier, password: password),
         );
+        await setSession(response);
+      } catch (error) {
+        _setUnauthenticated(errorMessage: error.toString());
+      }
+    });
+  }
+
+  Future<void> googleLogin() {
+    return OpenVtsPerf.traceAsync('auth.googleLogin', () async {
+      state = const AuthState.loading();
+
+      try {
+        final serverAuthCode =
+            await GoogleAuthService.instance.signInAndGetServerAuthCode();
+
+        if (serverAuthCode == null || serverAuthCode.trim().isEmpty) {
+          _setUnauthenticated(
+            errorMessage: 'Google Sign-In did not return an authorization code',
+          );
+          return;
+        }
+
+        final response = await _authService.googleLogin(serverAuthCode);
         await setSession(response);
       } catch (error) {
         _setUnauthenticated(errorMessage: error.toString());

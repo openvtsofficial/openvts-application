@@ -75,6 +75,11 @@ class LoginScreen extends ConsumerWidget {
                     child: _LoginPanel(
                       isLoading: isLoading,
                       errorMessage: authState.errorMessage,
+                      onGoogleSignIn: () {
+                        ref
+                            .read(authControllerProvider.notifier)
+                            .googleLogin();
+                      },
                       onSubmit: (identifier, password) {
                         ref.read(authControllerProvider.notifier).login(
                               identifier: identifier,
@@ -133,11 +138,13 @@ class _LoginPanel extends StatelessWidget {
   const _LoginPanel({
     required this.isLoading,
     required this.onSubmit,
+    required this.onGoogleSignIn,
     this.errorMessage,
   });
 
   final bool isLoading;
   final String? errorMessage;
+  final VoidCallback onGoogleSignIn;
   final void Function(String email, String password) onSubmit;
 
   @override
@@ -175,6 +182,69 @@ class _LoginPanel extends StatelessWidget {
           LoginForm(
             isLoading: isLoading,
             onSubmit: onSubmit,
+          ),
+          const SizedBox(height: OpenVtsSpacing.md),
+          Row(
+            children: [
+              Expanded(
+                child: Divider(
+                  color: OpenVtsColors.border,
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: OpenVtsSpacing.sm,
+                ),
+                child: Text(
+                  'OR',
+                  style: OpenVtsTypography.label.copyWith(
+                    color: OpenVtsColors.textSecondary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Divider(
+                  color: OpenVtsColors.border,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: OpenVtsSpacing.md),
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: OutlinedButton.icon(
+              onPressed: isLoading ? null : onGoogleSignIn,
+              icon: Container(
+                width: 22,
+                height: 22,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  border: Border.all(color: OpenVtsColors.border),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: const Text(
+                  'G',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              label: const Text('Continue with Google'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: OpenVtsColors.brandInk,
+                side: const BorderSide(
+                  color: OpenVtsColors.border,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(
+                    OpenVtsRadius.md,
+                  ),
+                ),
+              ),
+            ),
           ),
           if (errorMessage != null) ...[
             const SizedBox(height: OpenVtsSpacing.md),
