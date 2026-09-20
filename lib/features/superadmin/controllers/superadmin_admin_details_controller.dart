@@ -4,8 +4,10 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/api/api_exception.dart';
+import '../models/superadmin_activity_filter.dart';
 import '../models/superadmin_admin_details_model.dart';
 import '../models/superadmin_admin_details_state.dart';
+import '../models/superadmin_administrator_model.dart';
 import '../models/superadmin_payments_model.dart';
 import '../services/superadmin_admin_details_service.dart';
 import '../services/superadmin_payments_service.dart';
@@ -16,6 +18,7 @@ class SuperadminAdminDetailsController
     required String adminId,
     required SuperadminAdminDetailsService detailsService,
     required SuperadminPaymentsService paymentsService,
+    required this.onAdminStatusChanged,
   })  : _adminId = adminId,
         _detailsService = detailsService,
         _paymentsService = paymentsService,
@@ -24,6 +27,10 @@ class SuperadminAdminDetailsController
   final String _adminId;
   final SuperadminAdminDetailsService _detailsService;
   final SuperadminPaymentsService _paymentsService;
+  int _activityRequestGeneration = 0;
+
+  /// Callback to sync status changes with the administrators list.
+  final void Function(String adminId, bool isActive)? onAdminStatusChanged;
 
   // -------------------------------------------------------------------------
   // Lifecycle
@@ -33,15 +40,100 @@ class SuperadminAdminDetailsController
     await refreshAdmin();
   }
 
+  /// Seed initial vehicle count from the administrators list item.
+  /// Call this from the screen when initialAdmin is available.
+  void seedInitialVehicleCount(int? count) {
+    if (count != null && count > 0 && state.vehicleCount == null) {
+      state = state.copyWith(vehicleCount: count);
+    }
+  }
+
+  /// Seed initialAdmin from the administrators list item.
+  /// Call this from the screen when initialAdmin is available.
+  void seedInitialAdmin(SuperadminAdministrator? admin) {
+    if (admin == null) return;
+    if (state.initialAdmin != null) return;
+
+    final knownActive =
+        state.statusOverride ?? state.resolvedIsActive ?? admin.isActive;
+
+    final mergedAdmin = state.admin == null
+        ? null
+        : state.admin!.copyWith(isActive: knownActive);
+
+    state = state.copyWith(
+      initialAdmin: admin,
+      resolvedLastLogin: admin.lastLoginAt,
+      resolvedIsActive: knownActive,
+      admin: mergedAdmin,
+    );
+  }
+
+  /// Seed initial data from the administrators list item.
+  /// Call this from the screen when initialAdmin is available.
+  void seedInitialData({int? vehicleCount, DateTime? lastLogin}) {
+    if (vehicleCount != null &&
+        vehicleCount > 0 &&
+        state.vehicleCount == null) {
+      state = state.copyWith(vehicleCount: vehicleCount);
+    }
+
+    if (lastLogin != null && state.resolvedLastLogin == null) {
+      state = state.copyWith(resolvedLastLogin: lastLogin);
+    }
+  }
+
   Future<void> refreshAdmin() async {
     state = state.copyWith(
       isLoadingAdmin: true,
       errorMessage: null,
     );
     try {
-      final admin = await _detailsService.getAdminDetails(_adminId);
+      final fresh = await _detailsService.getAdminDetails(_adminId);
+
+      // Preserve vehicle count if detail API doesn't return it
+      final preservedVehicleCount = state.vehicleCount;
+      final preservedAdminCount = state.admin?.totalVehicles;
+      final preservedLastLogin = state.admin?.recentLogin;
+      final resolvedLastLoginFromState = state.resolvedLastLogin;
+
+      var updatedAdmin = fresh;
+
+      // Preserve vehicle count if missing
+      if (fresh.totalVehicles < 0) {
+        final knownCount = preservedVehicleCount ??
+            (preservedAdminCount != null && preservedAdminCount >= 0
+                ? preservedAdminCount
+                : null);
+        if (knownCount != null) {
+          updatedAdmin = updatedAdmin.copyWith(totalVehicles: knownCount);
+        }
+      }
+
+      // Preserve last login if missing: use detail API value, or fallback to previous, or use resolved value
+      if (fresh.recentLogin == null) {
+        final knownLastLogin = preservedLastLogin ?? resolvedLastLoginFromState;
+        if (knownLastLogin != null) {
+          updatedAdmin = updatedAdmin.copyWith(recentLogin: knownLastLogin);
+        }
+      } else {
+        // Update resolved last login when detail API provides it
+        state = state.copyWith(resolvedLastLogin: fresh.recentLogin);
+      }
+
+      // Preserve active status: prioritize override, then resolved, then initial, then current
+      final knownActive = state.statusOverride ??
+          state.resolvedIsActive ??
+          state.initialAdmin?.isActive ??
+          state.admin?.isActive;
+
+      final resolvedActive = knownActive ?? fresh.isActive;
+
+      updatedAdmin = updatedAdmin.copyWith(isActive: resolvedActive);
+
       state = state.copyWith(
-        admin: admin,
+        admin: updatedAdmin,
+        resolvedIsActive: resolvedActive,
         isLoadingAdmin: false,
       );
     } catch (error) {
@@ -122,6 +214,16 @@ class SuperadminAdminDetailsController
     await loadVehicles();
   }
 
+  Future<void> ensureVehicleCountLoaded() async {
+    if (state.vehicleCount != null) return;
+    if (state.hasLoadedVehicles) {
+      state = state.copyWith(vehicleCount: state.vehicles.length);
+      return;
+    }
+    if (state.isLoadingVehicles) return;
+    await loadVehicles();
+  }
+
   // -------------------------------------------------------------------------
   // Profile tab
   // -------------------------------------------------------------------------
@@ -151,23 +253,53 @@ class SuperadminAdminDetailsController
   }
 
   Future<bool> updateStatus(bool isActive) async {
+    final previousValue = state.admin?.isActive;
+    final previousOverride = state.statusOverride;
+    final previousResolved = state.resolvedIsActive;
+
     state = state.copyWith(
       isUpdatingStatus: true,
       sectionErrorMessage: null,
     );
+
     try {
       await _detailsService.setAdminActive(
         adminId: _adminId,
         isActive: isActive,
       );
-      final admin = state.admin?.copyWith(isActive: isActive);
+
+      // Set override and resolved status after successful backend update
       state = state.copyWith(
-        admin: admin,
+        admin: state.admin?.copyWith(isActive: isActive),
+        statusOverride: isActive,
+        resolvedIsActive: isActive,
         isUpdatingStatus: false,
       );
+
+      // Sync with server; preserve the toggled status
+      try {
+        final fresh = await _detailsService.getAdminDetails(_adminId);
+
+        // Always preserve the confirmed status value, don't let fresh override
+        state = state.copyWith(
+          admin: fresh.copyWith(isActive: isActive),
+          statusOverride: isActive,
+          resolvedIsActive: isActive,
+        );
+      } catch (_) {
+        // Server refresh failed — keep the optimistic state.
+      }
+
+      // Notify list controller to update cached admin status
+      onAdminStatusChanged?.call(_adminId, isActive);
+
       return true;
     } catch (error) {
+      // Rollback on failure
       state = state.copyWith(
+        admin: state.admin?.copyWith(isActive: previousValue ?? true),
+        statusOverride: previousOverride,
+        resolvedIsActive: previousResolved,
         isUpdatingStatus: false,
         sectionErrorMessage: _errorMessage(error),
       );
@@ -599,8 +731,10 @@ class SuperadminAdminDetailsController
       final vehicles = await _detailsService.getAdminVehicles(_adminId);
       state = state.copyWith(
         vehicles: vehicles,
+        vehicleCount: vehicles.length,
         isLoadingVehicles: false,
         hasLoadedVehicles: true,
+        admin: state.admin?.copyWith(totalVehicles: vehicles.length),
       );
     } catch (error) {
       state = state.copyWith(
@@ -615,18 +749,29 @@ class SuperadminAdminDetailsController
   // -------------------------------------------------------------------------
 
   Future<void> loadActivity() async {
+    final generation = ++_activityRequestGeneration;
+    final search = state.activitySearch.trim();
+    final category = SuperadminActivityCategory.fromValue(
+      state.activityActionPrefix,
+    );
+    final from = serializeActivityDateTime(state.activityFrom);
+    final to = serializeActivityDateTime(state.activityTo);
     state = state.copyWith(
       isLoadingActivity: true,
+      isLoadingMoreActivity: false,
+      activityLogs: const <SuperadminAdminActivityLog>[],
+      activityNextCursorId: null,
+      activityHasMore: false,
       sectionErrorMessage: null,
     );
     try {
-      final page = await _detailsService.getAdminActivityLogs(
-        adminId: _adminId,
-        q: state.activitySearch,
-        actionPrefix: state.activityActionPrefix,
-        from: _formatDateForApi(state.activityFrom),
-        to: _formatDateForApi(state.activityTo),
+      final page = await _loadActivityPage(
+        search: search,
+        category: category,
+        from: from,
+        to: to,
       );
+      if (generation != _activityRequestGeneration) return;
       state = state.copyWith(
         activityLogs: page.items,
         activityNextCursorId: page.nextCursorId,
@@ -634,6 +779,7 @@ class SuperadminAdminDetailsController
         isLoadingActivity: false,
       );
     } catch (error) {
+      if (generation != _activityRequestGeneration) return;
       state = state.copyWith(
         isLoadingActivity: false,
         sectionErrorMessage: _errorMessage(error),
@@ -647,27 +793,36 @@ class SuperadminAdminDetailsController
         state.isLoadingActivity) {
       return;
     }
+    final generation = _activityRequestGeneration;
+    final search = state.activitySearch.trim();
+    final category = SuperadminActivityCategory.fromValue(
+      state.activityActionPrefix,
+    );
+    final from = serializeActivityDateTime(state.activityFrom);
+    final to = serializeActivityDateTime(state.activityTo);
+    final cursorId = state.activityNextCursorId;
     state = state.copyWith(isLoadingMoreActivity: true);
     try {
-      final page = await _detailsService.getAdminActivityLogs(
-        adminId: _adminId,
-        q: state.activitySearch,
-        actionPrefix: state.activityActionPrefix,
-        from: _formatDateForApi(state.activityFrom),
-        to: _formatDateForApi(state.activityTo),
-        cursorId: state.activityNextCursorId,
+      final page = await _loadActivityPage(
+        search: search,
+        category: category,
+        from: from,
+        to: to,
+        cursorId: cursorId,
       );
-      final combined = <SuperadminAdminActivityLog>[
-        ...state.activityLogs,
-        ...page.items,
-      ];
+      if (generation != _activityRequestGeneration) return;
+      final byId = <int, SuperadminAdminActivityLog>{
+        for (final log in state.activityLogs) log.id: log,
+        for (final log in page.items) log.id: log,
+      };
       state = state.copyWith(
-        activityLogs: combined,
+        activityLogs: byId.values.toList(growable: false),
         activityNextCursorId: page.nextCursorId,
         activityHasMore: page.hasMore,
         isLoadingMoreActivity: false,
       );
     } catch (error) {
+      if (generation != _activityRequestGeneration) return;
       state = state.copyWith(
         isLoadingMoreActivity: false,
         sectionErrorMessage: _errorMessage(error),
@@ -676,30 +831,62 @@ class SuperadminAdminDetailsController
   }
 
   void setActivitySearch(String value) {
-    state = state.copyWith(activitySearch: value);
+    state = state.copyWith(activitySearch: value.trim());
   }
 
   void setActivityActionPrefix(String value) {
     state = state.copyWith(activityActionPrefix: value);
   }
 
-  void setActivityDateRange({DateTime? from, DateTime? to}) {
+  bool setActivityDateRange({DateTime? from, DateTime? to}) {
+    if (from != null && to != null && from.isAfter(to)) return false;
     state = state.copyWith(
       activityFrom: from,
       activityTo: to,
     );
+    return true;
   }
 
   // -------------------------------------------------------------------------
   // Helpers
   // -------------------------------------------------------------------------
 
-  String? _formatDateForApi(DateTime? value) {
-    if (value == null) return null;
-    final y = value.year.toString().padLeft(4, '0');
-    final m = value.month.toString().padLeft(2, '0');
-    final d = value.day.toString().padLeft(2, '0');
-    return '$y-$m-$d';
+  Future<SuperadminAdminActivityLogPage> _loadActivityPage({
+    required String search,
+    required SuperadminActivityCategory category,
+    required String? from,
+    required String? to,
+    int? cursorId,
+  }) async {
+    var cursor = cursorId;
+    var hasMore = true;
+    final items = <SuperadminAdminActivityLog>[];
+
+    do {
+      final page = await _detailsService.getAdminActivityLogs(
+        adminId: _adminId,
+        q: search,
+        actionPrefix: category.backendPrefix,
+        from: from,
+        to: to,
+        cursorId: cursor,
+      );
+      items.addAll(
+        category.requiresClientAggregation
+            ? page.items.where((log) => category.matches(log.action))
+            : page.items,
+      );
+      cursor = page.nextCursorId;
+      hasMore = page.hasMore && cursor != null;
+    } while (
+        category.requiresClientAggregation && items.length < 20 && hasMore);
+
+    return SuperadminAdminActivityLogPage(
+      items: items,
+      nextCursorId: cursor,
+      hasMore: hasMore,
+      admin: null,
+    );
   }
 
   // Helper: sanitize and limit messages shown to users.

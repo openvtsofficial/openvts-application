@@ -16,6 +16,10 @@ void main() {
         LiveMapRoleConfig.user().vehicleDetailsByImei('867440060976859'),
         '/user/vehicles/by-imei/867440060976859/details',
       );
+      expect(
+        LiveMapRoleConfig.demo().vehicleDetailsByImei('867440060976859'),
+        '/demo/vehicles/by-imei/867440060976859/details',
+      );
     });
 
     test('encodes raw IMEI values before appending details', () {
@@ -23,6 +27,42 @@ void main() {
         LiveMapRoleConfig.superadmin().vehicleDetailsByImei('imei/with space'),
         '/superadmin/vehicles/by-imei/imei%2Fwith%20space/details',
       );
+    });
+  });
+
+  group('LiveMapRoleConfig telemetry subscriptions', () {
+    test('superadmin uses the scoped batch stream', () {
+      expect(
+        LiveMapRoleConfig.superadmin().telemetrySubscribeMode,
+        LiveMapTelemetrySubscribeMode.superadminScope,
+      );
+    });
+
+    test('admin and user use explicit IMEI subscriptions', () {
+      expect(
+        LiveMapRoleConfig.admin().telemetrySubscribeMode,
+        LiveMapTelemetrySubscribeMode.imeis,
+      );
+      expect(
+        LiveMapRoleConfig.user().telemetrySubscribeMode,
+        LiveMapTelemetrySubscribeMode.imeis,
+      );
+    });
+
+    test('demo uses the isolated public scope without notification socket', () {
+      final config = LiveMapRoleConfig.demo();
+      expect(
+        config.telemetrySubscribeMode,
+        LiveMapTelemetrySubscribeMode.demoScope,
+      );
+      expect(config.telemetryNamespace, '/demo-telemetry');
+      expect(config.notificationNamespace, isNull);
+      expect(config.socketAuthenticationRequired, isFalse);
+      expect(
+        config.notificationSubscribeMode,
+        LiveMapNotificationSubscribeMode.disabled,
+      );
+      expect(config.mapTelemetryEndpoint, '/demo/map-telemetry');
     });
   });
 }

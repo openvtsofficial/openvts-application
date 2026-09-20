@@ -26,7 +26,8 @@ class UserNotificationsScreen extends ConsumerWidget {
         onMarkAllAsRead: () async {
           try {
             final unreadCount = ref.read(
-              userNotificationCenterProvider.select((value) => value.unreadCount),
+              userNotificationCenterProvider
+                  .select((value) => value.unreadCount),
             );
             await controller.markAllAsRead();
             if (unreadCount > 0) {

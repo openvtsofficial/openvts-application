@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
@@ -31,9 +30,19 @@ class UserNotificationGroupTabs extends StatelessWidget {
         icon: Icons.speed_rounded,
       ),
       const _GroupTabItem(
+        group: UserNotificationGroup.duration,
+        label: 'Duration',
+        icon: Icons.timer_outlined,
+      ),
+      const _GroupTabItem(
         group: UserNotificationGroup.geofence,
         label: 'Geofence',
         icon: Icons.location_on_outlined,
+      ),
+      const _GroupTabItem(
+        group: UserNotificationGroup.route,
+        label: 'Route',
+        icon: Icons.alt_route_rounded,
       ),
     ];
 
@@ -91,32 +100,51 @@ class _GroupChoiceChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ConstrainedBox(
-      constraints: const BoxConstraints(minHeight: 44),
-      child: ChoiceChip(
-        selected: selected,
-        showCheckmark: false,
-        avatar: Icon(
-          item.icon,
-          size: 15,
-          color:
-              selected ? OpenVtsColors.brandInk : OpenVtsColors.textSecondary,
-        ),
-        label: Text(item.label),
-        onSelected: (_) => onTap(),
-        materialTapTargetSize: MaterialTapTargetSize.padded,
-        selectedColor: OpenVtsColors.brandInk.withValues(alpha: 0.10),
-        backgroundColor: OpenVtsColors.surfaceElevated,
-        side: BorderSide(
-          color: selected ? OpenVtsColors.brandInk : OpenVtsColors.border,
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
-        ),
-        labelStyle: OpenVtsTypography.meta.copyWith(
-          color:
-              selected ? OpenVtsColors.brandInk : OpenVtsColors.textSecondary,
-          fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final backgroundColor =
+        selected ? (isDark ? Colors.black : Colors.white) : Colors.transparent;
+    final textColor = isDark ? Colors.white : Colors.black;
+    final borderColor =
+        isDark ? Colors.white : Colors.black.withValues(alpha: 0.2);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
+        onTap: onTap,
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 34),
+          padding: const EdgeInsets.symmetric(
+            horizontal: OpenVtsSpacing.sm,
+            vertical: OpenVtsSpacing.xs,
+          ),
+          decoration: BoxDecoration(
+            color: backgroundColor,
+            borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
+            border: Border.all(
+              color: borderColor,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                item.icon,
+                size: 15,
+                color: textColor,
+              ),
+              const SizedBox(width: OpenVtsSpacing.xxs),
+              Text(
+                item.label,
+                style: OpenVtsTypography.meta.copyWith(
+                  height: 1,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                  color: textColor,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

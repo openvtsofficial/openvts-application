@@ -69,6 +69,8 @@ class _TelemetryCircleButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -78,12 +80,10 @@ class _TelemetryCircleButton extends StatelessWidget {
           width: 54,
           height: 54,
           decoration: BoxDecoration(
-            color: isSelected ? const Color(0xFF141118) : Colors.white,
+            color: isSelected ? scheme.onSurface : scheme.surface,
             shape: BoxShape.circle,
             border: Border.all(
-              color: isSelected
-                  ? const Color(0xFF141118)
-                  : Colors.black.withValues(alpha: 0.08),
+              color: isSelected ? scheme.onSurface : scheme.outlineVariant,
             ),
             boxShadow: [
               BoxShadow(
@@ -101,7 +101,7 @@ class _TelemetryCircleButton extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
-                  color: isSelected ? Colors.white : const Color(0xFF141118),
+                  color: isSelected ? scheme.surface : scheme.onSurface,
                   height: 1,
                 ),
               ),
@@ -112,8 +112,8 @@ class _TelemetryCircleButton extends StatelessWidget {
                   fontSize: 9,
                   fontWeight: FontWeight.w600,
                   color: isSelected
-                      ? Colors.white.withValues(alpha: 0.92)
-                      : Colors.black.withValues(alpha: 0.7),
+                      ? scheme.surface.withValues(alpha: 0.92)
+                      : scheme.onSurfaceVariant,
                   height: 1,
                 ),
               ),
@@ -132,6 +132,8 @@ class _BottomDrawerButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -141,9 +143,9 @@ class _BottomDrawerButton extends StatelessWidget {
           width: 46,
           height: 46,
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.96),
+            color: scheme.surface,
             shape: BoxShape.circle,
-            border: Border.all(color: Colors.black.withValues(alpha: 0.08)),
+            border: Border.all(color: scheme.outlineVariant),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.1),
@@ -152,14 +154,13 @@ class _BottomDrawerButton extends StatelessWidget {
               ),
             ],
           ),
-          child: const Icon(
+          child: Icon(
             Icons.keyboard_arrow_up_rounded,
             size: 22,
-            color: Color(0xFF141118),
+            color: scheme.onSurface,
           ),
         ),
       ),
     );
   }
 }
-

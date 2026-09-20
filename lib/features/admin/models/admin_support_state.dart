@@ -9,6 +9,7 @@ class AdminSupportState {
     required this.mySearch,
     required this.userStatusFilter,
     required this.myStatusFilter,
+    required this.userIdFilter,
     required this.selectedTicketId,
     required this.selectedTicketTab,
     required this.selectedTicketDetails,
@@ -37,6 +38,7 @@ class AdminSupportState {
         mySearch = '',
         userStatusFilter = null,
         myStatusFilter = null,
+        userIdFilter = null,
         selectedTicketId = null,
         selectedTicketTab = null,
         selectedTicketDetails = null,
@@ -65,6 +67,8 @@ class AdminSupportState {
   final String mySearch;
   final AdminSupportTicketStatus? userStatusFilter;
   final AdminSupportTicketStatus? myStatusFilter;
+  // userId filter applies only to user-tickets tab (POST /admin/tickets?userId=)
+  final String? userIdFilter;
   final String? selectedTicketId;
   final AdminSupportTab? selectedTicketTab;
   final AdminSupportTicketDetails? selectedTicketDetails;
@@ -122,6 +126,7 @@ class AdminSupportState {
     String? mySearch,
     Object? userStatusFilter = _unset,
     Object? myStatusFilter = _unset,
+    Object? userIdFilter = _unset,
     Object? selectedTicketId = _unset,
     Object? selectedTicketTab = _unset,
     Object? selectedTicketDetails = _unset,
@@ -153,6 +158,9 @@ class AdminSupportState {
       myStatusFilter: identical(myStatusFilter, _unset)
           ? this.myStatusFilter
           : myStatusFilter as AdminSupportTicketStatus?,
+      userIdFilter: identical(userIdFilter, _unset)
+          ? this.userIdFilter
+          : userIdFilter as String?,
       selectedTicketId: identical(selectedTicketId, _unset)
           ? this.selectedTicketId
           : selectedTicketId as String?,

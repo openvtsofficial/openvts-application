@@ -8,6 +8,7 @@ import '../../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../../core/utils/date_time_formatter.dart';
+import '../../../../../../shared/helpers/phone_helper.dart';
 import '../../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../../shared/widgets/open_vts_bottom_sheet.dart';
 import '../../../../../../shared/widgets/open_vts_button.dart';
@@ -20,8 +21,6 @@ import 'user_driver_assign_vehicle_sheet.dart';
 import 'user_driver_delete_sheet.dart';
 import 'user_driver_edit_sheet.dart';
 
-const DateTimeFormatter _dateFormatter = DateTimeFormatter();
-
 class UserDriverProfileTab extends ConsumerWidget {
   const UserDriverProfileTab({required this.provider, super.key});
 
@@ -30,6 +29,7 @@ class UserDriverProfileTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final dateFormatter = ref.watch(appDateFormatterProvider);
     final state = ref.watch(provider);
     final controller = ref.read(provider.notifier);
     final driver = state.driver;
@@ -78,7 +78,7 @@ class UserDriverProfileTab extends ConsumerWidget {
             ),
             _InfoRow(
               label: 'Created',
-              value: _dateText(driver.createdAt),
+              value: _dateText(driver.createdAt, dateFormatter),
             ),
           ],
         ),
@@ -352,12 +352,18 @@ class _InfoCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(icon, size: 16, color: OpenVtsColors.textSecondary),
+              Icon(
+                icon,
+                size: 16,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
               const SizedBox(width: OpenVtsSpacing.xs),
               Text(
                 title,
                 style: OpenVtsTypography.label.copyWith(
-                  color: OpenVtsColors.textPrimary,
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Colors.white
+                      : OpenVtsColors.textPrimary,
                   fontWeight: FontWeight.w800,
                 ),
               ),
@@ -379,6 +385,8 @@ class _InfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(
@@ -388,7 +396,9 @@ class _InfoRow extends StatelessWidget {
             child: Text(
               label,
               style: OpenVtsTypography.meta.copyWith(
-                color: OpenVtsColors.textTertiary,
+                color: isDarkMode
+                    ? OpenVtsColors.darkTextTertiary
+                    : OpenVtsColors.textTertiary,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -402,7 +412,9 @@ class _InfoRow extends StatelessWidget {
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
               style: OpenVtsTypography.meta.copyWith(
-                color: OpenVtsColors.textPrimary,
+                color: isDarkMode
+                    ? OpenVtsColors.white
+                    : OpenVtsColors.textPrimary,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -572,20 +584,18 @@ String _username(String value) {
 }
 
 String _phoneLabel(UserDriver driver) {
-  final prefix = driver.mobilePrefix.trim();
-  final mobile = driver.mobile.trim();
-  final merged = [prefix, mobile]
-      .where((part) => part.isNotEmpty && part != '-')
-      .join(' ')
-      .trim();
-  return merged.isEmpty ? '-' : merged;
+  final normalized = normalizePhoneParts(
+    dialCode: driver.mobilePrefix,
+    mobile: driver.mobile,
+  );
+  return normalized.displayNumber;
 }
 
-String _dateText(DateTime? value) {
+String _dateText(DateTime? value, dynamic formatter) {
   if (value == null) {
     return '-';
   }
-  return _dateFormatter.formatDateTime(value.toLocal());
+  return formatter.formatDateTime(value.toLocal());
 }
 
 String _addressText(UserDriver driver) {

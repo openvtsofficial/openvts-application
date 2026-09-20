@@ -20,6 +20,9 @@ class UserNotificationVehicleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return OpenVtsCard(
       padding: const EdgeInsets.all(OpenVtsSpacing.xs),
       child: Column(
@@ -31,14 +34,18 @@ class UserNotificationVehicleCard extends StatelessWidget {
                 width: 24,
                 height: 24,
                 decoration: BoxDecoration(
-                  color: OpenVtsColors.surface,
+                  color: isDark ? Colors.black : OpenVtsColors.surface,
                   borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-                  border: Border.all(color: OpenVtsColors.border),
+                  border: Border.all(
+                    color: isDark ? OpenVtsColors.white : OpenVtsColors.border,
+                  ),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.directions_car_outlined,
                   size: 14,
-                  color: OpenVtsColors.textSecondary,
+                  color: isDark
+                      ? OpenVtsColors.white.withValues(alpha: 0.7)
+                      : OpenVtsColors.textSecondary,
                 ),
               ),
               const SizedBox(width: OpenVtsSpacing.xs),
@@ -49,7 +56,9 @@ class UserNotificationVehicleCard extends StatelessWidget {
                     Text(
                       vehicleName,
                       style: OpenVtsTypography.body.copyWith(
-                        color: OpenVtsColors.textPrimary,
+                        color: isDark
+                            ? OpenVtsColors.white
+                            : OpenVtsColors.textPrimary,
                         fontWeight: FontWeight.w600,
                       ),
                       maxLines: 1,
@@ -58,7 +67,9 @@ class UserNotificationVehicleCard extends StatelessWidget {
                     Text(
                       plateNumber,
                       style: OpenVtsTypography.meta.copyWith(
-                        color: OpenVtsColors.textSecondary,
+                        color: isDark
+                            ? OpenVtsColors.white.withValues(alpha: 0.7)
+                            : OpenVtsColors.textSecondary,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,

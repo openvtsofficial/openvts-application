@@ -39,6 +39,7 @@ class OpenVtsSupportTicketCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return OpenVtsCard(
       onTap: onTap,
       padding: const EdgeInsets.symmetric(
@@ -49,7 +50,11 @@ class OpenVtsSupportTicketCard extends StatelessWidget {
         decoration: BoxDecoration(
           border: BorderDirectional(
             start: BorderSide(
-              color: isSelected ? OpenVtsColors.brandInk : Colors.transparent,
+              color: isSelected
+                  ? (isDark
+                      ? OpenVtsColors.darkTextPrimary
+                      : OpenVtsColors.brandInk)
+                  : Colors.transparent,
               width: 3,
             ),
           ),
@@ -68,7 +73,7 @@ class OpenVtsSupportTicketCard extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: OpenVtsTypography.body.copyWith(
-                        color: OpenVtsColors.textPrimary,
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontWeight: FontWeight.w800,
                         height: 1.25,
                       ),
@@ -83,10 +88,13 @@ class OpenVtsSupportTicketCard extends StatelessWidget {
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   OpenVtsSupportPlainChip(label: ticketNumber),
-                  OpenVtsSupportSoftChip(label: statusLabel, color: statusColor),
-                  OpenVtsSupportSoftChip(label: priorityLabel, color: priorityColor),
+                  OpenVtsSupportSoftChip(
+                      label: statusLabel, color: statusColor),
+                  OpenVtsSupportSoftChip(
+                      label: priorityLabel, color: priorityColor),
                   OpenVtsSupportPlainChip(label: categoryLabel),
-                  for (final meta in extraMetaLabels) OpenVtsSupportPlainChip(label: meta),
+                  for (final meta in extraMetaLabels)
+                    OpenVtsSupportPlainChip(label: meta),
                 ],
               ),
               if (preview != null && preview!.trim().isNotEmpty) ...[
@@ -96,7 +104,7 @@ class OpenVtsSupportTicketCard extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: OpenVtsTypography.meta.copyWith(
-                    color: OpenVtsColors.textSecondary,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     height: 1.35,
                   ),
                 ),
@@ -110,7 +118,7 @@ class OpenVtsSupportTicketCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: OpenVtsTypography.meta.copyWith(
-                        color: OpenVtsColors.textTertiary,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ),
@@ -119,7 +127,7 @@ class OpenVtsSupportTicketCard extends StatelessWidget {
                     Text(
                       messageCountLabel!,
                       style: OpenVtsTypography.meta.copyWith(
-                        color: OpenVtsColors.textTertiary,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                         fontWeight: FontWeight.w600,
                       ),
                     ),

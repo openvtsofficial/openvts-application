@@ -262,7 +262,8 @@ class _WhiteLabelSettingsSectionState
       ToastHelper.showSuccess('Favicon updated');
     } else {
       ToastHelper.showError(
-        ref.read(superadminSettingsControllerProvider).sectionErrorMessage ?? 'Could not save favicon',
+        ref.read(superadminSettingsControllerProvider).sectionErrorMessage ??
+            'Could not save favicon',
       );
     }
   }
@@ -293,7 +294,8 @@ class _WhiteLabelSettingsSectionState
       ToastHelper.showSuccess('Light logo updated');
     } else {
       ToastHelper.showError(
-        ref.read(superadminSettingsControllerProvider).sectionErrorMessage ?? 'Could not save light logo',
+        ref.read(superadminSettingsControllerProvider).sectionErrorMessage ??
+            'Could not save light logo',
       );
     }
   }
@@ -324,7 +326,8 @@ class _WhiteLabelSettingsSectionState
       ToastHelper.showSuccess('Dark logo updated');
     } else {
       ToastHelper.showError(
-        ref.read(superadminSettingsControllerProvider).sectionErrorMessage ?? 'Could not save dark logo',
+        ref.read(superadminSettingsControllerProvider).sectionErrorMessage ??
+            'Could not save dark logo',
       );
     }
   }
@@ -353,10 +356,10 @@ class _WhiteLabelSettingsSectionState
             Text(
               state.sectionErrorMessage ??
                   'Could not load white-label settings.',
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: OpenVtsTypography.primaryFontFamily,
                 fontSize: 12.5,
-                color: OpenVtsColors.textSecondary,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
             const SizedBox(height: OpenVtsSpacing.sm),
@@ -435,14 +438,15 @@ class _WhiteLabelSettingsSectionState
         const SizedBox(height: OpenVtsSpacing.sm),
         _AssetCard(
           title: 'Light Logo',
-          subtitle: 'Shown on light backgrounds. PNG, JPG, SVG, WEBP. Max 5 MB.',
+          subtitle:
+              'Shown on light backgrounds. PNG, JPG, SVG, WEBP. Max 5 MB.',
           icon: Icons.wb_sunny_outlined,
           currentUrl: wl.logoLightUrl,
           baseUrl: baseUrl,
           picked: _logoLightPicked,
           cleared: _logoLightCleared,
           isSaving: _savingLogoLight,
-          previewBackground: OpenVtsColors.white,
+          previewBackground: Theme.of(context).colorScheme.surface,
           onPick: () async {
             final picked = await _pickFile(
               allowedExtensions: _logoExts,
@@ -536,11 +540,13 @@ class _SectionHeader extends StatelessWidget {
             width: 28,
             height: 28,
             decoration: BoxDecoration(
-              color: OpenVtsColors.surface,
+              color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-              border: Border.all(color: OpenVtsColors.border),
+              border: Border.all(
+                  color: Theme.of(context).colorScheme.outlineVariant),
             ),
-            child: Icon(icon, size: 16, color: OpenVtsColors.textPrimary),
+            child: Icon(icon,
+                size: 16, color: Theme.of(context).colorScheme.onSurface),
           ),
           const SizedBox(width: OpenVtsSpacing.xs),
           Expanded(
@@ -550,21 +556,21 @@ class _SectionHeader extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: OpenVtsTypography.primaryFontFamily,
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: OpenVtsColors.textPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 const SizedBox(height: 1),
                 Text(
                   subtitle,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: OpenVtsTypography.primaryFontFamily,
                     fontSize: 11,
                     height: 1.3,
-                    color: OpenVtsColors.textSecondary,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
               ],
@@ -643,9 +649,11 @@ class _DomainAndColorCard extends StatelessWidget {
               onTap: isSaving
                   ? null
                   : () async {
-                      final result = await showModalBottomSheet<_ThemeColorOption>(
+                      final result =
+                          await showModalBottomSheet<_ThemeColorOption>(
                         context: context,
-                        backgroundColor: OpenVtsColors.surfaceElevated,
+                        backgroundColor:
+                            Theme.of(context).colorScheme.surfaceContainer,
                         shape: const RoundedRectangleBorder(
                           borderRadius: BorderRadius.vertical(
                             top: Radius.circular(OpenVtsRadius.lg),
@@ -663,9 +671,10 @@ class _DomainAndColorCard extends StatelessWidget {
                   vertical: 10,
                 ),
                 decoration: BoxDecoration(
-                  color: OpenVtsColors.surface,
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-                  border: Border.all(color: OpenVtsColors.border),
+                  border: Border.all(
+                      color: Theme.of(context).colorScheme.outlineVariant),
                 ),
                 child: Row(
                   children: [
@@ -674,18 +683,18 @@ class _DomainAndColorCard extends StatelessWidget {
                     Expanded(
                       child: Text(
                         selectedColor.name,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontFamily: OpenVtsTypography.primaryFontFamily,
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
-                          color: OpenVtsColors.textPrimary,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                     ),
-                    const Icon(
+                    Icon(
                       Icons.expand_more_rounded,
                       size: 18,
-                      color: OpenVtsColors.textTertiary,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ],
                 ),
@@ -734,18 +743,18 @@ class _ColorPickerSheet extends StatelessWidget {
                 height: 4,
                 margin: const EdgeInsets.only(bottom: OpenVtsSpacing.sm),
                 decoration: BoxDecoration(
-                  color: OpenVtsColors.border,
+                  color: Theme.of(context).colorScheme.outlineVariant,
                   borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
                 ),
               ),
             ),
-            const Text(
+            Text(
               'Brand color',
               style: TextStyle(
                 fontFamily: OpenVtsTypography.primaryFontFamily,
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: OpenVtsColors.textPrimary,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
             const SizedBox(height: OpenVtsSpacing.xs),
@@ -765,11 +774,11 @@ class _ColorPickerSheet extends StatelessWidget {
                       Expanded(
                         child: Text(
                           option.name,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontFamily: OpenVtsTypography.primaryFontFamily,
                             fontSize: 13.5,
                             fontWeight: FontWeight.w500,
-                            color: OpenVtsColors.textPrimary,
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
                         ),
                       ),
@@ -802,7 +811,7 @@ class _ColorChip extends StatelessWidget {
       decoration: BoxDecoration(
         color: _parseHex(hex),
         borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-        border: Border.all(color: OpenVtsColors.border),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
     );
   }
@@ -881,11 +890,11 @@ class _AssetCard extends StatelessWidget {
                   children: [
                     Text(
                       _statusLabel(),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: OpenVtsTypography.primaryFontFamily,
                         fontSize: 12.5,
                         fontWeight: FontWeight.w500,
-                        color: OpenVtsColors.textPrimary,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     const SizedBox(height: 1),
@@ -893,10 +902,10 @@ class _AssetCard extends StatelessWidget {
                       _detailLabel(),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: OpenVtsTypography.primaryFontFamily,
                         fontSize: 11,
-                        color: OpenVtsColors.textSecondary,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ],
@@ -927,11 +936,11 @@ class _AssetCard extends StatelessWidget {
                   iconSize: 18,
                   icon: const Icon(Icons.delete_outline_rounded),
                   style: IconButton.styleFrom(
-                    backgroundColor: OpenVtsColors.surface,
+                    backgroundColor: Theme.of(context).colorScheme.surface,
                     shape: RoundedRectangleBorder(
-                      borderRadius:
-                          BorderRadius.circular(OpenVtsRadius.sm),
-                      side: const BorderSide(color: OpenVtsColors.border),
+                      borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
+                      side: BorderSide(
+                          color: Theme.of(context).colorScheme.outlineVariant),
                     ),
                   ),
                 ),
@@ -999,58 +1008,58 @@ class _AssetPreview extends StatelessWidget {
       width: 52,
       height: 52,
       decoration: BoxDecoration(
-        color: background ?? OpenVtsColors.surface,
+        color: background ?? Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-        border: Border.all(color: OpenVtsColors.border),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
       clipBehavior: Clip.antiAlias,
       alignment: Alignment.center,
-      child: _buildContent(),
+      child: _buildContent(context),
     );
   }
 
-  Widget _buildContent() {
+  Widget _buildContent(BuildContext context) {
     if (pickedBytes != null) {
       if (_pickedIsRaster) {
         return Image.memory(
           pickedBytes!,
           fit: BoxFit.contain,
-          errorBuilder: (_, __, ___) => _placeholder(),
+          errorBuilder: (_, __, ___) => _placeholder(context),
         );
       }
-      return _filePlaceholder(pickedFileName ?? '');
+      return _filePlaceholder(pickedFileName ?? '', context);
     }
     if (existingUrl != null) {
       final lower = existingUrl!.toLowerCase();
       if (lower.endsWith('.svg')) {
-        return _filePlaceholder('SVG');
+        return _filePlaceholder('SVG', context);
       }
       return Image.network(
         existingUrl!,
         fit: BoxFit.contain,
-        errorBuilder: (_, __, ___) => _placeholder(),
+        errorBuilder: (_, __, ___) => _placeholder(context),
       );
     }
-    return _placeholder();
+    return _placeholder(context);
   }
 
-  Widget _placeholder() {
-    return const Icon(
+  Widget _placeholder(BuildContext context) {
+    return Icon(
       Icons.image_not_supported_outlined,
       size: 18,
-      color: OpenVtsColors.textTertiary,
+      color: Theme.of(context).colorScheme.onSurfaceVariant,
     );
   }
 
-  Widget _filePlaceholder(String label) {
+  Widget _filePlaceholder(String label, BuildContext context) {
     final ext = _extensionOf(label).toUpperCase();
     return Text(
       ext.isEmpty ? 'FILE' : ext,
-      style: const TextStyle(
+      style: TextStyle(
         fontFamily: OpenVtsTypography.primaryFontFamily,
         fontSize: 10.5,
         fontWeight: FontWeight.w700,
-        color: OpenVtsColors.textPrimary,
+        color: Theme.of(context).colorScheme.onSurface,
         letterSpacing: 0.5,
       ),
     );
@@ -1076,7 +1085,8 @@ class _CardTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 16, color: OpenVtsColors.textSecondary),
+        Icon(icon,
+            size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
         const SizedBox(width: 8),
         Expanded(
           child: Column(
@@ -1085,21 +1095,21 @@ class _CardTitle extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: OpenVtsTypography.primaryFontFamily,
                   fontSize: 13.5,
                   fontWeight: FontWeight.w600,
-                  color: OpenVtsColors.textPrimary,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
               const SizedBox(height: 1),
               Text(
                 subtitle,
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: OpenVtsTypography.primaryFontFamily,
                   fontSize: 11,
                   height: 1.3,
-                  color: OpenVtsColors.textSecondary,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
             ],

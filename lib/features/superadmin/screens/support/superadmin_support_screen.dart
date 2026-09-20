@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/route_paths.dart';
-import '../../../../core/theme/open_vts_colors.dart';
 import '../../../../core/theme/open_vts_radius.dart';
 import '../../../../core/theme/open_vts_spacing.dart';
 import '../../../../core/theme/open_vts_typography.dart';
@@ -25,7 +24,8 @@ class SuperadminSupportScreen extends ConsumerStatefulWidget {
       _SuperadminSupportScreenState();
 }
 
-class _SuperadminSupportScreenState extends ConsumerState<SuperadminSupportScreen> {
+class _SuperadminSupportScreenState
+    extends ConsumerState<SuperadminSupportScreen> {
   Timer? _searchDebounce;
   int? _activeSplitTicketId;
 
@@ -71,7 +71,8 @@ class _SuperadminSupportScreenState extends ConsumerState<SuperadminSupportScree
 
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => SuperadminSupportConversationScreen(ticketId: ticket.id),
+        builder: (_) =>
+            SuperadminSupportConversationScreen(ticketId: ticket.id),
       ),
     );
   }
@@ -80,7 +81,9 @@ class _SuperadminSupportScreenState extends ConsumerState<SuperadminSupportScree
     _searchDebounce?.cancel();
     _searchDebounce = Timer(const Duration(milliseconds: 260), () {
       if (!mounted) return;
-      ref.read(superadminSupportControllerProvider.notifier).setSearchQuery(value);
+      ref
+          .read(superadminSupportControllerProvider.notifier)
+          .setSearchQuery(value);
     });
   }
 
@@ -191,10 +194,11 @@ class _ConversationSplitPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       decoration: BoxDecoration(
-        color: OpenVtsColors.surfaceElevated,
-        border: Border.all(color: OpenVtsColors.border),
+        color: colorScheme.surface,
+        border: Border.all(color: colorScheme.outline),
         borderRadius: BorderRadius.circular(OpenVtsRadius.md),
       ),
       clipBehavior: Clip.antiAlias,
@@ -210,6 +214,7 @@ class _SelectTicketPlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(OpenVtsSpacing.lg),
@@ -220,14 +225,14 @@ class _SelectTicketPlaceholder extends StatelessWidget {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: OpenVtsColors.surface,
-                border: Border.all(color: OpenVtsColors.border),
+                color: colorScheme.surface,
+                border: Border.all(color: colorScheme.outline),
                 borderRadius: BorderRadius.circular(OpenVtsRadius.md),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.forum_outlined,
                 size: 22,
-                color: OpenVtsColors.textSecondary,
+                color: colorScheme.onSurfaceVariant,
               ),
             ),
             const SizedBox(height: OpenVtsSpacing.sm),
@@ -240,7 +245,7 @@ class _SelectTicketPlaceholder extends StatelessWidget {
               'Open a support ticket to review the full conversation.',
               textAlign: TextAlign.center,
               style: OpenVtsTypography.body.copyWith(
-                color: OpenVtsColors.textSecondary,
+                color: colorScheme.onSurfaceVariant,
               ),
             ),
           ],

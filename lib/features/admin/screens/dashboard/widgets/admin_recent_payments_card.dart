@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/router/route_paths.dart';
 import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../core/utils/date_time_formatter.dart';
 import '../../../models/admin_dashboard_model.dart';
 import 'admin_dashboard_list_card.dart';
 
-class AdminRecentPaymentsCard extends StatelessWidget {
+class AdminRecentPaymentsCard extends ConsumerWidget {
   const AdminRecentPaymentsCard({
     required this.payments,
     required this.fallbackCurrency,
@@ -18,7 +20,9 @@ class AdminRecentPaymentsCard extends StatelessWidget {
   final String fallbackCurrency;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final formatter = ref.watch(appDateFormatterProvider);
+
     return AdminDashboardListCard(
       title: 'Recent Payments',
       icon: Icons.credit_card_rounded,
@@ -30,6 +34,7 @@ class AdminRecentPaymentsCard extends StatelessWidget {
         return _RecentPaymentRow(
           payment: payments[index],
           fallbackCurrency: fallbackCurrency,
+          formatter: formatter,
         );
       },
     );
@@ -40,10 +45,12 @@ class _RecentPaymentRow extends StatelessWidget {
   const _RecentPaymentRow({
     required this.payment,
     required this.fallbackCurrency,
+    required this.formatter,
   });
 
   final AdminRecentPayment payment;
   final String fallbackCurrency;
+  final AppDateFormatter formatter;
 
   @override
   Widget build(BuildContext context) {
@@ -68,17 +75,18 @@ class _RecentPaymentRow extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: OpenVtsTypography.label.copyWith(
-                    color: OpenVtsColors.textPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  adminDashboardRelativeDate(payment.createdAt),
+                  adminDashboardRelativeDate(payment.createdAt,
+                      formatter: formatter),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: OpenVtsTypography.meta.copyWith(
-                    color: OpenVtsColors.textSecondary,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontSize: 10.5,
                   ),
                 ),
@@ -98,7 +106,7 @@ class _RecentPaymentRow extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.end,
                   style: OpenVtsTypography.meta.copyWith(
-                    color: OpenVtsColors.textPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.w800,
                   ),
                 ),

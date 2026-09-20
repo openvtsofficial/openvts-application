@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
 
+import '../../../../../core/theme/open_vts_colors.dart';
+import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
+import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../core/utils/date_time_formatter.dart';
 import '../../../../../shared/widgets/open_vts_bottom_sheet.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../../../shared/widgets/open_vts_empty_state.dart';
 import '../../../../../shared/widgets/open_vts_loader.dart';
 import '../../../models/admin_vehicle_model.dart';
+
+const DateTimeFormatter _cardDateFormatter = DateTimeFormatter();
 
 class AdminVehicleUsersTab extends StatelessWidget {
   const AdminVehicleUsersTab({
@@ -39,12 +45,15 @@ class AdminVehicleUsersTab extends StatelessWidget {
     return Column(
       children: [
         OpenVtsCard(
+          padding: const EdgeInsets.all(OpenVtsSpacing.md),
           child: Row(
             children: [
               Expanded(
                 child: Text(
-                  'Linked Users (${linkedUsers.length})',
-                  style: Theme.of(context).textTheme.titleSmall,
+                  'Assigned Users (${linkedUsers.length})',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
                 ),
               ),
               OpenVtsButton(
@@ -60,42 +69,20 @@ class AdminVehicleUsersTab extends StatelessWidget {
         const SizedBox(height: OpenVtsSpacing.sm),
         if (linkedUsers.isEmpty)
           const OpenVtsEmptyState(
-            title: 'No linked users',
+            title: 'No users assigned',
             message: 'Assign users to this vehicle.',
           )
         else
           ...linkedUsers.map(
             (user) => Padding(
               padding: const EdgeInsets.only(bottom: OpenVtsSpacing.sm),
-              child: OpenVtsCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      user.name.isEmpty ? user.mobileDisplay : user.name,
-                      style: Theme.of(context).textTheme.titleSmall,
-                    ),
-                    const SizedBox(height: OpenVtsSpacing.xxs),
-                    Text('Username: ${_safe(user.username)}'),
-                    Text('Email: ${_safe(user.email)}'),
-                    Text('Mobile: ${_safe(user.mobileDisplay)}'),
-                    const SizedBox(height: OpenVtsSpacing.sm),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: OpenVtsButton(
-                        label: 'Unassign',
-                        isLoading: isUnlinking,
-                        variant: OpenVtsButtonVariant.secondary,
-                        onPressed: isUnlinking
-                            ? null
-                            : () async {
-                                await onUnlinkUser(user.id);
-                                await onRefresh();
-                              },
-                      ),
-                    ),
-                  ],
-                ),
+              child: _VehicleUserCard(
+                user: user,
+                isUnlinking: isUnlinking,
+                onUnlink: () async {
+                  await onUnlinkUser(user.id);
+                  await onRefresh();
+                },
               ),
             ),
           ),
@@ -123,8 +110,275 @@ class AdminVehicleUsersTab extends StatelessWidget {
       ),
     );
   }
+}
 
-  String _safe(String value) => value.trim().isEmpty ? '-' : value.trim();
+class _VehicleUserCard extends StatelessWidget {
+  const _VehicleUserCard({
+    required this.user,
+    required this.isUnlinking,
+    required this.onUnlink,
+  });
+
+  final AdminVehicleUserMini user;
+  final bool isUnlinking;
+  final VoidCallback onUnlink;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasEmail = user.email.trim().isNotEmpty;
+    final hasPhone = user.mobileDisplay.trim().isNotEmpty;
+    final hasContact = hasEmail || hasPhone;
+
+    return OpenVtsCard(
+      padding: const EdgeInsets.all(OpenVtsSpacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _AvatarCircle(user: user),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            user.displayName.isNotEmpty
+                                ? user.displayName
+                                : 'Unknown',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleSmall
+                                ?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: -0.2,
+                                ),
+                          ),
+                        ),
+                        if (user.isPrimary) ...[
+                          const SizedBox(width: OpenVtsSpacing.xs),
+                          const _PrimaryBadge(),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: OpenVtsSpacing.xs),
+                    if (hasEmail)
+                      Text(
+                        user.email,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: OpenVtsTypography.meta.copyWith(
+                          color: OpenVtsColors.textSecondary,
+                          fontSize: 12,
+                        ),
+                      ),
+                    if (hasPhone) ...[
+                      if (hasEmail) const SizedBox(height: 2),
+                      Text(
+                        user.mobileDisplay,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: OpenVtsTypography.meta.copyWith(
+                          color: OpenVtsColors.textTertiary,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                    if (!hasContact) ...[
+                      Text(
+                        'No contact information',
+                        style: OpenVtsTypography.meta.copyWith(
+                          color: OpenVtsColors.textTertiary,
+                          fontSize: 11,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              SizedBox(
+                height: 40,
+                width: 104,
+                child: Builder(
+                  builder: (context) => OpenVtsButton(
+                    label: 'Unassign',
+                    isLoading: isUnlinking,
+                    onPressed:
+                        isUnlinking ? null : () => _showConfirmDialog(context),
+                    variant: OpenVtsButtonVariant.secondary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (user.assignedAt != null) ...[
+            const SizedBox(height: OpenVtsSpacing.sm),
+            const Divider(height: 1, color: OpenVtsColors.border),
+            const SizedBox(height: OpenVtsSpacing.sm),
+            _InfoTile(
+              icon: Icons.event_outlined,
+              label: 'Assigned',
+              value: _cardDateFormatter.formatDateTime(user.assignedAt!),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showConfirmDialog(BuildContext context) {
+    return showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Unassign User?'),
+        content: Text(
+          'Remove ${user.displayName.isNotEmpty ? user.displayName : 'this user'} from this vehicle?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              onUnlink();
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: OpenVtsColors.error,
+            ),
+            child: const Text('Unassign'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AvatarCircle extends StatelessWidget {
+  const _AvatarCircle({required this.user});
+
+  final AdminVehicleUserMini user;
+
+  String _initials() {
+    final name = user.displayName;
+    if (name.isEmpty) return 'U';
+    final words = name.split(RegExp(r'\s+'));
+    if (words.length == 1) {
+      return name.characters.take(2).toString().toUpperCase();
+    }
+    return '${words.first.characters.first}${words.last.characters.first}'
+        .toUpperCase();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 40,
+      width: 40,
+      alignment: Alignment.center,
+      decoration: const BoxDecoration(
+        shape: BoxShape.circle,
+        color: OpenVtsColors.surface,
+      ),
+      child: Text(
+        _initials(),
+        style: const TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w700,
+          color: OpenVtsColors.textPrimary,
+        ),
+      ),
+    );
+  }
+}
+
+class _PrimaryBadge extends StatelessWidget {
+  const _PrimaryBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: OpenVtsColors.brandInk.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
+        border: Border.all(
+          color: OpenVtsColors.brandInk.withValues(alpha: 0.25),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.star_rounded,
+              size: 10, color: OpenVtsColors.brandInk),
+          const SizedBox(width: 2),
+          Text(
+            'Primary',
+            style: OpenVtsTypography.meta.copyWith(
+              color: OpenVtsColors.brandInk,
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _InfoTile extends StatelessWidget {
+  const _InfoTile({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: 14, color: OpenVtsColors.textTertiary),
+        const SizedBox(width: OpenVtsSpacing.xs),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                label,
+                style: OpenVtsTypography.meta.copyWith(
+                  color: OpenVtsColors.textSecondary,
+                  fontSize: 10,
+                ),
+              ),
+              Text(
+                value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: OpenVtsTypography.meta.copyWith(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 11,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 class _AssignUserSheet extends StatefulWidget {
@@ -183,7 +437,8 @@ class _AssignUserSheetState extends State<_AssignUserSheet> {
               groupValue: _selectedUserId,
               // ignore: deprecated_member_use
               onChanged: (value) => setState(() => _selectedUserId = value),
-              title: Text(user.name.isEmpty ? user.mobileDisplay : user.name),
+              title: Text(
+                  user.displayName.isNotEmpty ? user.displayName : 'Unknown'),
               subtitle: Text(
                 [user.username, user.email]
                     .where((item) => item.trim().isNotEmpty)

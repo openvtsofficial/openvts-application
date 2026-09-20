@@ -1,6 +1,5 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:open_vts/core/theme/open_vts_colors.dart';
 import 'package:open_vts/core/theme/open_vts_radius.dart';
 import 'package:open_vts/core/theme/open_vts_spacing.dart';
 import 'package:open_vts/core/theme/open_vts_typography.dart';
@@ -102,6 +101,7 @@ class UserSupportDraftAttachmentWrap extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Wrap(
       spacing: OpenVtsSpacing.xs,
       runSpacing: OpenVtsSpacing.xs,
@@ -113,17 +113,17 @@ class UserSupportDraftAttachmentWrap extends StatelessWidget {
                 end: OpenVtsSpacing.xxs,
               ),
               decoration: BoxDecoration(
-                border: Border.all(color: OpenVtsColors.border),
+                border: Border.all(color: colorScheme.outline),
                 borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
-                color: OpenVtsColors.surface,
+                color: colorScheme.surface,
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.insert_drive_file_outlined,
                     size: 14,
-                    color: OpenVtsColors.textTertiary,
+                    color: colorScheme.onSurfaceVariant,
                   ),
                   const SizedBox(width: OpenVtsSpacing.xxs),
                   ConstrainedBox(
@@ -196,6 +196,7 @@ class _UploadedAttachmentChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return InkWell(
       borderRadius: BorderRadius.circular(OpenVtsRadius.md),
       onTap: () => _openAttachment(context),
@@ -207,16 +208,16 @@ class _UploadedAttachmentChip extends StatelessWidget {
         ),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(OpenVtsRadius.md),
-          border: Border.all(color: OpenVtsColors.border),
-          color: OpenVtsColors.surface,
+          border: Border.all(color: colorScheme.outline),
+          color: colorScheme.surface,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
+            Icon(
               Icons.insert_drive_file_outlined,
               size: 16,
-              color: OpenVtsColors.textSecondary,
+              color: colorScheme.onSurfaceVariant,
             ),
             const SizedBox(width: OpenVtsSpacing.xs),
             Flexible(
@@ -229,7 +230,7 @@ class _UploadedAttachmentChip extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: OpenVtsTypography.meta.copyWith(
-                      color: OpenVtsColors.textSecondary,
+                      color: colorScheme.onSurfaceVariant,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -237,7 +238,7 @@ class _UploadedAttachmentChip extends StatelessWidget {
                     Text(
                       _formatFileSize(attachment.sizeBytes),
                       style: OpenVtsTypography.meta.copyWith(
-                        color: OpenVtsColors.textTertiary,
+                        color: colorScheme.onSurfaceVariant,
                       ),
                     ),
                 ],

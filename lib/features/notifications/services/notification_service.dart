@@ -24,9 +24,11 @@ abstract class NotificationService {
     bool unreadOnly = false,
     String? category,
   }) async {
+    // All current role endpoints cap notification pages at 30 records.
+    final pageLimit = limit.clamp(1, 30).toInt();
     if (AppConfig.useMockData) {
       return _buildMockPage(
-        limit: limit,
+        limit: pageLimit,
         beforeId: beforeId,
         unreadOnly: unreadOnly,
         category: category,
@@ -36,15 +38,16 @@ abstract class NotificationService {
     final response = await _apiClient.get<NotificationPage>(
       listEndpoint,
       queryParameters: <String, dynamic>{
-        'limit': limit.toString(),
+        'limit': pageLimit.toString(),
         if (beforeId != null) 'beforeId': beforeId.toString(),
         if (unreadOnly) 'unreadOnly': 'true',
-        if (category != null && category.trim().isNotEmpty)
+        if (listEndpoint == '/admin/notifications' &&
+            category != null && category.trim().isNotEmpty)
           'category': category.trim(),
       },
       parser: (json) => NotificationPage.fromDynamic(
         json,
-        requestedLimit: limit,
+        requestedLimit: pageLimit,
       ),
     );
 
@@ -71,7 +74,8 @@ abstract class NotificationService {
       var hasMore = firstPage.hasMore;
       var nextBeforeId = firstPage.nextBeforeId;
 
-      while (hasMore && nextBeforeId != null) {
+      final seenCursors = <int>{};
+      while (hasMore && nextBeforeId != null && seenCursors.add(nextBeforeId)) {
         final page = await getNotifications(
           limit: batchLimit,
           beforeId: nextBeforeId,

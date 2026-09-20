@@ -198,7 +198,7 @@ class _HeaderRow extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        const Expanded(
+        Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
@@ -207,7 +207,7 @@ class _HeaderRow extends StatelessWidget {
                 'Manage important places and operational points.',
                 style: TextStyle(
                   fontSize: 12,
-                  color: OpenVtsColors.textSecondary,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                   height: 1.3,
                 ),
               ),
@@ -262,8 +262,8 @@ class _HeaderIconButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final disabled = onTap == null;
-    final bg = primary ? OpenVtsColors.brandInk : OpenVtsColors.surfaceElevated;
-    final fg = primary ? OpenVtsColors.white : OpenVtsColors.textPrimary;
+    const bg = OpenVtsColors.brandInk;
+    const fg = OpenVtsColors.white;
     return Tooltip(
       message: tooltip,
       child: InkResponse(
@@ -275,16 +275,17 @@ class _HeaderIconButton extends StatelessWidget {
           decoration: BoxDecoration(
             color: disabled ? bg.withValues(alpha: 0.55) : bg,
             borderRadius: BorderRadius.circular(OpenVtsRadius.button),
-            border: primary ? null : Border.all(color: OpenVtsColors.border),
+            border: Border.all(
+              color: disabled ? fg.withValues(alpha: 0.3) : OpenVtsColors.white,
+            ),
           ),
           alignment: Alignment.center,
           child: showSpinner
-              ? SizedBox(
+              ? const SizedBox(
                   width: 14,
                   height: 14,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(fg),
                   ),
                 )
               : Icon(icon, size: 16, color: fg),

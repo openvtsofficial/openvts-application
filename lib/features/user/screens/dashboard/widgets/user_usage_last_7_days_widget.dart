@@ -9,6 +9,7 @@ import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../controllers/user_providers.dart';
 import '../../../models/user_dashboard_model.dart';
+import 'user_dashboard_vehicle_selector.dart';
 import 'user_dashboard_widget_card.dart';
 
 class UserUsageLast7DaysWidget extends ConsumerStatefulWidget {
@@ -67,8 +68,7 @@ class _UserUsageLast7DaysWidgetState
         UserDashboardVehicleScopedArgs(
           widgetId: widget.config.id,
           refreshKey: _refreshKey,
-          vehicleId:
-              _selectedVehicleId == 'all' ? null : _selectedVehicleId,
+          vehicleId: _selectedVehicleId == 'all' ? null : _selectedVehicleId,
         ),
       ),
     );
@@ -107,7 +107,7 @@ class _UserUsageLast7DaysWidgetState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _VehicleSelector(
+        UserDashboardVehicleSelector(
           vehicles: data.vehicles,
           value: selectedVehicleId,
           onChanged: _changeVehicle,
@@ -160,63 +160,6 @@ class _UserUsageLast7DaysWidgetState
   }
 }
 
-class _VehicleSelector extends StatelessWidget {
-  const _VehicleSelector({
-    required this.vehicles,
-    required this.value,
-    required this.onChanged,
-  });
-
-  final List<UserDashboardVehicleOption> vehicles;
-  final String value;
-  final ValueChanged<String?> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return DropdownButtonFormField<String>(
-      key: ValueKey(value),
-      initialValue: value,
-      isExpanded: true,
-      decoration: InputDecoration(
-        labelText: 'Vehicle',
-        isDense: true,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: OpenVtsSpacing.sm,
-          vertical: OpenVtsSpacing.xs,
-        ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(OpenVtsRadius.md),
-          borderSide: const BorderSide(color: OpenVtsColors.border),
-        ),
-      ),
-      items: [
-        const DropdownMenuItem<String>(
-          value: 'all',
-          child: Text('All Vehicles'),
-        ),
-        for (final vehicle in vehicles)
-          DropdownMenuItem<String>(
-            value: vehicle.id,
-            child: Text(
-              _label(vehicle),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-      ],
-      onChanged: onChanged,
-    );
-  }
-
-  static String _label(UserDashboardVehicleOption vehicle) {
-    final plate = vehicle.plateNumber?.trim();
-    if (plate != null && plate.isNotEmpty) {
-      return '${vehicle.name} · $plate';
-    }
-    return vehicle.name;
-  }
-}
-
 class _UsageChart extends StatelessWidget {
   const _UsageChart({required this.points});
 
@@ -227,7 +170,10 @@ class _UsageChart extends StatelessWidget {
     return SizedBox(
       height: 168,
       child: CustomPaint(
-        painter: _UsageChartPainter(points),
+        painter: _UsageChartPainter(
+          points,
+          textColor: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
         size: Size.infinite,
       ),
     );
@@ -235,9 +181,13 @@ class _UsageChart extends StatelessWidget {
 }
 
 class _UsageChartPainter extends CustomPainter {
-  _UsageChartPainter(this.points);
+  _UsageChartPainter(
+    this.points, {
+    required this.textColor,
+  });
 
   final List<UserDashboardUsagePoint> points;
+  final Color textColor;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -262,7 +212,7 @@ class _UsageChartPainter extends CustomPainter {
     final hourScale = math.max(maxHours, 1);
 
     final gridPaint = Paint()
-      ..color = OpenVtsColors.border
+      ..color = OpenVtsColors.border // Keep as constant in CustomPainter
       ..strokeWidth = 1;
     for (var line = 0; line < 4; line++) {
       final y = top + chartHeight * line / 3;
@@ -274,7 +224,7 @@ class _UsageChartPainter extends CustomPainter {
       ..color = OpenVtsColors.brandInk
       ..style = PaintingStyle.fill;
     final barTrackPaint = Paint()
-      ..color = OpenVtsColors.surface
+      ..color = OpenVtsColors.surface // Keep as constant in CustomPainter
       ..style = PaintingStyle.fill;
     final slot = chartWidth / points.length;
     final barWidth = math.min(18.0, slot * 0.42).toDouble();
@@ -341,7 +291,7 @@ class _UsageChartPainter extends CustomPainter {
         text: TextSpan(
           text: label.length > 3 ? label.substring(0, 3) : label,
           style: OpenVtsTypography.meta.copyWith(
-            color: OpenVtsColors.textTertiary,
+            color: textColor,
             fontSize: 9.5,
             fontWeight: FontWeight.w700,
           ),
@@ -356,7 +306,7 @@ class _UsageChartPainter extends CustomPainter {
 
   void _drawLegend(Canvas canvas, Size size) {
     final driven = _legendPainter('Driven km', OpenVtsColors.brandInk);
-    final engine = _legendPainter('Engine hours', OpenVtsColors.textTertiary);
+    final engine = _legendPainter('Engine hours', textColor);
     driven.paint(canvas, const Offset(4, 0));
     engine.paint(canvas, const Offset(92, 0));
   }
@@ -415,9 +365,9 @@ class _SkeletonBlock extends StatelessWidget {
     return Container(
       height: height,
       decoration: BoxDecoration(
-        color: OpenVtsColors.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(OpenVtsRadius.md),
-        border: Border.all(color: OpenVtsColors.border),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
     );
   }

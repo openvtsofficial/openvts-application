@@ -13,8 +13,7 @@ import 'package:open_vts/shared/models/vehicle_summary.dart';
 
 void main() {
   group('SuperadminMapLiveController', () {
-    test('loads REST baseline and skips telemetry snapshot subscription',
-        () async {
+    test('loads REST baseline and skips telemetry snapshot subscription', () async {
       final telemetryConnection = _FakeSocketConnection();
       final notificationsConnection = _FakeSocketConnection();
       final vehicleService = _FakeVehicleService(
@@ -59,9 +58,7 @@ void main() {
         contains('notif:subscribe'),
       );
       expect(
-        notificationsConnection.emittedEvents
-            .firstWhere((event) => event.name == 'notif:subscribe')
-            .data,
+        notificationsConnection.emittedEvents.firstWhere((event) => event.name == 'notif:subscribe').data,
         const <String, dynamic>{'scope': 'superadmin'},
       );
       expect(controller.state.alerts, hasLength(1));
@@ -110,8 +107,7 @@ void main() {
       expect(controller.state.alerts.first.contextLabel, 'TRK-204');
     });
 
-    test('deduplicates REST and socket alerts by parsed event identity',
-        () async {
+    test('deduplicates REST and socket alerts by parsed event identity', () async {
       final notificationsConnection = _FakeSocketConnection();
       final controller = SuperadminMapLiveController(
         _FakeVehicleService(fallbackTelemetry: _buildTelemetry(const [])),
@@ -312,15 +308,11 @@ void main() {
 
       expect(statePublishes, 1);
       expect(
-        controller.state.telemetry.vehicles
-            .firstWhere((vehicle) => vehicle.imei == 'imei-1')
-            .speed,
+        controller.state.telemetry.vehicles.firstWhere((vehicle) => vehicle.imei == 'imei-1').speed,
         24,
       );
       expect(
-        controller.state.telemetry.vehicles
-            .firstWhere((vehicle) => vehicle.imei == 'imei-2')
-            .speed,
+        controller.state.telemetry.vehicles.firstWhere((vehicle) => vehicle.imei == 'imei-2').speed,
         18,
       );
     });
@@ -389,8 +381,7 @@ void main() {
       expect(controller.state.telemetry.vehicles.single.longitude, 20);
     });
 
-    test('patches existing vehicles from snapshots without creating baseline',
-        () async {
+    test('patches existing vehicles from snapshots without creating baseline', () async {
       final telemetryConnection = _FakeSocketConnection();
       final controller = SuperadminMapLiveController(
         _FakeVehicleService(
@@ -433,20 +424,16 @@ void main() {
       expect(controller.state.telemetry.allCount, 2);
       expect(controller.state.telemetry.vehicles, hasLength(2));
       expect(
-        controller.state.telemetry.vehicles
-            .firstWhere((vehicle) => vehicle.imei == 'imei-2')
-            .speed,
+        controller.state.telemetry.vehicles.firstWhere((vehicle) => vehicle.imei == 'imei-2').speed,
         35,
       );
       expect(
-        controller.state.telemetry.vehicles
-            .any((vehicle) => vehicle.imei == 'socket-only-imei'),
+        controller.state.telemetry.vehicles.any((vehicle) => vehicle.imei == 'socket-only-imei'),
         isFalse,
       );
     });
 
-    test('never expands a 10 vehicle REST baseline from socket-only updates',
-        () async {
+    test('never expands a 10 vehicle REST baseline from socket-only updates', () async {
       final telemetryConnection = _FakeSocketConnection();
       final baselineVehicles = List<VehicleSummary>.generate(
         10,
@@ -458,8 +445,7 @@ void main() {
         ),
       );
       final controller = SuperadminMapLiveController(
-        _FakeVehicleService(
-            fallbackTelemetry: _buildTelemetry(baselineVehicles)),
+        _FakeVehicleService(fallbackTelemetry: _buildTelemetry(baselineVehicles)),
         _FakeMapEventsService(notifications: const <AppNotification>[]),
         _FakeSocketService(
           telemetryConnection: telemetryConnection,
@@ -533,8 +519,7 @@ void main() {
       );
     });
 
-    test('loads telemetry seed once and disconnects sockets on dispose',
-        () async {
+    test('loads telemetry seed once and disconnects sockets on dispose', () async {
       final telemetryConnection = _FakeSocketConnection();
       final notificationsConnection = _FakeSocketConnection();
       final vehicleService = _FakeVehicleService(
@@ -583,8 +568,7 @@ Future<void> _flushLiveBatch() async {
 }
 
 class _FakeVehicleService extends SuperadminVehicleService {
-  _FakeVehicleService({required this.fallbackTelemetry})
-      : super(ApiClient(Dio()));
+  _FakeVehicleService({required this.fallbackTelemetry}) : super(ApiClient(Dio()));
 
   final SuperadminMapTelemetry fallbackTelemetry;
   int getMapTelemetryCalls = 0;
@@ -597,10 +581,7 @@ class _FakeVehicleService extends SuperadminVehicleService {
 
   @override
   SuperadminMapTelemetry parseMapTelemetryPayload(dynamic json) {
-    final vehicles = _extractVehicleMaps(json)
-        .map(_vehicleFromMap)
-        .whereType<VehicleSummary>()
-        .toList(growable: false);
+    final vehicles = _extractVehicleMaps(json).map(_vehicleFromMap).whereType<VehicleSummary>().toList(growable: false);
     return buildTelemetryFromVehicles(vehicles);
   }
 
@@ -683,8 +664,7 @@ class _FakeMapEventsService extends SuperadminMapEventsService {
     return NotificationPage(
       items: _notifications.take(limit).toList(growable: false),
       hasMore: _notifications.length > limit,
-      nextBeforeId:
-          _notifications.length > limit ? _notifications[limit - 1].id : null,
+      nextBeforeId: _notifications.length > limit ? _notifications[limit - 1].id : null,
       unreadCount: _notifications.where((item) => !item.isRead).length,
     );
   }
@@ -706,7 +686,7 @@ class _FakeSocketService extends SocketService {
   final Map<String, _FakeSocketConnection> _connections;
 
   @override
-  Future<SocketConnection> connect(String namespace) async {
+  Future<SocketConnection> connect(String namespace, {bool authenticated = true}) async {
     final connection = _connections[namespace];
     if (connection == null) {
       throw StateError('No fake socket registered for $namespace');
@@ -717,8 +697,7 @@ class _FakeSocketService extends SocketService {
 }
 
 class _FakeSocketConnection implements SocketConnection {
-  final Map<String, List<SocketEventHandler>> _eventHandlers =
-      <String, List<SocketEventHandler>>{};
+  final Map<String, List<SocketEventHandler>> _eventHandlers = <String, List<SocketEventHandler>>{};
   final List<void Function()> _connectHandlers = <void Function()>[];
   final List<SocketEventHandler> _disconnectHandlers = <SocketEventHandler>[];
   final List<SocketEventHandler> _errorHandlers = <SocketEventHandler>[];
@@ -737,9 +716,7 @@ class _FakeSocketConnection implements SocketConnection {
 
   @override
   void on(String event, SocketEventHandler handler) {
-    _eventHandlers
-        .putIfAbsent(event, () => <SocketEventHandler>[])
-        .add(handler);
+    _eventHandlers.putIfAbsent(event, () => <SocketEventHandler>[]).add(handler);
   }
 
   @override
@@ -818,9 +795,7 @@ SuperadminMapTelemetry _buildTelemetry(List<VehicleSummary> vehicles) {
   final runningCount = vehicles
       .where((vehicle) => !_isInactiveVehicle(vehicle))
       .where(
-        (vehicle) =>
-            vehicle.speed > 0 ||
-            vehicle.status.toLowerCase().contains('running'),
+        (vehicle) => vehicle.speed > 0 || vehicle.status.toLowerCase().contains('running'),
       )
       .length;
   return SuperadminMapTelemetry(
@@ -955,28 +930,20 @@ VehicleSummary? _vehicleFromMap(Map<String, dynamic>? map) {
     name: map['name']?.toString() ?? map['plateNumber']?.toString() ?? '',
     plateNumber: map['plateNumber']?.toString() ?? '',
     status: map['status']?.toString() ?? 'stop',
-    speed: (map['speed'] as num?)?.toDouble() ??
-        (map['speedKph'] as num?)?.toDouble() ??
-        0,
+    speed: (map['speed'] as num?)?.toDouble() ?? (map['speedKph'] as num?)?.toDouble() ?? 0,
     latitude: (map['latitude'] as num?)?.toDouble() ?? 0,
     longitude: (map['longitude'] as num?)?.toDouble() ?? 0,
-    hasValidLocation:
-        map.containsKey('latitude') && map.containsKey('longitude'),
-    distanceKm: (map['distanceToday'] as num?)?.toDouble() ??
-        (map['distanceKm'] as num?)?.toDouble() ??
-        (map['distance'] as num?)?.toDouble(),
-    odometerKm: (map['odometer'] as num?)?.toDouble() ??
-        (map['odometerKm'] as num?)?.toDouble(),
+    hasValidLocation: map.containsKey('latitude') && map.containsKey('longitude'),
+    distanceKm: (map['distanceToday'] as num?)?.toDouble() ?? (map['distanceKm'] as num?)?.toDouble() ?? (map['distance'] as num?)?.toDouble(),
+    odometerKm: (map['odometer'] as num?)?.toDouble() ?? (map['odometerKm'] as num?)?.toDouble(),
     engineHoursToday: (map['engineHoursToday'] as num?)?.toDouble(),
     engineHours: (map['engineHours'] as num?)?.toDouble(),
-    totalEngineHours: (map['totalengineHours'] as num?)?.toDouble() ??
-        (map['totalEngineHours'] as num?)?.toDouble(),
+    totalEngineHours: (map['totalengineHours'] as num?)?.toDouble() ?? (map['totalEngineHours'] as num?)?.toDouble(),
     satellites: (map['satellites'] as num?)?.round(),
     headingDegrees: (map['course'] as num?)?.toDouble(),
     ignition: map['ignition'] as bool?,
     acc: map['acc'] as bool?,
-    deviceConnectionStatus: map['deviceConnectionStatus']?.toString() ??
-        map['connectionStatus']?.toString(),
+    deviceConnectionStatus: map['deviceConnectionStatus']?.toString() ?? map['connectionStatus']?.toString(),
     updatedAt: _parseDateTime(map['updatedAt']),
   );
 }

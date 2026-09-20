@@ -5,14 +5,15 @@ import 'package:open_vts/core/theme/open_vts_spacing.dart';
 import 'package:open_vts/core/theme/open_vts_typography.dart';
 import 'package:open_vts/features/user/models/user_support_model.dart';
 import 'package:open_vts/features/user/models/user_support_state.dart';
+import 'package:open_vts/features/user/screens/support/widgets/user_support_status_segment.dart';
 import 'package:open_vts/features/user/screens/support/widgets/user_support_ticket_card.dart';
 import 'package:open_vts/shared/widgets/open_vts_button.dart';
 import 'package:open_vts/shared/widgets/open_vts_card.dart';
 import 'package:open_vts/shared/widgets/open_vts_error_view.dart';
 import 'package:open_vts/shared/widgets/open_vts_search_field.dart';
 
-typedef UserSupportTicketPreviewBuilder =
-    String? Function(UserSupportTicketListItem ticket, UserSupportState state);
+typedef UserSupportTicketPreviewBuilder = String? Function(
+    UserSupportTicketListItem ticket, UserSupportState state);
 
 class UserSupportTicketListView extends StatelessWidget {
   const UserSupportTicketListView({
@@ -54,10 +55,10 @@ class UserSupportTicketListView extends StatelessWidget {
           ),
           const SliverToBoxAdapter(child: SizedBox(height: OpenVtsSpacing.xs)),
           SliverToBoxAdapter(
-            child: _StatusTabs(
+            child: UserSupportStatusSegment(
               selected: state.selectedStatusFilter,
-              tickets: state.tickets,
               onChanged: onStatusChanged,
+              counts: _calculateStatusCounts(state.tickets),
             ),
           ),
           const SliverToBoxAdapter(child: SizedBox(height: OpenVtsSpacing.xs)),
@@ -169,6 +170,7 @@ class _SupportHeader extends StatelessWidget {
           label: const Text('Create'),
         );
 
+        final colorScheme = Theme.of(context).colorScheme;
         return Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
@@ -178,7 +180,7 @@ class _SupportHeader extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: OpenVtsTypography.meta.copyWith(
-                  color: OpenVtsColors.textSecondary,
+                  color: colorScheme.onSurfaceVariant,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -207,86 +209,18 @@ class _SupportHeader extends StatelessWidget {
   }
 }
 
-class _StatusTabs extends StatelessWidget {
-  const _StatusTabs({
-    required this.selected,
-    required this.tickets,
-    required this.onChanged,
-  });
+Map<UserSupportTicketStatus?, int> _calculateStatusCounts(
+  List<UserSupportTicketListItem> tickets,
+) {
+  final counts = <UserSupportTicketStatus?, int>{
+    null: tickets.length, // All tickets
+  };
 
-  final UserSupportTicketStatus? selected;
-  final List<UserSupportTicketListItem> tickets;
-  final ValueChanged<UserSupportTicketStatus?> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final counts = <UserSupportTicketStatus, int>{
-      for (final status in UserSupportTicketStatus.values)
-        status: tickets.where((ticket) => ticket.status == status).length,
-    };
-
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: [
-          _SupportFilterChip(
-            label: 'All',
-            count: tickets.length,
-            selected: selected == null,
-            onSelected: () => onChanged(null),
-          ),
-          const SizedBox(width: OpenVtsSpacing.xs),
-          for (final status in UserSupportTicketStatus.values) ...[
-            _SupportFilterChip(
-              label: status.label,
-              count: counts[status] ?? 0,
-              selected: selected == status,
-              onSelected: () => onChanged(status),
-            ),
-            const SizedBox(width: OpenVtsSpacing.xs),
-          ],
-        ],
-      ),
-    );
+  for (final status in UserSupportTicketStatus.values) {
+    counts[status] = tickets.where((ticket) => ticket.status == status).length;
   }
-}
 
-class _SupportFilterChip extends StatelessWidget {
-  const _SupportFilterChip({
-    required this.label,
-    required this.count,
-    required this.selected,
-    required this.onSelected,
-  });
-
-  final String label;
-  final int count;
-  final bool selected;
-  final VoidCallback onSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    return ChoiceChip(
-      label: Text('$label $count'),
-      selected: selected,
-      onSelected: (_) => onSelected(),
-      visualDensity: VisualDensity.compact,
-      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      labelPadding: const EdgeInsets.symmetric(horizontal: OpenVtsSpacing.xs),
-      selectedColor: OpenVtsColors.brandInk.withValues(alpha: 0.08),
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      side: BorderSide(
-        color: selected ? OpenVtsColors.brandInk : OpenVtsColors.border,
-      ),
-      labelStyle: OpenVtsTypography.meta.copyWith(
-        color: selected ? OpenVtsColors.brandInk : OpenVtsColors.textSecondary,
-        fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
-      ),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
-      ),
-    );
-  }
+  return counts;
 }
 
 class _SupportEmptyState extends StatelessWidget {
@@ -300,6 +234,7 @@ class _SupportEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(OpenVtsSpacing.lg),
@@ -310,14 +245,14 @@ class _SupportEmptyState extends StatelessWidget {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: OpenVtsColors.surface,
-                border: Border.all(color: OpenVtsColors.border),
+                color: colorScheme.surface,
+                border: Border.all(color: colorScheme.outline),
                 borderRadius: BorderRadius.circular(OpenVtsRadius.md),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.support_agent_rounded,
                 size: 20,
-                color: OpenVtsColors.textSecondary,
+                color: colorScheme.onSurfaceVariant,
               ),
             ),
             const SizedBox(height: OpenVtsSpacing.sm),
@@ -333,7 +268,7 @@ class _SupportEmptyState extends StatelessWidget {
                   : 'Create a ticket and the team will follow up here.',
               textAlign: TextAlign.center,
               style: OpenVtsTypography.body.copyWith(
-                color: OpenVtsColors.textSecondary,
+                color: colorScheme.onSurfaceVariant,
               ),
             ),
             if (!hasActiveFilters) ...[
@@ -403,12 +338,13 @@ class _SkeletonLine extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return FractionallySizedBox(
       widthFactor: widthFactor,
       child: Container(
         height: height,
         decoration: BoxDecoration(
-          color: OpenVtsColors.surface,
+          color: colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
         ),
       ),
@@ -423,6 +359,7 @@ class _InlineErrorBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(
@@ -431,12 +368,12 @@ class _InlineErrorBanner extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(OpenVtsRadius.md),
-        border: Border.all(color: OpenVtsColors.error.withValues(alpha: 0.28)),
-        color: OpenVtsColors.error.withValues(alpha: 0.07),
+        border: Border.all(color: colorScheme.error.withValues(alpha: 0.35)),
+        color: colorScheme.error.withValues(alpha: 0.15),
       ),
       child: Text(
         message,
-        style: OpenVtsTypography.body.copyWith(color: OpenVtsColors.error),
+        style: OpenVtsTypography.body.copyWith(color: colorScheme.error),
       ),
     );
   }

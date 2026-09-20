@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../core/theme/open_vts_spacing.dart';
+import '../../../../../core/utils/validators.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
+import '../../../../../shared/widgets/open_vts_searchable_dropdown.dart';
 import '../../../models/admin_vehicle_model.dart';
 
 class AdminVehicleEditSheet extends StatefulWidget {
@@ -71,29 +73,26 @@ class _AdminVehicleEditSheetState extends State<AdminVehicleEditSheet> {
               TextFormField(
                 controller: _nameController,
                 decoration: const InputDecoration(labelText: 'Name'),
-                validator: (value) =>
-                    (value ?? '').trim().isEmpty ? 'Name is required' : null,
+                validator: Validators.vehicleName,
               ),
               const SizedBox(height: OpenVtsSpacing.sm),
               TextFormField(
                 controller: _plateController,
-                decoration: const InputDecoration(labelText: 'Plate Number'),
+                decoration:
+                    const InputDecoration(labelText: 'Plate Number (optional)'),
+                validator: Validators.plateNumberOptional,
               ),
               const SizedBox(height: OpenVtsSpacing.sm),
               TextFormField(
                 controller: _vinController,
-                decoration: const InputDecoration(labelText: 'VIN'),
+                decoration: const InputDecoration(labelText: 'VIN (optional)'),
+                validator: Validators.vinOptional,
               ),
               const SizedBox(height: OpenVtsSpacing.sm),
-              DropdownButtonFormField<String>(
-                initialValue: _vehicleTypeId.isEmpty ? null : _vehicleTypeId,
-                decoration: const InputDecoration(labelText: 'Vehicle Type'),
-                items: widget.vehicleTypes
-                    .map((item) => DropdownMenuItem<String>(
-                          value: item.id,
-                          child: Text(item.name),
-                        ))
-                    .toList(growable: false),
+              OpenVtsSearchableDropdown<String>(
+                label: 'Vehicle Type',
+                value: _vehicleTypeId.isEmpty ? null : _vehicleTypeId,
+                options: _vehicleTypeOptions,
                 onChanged: (value) =>
                     setState(() => _vehicleTypeId = value ?? ''),
               ),
@@ -168,6 +167,26 @@ class _AdminVehicleEditSheetState extends State<AdminVehicleEditSheet> {
         ),
       ],
     );
+  }
+
+  List<OpenVtsDropdownOption<String>> get _vehicleTypeOptions {
+    final hasCurrent = widget.vehicleTypes.any(
+      (type) => type.id == _vehicleTypeId,
+    );
+    return [
+      if (!hasCurrent && _vehicleTypeId.isNotEmpty)
+        OpenVtsDropdownOption(
+          value: _vehicleTypeId,
+          label: _vehicleTypeId,
+          searchText: _vehicleTypeId,
+        ),
+      for (final type in widget.vehicleTypes)
+        OpenVtsDropdownOption(
+          value: type.id,
+          label: type.name,
+          searchText: '${type.name} ${type.id}',
+        ),
+    ];
   }
 
   Future<void> _submit() async {

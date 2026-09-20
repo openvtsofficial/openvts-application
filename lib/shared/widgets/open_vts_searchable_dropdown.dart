@@ -167,9 +167,7 @@ class _OpenVtsSearchableDropdownState<T>
 
     final labelColor = !widget.enabled
         ? OpenVtsColors.textTertiary
-        : (isDark
-            ? OpenVtsColors.darkTextPrimary
-            : OpenVtsColors.textPrimary);
+        : (isDark ? OpenVtsColors.darkTextPrimary : OpenVtsColors.textPrimary);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -209,7 +207,7 @@ class _OpenVtsSearchableDropdownState<T>
                     Icon(
                       widget.leadingIcon,
                       size: 18,
-                      color: OpenVtsColors.textSecondary,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                     const SizedBox(width: OpenVtsSpacing.sm),
                   ],
@@ -231,8 +229,8 @@ class _OpenVtsSearchableDropdownState<T>
                       Icons.unfold_more_rounded,
                       size: 18,
                       color: widget.enabled
-                          ? OpenVtsColors.textSecondary
-                          : OpenVtsColors.textTertiary,
+                          ? Theme.of(context).colorScheme.onSurfaceVariant
+                          : Theme.of(context).colorScheme.outline,
                     ),
                 ],
               ),
@@ -253,7 +251,7 @@ class _OpenVtsSearchableDropdownState<T>
           Text(
             widget.helperText!,
             style: OpenVtsTypography.meta.copyWith(
-              color: OpenVtsColors.textSecondary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
         ],
@@ -292,10 +290,10 @@ class _OpenVtsSearchableDropdownState<T>
           title: widget.sheetTitle ?? widget.label,
           options: widget.options,
           selectedValue: widget.value,
-          searchHintText: widget.searchHintText ??
-              'Search ${widget.label.toLowerCase()}',
-          emptyMessage:
-              widget.emptyMessage ?? 'No matching ${widget.label.toLowerCase()}',
+          searchHintText:
+              widget.searchHintText ?? 'Search ${widget.label.toLowerCase()}',
+          emptyMessage: widget.emptyMessage ??
+              'No matching ${widget.label.toLowerCase()}',
         );
       },
     );
@@ -368,9 +366,8 @@ class _ValueDisplay<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor = isDark
-        ? OpenVtsColors.darkTextPrimary
-        : OpenVtsColors.textPrimary;
+    final textColor =
+        isDark ? OpenVtsColors.darkTextPrimary : OpenVtsColors.textPrimary;
 
     if (option == null) {
       return Text(
@@ -411,7 +408,7 @@ class _ValueDisplay<T> extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: OpenVtsTypography.meta.copyWith(
-                      color: OpenVtsColors.textSecondary,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ),
@@ -502,7 +499,7 @@ class _SearchableDropdownSheetState<T>
                   height: 4,
                   width: 40,
                   decoration: BoxDecoration(
-                    color: OpenVtsColors.border,
+                    color: Theme.of(context).colorScheme.outlineVariant,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -528,7 +525,8 @@ class _SearchableDropdownSheetState<T>
                         onPressed: () => Navigator.of(context)
                             .pop<_PickerResult<T>>(_PickerResult.cleared()),
                         style: TextButton.styleFrom(
-                          foregroundColor: OpenVtsColors.textSecondary,
+                          foregroundColor:
+                              Theme.of(context).colorScheme.onSurfaceVariant,
                           visualDensity: VisualDensity.compact,
                         ),
                         child: const Text('Clear'),
@@ -554,7 +552,10 @@ class _SearchableDropdownSheetState<T>
                 ),
               ),
               const SizedBox(height: OpenVtsSpacing.sm),
-              const Divider(height: 1, color: OpenVtsColors.divider),
+              Divider(
+                height: 1,
+                color: Theme.of(context).colorScheme.outlineVariant,
+              ),
               Flexible(
                 child: filtered.isEmpty
                     ? _EmptyResults(message: widget.emptyMessage)
@@ -619,31 +620,31 @@ class _SheetSearchField extends StatelessWidget {
             autofocus: true,
             textAlignVertical: TextAlignVertical.center,
             onChanged: onChanged,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: OpenVtsTypography.primaryFontFamily,
               fontFamilyFallback: OpenVtsTypography.fontFallback,
               fontSize: 14,
               fontWeight: FontWeight.w500,
-              color: OpenVtsColors.textPrimary,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
             decoration: InputDecoration(
               filled: true,
               fillColor: fillColor,
               isDense: true,
               hintText: hintText,
-              hintStyle: const TextStyle(
+              hintStyle: TextStyle(
                 fontFamily: OpenVtsTypography.primaryFontFamily,
                 fontFamilyFallback: OpenVtsTypography.fontFallback,
                 fontSize: 14,
-                color: OpenVtsColors.textTertiary,
+                color: Theme.of(context).colorScheme.outline,
                 fontWeight: FontWeight.w400,
               ),
-              prefixIcon: const Padding(
-                padding: EdgeInsetsDirectional.only(start: 12, end: 8),
+              prefixIcon: Padding(
+                padding: const EdgeInsetsDirectional.only(start: 12, end: 8),
                 child: Icon(
                   Icons.search_rounded,
                   size: 18,
-                  color: OpenVtsColors.textSecondary,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
               prefixIconConstraints: const BoxConstraints(
@@ -666,10 +667,10 @@ class _SheetSearchField extends StatelessWidget {
                           minHeight: 28,
                         ),
                         splashRadius: 16,
-                        icon: const Icon(
+                        icon: Icon(
                           Icons.close_rounded,
                           size: 16,
-                          color: OpenVtsColors.textSecondary,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ),
@@ -717,8 +718,7 @@ class _OptionRow<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasSubtitle = (option.subtitle ?? '').trim().isNotEmpty;
-    final background =
-        isSelected ? OpenVtsColors.surface : Colors.transparent;
+    final background = isSelected ? OpenVtsColors.surface : Colors.transparent;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final selectedBackground =
         isDark ? OpenVtsColors.darkSurface : OpenVtsColors.surface;
@@ -750,7 +750,7 @@ class _OptionRow<T> extends StatelessWidget {
                       style: OpenVtsTypography.body.copyWith(
                         fontWeight:
                             isSelected ? FontWeight.w700 : FontWeight.w500,
-                        color: OpenVtsColors.textPrimary,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     if (hasSubtitle) ...[
@@ -760,7 +760,7 @@ class _OptionRow<T> extends StatelessWidget {
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: OpenVtsTypography.meta.copyWith(
-                          color: OpenVtsColors.textSecondary,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ],
@@ -775,7 +775,7 @@ class _OptionRow<T> extends StatelessWidget {
                 size: 18,
                 color: isSelected
                     ? OpenVtsColors.brandInk
-                    : OpenVtsColors.textTertiary,
+                    : Theme.of(context).colorScheme.outline,
               ),
             ],
           ),
@@ -800,17 +800,17 @@ class _EmptyResults extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
+          Icon(
             Icons.search_off_rounded,
             size: 32,
-            color: OpenVtsColors.textTertiary,
+            color: Theme.of(context).colorScheme.outline,
           ),
           const SizedBox(height: OpenVtsSpacing.xs),
           Text(
             message,
             textAlign: TextAlign.center,
             style: OpenVtsTypography.body.copyWith(
-              color: OpenVtsColors.textSecondary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
         ],

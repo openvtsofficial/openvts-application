@@ -4,7 +4,6 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
@@ -132,9 +131,9 @@ class _RangeSelector extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: OpenVtsColors.surface,
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(OpenVtsRadius.md),
-        border: Border.all(color: OpenVtsColors.border),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
       child: Padding(
         padding: const EdgeInsets.all(3),
@@ -180,16 +179,21 @@ class _RangeSegment extends StatelessWidget {
             vertical: 5,
           ),
           decoration: BoxDecoration(
-            color: isSelected ? OpenVtsColors.white : Colors.transparent,
+            color: isSelected
+                ? Theme.of(context).colorScheme.surface
+                : Colors.transparent,
             borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-            border: isSelected ? Border.all(color: OpenVtsColors.border) : null,
+            border: isSelected
+                ? Border.all(
+                    color: Theme.of(context).colorScheme.outlineVariant)
+                : null,
           ),
           child: Text(
             range.label,
             style: OpenVtsTypography.meta.copyWith(
               color: isSelected
-                  ? OpenVtsColors.textPrimary
-                  : OpenVtsColors.textSecondary,
+                  ? Theme.of(context).colorScheme.onSurface
+                  : Theme.of(context).colorScheme.onSurfaceVariant,
               fontSize: 10.5,
               fontWeight: FontWeight.w800,
             ),
@@ -213,13 +217,16 @@ class _SeriesLegend extends StatelessWidget {
       children: [
         CustomPaint(
           size: const Size(18, 8),
-          painter: _LegendLinePainter(solid: solid),
+          painter: _LegendLinePainter(
+            solid: solid,
+            isDark: Theme.of(context).brightness == Brightness.dark,
+          ),
         ),
         const SizedBox(width: OpenVtsSpacing.xxs),
         Text(
           label,
           style: OpenVtsTypography.meta.copyWith(
-            color: OpenVtsColors.textSecondary,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
             fontSize: 10.5,
             fontWeight: FontWeight.w700,
           ),
@@ -230,14 +237,20 @@ class _SeriesLegend extends StatelessWidget {
 }
 
 class _LegendLinePainter extends CustomPainter {
-  const _LegendLinePainter({required this.solid});
+  const _LegendLinePainter({required this.solid, required this.isDark});
 
   final bool solid;
+  final bool isDark;
 
   @override
   void paint(Canvas canvas, Size size) {
+    final primaryColor =
+        isDark ? const Color(0xFFFFFFFF) : const Color(0xFF141118);
+    final secondaryColor =
+        isDark ? const Color(0xFF71717A) : const Color(0xFF908A96);
+
     final paint = Paint()
-      ..color = solid ? OpenVtsColors.brandInk : OpenVtsColors.textTertiary
+      ..color = solid ? primaryColor : secondaryColor
       ..strokeWidth = 2
       ..strokeCap = StrokeCap.round;
 
@@ -260,7 +273,7 @@ class _LegendLinePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _LegendLinePainter oldDelegate) {
-    return oldDelegate.solid != solid;
+    return oldDelegate.solid != solid || oldDelegate.isDark != isDark;
   }
 }
 
@@ -271,15 +284,15 @@ class _GrowthEmptyState extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: OpenVtsColors.surface,
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(OpenVtsRadius.md),
-        border: Border.all(color: OpenVtsColors.border),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
       child: Center(
         child: Text(
           'No growth data yet.',
           style: OpenVtsTypography.meta.copyWith(
-            color: OpenVtsColors.textSecondary,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
             fontWeight: FontWeight.w700,
           ),
         ),
@@ -295,17 +308,19 @@ class _GrowthLineChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return CustomPaint(
-      painter: _GrowthLineChartPainter(points: points),
+      painter: _GrowthLineChartPainter(points: points, isDark: isDark),
       child: const SizedBox.expand(),
     );
   }
 }
 
 class _GrowthLineChartPainter extends CustomPainter {
-  const _GrowthLineChartPainter({required this.points});
+  const _GrowthLineChartPainter({required this.points, required this.isDark});
 
   final List<AdminMonthGraphPoint> points;
+  final bool isDark;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -324,21 +339,26 @@ class _GrowthLineChartPainter extends CustomPainter {
       maxValue,
     );
 
+    final primaryColor =
+        isDark ? const Color(0xFFFFFFFF) : const Color(0xFF141118);
+    final secondaryColor =
+        isDark ? const Color(0xFF71717A) : const Color(0xFF908A96);
+
     _paintArea(canvas, chartRect, userOffsets);
     _paintSeries(
       canvas,
       userOffsets,
-      OpenVtsColors.brandInk,
+      primaryColor,
       dashed: false,
     );
     _paintSeries(
       canvas,
       vehicleOffsets,
-      OpenVtsColors.textTertiary,
+      secondaryColor,
       dashed: true,
     );
-    _paintDots(canvas, userOffsets, OpenVtsColors.brandInk);
-    _paintDots(canvas, vehicleOffsets, OpenVtsColors.textTertiary);
+    _paintDots(canvas, userOffsets, primaryColor);
+    _paintDots(canvas, vehicleOffsets, secondaryColor);
     _paintAxisLabels(canvas, chartRect, maxValue);
   }
 
@@ -352,8 +372,10 @@ class _GrowthLineChartPainter extends CustomPainter {
   }
 
   void _paintGrid(Canvas canvas, Rect chartRect, int maxValue) {
+    final borderColor =
+        isDark ? const Color(0xFF2A2430) : const Color(0xFFE7E3EA);
     final gridPaint = Paint()
-      ..color = OpenVtsColors.border.withValues(alpha: 0.9)
+      ..color = borderColor.withValues(alpha: 0.9)
       ..strokeWidth = 1;
 
     for (var index = 0; index <= 4; index++) {
@@ -366,7 +388,7 @@ class _GrowthLineChartPainter extends CustomPainter {
     }
 
     final axisPaint = Paint()
-      ..color = OpenVtsColors.border
+      ..color = borderColor
       ..strokeWidth = 1.1;
     canvas.drawLine(chartRect.bottomLeft, chartRect.bottomRight, axisPaint);
   }
@@ -392,13 +414,15 @@ class _GrowthLineChartPainter extends CustomPainter {
       ..lineTo(offsets.first.dx, chartRect.bottom)
       ..close();
 
+    final primaryColor =
+        isDark ? const Color(0xFFFFFFFF) : const Color(0xFF141118);
     final fillPaint = Paint()
       ..shader = LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
         colors: [
-          OpenVtsColors.brandInk.withValues(alpha: 0.08),
-          OpenVtsColors.brandInk.withValues(alpha: 0.01),
+          primaryColor.withValues(alpha: 0.12),
+          primaryColor.withValues(alpha: 0.03),
         ],
       ).createShader(chartRect);
     canvas.drawPath(path, fillPaint);
@@ -464,8 +488,10 @@ class _GrowthLineChartPainter extends CustomPainter {
   }
 
   void _paintAxisLabels(Canvas canvas, Rect chartRect, int maxValue) {
+    final tertiaryColor =
+        isDark ? const Color(0xFF71717A) : const Color(0xFF908A96);
     final labelStyle = OpenVtsTypography.meta.copyWith(
-      color: OpenVtsColors.textTertiary,
+      color: tertiaryColor,
       fontSize: 10,
     );
     for (var index = 0; index <= 2; index++) {
@@ -527,7 +553,7 @@ class _GrowthLineChartPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _GrowthLineChartPainter oldDelegate) {
-    return oldDelegate.points != points;
+    return oldDelegate.points != points || oldDelegate.isDark != isDark;
   }
 }
 
@@ -546,11 +572,13 @@ class _SectionHeading extends StatelessWidget {
           width: 28,
           height: 28,
           decoration: BoxDecoration(
-            color: OpenVtsColors.surface,
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-            border: Border.all(color: OpenVtsColors.border),
+            border:
+                Border.all(color: Theme.of(context).colorScheme.outlineVariant),
           ),
-          child: Icon(icon, size: 16, color: OpenVtsColors.textSecondary),
+          child: Icon(icon,
+              size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
         ),
         const SizedBox(width: OpenVtsSpacing.xs),
         Flexible(
@@ -559,7 +587,7 @@ class _SectionHeading extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: OpenVtsTypography.label.copyWith(
-              color: OpenVtsColors.textPrimary,
+              color: Theme.of(context).colorScheme.onSurface,
               fontWeight: FontWeight.w800,
             ),
           ),

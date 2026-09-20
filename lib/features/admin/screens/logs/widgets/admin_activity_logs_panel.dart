@@ -11,7 +11,9 @@ import '../../../../../shared/widgets/open_vts_empty_state.dart';
 import '../../../../../shared/widgets/open_vts_error_view.dart';
 import '../../../../../shared/widgets/open_vts_loader.dart';
 import '../../../../../shared/widgets/open_vts_search_field.dart';
+import '../../../../../shared/widgets/open_vts_searchable_dropdown.dart';
 import '../../../controllers/admin_providers.dart';
+import '../../../models/admin_logs_model.dart';
 import '../widgets/admin_activity_log_card.dart';
 import '../widgets/admin_activity_log_detail_sheet.dart';
 import '../widgets/admin_logs_filter_widgets.dart';
@@ -63,19 +65,14 @@ class _AdminActivityLogsPanelState
           },
         ),
         const SizedBox(height: OpenVtsSpacing.sm),
-        DropdownButtonFormField<String?>(
-          initialValue: state.activityUserId,
-          decoration: const InputDecoration(labelText: 'Actor User'),
-          items: [
-            const DropdownMenuItem<String?>(
-                value: null, child: Text('All users')),
-            ...state.options.users.map((u) => DropdownMenuItem<String?>(
-                  value: u.uid,
-                  child: Text(u.displayName, overflow: TextOverflow.ellipsis),
-                )),
-          ],
+        AdminActivityActorUserDropdown(
+          value: state.activityUserId,
+          users: state.options.users,
           onChanged: (v) {
-            controller.setActivityFilters(userId: v);
+            controller.setActivityFilters(
+              userId: v,
+              clearUserId: v == null,
+            );
             unawaited(controller.loadActivityLogs());
           },
         ),
@@ -149,6 +146,49 @@ class _AdminActivityLogsPanelState
   }
 
   _GroupChip _group(String label, String value) => _GroupChip(label, value);
+}
+
+class AdminActivityActorUserDropdown extends StatelessWidget {
+  const AdminActivityActorUserDropdown({
+    required this.value,
+    required this.users,
+    required this.onChanged,
+    super.key,
+  });
+
+  final String? value;
+  final List<AdminLogsUserOption> users;
+  final ValueChanged<String?> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return OpenVtsSearchableDropdown<String>(
+      label: 'Actor User',
+      value: value,
+      hintText: 'All users',
+      searchHintText: 'Search users...',
+      options: users
+          .map(
+            (user) => OpenVtsDropdownOption<String>(
+              value: user.uid,
+              label: user.displayName,
+              subtitle: [
+                user.username.trim(),
+                user.loginType.trim(),
+              ].where((part) => part.isNotEmpty).join(' • '),
+              searchText: [
+                user.displayName,
+                user.uid,
+                user.name,
+                user.username,
+                user.loginType,
+              ].join(' '),
+            ),
+          )
+          .toList(growable: false),
+      onChanged: onChanged,
+    );
+  }
 }
 
 class _GroupChip {

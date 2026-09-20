@@ -23,9 +23,12 @@ class SuperadminAdminDetails {
     required this.totalVehicles,
     required this.recentLogin,
     required this.isActive,
+    required this.hasExplicitActiveStatus,
     required this.isEmailVerified,
     required this.countryCode,
+    required this.countryName,
     required this.stateCode,
+    required this.stateName,
     required this.cityName,
     required this.pincode,
     required this.organization,
@@ -47,9 +50,12 @@ class SuperadminAdminDetails {
   final int totalVehicles;
   final DateTime? recentLogin;
   final bool isActive;
+  final bool hasExplicitActiveStatus;
   final bool isEmailVerified;
   final String countryCode;
+  final String countryName;
   final String stateCode;
+  final String stateName;
   final String cityName;
   final String pincode;
   final String organization;
@@ -58,6 +64,8 @@ class SuperadminAdminDetails {
   final DateTime? updatedAt;
   final List<SuperadminAdminCompany> companies;
   final SuperadminAdminAddress? address;
+
+  static const Object _unset = Object();
 
   factory SuperadminAdminDetails.fromJson(dynamic json) {
     final root = _asMap(json);
@@ -106,6 +114,35 @@ class SuperadminAdminDetails {
     final mobileDisplay =
         _firstString(source, const ['mobileDisplay', 'mobile_display']) ??
             _composePhone(mobilePrefix, mobileNumber);
+
+    final rawCountryCode = _firstString(source, const [
+          'countryCode',
+          'country_code',
+          'countrycode',
+        ]) ??
+        '';
+    final rawCountryGeneric = _firstString(source, const ['country']) ?? '';
+    final detailsCountryCode = rawCountryCode.isNotEmpty
+        ? rawCountryCode.toUpperCase()
+        : (rawCountryGeneric.trim().length <= 2
+            ? rawCountryGeneric.trim().toUpperCase()
+            : '');
+    final detailsCountryName =
+        rawCountryCode.isEmpty && rawCountryGeneric.trim().length > 2
+            ? rawCountryGeneric.trim()
+            : '';
+
+    final rawStateCode =
+        _firstString(source, const ['stateCode', 'state_code', 'statecode']) ??
+            '';
+    final rawStateGeneric = _firstString(source, const ['state']) ?? '';
+    final detailsStateCode = rawStateCode.isNotEmpty
+        ? rawStateCode
+        : (rawStateGeneric.trim().length <= 4 ? rawStateGeneric.trim() : '');
+    final detailsStateName =
+        rawStateCode.isEmpty && rawStateGeneric.trim().length > 4
+            ? rawStateGeneric.trim()
+            : '';
 
     return SuperadminAdminDetails(
       id: _firstString(source, const [
@@ -157,26 +194,66 @@ class SuperadminAdminDetails {
             'totalVehicles',
             'vehicleCount',
             'vehiclesCount',
-            'vehicles',
+            'total_vehicles',
+            'total_vehicle',
+            'totalVehicle',
           ]) ??
-          0,
+          _firstInt(
+            _firstMap(source, const ['_count']) ?? const <String, dynamic>{},
+            const ['vehicles'],
+          ) ??
+          _listLength(source, 'vehicles') ??
+          -1,
       recentLogin: _firstDate(source, const [
         'Lastlogin',
         'lastLogin',
         'last_login',
         'lastlogin',
+        'lastLoggedIn',
+        'last_logged_in',
+        'lastLoginAt',
+        'lastLoggedInAt',
+        'last_logged_in_at',
+        'last_login_at',
         'recentLogin',
+        'recent_login',
+        'loginAt',
+        'login_at',
+        'lastSeenAt',
+        'last_seen_at',
         'lastSeen',
         'last_seen',
+        'lastSeenOn',
+        'last_seen_on',
+        'loggedInAt',
+        'logged_in_at',
+        'loginDate',
+        'login_date',
+        'loginTime',
+        'login_time',
+        'lastActivityAt',
+        'last_activity_at',
       ]),
       isActive: _parseBool(
             source['isActive'] ??
                 source['is_active'] ??
                 source['isactive'] ??
                 source['active'] ??
-                source['status'],
+                source['status'] ??
+                source['accountStatus'] ??
+                source['account_status'],
           ) ??
           false,
+      hasExplicitActiveStatus: _parseBool(
+            source['isActive'] ??
+                source['is_active'] ??
+                source['isactive'] ??
+                source['active'] ??
+                source['status'] ??
+                source['accountStatus'] ??
+                source['account_status'],
+          ) !=
+          null,
       isEmailVerified: _parseBool(
             source['isEmailVerified'] ??
                 source['isemailvarified'] ??
@@ -186,17 +263,10 @@ class SuperadminAdminDetails {
                 source['email_verified'],
           ) ??
           false,
-      countryCode: (_firstString(source, const [
-                'countrycode',
-                'countryCode',
-                'country_code',
-                'country',
-              ]) ??
-              '')
-          .toUpperCase(),
-      stateCode: _firstString(
-              source, const ['stateCode', 'state_code', 'statecode']) ??
-          '',
+      countryCode: detailsCountryCode,
+      countryName: detailsCountryName,
+      stateCode: detailsStateCode,
+      stateName: detailsStateName,
       cityName: _firstString(source, const [
             'cityName',
             'city_name',
@@ -238,6 +308,9 @@ class SuperadminAdminDetails {
 
   SuperadminAdminDetails copyWith({
     bool? isActive,
+    bool? hasExplicitActiveStatus,
+    int? totalVehicles,
+    Object? recentLogin = _unset,
   }) {
     return SuperadminAdminDetails(
       id: id,
@@ -248,12 +321,18 @@ class SuperadminAdminDetails {
       mobileNumber: mobileNumber,
       mobileDisplay: mobileDisplay,
       credits: credits,
-      totalVehicles: totalVehicles,
-      recentLogin: recentLogin,
+      totalVehicles: totalVehicles ?? this.totalVehicles,
+      recentLogin: identical(recentLogin, _unset)
+          ? this.recentLogin
+          : recentLogin as DateTime?,
       isActive: isActive ?? this.isActive,
+      hasExplicitActiveStatus:
+          hasExplicitActiveStatus ?? this.hasExplicitActiveStatus,
       isEmailVerified: isEmailVerified,
       countryCode: countryCode,
+      countryName: countryName,
       stateCode: stateCode,
+      stateName: stateName,
       cityName: cityName,
       pincode: pincode,
       organization: organization,
@@ -360,7 +439,9 @@ class SuperadminAdminAddress {
     required this.id,
     required this.addressLine,
     required this.countryCode,
+    required this.countryName,
     required this.stateCode,
+    required this.stateName,
     required this.cityId,
     required this.cityName,
     required this.pincode,
@@ -370,7 +451,9 @@ class SuperadminAdminAddress {
   final String id;
   final String addressLine;
   final String countryCode;
+  final String countryName;
   final String stateCode;
+  final String stateName;
   final String cityId;
   final String cityName;
   final String pincode;
@@ -378,6 +461,36 @@ class SuperadminAdminAddress {
 
   factory SuperadminAdminAddress.fromJson(dynamic json) {
     final source = _asMap(json);
+
+    final addrRawCountryCode = _firstString(source, const [
+          'countryCode',
+          'country_code',
+        ]) ??
+        '';
+    final addrRawCountryGeneric = _firstString(source, const ['country']) ?? '';
+    final addrCountryCode = addrRawCountryCode.isNotEmpty
+        ? addrRawCountryCode.toUpperCase()
+        : (addrRawCountryGeneric.trim().length <= 2
+            ? addrRawCountryGeneric.trim().toUpperCase()
+            : '');
+    final addrCountryName =
+        addrRawCountryCode.isEmpty && addrRawCountryGeneric.trim().length > 2
+            ? addrRawCountryGeneric.trim()
+            : _firstString(source, const ['countryName', 'country_name']) ?? '';
+
+    final addrRawStateCode =
+        _firstString(source, const ['stateCode', 'state_code']) ?? '';
+    final addrRawStateGeneric = _firstString(source, const ['state']) ?? '';
+    final addrStateCode = addrRawStateCode.isNotEmpty
+        ? addrRawStateCode
+        : (addrRawStateGeneric.trim().length <= 4
+            ? addrRawStateGeneric.trim()
+            : '');
+    final addrStateName =
+        addrRawStateCode.isEmpty && addrRawStateGeneric.trim().length > 4
+            ? addrRawStateGeneric.trim()
+            : _firstString(source, const ['stateName', 'state_name']) ?? '';
+
     return SuperadminAdminAddress(
       id: _firstString(source, const ['id', '_id', 'addressId']) ?? '',
       addressLine: _firstString(source, const [
@@ -387,16 +500,10 @@ class SuperadminAdminAddress {
             'line1',
           ]) ??
           '',
-      countryCode: (_firstString(source, const [
-                'countryCode',
-                'country_code',
-                'country',
-              ]) ??
-              '')
-          .toUpperCase(),
-      stateCode:
-          _firstString(source, const ['stateCode', 'state_code', 'state']) ??
-              '',
+      countryCode: addrCountryCode,
+      countryName: addrCountryName,
+      stateCode: addrStateCode,
+      stateName: addrStateName,
       cityId: _firstString(source, const [
             'cityId',
             'city_id',
@@ -1230,6 +1337,12 @@ int? _firstInt(Map<String, dynamic> json, List<String> keys) {
   return null;
 }
 
+int? _listLength(Map<String, dynamic> json, String key) {
+  final value = _valueForKey(json, key);
+  if (value is List) return value.length;
+  return null;
+}
+
 DateTime? _firstDate(Map<String, dynamic> json, List<String> keys) {
   for (final key in keys) {
     final value = _valueForKey(json, key);
@@ -1275,6 +1388,7 @@ bool? _parseBool(dynamic value) {
     case 'n':
     case 'inactive':
     case 'disabled':
+    case 'blocked':
       return false;
   }
   return null;

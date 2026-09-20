@@ -83,7 +83,7 @@ class AdminInventoryService {
     _throwIfActionFalse(response.data);
   }
 
-  Future<AdminInventoryDevice> updateDevice({
+  Future<void> updateDevice({
     required String id,
     required AdminUpdateDeviceRequest request,
   }) async {
@@ -95,19 +95,6 @@ class AdminInventoryService {
     );
 
     _throwIfActionFalse(response.data);
-
-    final refreshed = await _apiClient.get<dynamic>(
-      ApiEndpoints.admin.deviceById(id),
-      options: _readOptions,
-      parser: (json) => json,
-    );
-    _throwIfActionFalse(refreshed.data);
-
-    final parsed = AdminInventoryDevice.listFromJson(refreshed.data);
-    if (parsed.isNotEmpty) {
-      return parsed.first;
-    }
-    return AdminInventoryDevice.fromJson(_asMap(refreshed.data));
   }
 
   Future<AdminInventorySimCard> updateSimCard({

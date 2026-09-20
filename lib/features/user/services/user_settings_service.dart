@@ -27,6 +27,17 @@ class UserSettingsService {
       parser: (json) => json,
     );
 
+    if (_apiClient.isDemoMode) {
+      final companyResponse = await _apiClient.get<dynamic>(
+        '/demo/companydetails',
+        options: _readOptions,
+        parser: (json) => json,
+      );
+      return UserSettingsProfile.fromDynamic(
+        _mergeDemoProfile(response.data, companyResponse.data),
+      );
+    }
+
     return UserSettingsProfile.fromDynamic(response.data);
   }
 
@@ -377,6 +388,61 @@ class UserSettingsService {
         .map((value) => value.trim())
         .where((value) => value.isNotEmpty)
         .toList(growable: false);
+  }
+
+  Map<String, dynamic> _mergeDemoProfile(
+    dynamic profilePayload,
+    dynamic companyPayload,
+  ) {
+    final profile = _asMap(profilePayload);
+    final company = _asMap(companyPayload);
+    final address = _asMap(company['address']);
+    final line1 = address['line1']?.toString().trim() ?? '';
+    final line2 = address['line2']?.toString().trim() ?? '';
+
+    return <String, dynamic>{
+      ...profile,
+      'uid': 1,
+      'mobilePrefix': '+1',
+      'mobileNumber': '5550100000',
+      'isEmailVerified': true,
+      'isMobileVerified': true,
+      'company': <String, dynamic>{
+        'id': 1,
+        'name': company['companyName'],
+        'websiteUrl': company['website'],
+      },
+      'address': <String, dynamic>{
+        'id': 1,
+        'addressLine': <String>[
+          if (line1.isNotEmpty) line1,
+          if (line2.isNotEmpty) line2,
+        ].join(', '),
+        'countryCode': 'US',
+        'stateCode': address['state'] ?? 'NY',
+        'cityName': address['city'] ?? 'New York City',
+        'pincode': address['postalCode'] ?? '10001',
+        'fullAddress': <String>[
+          if (line1.isNotEmpty) line1,
+          if (line2.isNotEmpty) line2,
+          if (address['city'] != null) address['city'].toString(),
+          if (address['state'] != null) address['state'].toString(),
+          if (address['postalCode'] != null) address['postalCode'].toString(),
+        ].join(', '),
+      },
+    };
+  }
+
+  Map<String, dynamic> _asMap(dynamic value) {
+    if (value is Map<String, dynamic>) {
+      return value;
+    }
+    if (value is Map) {
+      return value.map(
+        (key, item) => MapEntry(key.toString(), item),
+      );
+    }
+    return const <String, dynamic>{};
   }
 
   static MediaType? _guessContentType(String fileName) {

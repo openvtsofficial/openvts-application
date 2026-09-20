@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../core/utils/unit_formatter.dart';
 import '../../../../../shared/widgets/open_vts_empty_state.dart';
 import '../../../models/user_notification_settings_model.dart';
 import 'user_notification_channel_card.dart';
 import 'user_notification_compact_toggle.dart';
 import 'user_notification_vehicle_card.dart';
 
-class UserOverspeedNotificationTab extends StatelessWidget {
+class UserOverspeedNotificationTab extends ConsumerWidget {
   const UserOverspeedNotificationTab({
     required this.preferences,
     required this.channelFlags,
@@ -29,7 +31,8 @@ class UserOverspeedNotificationTab extends StatelessWidget {
   final void Function(int vehicleId, int? speedLimitKph) onSpeedLimitChanged;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final uf = ref.watch(unitFormatterProvider);
     if (preferences.vehicles.isEmpty) {
       return Column(
         children: [
@@ -93,6 +96,7 @@ class UserOverspeedNotificationTab extends StatelessWidget {
                     onChanged: (value) {
                       onSpeedLimitChanged(vehicle.id, value);
                     },
+                    speedLabel: uf.speedLabel,
                   ),
                   if (isInvalid)
                     Padding(
@@ -101,7 +105,7 @@ class UserOverspeedNotificationTab extends StatelessWidget {
                         left: OpenVtsSpacing.xxs,
                       ),
                       child: Text(
-                        'Speed limit must be at least 1 km/h.',
+                        'Speed limit must be at least 1 ${uf.speedLabel}.',
                         style: OpenVtsTypography.meta.copyWith(
                           color: OpenVtsColors.error,
                           fontWeight: FontWeight.w600,
@@ -126,6 +130,7 @@ class _SpeedLimitField extends StatelessWidget {
     required this.hasError,
     required this.value,
     required this.onChanged,
+    required this.speedLabel,
   });
 
   final int vehicleId;
@@ -134,9 +139,13 @@ class _SpeedLimitField extends StatelessWidget {
   final bool hasError;
   final int? value;
   final ValueChanged<int?> onChanged;
+  final String speedLabel;
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     final key = ValueKey<String>(
       'speed-limit-$vehicleId-${value ?? 'null'}-$enabled',
     );
@@ -145,7 +154,7 @@ class _SpeedLimitField extends StatelessWidget {
       width: 140,
       child: Semantics(
         textField: true,
-        label: 'Overspeed limit in kilometers per hour for $vehicleLabel',
+        label: 'Overspeed limit ($speedLabel) for $vehicleLabel',
         child: TextFormField(
           key: key,
           initialValue: value?.toString() ?? '',
@@ -158,19 +167,25 @@ class _SpeedLimitField extends StatelessWidget {
           ],
           style: OpenVtsTypography.meta.copyWith(
             color: enabled
-                ? OpenVtsColors.textPrimary
-                : OpenVtsColors.textTertiary,
+                ? (isDark ? OpenVtsColors.white : OpenVtsColors.textPrimary)
+                : (isDark
+                    ? OpenVtsColors.white.withValues(alpha: 0.5)
+                    : OpenVtsColors.textTertiary),
             fontWeight: FontWeight.w600,
           ),
           decoration: InputDecoration(
             isDense: true,
             hintText: 'Limit',
             hintStyle: OpenVtsTypography.meta.copyWith(
-              color: OpenVtsColors.textTertiary,
+              color: isDark
+                  ? OpenVtsColors.white.withValues(alpha: 0.5)
+                  : OpenVtsColors.textTertiary,
             ),
-            suffixText: 'km/h',
+            suffixText: speedLabel,
             suffixStyle: OpenVtsTypography.meta.copyWith(
-              color: OpenVtsColors.textSecondary,
+              color: isDark
+                  ? OpenVtsColors.white.withValues(alpha: 0.7)
+                  : OpenVtsColors.textSecondary,
               fontWeight: FontWeight.w600,
             ),
             contentPadding: const EdgeInsets.symmetric(
@@ -178,24 +193,31 @@ class _SpeedLimitField extends StatelessWidget {
               vertical: 10,
             ),
             filled: true,
-            fillColor:
-                enabled ? OpenVtsColors.surfaceElevated : OpenVtsColors.surface,
+            fillColor: enabled
+                ? (isDark ? Colors.black : OpenVtsColors.surfaceElevated)
+                : (isDark ? Colors.black : OpenVtsColors.surface),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
               borderSide: BorderSide(
-                color: hasError ? OpenVtsColors.error : OpenVtsColors.border,
+                color: hasError
+                    ? OpenVtsColors.error
+                    : (isDark ? OpenVtsColors.white : OpenVtsColors.border),
               ),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
               borderSide: BorderSide(
-                color: hasError ? OpenVtsColors.error : OpenVtsColors.border,
+                color: hasError
+                    ? OpenVtsColors.error
+                    : (isDark ? OpenVtsColors.white : OpenVtsColors.border),
               ),
             ),
             disabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
               borderSide: BorderSide(
-                color: hasError ? OpenVtsColors.error : OpenVtsColors.border,
+                color: hasError
+                    ? OpenVtsColors.error
+                    : (isDark ? OpenVtsColors.white : OpenVtsColors.border),
               ),
             ),
             focusedBorder: OutlineInputBorder(
@@ -203,7 +225,9 @@ class _SpeedLimitField extends StatelessWidget {
               borderSide: BorderSide(
                 color: hasError
                     ? OpenVtsColors.error
-                    : OpenVtsColors.textSecondary,
+                    : (isDark
+                        ? OpenVtsColors.white
+                        : OpenVtsColors.textSecondary),
               ),
             ),
           ),

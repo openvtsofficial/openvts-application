@@ -78,9 +78,9 @@ class _UserPasswordChangeSheetState extends State<UserPasswordChangeSheet> {
     final insets = MediaQuery.viewInsetsOf(context).bottom;
 
     return DecoratedBox(
-      decoration: const BoxDecoration(
-        color: OpenVtsColors.surface,
-        borderRadius: BorderRadius.vertical(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainer,
+        borderRadius: const BorderRadius.vertical(
           top: Radius.circular(OpenVtsRadius.lg),
         ),
       ),
@@ -103,7 +103,7 @@ class _UserPasswordChangeSheetState extends State<UserPasswordChangeSheet> {
                 Text(
                   'Change Password',
                   style: OpenVtsTypography.label.copyWith(
-                    color: OpenVtsColors.textPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -111,7 +111,7 @@ class _UserPasswordChangeSheetState extends State<UserPasswordChangeSheet> {
                 Text(
                   'Use a strong password with at least 8 characters.',
                   style: OpenVtsTypography.meta.copyWith(
-                    color: OpenVtsColors.textSecondary,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
                 const SizedBox(height: OpenVtsSpacing.sm),

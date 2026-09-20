@@ -24,100 +24,62 @@ class UserNotificationSaveBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
-    return AnimatedPadding(
-      duration: const Duration(milliseconds: 180),
-      curve: Curves.easeOut,
-      padding: EdgeInsets.only(bottom: keyboardInset),
-      child: SafeArea(
-        top: false,
-        minimum: const EdgeInsets.fromLTRB(
-          0,
-          OpenVtsSpacing.xs,
-          0,
-          OpenVtsSpacing.xs,
+    return SafeArea(
+      top: false,
+      minimum: const EdgeInsets.symmetric(vertical: OpenVtsSpacing.xxs),
+      child: OpenVtsCard(
+        padding: const EdgeInsets.symmetric(
+          horizontal: OpenVtsSpacing.xs,
+          vertical: OpenVtsSpacing.xxs,
         ),
-        child: OpenVtsCard(
-          padding: const EdgeInsets.all(OpenVtsSpacing.xs),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              if (constraints.maxWidth < 430) {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      isSaving
-                          ? 'Saving changes...'
-                          : 'You have unsaved changes.',
-                      style: OpenVtsTypography.meta.copyWith(
-                        color: OpenVtsColors.textSecondary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: OpenVtsSpacing.xs),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OpenVtsButton(
-                            label: 'Reset',
-                            height: 44,
-                            variant: OpenVtsButtonVariant.secondary,
-                            onPressed: canReset ? onReset : null,
-                          ),
-                        ),
-                        const SizedBox(width: OpenVtsSpacing.xs),
-                        Expanded(
-                          flex: 2,
-                          child: OpenVtsButton(
-                            label: isSaving ? 'Saving...' : 'Save Changes',
-                            height: 44,
-                            isLoading: isSaving,
-                            onPressed: canSave ? onSave : null,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                );
-              }
-
-              return Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      isSaving
-                          ? 'Saving changes...'
-                          : 'You have unsaved changes.',
-                      style: OpenVtsTypography.meta.copyWith(
-                        color: OpenVtsColors.textSecondary,
-                        fontWeight: FontWeight.w600,
-                      ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isPhone = constraints.maxWidth < 430;
+            return Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    isSaving
+                        ? (isPhone ? 'Saving…' : 'Saving changes…')
+                        : (isPhone ? 'Unsaved' : 'You have unsaved changes.'),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: OpenVtsTypography.meta.copyWith(
+                      color: isDark
+                          ? OpenVtsColors.white.withValues(alpha: 0.7)
+                          : OpenVtsColors.textSecondary,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                  SizedBox(
-                    width: 98,
-                    child: OpenVtsButton(
-                      label: 'Reset',
-                      height: 44,
-                      variant: OpenVtsButtonVariant.secondary,
-                      onPressed: canReset ? onReset : null,
-                    ),
+                ),
+                const SizedBox(width: OpenVtsSpacing.xs),
+                SizedBox(
+                  width: isPhone ? 72 : 98,
+                  child: OpenVtsButton(
+                    label: 'Reset',
+                    height: 44,
+                    variant: OpenVtsButtonVariant.secondary,
+                    onPressed: canReset ? onReset : null,
                   ),
-                  const SizedBox(width: OpenVtsSpacing.xs),
-                  SizedBox(
-                    width: 154,
-                    child: OpenVtsButton(
-                      label: isSaving ? 'Saving...' : 'Save Changes',
-                      height: 44,
-                      isLoading: isSaving,
-                      onPressed: canSave ? onSave : null,
-                    ),
+                ),
+                const SizedBox(width: OpenVtsSpacing.xs),
+                SizedBox(
+                  width: isPhone ? 96 : 132,
+                  child: OpenVtsButton(
+                    label: isSaving
+                        ? 'Saving…'
+                        : (isPhone ? 'Save' : 'Save Changes'),
+                    height: 44,
+                    isLoading: isSaving,
+                    onPressed: canSave ? onSave : null,
                   ),
-                ],
-              );
-            },
-          ),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );

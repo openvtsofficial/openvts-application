@@ -7,9 +7,6 @@ import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
-import '../../../../../shared/helpers/toast_helper.dart';
-import '../../../../../shared/widgets/open_vts_bottom_sheet.dart';
-import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../../../shared/widgets/open_vts_error_view.dart';
 import '../../../../../shared/widgets/open_vts_loader.dart';
@@ -18,11 +15,10 @@ import '../../../controllers/user_providers.dart';
 import '../../../controllers/user_subuser_details_controller.dart';
 import '../../../models/user_subuser_model.dart';
 import '../../../models/user_subusers_state.dart';
-import 'widgets/user_subuser_delete_sheet.dart';
 import 'widgets/user_subuser_profile_tab.dart';
 import 'widgets/user_subuser_vehicles_tab.dart';
 
-enum _UserSubUserDetailsTab { profile, vehicles, delete }
+enum _UserSubUserDetailsTab { profile, vehicles }
 
 typedef UserSubUserDetailsProvider = AutoDisposeStateNotifierProvider<
     UserSubUserDetailsController, UserSubUserDetailsState>;
@@ -140,9 +136,6 @@ class _UserSubUserDetailsScreenState
       case _UserSubUserDetailsTab.vehicles:
         await controller.loadVehicles();
         break;
-      case _UserSubUserDetailsTab.delete:
-        await controller.refresh();
-        break;
     }
   }
 
@@ -154,8 +147,6 @@ class _UserSubUserDetailsScreenState
         return state.isLoadingVehicles ||
             state.isAssigningVehicles ||
             state.isUnassigningVehicles;
-      case _UserSubUserDetailsTab.delete:
-        return state.isDeleting || state.isLoading;
     }
   }
 
@@ -185,7 +176,6 @@ class _TabContent extends StatelessWidget {
         UserSubUserProfileTab(provider: provider),
       _UserSubUserDetailsTab.vehicles =>
         UserSubUserVehiclesTab(provider: provider),
-      _UserSubUserDetailsTab.delete => _DeleteTab(provider: provider),
     };
   }
 }
@@ -319,85 +309,6 @@ class _TabChips extends StatelessWidget {
   }
 }
 
-class _DeleteTab extends ConsumerWidget {
-  const _DeleteTab({required this.provider});
-
-  final UserSubUserDetailsProvider provider;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(provider);
-    final subUser = state.subUser;
-
-    return OpenVtsCard(
-      padding: const EdgeInsets.all(OpenVtsSpacing.sm),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Delete Sub User',
-            style: OpenVtsTypography.label.copyWith(
-              color: OpenVtsColors.error,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: OpenVtsSpacing.xs),
-          Text(
-            'Deleting this sub user permanently removes account access and vehicle permissions. This action cannot be reversed.',
-            style: OpenVtsTypography.meta.copyWith(
-              color: OpenVtsColors.textSecondary,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: OpenVtsSpacing.sm),
-          SizedBox(
-            height: 36,
-            child: OpenVtsButton(
-              label: 'Delete Sub User',
-              height: 36,
-              trailingIcon: Icons.delete_outline_rounded,
-              isLoading: state.isDeleting,
-              onPressed: subUser == null || state.isDeleting
-                  ? null
-                  : () => _showDeleteSheet(context, ref, subUser),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _showDeleteSheet(
-    BuildContext context,
-    WidgetRef ref,
-    UserSubUser subUser,
-  ) async {
-    final deleted = await OpenVtsBottomSheet.show<bool>(
-      context: context,
-      title: 'Delete Sub User',
-      initialChildSize: 0.42,
-      minChildSize: 0.34,
-      maxChildSize: 0.62,
-      child: UserSubUserDeleteSheet(
-        provider: provider,
-        subUser: subUser,
-      ),
-    );
-
-    if (deleted != true || !context.mounted) {
-      return;
-    }
-
-    await ref.read(userSubUsersControllerProvider.notifier).refresh();
-    if (!context.mounted) {
-      return;
-    }
-
-    ToastHelper.showSuccess('Sub user deleted.', context: context);
-    context.go(RoutePaths.userSubUsers);
-  }
-}
-
 class _StatusPill extends StatelessWidget {
   const _StatusPill({
     required this.label,
@@ -411,18 +322,21 @@ class _StatusPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final displayColor =
+        isDarkMode && color == OpenVtsColors.brandInk ? Colors.white : color;
     return Container(
       constraints: const BoxConstraints(maxWidth: 280),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.06),
+        color: displayColor.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
-        border: Border.all(color: color.withValues(alpha: 0.18)),
+        border: Border.all(color: displayColor.withValues(alpha: 0.18)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12, color: color),
+          Icon(icon, size: 12, color: displayColor),
           const SizedBox(width: 4),
           Flexible(
             child: Text(
@@ -430,7 +344,7 @@ class _StatusPill extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: OpenVtsTypography.meta.copyWith(
-                color: color,
+                color: displayColor,
                 fontSize: 11,
                 fontWeight: FontWeight.w800,
               ),
@@ -509,7 +423,6 @@ String _tabLabel(_UserSubUserDetailsTab tab) {
   return switch (tab) {
     _UserSubUserDetailsTab.profile => 'Profile',
     _UserSubUserDetailsTab.vehicles => 'Vehicles',
-    _UserSubUserDetailsTab.delete => 'Delete',
   };
 }
 

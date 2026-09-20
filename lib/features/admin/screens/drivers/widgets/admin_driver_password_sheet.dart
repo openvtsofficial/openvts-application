@@ -40,6 +40,8 @@ class _DriverPasswordSheetState extends ConsumerState<_DriverPasswordSheet> {
   final _formKey = GlobalKey<FormState>();
   final _newPassword = TextEditingController();
   final _confirmPassword = TextEditingController();
+  bool _obscureNew = true;
+  bool _obscureConfirm = true;
 
   @override
   void dispose() {
@@ -61,7 +63,17 @@ class _DriverPasswordSheetState extends ConsumerState<_DriverPasswordSheet> {
             OpenVtsTextField(
               label: 'New Password',
               controller: _newPassword,
-              obscureText: true,
+              obscureText: _obscureNew,
+              suffixIcon: IconButton(
+                tooltip: _obscureNew ? 'Show password' : 'Hide password',
+                onPressed: () => setState(() => _obscureNew = !_obscureNew),
+                icon: Icon(
+                  _obscureNew
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
+                  size: 18,
+                ),
+              ),
               validator: (v) => (v == null || v.length < 8)
                   ? 'Password must be at least 8 characters'
                   : null,
@@ -70,7 +82,18 @@ class _DriverPasswordSheetState extends ConsumerState<_DriverPasswordSheet> {
             OpenVtsTextField(
               label: 'Confirm Password',
               controller: _confirmPassword,
-              obscureText: true,
+              obscureText: _obscureConfirm,
+              suffixIcon: IconButton(
+                tooltip: _obscureConfirm ? 'Show password' : 'Hide password',
+                onPressed: () =>
+                    setState(() => _obscureConfirm = !_obscureConfirm),
+                icon: Icon(
+                  _obscureConfirm
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
+                  size: 18,
+                ),
+              ),
               validator: (v) =>
                   v != _newPassword.text ? 'Passwords do not match' : null,
             ),

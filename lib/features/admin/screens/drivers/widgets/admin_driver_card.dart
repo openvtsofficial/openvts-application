@@ -1,101 +1,72 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
 import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../core/utils/date_time_formatter.dart';
 import '../../../models/admin_drivers_model.dart';
 
+const DateTimeFormatter _cardDateFormatter = DateTimeFormatter();
+
 class AdminDriverCard extends StatelessWidget {
-  const AdminDriverCard({required this.driver, this.onTap, super.key});
+  const AdminDriverCard({
+    required this.driver,
+    this.onTap,
+    this.isUpdatingStatus = false,
+    this.onStatusChanged,
+    super.key,
+  });
 
   final AdminDriverListItem driver;
   final VoidCallback? onTap;
-
-  static final DateFormat _createdFormat = DateFormat('yyyy-MM-dd HH:mm');
+  final bool isUpdatingStatus;
+  final ValueChanged<bool>? onStatusChanged;
 
   @override
   Widget build(BuildContext context) {
-    final name = _displayName(driver);
-    final username = _displayUsername(driver);
-    final address = _displayAddress(driver);
-    final primaryUser = _displayPrimaryUser(driver);
-    final createdValue = driver.createdAt == null
-        ? '-'
-        : _createdFormat.format(driver.createdAt!.toLocal());
-
     return _RoundedSurface(
       onTap: onTap,
+      padding: const EdgeInsets.all(OpenVtsSpacing.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _CardHeader(
-            name: name,
-            username: username,
-            isVerified: driver.isVerified,
-            statusLabel: driver.statusLabel,
-            initials: _initials(name),
+            driver: driver,
+            isUpdatingStatus: isUpdatingStatus,
+            onStatusChanged: onStatusChanged,
           ),
           const SizedBox(height: OpenVtsSpacing.md),
-          _CardInfoGrid(
-            email: _displayValue(driver.email),
-            address: address,
-            phone: _displayValue(driver.phone),
-            primaryUser: primaryUser,
-          ),
+          _CardInfoGrid(driver: driver),
           const SizedBox(height: OpenVtsSpacing.md),
-          _CreatedFooter(createdValue: createdValue),
+          _CardMetricsRow(driver: driver),
         ],
       ),
     );
   }
 }
 
+// ---------------------------------------------------------------------------
+// Card header (avatar + name + status badge)
+// ---------------------------------------------------------------------------
+
 class _CardHeader extends StatelessWidget {
   const _CardHeader({
-    required this.name,
-    required this.username,
-    required this.isVerified,
-    required this.statusLabel,
-    required this.initials,
+    required this.driver,
+    required this.isUpdatingStatus,
+    required this.onStatusChanged,
   });
 
-  final String name;
-  final String username;
-  final bool isVerified;
-  final String statusLabel;
-  final String initials;
+  final AdminDriverListItem driver;
+  final bool isUpdatingStatus;
+  final ValueChanged<bool>? onStatusChanged;
 
   @override
   Widget build(BuildContext context) {
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Container(
-          height: 44,
-          width: 44,
-          decoration: BoxDecoration(
-            color: _softSurfaceColor(context),
-            shape: BoxShape.circle,
-            border: Border.all(color: _softBorderColor(context)),
-          ),
-          alignment: Alignment.center,
-          child: initials.isNotEmpty
-              ? Text(
-                  initials,
-                  style: OpenVtsTypography.label.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: _primaryInkColor(context),
-                    fontSize: 14,
-                  ),
-                )
-              : Icon(
-                  Icons.person_outline_rounded,
-                  size: 22,
-                  color: _primaryInkColor(context),
-                ),
-        ),
+        _AvatarCircle(driver: driver),
         const SizedBox(width: OpenVtsSpacing.sm),
         Expanded(
           child: Column(
@@ -105,96 +76,138 @@ class _CardHeader extends StatelessWidget {
                 children: [
                   Flexible(
                     child: Text(
-                      name,
+                      _displayName(driver),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
                             fontWeight: FontWeight.w700,
                             letterSpacing: -0.2,
                           ),
                     ),
                   ),
-                  if (isVerified) ...[
-                    const SizedBox(width: OpenVtsSpacing.xs),
-                    Container(
-                      width: 16,
-                      height: 16,
-                      decoration: BoxDecoration(
-                        color: _primaryInkColor(context),
-                        shape: BoxShape.circle,
-                      ),
-                      alignment: Alignment.center,
-                      child: const Icon(
-                        Icons.check_rounded,
-                        size: 10,
-                        color: OpenVtsColors.white,
-                      ),
+                  const SizedBox(width: OpenVtsSpacing.xs),
+                  if (driver.isVerified)
+                    const Icon(
+                      Icons.verified_rounded,
+                      size: 16,
+                      color: OpenVtsColors.success,
                     ),
-                  ],
                 ],
               ),
               const SizedBox(height: 2),
               Text(
-                '@$username',
+                '@${_displayUsername(driver)}',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: OpenVtsTypography.label.copyWith(
-                  color: OpenVtsColors.textSecondary,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
             ],
           ),
         ),
         const SizedBox(width: OpenVtsSpacing.xs),
-        _StatusBadge(label: statusLabel),
+        _StatusToggle(
+          isActive: driver.isActive,
+          isBusy: isUpdatingStatus,
+          isToggling: isUpdatingStatus,
+          onChanged: onStatusChanged,
+        ),
       ],
     );
   }
 }
 
-class _StatusBadge extends StatelessWidget {
-  const _StatusBadge({required this.label});
+class _AvatarCircle extends StatelessWidget {
+  const _AvatarCircle({required this.driver});
 
-  final String label;
+  final AdminDriverListItem driver;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: OpenVtsSpacing.sm,
-        vertical: OpenVtsSpacing.xs,
-      ),
+      height: 44,
+      width: 44,
       decoration: BoxDecoration(
         color: _softSurfaceColor(context),
-        borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
+        shape: BoxShape.circle,
         border: Border.all(color: _softBorderColor(context)),
       ),
+      alignment: Alignment.center,
       child: Text(
-        label,
+        _initials(_displayName(driver)),
         style: OpenVtsTypography.label.copyWith(
-          color: _primaryInkColor(context),
           fontWeight: FontWeight.w700,
+          color: _primaryInkColor(context),
+          fontSize: 14,
         ),
       ),
     );
   }
 }
 
-class _CardInfoGrid extends StatelessWidget {
-  const _CardInfoGrid({
-    required this.email,
-    required this.address,
-    required this.phone,
-    required this.primaryUser,
+class _StatusToggle extends StatelessWidget {
+  const _StatusToggle({
+    required this.isActive,
+    required this.isBusy,
+    required this.isToggling,
+    required this.onChanged,
   });
 
-  final String email;
-  final String address;
-  final String phone;
-  final String primaryUser;
+  final bool isActive;
+  final bool isBusy;
+  final bool isToggling;
+  final ValueChanged<bool>? onChanged;
 
   @override
   Widget build(BuildContext context) {
+    if (isToggling) {
+      return const SizedBox(
+        width: 40,
+        height: 32,
+        child: Center(
+          child: SizedBox.square(
+            dimension: 16,
+            child: CircularProgressIndicator(strokeWidth: 2.2),
+          ),
+        ),
+      );
+    }
+
+    return Tooltip(
+      message: isActive ? 'Deactivate driver' : 'Activate driver',
+      child: Transform.scale(
+        scale: 0.85,
+        child: Switch(
+          value: isActive,
+          onChanged: isBusy ? null : onChanged,
+          activeThumbColor: Theme.of(context).colorScheme.onPrimary,
+          activeTrackColor: _primaryInkColor(context),
+          inactiveThumbColor: Theme.of(context).colorScheme.onSurface,
+          inactiveTrackColor: _softBorderColor(context),
+          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Card info grid (email, phone, address, primary user)
+// ---------------------------------------------------------------------------
+
+class _CardInfoGrid extends StatelessWidget {
+  const _CardInfoGrid({required this.driver});
+
+  final AdminDriverListItem driver;
+
+  @override
+  Widget build(BuildContext context) {
+    final emailValue = _displayValue(driver.email);
+    final phoneValue = _displayValue(driver.phone);
+    final addressValue = _displayAddress(driver);
+    final primaryUserValue = _displayPrimaryUser(driver);
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final compact = constraints.maxWidth < 420;
@@ -203,16 +216,17 @@ class _CardInfoGrid extends StatelessWidget {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _InfoRow(icon: Icons.mail_outline_rounded, value: email),
+              _InfoRow(icon: Icons.mail_outline_rounded, value: emailValue),
               const SizedBox(height: OpenVtsSpacing.xs),
-              _InfoRow(icon: Icons.place_outlined, value: address, maxLines: 2),
+              _InfoRow(icon: Icons.call_outlined, value: phoneValue),
               const SizedBox(height: OpenVtsSpacing.xs),
-              _InfoRow(icon: Icons.call_outlined, value: phone),
-              if (primaryUser.isNotEmpty) ...[
+              _InfoRow(
+                  icon: Icons.place_outlined, value: addressValue, maxLines: 2),
+              if (primaryUserValue.isNotEmpty) ...[
                 const SizedBox(height: OpenVtsSpacing.xs),
                 _InfoRow(
                   icon: Icons.account_circle_outlined,
-                  value: 'Primary: $primaryUser',
+                  value: 'Primary: $primaryUserValue',
                 ),
               ],
             ],
@@ -220,6 +234,7 @@ class _CardInfoGrid extends StatelessWidget {
         }
 
         return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -227,14 +242,14 @@ class _CardInfoGrid extends StatelessWidget {
                 Expanded(
                   child: _InfoRow(
                     icon: Icons.mail_outline_rounded,
-                    value: email,
+                    value: emailValue,
                   ),
                 ),
                 const SizedBox(width: OpenVtsSpacing.sm),
                 Expanded(
                   child: _InfoRow(
                     icon: Icons.call_outlined,
-                    value: phone,
+                    value: phoneValue,
                   ),
                 ),
               ],
@@ -246,16 +261,16 @@ class _CardInfoGrid extends StatelessWidget {
                 Expanded(
                   child: _InfoRow(
                     icon: Icons.place_outlined,
-                    value: address,
+                    value: addressValue,
                     maxLines: 2,
                   ),
                 ),
                 const SizedBox(width: OpenVtsSpacing.sm),
                 Expanded(
-                  child: primaryUser.isNotEmpty
+                  child: primaryUserValue.isNotEmpty
                       ? _InfoRow(
                           icon: Icons.account_circle_outlined,
-                          value: 'Primary: $primaryUser',
+                          value: 'Primary: $primaryUserValue',
                         )
                       : const SizedBox.shrink(),
                 ),
@@ -282,13 +297,9 @@ class _InfoRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Icon(
-          icon,
-          size: 16,
-          color: OpenVtsColors.textSecondary,
-        ),
+        Icon(icon, size: 16, color: OpenVtsColors.textSecondary),
         const SizedBox(width: OpenVtsSpacing.xs),
         Expanded(
           child: Text(
@@ -296,7 +307,7 @@ class _InfoRow extends StatelessWidget {
             maxLines: maxLines,
             overflow: TextOverflow.ellipsis,
             style: OpenVtsTypography.label.copyWith(
-              color: OpenVtsColors.textPrimary,
+              color: Theme.of(context).colorScheme.onSurface,
               height: 1.4,
             ),
           ),
@@ -306,16 +317,89 @@ class _InfoRow extends StatelessWidget {
   }
 }
 
-class _CreatedFooter extends StatelessWidget {
-  const _CreatedFooter({required this.createdValue});
+// ---------------------------------------------------------------------------
+// Card metrics row (Created / Documents / Users)
+// ---------------------------------------------------------------------------
 
-  final String createdValue;
+class _CardMetricsRow extends StatelessWidget {
+  const _CardMetricsRow({required this.driver});
+
+  final AdminDriverListItem driver;
+
+  @override
+  Widget build(BuildContext context) {
+    final createdValue = _createdLabel(driver.createdAt);
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth < 420;
+
+        if (compact) {
+          return Column(
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: _MetricCell(
+                      icon: Icons.calendar_today_rounded,
+                      label: 'Created',
+                      value: createdValue,
+                    ),
+                  ),
+                  const SizedBox(width: OpenVtsSpacing.xs),
+                  const Expanded(
+                    child: _MetricCell(
+                      icon: Icons.description_outlined,
+                      label: 'Role',
+                      value: 'Driver',
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          );
+        }
+
+        return Row(
+          children: [
+            Expanded(
+              child: _MetricCell(
+                icon: Icons.calendar_today_rounded,
+                label: 'Created',
+                value: createdValue,
+              ),
+            ),
+            const SizedBox(width: OpenVtsSpacing.xs),
+            Expanded(
+              flex: 2,
+              child: _MetricCell(
+                icon: Icons.schedule_outlined,
+                label: 'Updated',
+                value: _updatedLabel(driver.updatedAt),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _MetricCell extends StatelessWidget {
+  const _MetricCell({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(
+      padding: const EdgeInsetsDirectional.symmetric(
         horizontal: OpenVtsSpacing.sm,
         vertical: OpenVtsSpacing.xs + 2,
       ),
@@ -324,34 +408,37 @@ class _CreatedFooter extends StatelessWidget {
         borderRadius: BorderRadius.circular(OpenVtsRadius.md),
         border: Border.all(color: _softBorderColor(context)),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
-            Icons.schedule_outlined,
-            size: 16,
-            color: OpenVtsColors.textSecondary,
-          ),
-          const SizedBox(width: OpenVtsSpacing.xs),
-          Expanded(
-            child: RichText(
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              text: TextSpan(
-                style: OpenVtsTypography.label.copyWith(
-                  color: OpenVtsColors.textPrimary,
-                  height: 1.4,
+          Row(
+            children: [
+              Icon(icon,
+                  size: 14,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant),
+              const SizedBox(width: OpenVtsSpacing.xxs + 2),
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: OpenVtsTypography.meta.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
-                children: [
-                  const TextSpan(
-                    text: 'Created : ',
-                    style: TextStyle(fontWeight: FontWeight.w700),
-                  ),
-                  TextSpan(
-                    text: createdValue,
-                    style: const TextStyle(fontWeight: FontWeight.w500),
-                  ),
-                ],
               ),
+            ],
+          ),
+          const SizedBox(height: OpenVtsSpacing.xxs + 2),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: OpenVtsTypography.label.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+              fontWeight: FontWeight.w700,
             ),
           ),
         ],
@@ -360,13 +447,19 @@ class _CreatedFooter extends StatelessWidget {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Shared surface
+// ---------------------------------------------------------------------------
+
 class _RoundedSurface extends StatelessWidget {
   const _RoundedSurface({
     required this.child,
+    this.padding = const EdgeInsets.all(OpenVtsSpacing.md),
     this.onTap,
   });
 
   final Widget child;
+  final EdgeInsetsGeometry padding;
   final VoidCallback? onTap;
 
   @override
@@ -374,7 +467,7 @@ class _RoundedSurface extends StatelessWidget {
     final radius = BorderRadius.circular(OpenVtsRadius.lg);
     final surface = Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(OpenVtsSpacing.md),
+      padding: padding,
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: radius,
@@ -399,6 +492,10 @@ class _RoundedSurface extends StatelessWidget {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Theme helpers
+// ---------------------------------------------------------------------------
+
 Color _softSurfaceColor(BuildContext context) {
   return Theme.of(context).brightness == Brightness.dark
       ? OpenVtsColors.darkSurface
@@ -416,6 +513,10 @@ Color _primaryInkColor(BuildContext context) {
       ? OpenVtsColors.darkTextPrimary
       : OpenVtsColors.brandInk;
 }
+
+// ---------------------------------------------------------------------------
+// Data helpers
+// ---------------------------------------------------------------------------
 
 String _displayName(AdminDriverListItem driver) {
   final name = driver.firstName.trim();
@@ -458,20 +559,35 @@ String _displayPrimaryUser(AdminDriverListItem driver) {
 }
 
 String _initials(String input) {
-  final parts = input
-      .trim()
-      .split(RegExp(r'\s+'))
-      .where((e) => e.isNotEmpty)
-      .toList(growable: false);
-  if (parts.isEmpty) return '';
-  if (parts.length == 1) {
-    return parts.first.characters.take(2).toString().toUpperCase();
+  final source = input.trim();
+  if (source.isEmpty || source == '—') {
+    return 'D';
   }
-  return '${parts.first.characters.first}${parts.last.characters.first}'
+  final words = source.split(RegExp(r'\s+'));
+  if (words.length == 1) {
+    return words.first.characters.take(2).toString().toUpperCase();
+  }
+  return '${words.first.characters.first}${words.last.characters.first}'
       .toUpperCase();
 }
 
 String _displayValue(String value) {
   final normalized = value.trim();
   return normalized.isEmpty || normalized == '-' ? '—' : normalized;
+}
+
+String _createdLabel(DateTime? value) {
+  if (value == null) {
+    return '—';
+  }
+  final local = value.toLocal();
+  return _cardDateFormatter.formatDate(local);
+}
+
+String _updatedLabel(DateTime? value) {
+  if (value == null) {
+    return '—';
+  }
+  final local = value.toLocal();
+  return _cardDateFormatter.formatDateTime(local);
 }

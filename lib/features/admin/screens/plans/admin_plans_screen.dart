@@ -157,6 +157,8 @@ class _PlansHeaderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return OpenVtsCard(
       padding: const EdgeInsets.all(OpenVtsSpacing.sm),
       child: Row(
@@ -171,7 +173,7 @@ class _PlansHeaderCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: OpenVtsTypography.titleSmall.copyWith(
-                    color: OpenVtsColors.textPrimary,
+                    color: colorScheme.onSurface,
                   ),
                 ),
                 const SizedBox(height: OpenVtsSpacing.xxs),
@@ -180,7 +182,7 @@ class _PlansHeaderCard extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: OpenVtsTypography.meta.copyWith(
-                    color: OpenVtsColors.textSecondary,
+                    color: colorScheme.onSurfaceVariant,
                   ),
                 ),
               ],
@@ -191,6 +193,11 @@ class _PlansHeaderCard extends StatelessWidget {
             width: 122,
             child: FilledButton.icon(
               onPressed: isSubmitting ? null : onAddPressed,
+              style: FilledButton.styleFrom(
+                backgroundColor: OpenVtsColors.brandInk,
+                foregroundColor: OpenVtsColors.white,
+                side: const BorderSide(color: OpenVtsColors.white, width: 0.8),
+              ),
               icon: const Icon(Icons.add_rounded, size: 16),
               label: const Text('Add Plan'),
             ),
@@ -212,7 +219,7 @@ class _CountText extends StatelessWidget {
     return Text(
       '$filteredCount of $totalCount plans',
       style: OpenVtsTypography.meta.copyWith(
-        color: OpenVtsColors.textSecondary,
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
         fontWeight: FontWeight.w600,
       ),
     );

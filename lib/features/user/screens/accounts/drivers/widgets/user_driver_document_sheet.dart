@@ -7,6 +7,7 @@ import '../../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../../core/utils/date_time_formatter.dart';
+import '../../../../../../core/utils/validators.dart';
 import '../../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../../shared/widgets/open_vts_text_field.dart';
@@ -14,7 +15,6 @@ import '../../../../controllers/user_driver_details_controller.dart';
 import '../../../../models/user_driver_model.dart';
 import '../../../../models/user_drivers_state.dart';
 
-const DateTimeFormatter _dateFormatter = DateTimeFormatter();
 const int _maxDocumentBytes = 10 * 1024 * 1024;
 const List<String> _blockedDocumentExtensions = <String>[
   'exe',
@@ -132,16 +132,8 @@ class _UserDriverDocumentSheetState
                     hintText: 'Document title',
                     prefixIcon: Icons.title_rounded,
                     textInputAction: TextInputAction.next,
-                    validator: (value) {
-                      final normalized = value?.trim() ?? '';
-                      if (normalized.isEmpty) {
-                        return 'Title is required.';
-                      }
-                      if (normalized.length > 120) {
-                        return 'Title is too long.';
-                      }
-                      return null;
-                    },
+                    validator: Validators.documentTitle,
+                    maxLength: Validators.maxNameLength,
                   ),
                   const SizedBox(height: OpenVtsSpacing.sm),
                   _FilePickerField(
@@ -529,7 +521,7 @@ class _FilePickerField extends StatelessWidget {
   }
 }
 
-class _ExpiryField extends StatelessWidget {
+class _ExpiryField extends ConsumerWidget {
   const _ExpiryField({
     required this.value,
     required this.onPick,
@@ -541,7 +533,8 @@ class _ExpiryField extends StatelessWidget {
   final VoidCallback onClear;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final dateFormatter = ref.watch(appDateFormatterProvider);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -570,7 +563,9 @@ class _ExpiryField extends StatelessWidget {
                 const SizedBox(width: OpenVtsSpacing.xs),
                 Expanded(
                   child: Text(
-                    value == null ? 'No expiry' : _dateText(value),
+                    value == null
+                        ? 'No expiry'
+                        : _dateText(value, dateFormatter),
                     style: OpenVtsTypography.meta.copyWith(
                       color: value == null
                           ? OpenVtsColors.textTertiary
@@ -722,9 +717,9 @@ class _InlineError extends StatelessWidget {
   }
 }
 
-String _dateText(DateTime? value) {
+String _dateText(DateTime? value, dynamic formatter) {
   if (value == null) return '-';
-  return _dateFormatter.formatDate(value.toLocal());
+  return formatter.formatDate(value.toLocal());
 }
 
 String _formatYmd(DateTime value) {

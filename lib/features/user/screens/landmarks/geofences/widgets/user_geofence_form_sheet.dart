@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:latlong2/latlong.dart';
 
 import '../../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../../core/theme/open_vts_radius.dart';
@@ -58,6 +59,7 @@ class UserGeofenceFormSheet {
   static Future<UserGeofence?> show({
     required BuildContext context,
     UserGeofence? geofence,
+    LatLng? initialCenter,
   }) {
     return OpenVtsBottomSheet.show<UserGeofence>(
       context: context,
@@ -68,6 +70,7 @@ class UserGeofenceFormSheet {
       draggableChildBuilder: (context, scrollController) {
         return _UserGeofenceFormBody(
           existing: geofence,
+          initialCenter: initialCenter,
           scrollController: scrollController,
         );
       },
@@ -79,9 +82,11 @@ class _UserGeofenceFormBody extends ConsumerStatefulWidget {
   const _UserGeofenceFormBody({
     required this.existing,
     required this.scrollController,
+    this.initialCenter,
   });
 
   final UserGeofence? existing;
+  final LatLng? initialCenter;
   final ScrollController scrollController;
 
   @override
@@ -110,11 +115,25 @@ class _UserGeofenceFormBodyState extends ConsumerState<_UserGeofenceFormBody> {
     _type = _formTypeFromGeodata(existing?.geodata);
     _color = existing?.color ?? kUserLandmarkPalette.first;
     _active = existing?.isActive ?? true;
-    _geodata = existing?.geodata;
     _toleranceM = existing?.toleranceMeters ??
         (existing?.geodata is UserLineGeoData
             ? (existing!.geodata as UserLineGeoData).toleranceM
             : null);
+
+    if (existing != null) {
+      _geodata = existing.geodata;
+    } else if (widget.initialCenter != null) {
+      // Quick-create from the map: pre-populate a 200 m circle centred on the
+      // held coordinate so the user can save immediately or refine the shape.
+      _type = UserGeofenceFormType.circle;
+      _geodata = UserCircleGeoData(
+        center: UserGeoPoint(
+          lat: widget.initialCenter!.latitude,
+          lon: widget.initialCenter!.longitude,
+        ),
+        radiusM: 200,
+      );
+    }
   }
 
   @override
@@ -125,6 +144,7 @@ class _UserGeofenceFormBodyState extends ConsumerState<_UserGeofenceFormBody> {
   }
 
   Future<void> _openEditor() async {
+    final center = widget.initialCenter;
     final result = await Navigator.of(context).push<UserGeofenceEditorResult>(
       MaterialPageRoute<UserGeofenceEditorResult>(
         fullscreenDialog: true,
@@ -132,6 +152,7 @@ class _UserGeofenceFormBodyState extends ConsumerState<_UserGeofenceFormBody> {
           initialMode: _type.editorMode,
           initialGeodata: _geodata,
           initialToleranceM: _toleranceM,
+          initialCenter: _geodata == null ? center : null,
         ),
       ),
     );
@@ -296,7 +317,7 @@ class _UserGeofenceFormBodyState extends ConsumerState<_UserGeofenceFormBody> {
       isDense: true,
       hintText: hint,
       hintStyle: OpenVtsTypography.body.copyWith(
-        color: OpenVtsColors.textTertiary,
+        color: Theme.of(context).colorScheme.outline,
       ),
       contentPadding: const EdgeInsets.symmetric(
         horizontal: OpenVtsSpacing.sm,
@@ -328,7 +349,7 @@ class _SectionLabel extends StatelessWidget {
     return Text(
       text.toUpperCase(),
       style: OpenVtsTypography.meta.copyWith(
-        color: OpenVtsColors.textSecondary,
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
         fontWeight: FontWeight.w700,
         letterSpacing: 0.6,
       ),
@@ -348,7 +369,7 @@ class _FieldLabel extends StatelessWidget {
       child: Text(
         text,
         style: OpenVtsTypography.label.copyWith(
-          color: OpenVtsColors.textPrimary,
+          color: Theme.of(context).colorScheme.onSurface,
         ),
       ),
     );
@@ -391,6 +412,13 @@ class _TypePill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? OpenVtsColors.brandInk : OpenVtsColors.surface;
+    final textColor = isDark ? OpenVtsColors.white : OpenVtsColors.textPrimary;
+    final borderColor = selected
+        ? (isDark ? OpenVtsColors.white : OpenVtsColors.textPrimary)
+        : bgColor;
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
@@ -400,16 +428,14 @@ class _TypePill extends StatelessWidget {
           vertical: 6,
         ),
         decoration: BoxDecoration(
-          color: selected ? OpenVtsColors.brandInk : OpenVtsColors.surface,
+          color: bgColor,
           borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
-          border: Border.all(
-            color: selected ? OpenVtsColors.brandInk : OpenVtsColors.border,
-          ),
+          border: Border.all(color: borderColor),
         ),
         child: Text(
           label,
           style: OpenVtsTypography.meta.copyWith(
-            color: selected ? OpenVtsColors.white : OpenVtsColors.textPrimary,
+            color: textColor,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -433,13 +459,18 @@ class _GeometrySummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? OpenVtsColors.brandInk : OpenVtsColors.surface;
+    final textColor = isDark ? OpenVtsColors.white : OpenVtsColors.textPrimary;
+    final borderColor = isDark ? OpenVtsColors.white : OpenVtsColors.border;
     final summary = _summary(geodata, type, toleranceM);
+
     return Container(
       padding: const EdgeInsets.all(OpenVtsSpacing.sm),
       decoration: BoxDecoration(
-        color: OpenVtsColors.surface,
+        color: bgColor,
         borderRadius: BorderRadius.circular(OpenVtsRadius.md),
-        border: Border.all(color: OpenVtsColors.border),
+        border: Border.all(color: borderColor),
       ),
       child: Row(
         children: [
@@ -447,14 +478,14 @@ class _GeometrySummaryCard extends StatelessWidget {
             width: 28,
             height: 28,
             decoration: BoxDecoration(
-              color: OpenVtsColors.surfaceElevated,
+              color: bgColor,
               borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-              border: Border.all(color: OpenVtsColors.border),
+              border: Border.all(color: borderColor),
             ),
             child: Icon(
               _iconFor(type),
               size: 14,
-              color: OpenVtsColors.textPrimary,
+              color: textColor,
             ),
           ),
           const SizedBox(width: OpenVtsSpacing.sm),
@@ -465,7 +496,7 @@ class _GeometrySummaryCard extends StatelessWidget {
                 Text(
                   geodata == null ? 'No geometry yet' : 'Geometry ready',
                   style: OpenVtsTypography.label.copyWith(
-                    color: OpenVtsColors.textPrimary,
+                    color: textColor,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -473,27 +504,33 @@ class _GeometrySummaryCard extends StatelessWidget {
                 Text(
                   summary,
                   style: OpenVtsTypography.meta.copyWith(
-                    color: OpenVtsColors.textSecondary,
+                    color: textColor,
                   ),
                 ),
               ],
             ),
           ),
-          TextButton.icon(
-            style: TextButton.styleFrom(
-              foregroundColor: OpenVtsColors.brandInk,
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: bgColor,
+              foregroundColor: textColor,
               minimumSize: const Size(0, 32),
               padding: const EdgeInsets.symmetric(
                 horizontal: OpenVtsSpacing.sm,
               ),
+              side: BorderSide(
+                color: borderColor,
+                width: 1,
+              ),
             ),
             onPressed: onDraw,
-            icon: const Icon(Icons.edit_location_alt_outlined, size: 14),
+            icon: Icon(Icons.edit_location_alt_outlined,
+                size: 14, color: textColor),
             label: Text(
               geodata == null ? 'Draw' : 'Edit',
               style: OpenVtsTypography.meta.copyWith(
                 fontWeight: FontWeight.w700,
-                color: OpenVtsColors.brandInk,
+                color: textColor,
               ),
             ),
           ),
@@ -556,15 +593,24 @@ class _ActiveToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? OpenVtsColors.brandInk : OpenVtsColors.surface;
+    final textColor = isDark ? OpenVtsColors.white : OpenVtsColors.textPrimary;
+    final subtitleColor =
+        isDark ? OpenVtsColors.darkTextSecondary : OpenVtsColors.textSecondary;
+    final borderColor = value
+        ? OpenVtsColors.success
+        : (isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border);
+
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: OpenVtsSpacing.sm,
         vertical: 6,
       ),
       decoration: BoxDecoration(
-        color: OpenVtsColors.surface,
+        color: bgColor,
         borderRadius: BorderRadius.circular(OpenVtsRadius.md),
-        border: Border.all(color: OpenVtsColors.border),
+        border: Border.all(color: borderColor),
       ),
       child: Row(
         children: [
@@ -575,7 +621,7 @@ class _ActiveToggle extends StatelessWidget {
                 Text(
                   'Active',
                   style: OpenVtsTypography.label.copyWith(
-                    color: OpenVtsColors.textPrimary,
+                    color: textColor,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -584,13 +630,24 @@ class _ActiveToggle extends StatelessWidget {
                       ? 'Events will trigger for this geofence.'
                       : 'Geofence is paused.',
                   style: OpenVtsTypography.meta.copyWith(
-                    color: OpenVtsColors.textSecondary,
+                    color: subtitleColor,
                   ),
                 ),
               ],
             ),
           ),
-          Switch.adaptive(value: value, onChanged: onChanged),
+          Switch.adaptive(
+            value: value,
+            onChanged: onChanged,
+            activeTrackColor: OpenVtsColors.success,
+            activeThumbColor: OpenVtsColors.white,
+            inactiveThumbColor: isDark
+                ? OpenVtsColors.darkTextTertiary
+                : OpenVtsColors.textTertiary,
+            inactiveTrackColor: isDark
+                ? OpenVtsColors.darkSurfaceElevated
+                : OpenVtsColors.divider,
+          ),
         ],
       ),
     );

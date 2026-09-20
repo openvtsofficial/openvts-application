@@ -39,6 +39,7 @@ class AdminLogsState {
     required this.telemetryImeiSearch,
     required this.telemetryFrom,
     required this.telemetryTo,
+    required this.telemetryReadFilter,
     required this.sectionErrorMessage,
   });
 
@@ -85,6 +86,7 @@ class AdminLogsState {
         telemetryImeiSearch = '',
         telemetryFrom = null,
         telemetryTo = null,
+        telemetryReadFilter = AdminReadFilter.all,
         sectionErrorMessage = null;
 
   static const Object _unset = Object();
@@ -129,6 +131,7 @@ class AdminLogsState {
   final String telemetryImeiSearch;
   final DateTime? telemetryFrom;
   final DateTime? telemetryTo;
+  final AdminReadFilter telemetryReadFilter;
 
   final String? sectionErrorMessage;
 
@@ -170,6 +173,7 @@ class AdminLogsState {
     String? telemetryImeiSearch,
     Object? telemetryFrom = _unset,
     Object? telemetryTo = _unset,
+    AdminReadFilter? telemetryReadFilter,
     Object? sectionErrorMessage = _unset,
   }) {
     return AdminLogsState(
@@ -240,6 +244,7 @@ class AdminLogsState {
       telemetryTo: identical(telemetryTo, _unset)
           ? this.telemetryTo
           : telemetryTo as DateTime?,
+      telemetryReadFilter: telemetryReadFilter ?? this.telemetryReadFilter,
       sectionErrorMessage: identical(sectionErrorMessage, _unset)
           ? this.sectionErrorMessage
           : sectionErrorMessage as String?,

@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
+import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../core/utils/validators.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../shared/widgets/open_vts_text_field.dart';
+import '../../../../../shared/widgets/searchable_dropdown_field.dart';
 import '../../../controllers/admin_providers.dart';
 import '../../../models/admin_inventory_model.dart';
 
@@ -32,6 +36,8 @@ class _AdminInventoryAddSheetState
   String? _deviceTypeId;
   String? _providerId;
   bool _loadingRefs = true;
+  String? _referenceError;
+  int _referenceGeneration = 0;
 
   @override
   void initState() {
@@ -56,92 +62,118 @@ class _AdminInventoryAddSheetState
     return Form(
       key: _formKey,
       child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Expanded(
-            child: ListView(
-              controller: PrimaryScrollController.maybeOf(context),
-              padding: const EdgeInsets.all(OpenVtsSpacing.md),
-              children: [
-                _modeChips(),
-                if (_loadingRefs) ...[
-                  const SizedBox(height: OpenVtsSpacing.sm),
-                  const LinearProgressIndicator(minHeight: 2),
-                ],
-                const SizedBox(height: OpenVtsSpacing.sm),
-                if (_mode != AdminInventoryAddMode.sim) ...[
-                  OpenVtsTextField(
-                    label: 'IMEI',
-                    controller: _imeiController,
-                    keyboardType: TextInputType.number,
-                    validator: _validateImei,
-                  ),
-                  const SizedBox(height: OpenVtsSpacing.sm),
-                  DropdownButtonFormField<String>(
-                    initialValue: _deviceTypeId,
-                    items: _deviceTypes
-                        .map((item) => DropdownMenuItem<String>(
-                              value: item.id,
-                              child: Text(item.name,
-                                  overflow: TextOverflow.ellipsis),
-                            ))
-                        .toList(growable: false),
-                    decoration: const InputDecoration(labelText: 'Device Type'),
-                    onChanged: isSubmitting
-                        ? null
-                        : (v) => setState(() => _deviceTypeId = v),
-                    validator: _mode == AdminInventoryAddMode.sim
-                        ? null
-                        : (value) => (value == null || value.isEmpty)
-                            ? 'Device type is required'
-                            : null,
-                  ),
-                  const SizedBox(height: OpenVtsSpacing.sm),
-                ],
-                if (_mode != AdminInventoryAddMode.device) ...[
-                  OpenVtsTextField(
-                    label: 'SIM Number',
-                    controller: _simNumberController,
-                    keyboardType: TextInputType.number,
-                    validator: (v) {
-                      if (_mode == AdminInventoryAddMode.device) return null;
-                      final value = (v ?? '').trim();
-                      return value.isEmpty ? 'SIM number is required' : null;
-                    },
-                  ),
-                  const SizedBox(height: OpenVtsSpacing.sm),
-                  OpenVtsTextField(
-                    label: 'IMSI (optional)',
-                    controller: _imsiController,
-                    keyboardType: TextInputType.number,
-                    validator: _validateImsi,
-                  ),
-                  const SizedBox(height: OpenVtsSpacing.sm),
-                  OpenVtsTextField(
-                    label: 'ICCID (optional)',
-                    controller: _iccidController,
-                    keyboardType: TextInputType.number,
-                    validator: _validateIccid,
-                  ),
-                  const SizedBox(height: OpenVtsSpacing.sm),
-                  DropdownButtonFormField<String>(
-                    initialValue: _providerId,
-                    items: [
-                      const DropdownMenuItem<String>(
-                          value: '', child: Text('No Provider')),
-                      ..._providers.map((item) => DropdownMenuItem<String>(
-                            value: item.id,
-                            child: Text(item.name,
-                                overflow: TextOverflow.ellipsis),
-                          )),
+          Flexible(
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(OpenVtsSpacing.md),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _modeChips(),
+                    if (_loadingRefs) ...[
+                      const SizedBox(height: OpenVtsSpacing.sm),
+                      const _ReferenceLoadingIndicator(),
+                    ] else if (_referenceError != null) ...[
+                      const SizedBox(height: OpenVtsSpacing.sm),
+                      _ReferenceLoadError(
+                        message: _referenceError!,
+                        onRetry: _loadReferences,
+                      ),
                     ],
-                    decoration: const InputDecoration(
-                        labelText: 'SIM Provider (optional)'),
-                    onChanged: isSubmitting
-                        ? null
-                        : (v) => setState(() => _providerId = v),
-                  ),
-                ],
-              ],
+                    const SizedBox(height: OpenVtsSpacing.sm),
+                    if (_mode != AdminInventoryAddMode.sim) ...[
+                      OpenVtsTextField(
+                        label: 'IMEI',
+                        controller: _imeiController,
+                        keyboardType: TextInputType.number,
+                        validator: _validateImei,
+                      ),
+                      const SizedBox(height: OpenVtsSpacing.sm),
+                      SearchableDropdownField<String>(
+                        key: ValueKey(
+                          'device-type-$_referenceGeneration-$_deviceTypeId',
+                        ),
+                        label: 'Device Type',
+                        hintText: _loadingRefs
+                            ? 'Loading device types...'
+                            : 'Select device type',
+                        searchHint: 'Search device type…',
+                        initialValue: _deviceTypeId,
+                        items: _deviceTypes
+                            .map((item) => SearchableDropdownItem<String>(
+                                  value: item.id,
+                                  label: item.name,
+                                ))
+                            .toList(growable: false),
+                        enabled: !isSubmitting &&
+                            !_loadingRefs &&
+                            _referenceError == null &&
+                            _deviceTypes.isNotEmpty,
+                        validator: _mode == AdminInventoryAddMode.sim
+                            ? null
+                            : (value) => (value == null || value.isEmpty)
+                                ? 'Device type is required'
+                                : null,
+                        onChanged: (v) => setState(() => _deviceTypeId = v),
+                      ),
+                      const SizedBox(height: OpenVtsSpacing.sm),
+                    ],
+                    if (_mode != AdminInventoryAddMode.device) ...[
+                      OpenVtsTextField(
+                        label: 'SIM Number',
+                        controller: _simNumberController,
+                        keyboardType: TextInputType.number,
+                        validator: (v) {
+                          if (_mode == AdminInventoryAddMode.device) {
+                            return null;
+                          }
+                          return Validators.simNumber(v);
+                        },
+                      ),
+                      const SizedBox(height: OpenVtsSpacing.sm),
+                      OpenVtsTextField(
+                        label: 'IMSI (optional)',
+                        controller: _imsiController,
+                        keyboardType: TextInputType.number,
+                        validator: _validateImsi,
+                      ),
+                      const SizedBox(height: OpenVtsSpacing.sm),
+                      OpenVtsTextField(
+                        label: 'ICCID (optional)',
+                        controller: _iccidController,
+                        keyboardType: TextInputType.number,
+                        validator: _validateIccid,
+                      ),
+                      const SizedBox(height: OpenVtsSpacing.sm),
+                      SearchableDropdownField<String>(
+                        key: ValueKey(
+                          'sim-provider-$_referenceGeneration-$_providerId',
+                        ),
+                        label: 'SIM Provider (optional)',
+                        hintText: 'Select provider',
+                        searchHint: 'Search provider…',
+                        initialValue: _providerId,
+                        items: [
+                          const SearchableDropdownItem<String>(
+                              value: '', label: 'No Provider'),
+                          ..._providers
+                              .map((item) => SearchableDropdownItem<String>(
+                                    value: item.id,
+                                    label: item.name,
+                                  )),
+                        ],
+                        enabled: !isSubmitting &&
+                            !_loadingRefs &&
+                            _referenceError == null,
+                        onChanged: (v) => setState(() => _providerId = v),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
             ),
           ),
           const Divider(height: 1),
@@ -178,32 +210,43 @@ class _AdminInventoryAddSheetState
   }
 
   Widget _modeChips() {
-    return Wrap(
-      spacing: OpenVtsSpacing.xs,
-      runSpacing: OpenVtsSpacing.xs,
-      children: [
-        ChoiceChip(
-          label: const Text('Device Only'),
-          selected: _mode == AdminInventoryAddMode.device,
-          onSelected: (_) =>
-              setState(() => _mode = AdminInventoryAddMode.device),
-        ),
-        ChoiceChip(
-          label: const Text('SIM Only'),
-          selected: _mode == AdminInventoryAddMode.sim,
-          onSelected: (_) => setState(() => _mode = AdminInventoryAddMode.sim),
-        ),
-        ChoiceChip(
-          label: const Text('Device + SIM'),
-          selected: _mode == AdminInventoryAddMode.both,
-          onSelected: (_) => setState(() => _mode = AdminInventoryAddMode.both),
-        ),
-      ],
+    return SizedBox(
+      height: 36,
+      child: Row(
+        children: [
+          Expanded(
+            child: _ModeChip(
+              label: 'Device Only',
+              isSelected: _mode == AdminInventoryAddMode.device,
+              onTap: () => setState(() => _mode = AdminInventoryAddMode.device),
+            ),
+          ),
+          const SizedBox(width: OpenVtsSpacing.xs),
+          Expanded(
+            child: _ModeChip(
+              label: 'SIM Only',
+              isSelected: _mode == AdminInventoryAddMode.sim,
+              onTap: () => setState(() => _mode = AdminInventoryAddMode.sim),
+            ),
+          ),
+          const SizedBox(width: OpenVtsSpacing.xs),
+          Expanded(
+            child: _ModeChip(
+              label: 'Device + SIM',
+              isSelected: _mode == AdminInventoryAddMode.both,
+              onTap: () => setState(() => _mode = AdminInventoryAddMode.both),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   Future<void> _loadReferences() async {
-    setState(() => _loadingRefs = true);
+    setState(() {
+      _loadingRefs = true;
+      _referenceError = null;
+    });
     final controller = ref.read(adminInventoryControllerProvider.notifier);
     try {
       final results = await Future.wait([
@@ -216,13 +259,18 @@ class _AdminInventoryAddSheetState
       setState(() {
         _deviceTypes = deviceTypes;
         _providers = providers;
-        _deviceTypeId = deviceTypes.isNotEmpty ? deviceTypes.first.id : null;
+        _deviceTypeId = null;
         _providerId = '';
         _loadingRefs = false;
+        _referenceGeneration++;
       });
     } catch (_) {
       if (!mounted) return;
-      setState(() => _loadingRefs = false);
+      setState(() {
+        _loadingRefs = false;
+        _referenceError = 'Unable to load device types and providers.';
+        _referenceGeneration++;
+      });
     }
   }
 
@@ -230,17 +278,19 @@ class _AdminInventoryAddSheetState
     if (!_formKey.currentState!.validate()) return;
 
     final controller = ref.read(adminInventoryControllerProvider.notifier);
+    dynamic result;
     bool success = false;
 
     if (_mode == AdminInventoryAddMode.device) {
-      success = await controller.createDevice(
+      result = await controller.createDevice(
         AdminCreateDeviceRequest(
           imei: _imeiController.text,
           deviceTypeId: int.parse(_deviceTypeId ?? '0'),
         ),
       );
+      success = result != null;
     } else if (_mode == AdminInventoryAddMode.sim) {
-      success = await controller.createSimCard(
+      result = await controller.createSimCard(
         AdminCreateSimCardRequest(
           simNumber: _simNumberController.text,
           imsi: _imsiController.text,
@@ -248,8 +298,9 @@ class _AdminInventoryAddSheetState
           providerId: (_providerId ?? '').trim().isEmpty ? null : _providerId,
         ),
       );
+      success = result;
     } else {
-      success = await controller.createDeviceAndSim(
+      result = await controller.createDeviceAndSim(
         AdminCreateDeviceAndSimRequest(
           imei: _imeiController.text,
           deviceTypeId: int.parse(_deviceTypeId ?? '0'),
@@ -259,13 +310,14 @@ class _AdminInventoryAddSheetState
           providerId: (_providerId ?? '').trim().isEmpty ? null : _providerId,
         ),
       );
+      success = result;
     }
 
     if (!mounted) {
       return;
     }
     if (success) {
-      Navigator.of(context).pop();
+      Navigator.of(context).pop(result);
       ToastHelper.showSuccess('Inventory item created.', context: context);
       return;
     }
@@ -319,5 +371,101 @@ class _AdminInventoryAddSheetState
       return 'ICCID length must be 10-25 digits';
     }
     return null;
+  }
+}
+
+class _ModeChip extends StatelessWidget {
+  const _ModeChip({
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final bgColor = isSelected ? OpenVtsColors.brandInk : OpenVtsColors.white;
+    final fgColor =
+        isSelected ? OpenVtsColors.white : OpenVtsColors.textPrimary;
+    final borderColor =
+        isSelected ? OpenVtsColors.brandInk : OpenVtsColors.border;
+
+    return Material(
+      color: bgColor,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(color: borderColor),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: onTap,
+        child: Center(
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: OpenVtsTypography.meta.copyWith(
+              color: fgColor,
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ReferenceLoadingIndicator extends StatelessWidget {
+  const _ReferenceLoadingIndicator();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Row(
+      key: Key('inventory-reference-loading'),
+      children: [
+        SizedBox.square(
+          dimension: 16,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+        SizedBox(width: OpenVtsSpacing.xs),
+        Expanded(child: Text('Loading device types and providers...')),
+      ],
+    );
+  }
+}
+
+class _ReferenceLoadError extends StatelessWidget {
+  const _ReferenceLoadError({
+    required this.message,
+    required this.onRetry,
+  });
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      key: const Key('inventory-reference-error'),
+      children: [
+        const Icon(Icons.error_outline, color: OpenVtsColors.error),
+        const SizedBox(width: OpenVtsSpacing.xs),
+        Expanded(
+          child: Text(
+            message,
+            style: OpenVtsTypography.meta.copyWith(
+              color: OpenVtsColors.error,
+            ),
+          ),
+        ),
+        TextButton(
+          onPressed: onRetry,
+          child: const Text('Retry'),
+        ),
+      ],
+    );
   }
 }

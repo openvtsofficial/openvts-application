@@ -28,8 +28,7 @@ class AdminTeamListItem {
   factory AdminTeamListItem.fromJson(Map<String, dynamic> json) {
     final source = _extractTeamMap(json);
 
-    final mobilePrefix =
-        _firstString(source, const [
+    final mobilePrefix = _firstString(source, const [
           'mobilePrefix',
           'mobile_prefix',
           'mobileCode',
@@ -38,8 +37,7 @@ class AdminTeamListItem {
           'phone_prefix',
         ]) ??
         '';
-    final mobileNumber =
-        _firstString(source, const [
+    final mobileNumber = _firstString(source, const [
           'mobileNumber',
           'mobile_number',
           'mobile',
@@ -55,8 +53,7 @@ class AdminTeamListItem {
       number: mobileNumber,
     );
 
-    final isActive =
-        _parseStatus(
+    final isActive = _parseStatus(
           _firstValue(source, const [
             'isActive',
             'is_active',
@@ -66,8 +63,7 @@ class AdminTeamListItem {
         ) ??
         true;
 
-    final isVerified =
-        _parseStatus(
+    final isVerified = _parseStatus(
           _firstValue(source, const [
             'isVerified',
             'is_verified',
@@ -81,8 +77,7 @@ class AdminTeamListItem {
         isActive;
 
     return AdminTeamListItem(
-      id:
-          _firstString(source, const [
+      id: _firstString(source, const [
             'uid',
             'id',
             '_id',
@@ -90,8 +85,7 @@ class AdminTeamListItem {
             'team_id',
           ]) ??
           '',
-      teamName:
-          _firstString(source, const [
+      teamName: _firstString(source, const [
             'name',
             'teamName',
             'team_name',
@@ -102,7 +96,7 @@ class AdminTeamListItem {
           '-',
       username:
           _firstString(source, const ['username', 'userName', 'user_name']) ??
-          '-',
+              '-',
       isVerified: isVerified,
       isActive: isActive,
       statusLabel: isActive ? 'Active' : 'Inactive',
@@ -117,6 +111,34 @@ class AdminTeamListItem {
         'joinedAt',
         'joined_at',
       ]),
+    );
+  }
+
+  AdminTeamListItem copyWith({
+    String? id,
+    String? teamName,
+    String? username,
+    bool? isVerified,
+    bool? isActive,
+    String? statusLabel,
+    String? email,
+    String? phone,
+    String? mobilePrefix,
+    String? mobileNumber,
+    DateTime? createdAt,
+  }) {
+    return AdminTeamListItem(
+      id: id ?? this.id,
+      teamName: teamName ?? this.teamName,
+      username: username ?? this.username,
+      isVerified: isVerified ?? this.isVerified,
+      isActive: isActive ?? this.isActive,
+      statusLabel: statusLabel ?? this.statusLabel,
+      email: email ?? this.email,
+      phone: phone ?? this.phone,
+      mobilePrefix: mobilePrefix ?? this.mobilePrefix,
+      mobileNumber: mobileNumber ?? this.mobileNumber,
+      createdAt: createdAt ?? this.createdAt,
     );
   }
 
@@ -174,6 +196,32 @@ class AdminCreateTeamRequest {
   }
 }
 
+class AdminUpdateTeamRequest {
+  const AdminUpdateTeamRequest({
+    required this.name,
+    required this.email,
+    required this.mobilePrefix,
+    required this.mobileNumber,
+    required this.username,
+  });
+
+  final String name;
+  final String email;
+  final String mobilePrefix;
+  final String mobileNumber;
+  final String username;
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'name': name.trim(),
+      'email': email.trim(),
+      'mobilePrefix': mobilePrefix.trim(),
+      'mobileNumber': mobileNumber.trim(),
+      'username': username.trim(),
+    };
+  }
+}
+
 class AdminTeamMobilePrefixOption {
   const AdminTeamMobilePrefixOption({
     required this.code,
@@ -187,8 +235,7 @@ class AdminTeamMobilePrefixOption {
 
   factory AdminTeamMobilePrefixOption.fromJson(Map<String, dynamic> json) {
     final source = _extractTeamMap(json);
-    final code =
-        _firstString(source, const [
+    final code = _firstString(source, const [
           'mobilePrefix',
           'mobile_prefix',
           'prefix',
@@ -198,8 +245,7 @@ class AdminTeamMobilePrefixOption {
           'value',
         ]) ??
         '';
-    final country =
-        _firstString(source, const [
+    final country = _firstString(source, const [
           'country',
           'countryCode',
           'country_code',

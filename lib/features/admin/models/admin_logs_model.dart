@@ -6,7 +6,15 @@ enum AdminVehicleSeverity { info, warning, critical }
 
 enum AdminReadFilter { all, read, unread }
 
-enum AdminTelemetryPacketType { location, history, event, unknown }
+enum AdminTelemetryPacketType {
+  location,
+  history,
+  alarm,
+  heartbeat,
+  command,
+  event,
+  unknown
+}
 
 class AdminLogsOptions {
   const AdminLogsOptions({
@@ -255,6 +263,44 @@ class AdminVehicleEventLogItem {
   final bool isRead;
   final DateTime? createdAt;
   final String dedupeKey;
+
+  bool get isReadNormalized => isRead;
+
+  AdminVehicleEventLogItem copyWith({
+    String? id,
+    String? vehicleId,
+    String? vehicleName,
+    String? plateNumber,
+    String? imei,
+    String? userId,
+    String? userName,
+    String? source,
+    String? severity,
+    String? title,
+    String? message,
+    Map<String, dynamic>? meta,
+    bool? isRead,
+    DateTime? createdAt,
+    String? dedupeKey,
+  }) {
+    return AdminVehicleEventLogItem(
+      id: id ?? this.id,
+      vehicleId: vehicleId ?? this.vehicleId,
+      vehicleName: vehicleName ?? this.vehicleName,
+      plateNumber: plateNumber ?? this.plateNumber,
+      imei: imei ?? this.imei,
+      userId: userId ?? this.userId,
+      userName: userName ?? this.userName,
+      source: source ?? this.source,
+      severity: severity ?? this.severity,
+      title: title ?? this.title,
+      message: message ?? this.message,
+      meta: meta ?? this.meta,
+      isRead: isRead ?? this.isRead,
+      createdAt: createdAt ?? this.createdAt,
+      dedupeKey: dedupeKey ?? this.dedupeKey,
+    );
+  }
 
   factory AdminVehicleEventLogItem.fromJson(dynamic json) {
     final m = _asMap(json);

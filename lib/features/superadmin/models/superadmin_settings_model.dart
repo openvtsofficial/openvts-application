@@ -7,7 +7,6 @@ import 'dart:typed_data';
 enum SuperadminSettingsSection {
   profile,
   whiteLabel,
-  smtp,
   localization,
   general,
 }
@@ -49,8 +48,7 @@ enum SuperadminLayoutDirection {
   ltr,
   rtl;
 
-  String get apiValue =>
-      this == SuperadminLayoutDirection.rtl ? 'RTL' : 'LTR';
+  String get apiValue => this == SuperadminLayoutDirection.rtl ? 'RTL' : 'LTR';
 
   static SuperadminLayoutDirection fromValue(dynamic value) {
     final normalized = value?.toString().trim().toUpperCase();
@@ -94,8 +92,7 @@ enum SuperadminUnits {
   km,
   miles;
 
-  String get apiValue =>
-      this == SuperadminUnits.miles ? 'MILES' : 'KM';
+  String get apiValue => this == SuperadminUnits.miles ? 'MILES' : 'KM';
 
   static SuperadminUnits fromValue(dynamic value) {
     final normalized = value?.toString().trim().toUpperCase();
@@ -107,10 +104,9 @@ enum SuperadminGeocodingPrecision {
   twoDigit,
   threeDigit;
 
-  String get apiValue =>
-      this == SuperadminGeocodingPrecision.threeDigit
-          ? 'THREE_DIGIT'
-          : 'TWO_DIGIT';
+  String get apiValue => this == SuperadminGeocodingPrecision.threeDigit
+      ? 'THREE_DIGIT'
+      : 'TWO_DIGIT';
 
   static SuperadminGeocodingPrecision fromValue(dynamic value) {
     final normalized = value?.toString().trim().toUpperCase();
@@ -148,6 +144,7 @@ class SuperadminAddressSettings {
     this.stateCode,
     this.cityName,
     this.cityId,
+    this.cityCode,
     this.pincode,
     this.fullAddress,
   });
@@ -157,21 +154,79 @@ class SuperadminAddressSettings {
   final String? countryCode;
   final String? stateCode;
   final String? cityName;
-  final int? cityId;
+  // Backend Address.cityId is a String field (stores the city name/value).
+  final String? cityId;
+  final String? cityCode;
   final String? pincode;
   final String? fullAddress;
 
+  String? get cityValue => cityCode ?? cityId;
+
+  String? get cityDisplayName {
+    // Resolution order per confirmed backend contract:
+    // cityName → city_name → city → string cityId → cityCode
+    for (final candidate in [cityName, cityId, cityCode]) {
+      if (candidate != null && candidate.trim().isNotEmpty) {
+        return candidate.trim();
+      }
+    }
+    return null;
+  }
+
   factory SuperadminAddressSettings.fromJson(dynamic json) {
     final source = _asMap(json);
+
+    String? cityName;
+    String? cityCode;
+    String? cityId;
+
+    final priorityNames = const ['cityName', 'city_name'];
+    for (final key in priorityNames) {
+      if (source.containsKey(key)) {
+        final val = _firstString(source, [key]);
+        if (val != null && val.isNotEmpty && val.toLowerCase() != 'city') {
+          cityName = val;
+          break;
+        }
+      }
+    }
+
+    if (cityName == null && source.containsKey('city')) {
+      final val = _firstString(source, const ['city']);
+      if (val != null && val.isNotEmpty && val.toLowerCase() != 'city') {
+        cityName = val;
+      }
+    }
+
+    final priorityCodes = const ['cityCode', 'city_code', 'code'];
+    for (final key in priorityCodes) {
+      if (source.containsKey(key)) {
+        final val = _firstString(source, [key]);
+        if (val != null && val.isNotEmpty) {
+          cityCode = val;
+          break;
+        }
+      }
+    }
+
+    // cityId is a String in the backend schema (stores city name/value).
+    cityId = _firstString(source, const ['cityId', 'city_id']);
+
     return SuperadminAddressSettings(
       id: _firstInt(source, const ['id', 'addressId']),
-      addressLine: _firstString(source, const ['addressLine', 'address', 'line']),
-      countryCode: _firstString(source, const ['countryCode', 'country']),
-      stateCode: _firstString(source, const ['stateCode', 'state']),
-      cityName: _firstString(source, const ['cityName', 'city']),
-      cityId: _firstInt(source, const ['cityId']),
-      pincode: _firstString(source, const ['pincode', 'pinCode', 'zip', 'zipCode']),
-      fullAddress: _firstString(source, const ['fullAddress', 'formatted']),
+      addressLine: _firstString(
+          source, const ['addressLine', 'address_line', 'address', 'line']),
+      countryCode: _firstString(
+          source, const ['countryCode', 'country_code', 'country']),
+      stateCode:
+          _firstString(source, const ['stateCode', 'state_code', 'state']),
+      cityName: cityName,
+      cityId: cityId,
+      cityCode: cityCode,
+      pincode: _firstString(
+          source, const ['pincode', 'pinCode', 'pin_code', 'zip', 'zipCode']),
+      fullAddress: _firstString(
+          source, const ['fullAddress', 'full_address', 'formatted']),
     );
   }
 
@@ -181,7 +236,8 @@ class SuperadminAddressSettings {
     String? countryCode,
     String? stateCode,
     String? cityName,
-    int? cityId,
+    String? cityId,
+    String? cityCode,
     String? pincode,
     String? fullAddress,
   }) {
@@ -192,6 +248,7 @@ class SuperadminAddressSettings {
       stateCode: stateCode ?? this.stateCode,
       cityName: cityName ?? this.cityName,
       cityId: cityId ?? this.cityId,
+      cityCode: cityCode ?? this.cityCode,
       pincode: pincode ?? this.pincode,
       fullAddress: fullAddress ?? this.fullAddress,
     );
@@ -356,6 +413,7 @@ class SuperadminProfileSettings {
     this.mobileVerifiedAt,
     this.company,
     this.address,
+    this.cityName,
   });
 
   final int? uid;
@@ -374,6 +432,7 @@ class SuperadminProfileSettings {
   final DateTime? mobileVerifiedAt;
   final SuperadminCompanySettings? company;
   final SuperadminAddressSettings? address;
+  final String? cityName;
 
   factory SuperadminProfileSettings.fromJson(dynamic json) {
     final source = _unwrap(json);
@@ -393,7 +452,40 @@ class SuperadminProfileSettings {
       }
     }
 
-    final addressMap = _firstMap(source, const ['address', 'profileAddress']);
+    var addressMap = _firstMap(source, const ['address', 'profileAddress']);
+
+    // If address object not found, build it from root-level address fields
+    if (addressMap == null || addressMap.isEmpty) {
+      final rootLevelAddressFields = <String, dynamic>{};
+
+      // Look for address fields at root level and copy them
+      for (final key in [
+        'addressLine',
+        'address',
+        'line',
+        'countryCode',
+        'country',
+        'stateCode',
+        'state',
+        'cityName',
+        'city',
+        'cityId',
+        'pincode',
+        'pinCode',
+        'zip',
+        'zipCode',
+        'fullAddress',
+        'formatted'
+      ]) {
+        if (source.containsKey(key)) {
+          rootLevelAddressFields[key] = source[key];
+        }
+      }
+
+      if (rootLevelAddressFields.isNotEmpty) {
+        addressMap = rootLevelAddressFields;
+      }
+    }
 
     return SuperadminProfileSettings(
       uid: _firstInt(source, const ['uid', 'id', 'userId']),
@@ -401,8 +493,10 @@ class SuperadminProfileSettings {
       username: _firstString(source, const ['username', 'userName']),
       email: _firstString(source, const ['email']),
       mobilePrefix: _firstString(source, const ['mobilePrefix', 'phonePrefix']),
-      mobileNumber: _firstString(source, const ['mobileNumber', 'phoneNumber', 'mobile']),
-      profileUrl: _firstString(source, const ['profileUrl', 'avatar', 'profile']),
+      mobileNumber:
+          _firstString(source, const ['mobileNumber', 'phoneNumber', 'mobile']),
+      profileUrl:
+          _firstString(source, const ['profileUrl', 'avatar', 'profile']),
       credits: _firstDouble(source, const ['credits', 'balance']),
       createdAt: _firstDate(source, const ['createdAt', 'created']),
       updatedAt: _firstDate(source, const ['updatedAt', 'modified']),
@@ -424,6 +518,22 @@ class SuperadminProfileSettings {
       address: addressMap != null
           ? SuperadminAddressSettings.fromJson(addressMap)
           : null,
+      cityName: _firstString(addressMap ?? const <String, dynamic>{}, const [
+            'cityName',
+            'city_name',
+            'city',
+            // backend Address.cityId is a String carrying the city name
+            'cityId',
+            'city_id',
+          ]) ??
+          _firstString(source, const [
+            'cityName',
+            'city_name',
+            'cityname',
+            'city',
+            'cityId',
+            'city_id',
+          ]),
     );
   }
 
@@ -444,6 +554,7 @@ class SuperadminProfileSettings {
     DateTime? mobileVerifiedAt,
     SuperadminCompanySettings? company,
     SuperadminAddressSettings? address,
+    String? cityName,
   }) {
     return SuperadminProfileSettings(
       uid: uid ?? this.uid,
@@ -462,6 +573,7 @@ class SuperadminProfileSettings {
       mobileVerifiedAt: mobileVerifiedAt ?? this.mobileVerifiedAt,
       company: company ?? this.company,
       address: address ?? this.address,
+      cityName: cityName ?? this.cityName,
     );
   }
 }
@@ -501,6 +613,8 @@ class SuperadminUpdateProfileRequest {
     if (mobileNumber != null) json['mobileNumber'] = mobileNumber;
     if (addressLine != null) json['addressLine'] = addressLine;
     if (countryCode != null) json['countryCode'] = countryCode;
+    // stateCode and cityName are always included when set, even as empty strings.
+    // An empty string signals a genuinely absent subdivision (not null/omitted).
     if (stateCode != null) json['stateCode'] = stateCode;
     if (cityName != null) json['cityName'] = cityName;
     if (pincode != null) json['pincode'] = pincode;
@@ -750,14 +864,15 @@ class SuperadminLocalizationSettings {
       language: _firstString(source, const ['language', 'lang']) ?? 'en',
       layoutDirection:
           SuperadminLayoutDirection.fromValue(source['layoutDirection']),
-      dateFormat:
-          _firstString(source, const ['dateFormat']) ?? 'YYYY-MM-DD',
+      dateFormat: _firstString(source, const ['dateFormat']) ?? 'YYYY-MM-DD',
       use24Hour: _firstBool(source, const ['use24Hour']) ?? true,
       theme: SuperadminTheme.fromValue(source['theme']),
       timezoneOffset:
           _firstString(source, const ['timezoneOffset', 'timezone']) ??
               '+00:00',
-      units: SuperadminUnits.fromValue(source['units']),
+      units: SuperadminUnits.fromValue(
+        source['distanceUnit'] ?? source['units'] ?? source['measurementUnit'],
+      ),
       defaultLat: _firstDouble(source, const ['defaultLat', 'lat']) ?? 0,
       defaultLon: _firstDouble(source, const ['defaultLon', 'lon', 'lng']) ?? 0,
       mapZoom: _firstInt(source, const ['mapZoom', 'zoom']) ?? 10,
@@ -816,7 +931,8 @@ class SuperadminLanguageOption {
   factory SuperadminLanguageOption.fromJson(dynamic json) {
     final source = _asMap(json);
     final code = _firstString(source, const ['code', 'value', 'key']) ?? '';
-    final label = _firstString(source, const ['label', 'name', 'title']) ?? code;
+    final label =
+        _firstString(source, const ['label', 'name', 'title']) ?? code;
     return SuperadminLanguageOption(code: code, label: label);
   }
 
@@ -844,7 +960,8 @@ class SuperadminDateFormatOption {
     }
     final source = _asMap(json);
     final value = _firstString(source, const ['value', 'format', 'code']) ?? '';
-    final label = _firstString(source, const ['label', 'name', 'title']) ?? value;
+    final label =
+        _firstString(source, const ['label', 'name', 'title']) ?? value;
     return SuperadminDateFormatOption(value: value, label: label);
   }
 
@@ -884,8 +1001,7 @@ class SuperadminSoftwareConfig {
         source['geocodingPrecision'],
       ),
       backupDays: _firstInt(source, const ['backupDays']) ?? 365,
-      allowDemoLogin:
-          _firstBool(source, const ['allowDemoLogin']) ?? false,
+      allowDemoLogin: _firstBool(source, const ['allowDemoLogin']) ?? false,
       allowSignup: _firstBool(source, const ['allowSignup']) ?? false,
       signupCredits: _firstInt(source, const ['signupCredits']) ?? 0,
     );

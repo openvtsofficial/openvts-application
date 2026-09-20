@@ -13,7 +13,7 @@ class UserTransactionsState {
     required this.selectedTransaction,
     required this.selectedStatus,
     required this.selectedPaymentMode,
-    required this.selectedPaymentType,
+    required this.selectedDirection,
     required this.searchQuery,
     required this.rangePreset,
     required this.customFrom,
@@ -32,7 +32,7 @@ class UserTransactionsState {
         selectedTransaction = null,
         selectedStatus = null,
         selectedPaymentMode = null,
-        selectedPaymentType = null,
+        selectedDirection = null,
         searchQuery = '',
         rangePreset = UserTransactionsRangePreset.thisMonth,
         customFrom = null,
@@ -51,7 +51,7 @@ class UserTransactionsState {
   final UserTransaction? selectedTransaction;
   final UserTransactionStatus? selectedStatus;
   final UserPaymentMode? selectedPaymentMode;
-  final String? selectedPaymentType;
+  final UserTransactionDirection? selectedDirection;
   final String searchQuery;
   final UserTransactionsRangePreset rangePreset;
   final DateTime? customFrom;
@@ -71,31 +71,38 @@ class UserTransactionsState {
   bool get hasActiveFilters {
     return selectedStatus != null ||
         selectedPaymentMode != null ||
-        (selectedPaymentType?.trim().isNotEmpty ?? false) ||
+        selectedDirection != null ||
         searchQuery.trim().isNotEmpty ||
         rangePreset != UserTransactionsRangePreset.thisMonth;
   }
 
-  List<UserTransaction> get filteredTransactions {
+  /// Returns the filtered list of transactions for [currentUserId].
+  ///
+  /// Credit/Debit direction is derived from [fromUserId]/[toUserId] relative
+  /// to the authenticated user — it is never compared against
+  /// [UserTransaction.paymentType], which holds unrelated backend values
+  /// (SYSTEM / MANUAL / ONLINE).
+  List<UserTransaction> filteredTransactionsFor(String? currentUserId) {
     final modeFilter = selectedPaymentMode;
-    final typeFilter = selectedPaymentType?.trim().toUpperCase() ?? '';
+    final directionFilter = selectedDirection;
 
-    if (modeFilter == null && typeFilter.isEmpty) {
+    if (modeFilter == null && directionFilter == null) {
       return transactions;
     }
 
     return transactions.where((transaction) {
-      final matchesMode =
-          modeFilter == null || transaction.paymentMode == modeFilter;
-      if (!matchesMode) {
+      if (modeFilter != null && transaction.paymentMode != modeFilter) {
         return false;
       }
 
-      if (typeFilter.isEmpty) {
-        return true;
+      if (directionFilter != null) {
+        final direction = transactionDirectionFor(transaction, currentUserId);
+        if (direction != directionFilter) {
+          return false;
+        }
       }
 
-      return transaction.paymentType.trim().toUpperCase() == typeFilter;
+      return true;
     }).toList(growable: false);
   }
 
@@ -104,7 +111,7 @@ class UserTransactionsState {
     Object? selectedTransaction = _unset,
     Object? selectedStatus = _unset,
     Object? selectedPaymentMode = _unset,
-    Object? selectedPaymentType = _unset,
+    Object? selectedDirection = _unset,
     String? searchQuery,
     UserTransactionsRangePreset? rangePreset,
     Object? customFrom = _unset,
@@ -128,9 +135,9 @@ class UserTransactionsState {
       selectedPaymentMode: identical(selectedPaymentMode, _unset)
           ? this.selectedPaymentMode
           : selectedPaymentMode as UserPaymentMode?,
-      selectedPaymentType: identical(selectedPaymentType, _unset)
-          ? this.selectedPaymentType
-          : selectedPaymentType as String?,
+      selectedDirection: identical(selectedDirection, _unset)
+          ? this.selectedDirection
+          : selectedDirection as UserTransactionDirection?,
       searchQuery: searchQuery ?? this.searchQuery,
       rangePreset: rangePreset ?? this.rangePreset,
       customFrom: identical(customFrom, _unset)

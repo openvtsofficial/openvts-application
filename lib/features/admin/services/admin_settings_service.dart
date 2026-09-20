@@ -1,8 +1,10 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http_parser/http_parser.dart';
 
 import '../../../core/api/api_client.dart';
 import '../../../core/api/api_endpoints.dart';
+import '../../../core/api/api_exception.dart';
 import '../../../core/api/api_options.dart';
 import '../models/admin_settings_model.dart';
 
@@ -18,24 +20,114 @@ class AdminSettingsService {
   );
 
   Future<AdminProfileSettings> getProfile() async {
-    final response = await _apiClient.get<dynamic>(
-      ApiEndpoints.admin.profile,
-      options: _readOptions,
-      parser: (json) => json,
-    );
-    return AdminProfileSettings.fromJson(response.data);
+    try {
+      final response = await _apiClient.get<dynamic>(
+        ApiEndpoints.admin.profile,
+        options: _readOptions,
+        parser: (json) => json,
+      );
+      _logProfileRequest(
+        method: 'GET',
+        statusCode: response.statusCode,
+        message: response.message,
+      );
+      return AdminProfileSettings.fromJson(response.data);
+    } catch (error) {
+      _logProfileFailure(method: 'GET', error: error);
+      rethrow;
+    }
   }
 
   Future<AdminProfileSettings> updateProfile(
     AdminUpdateProfileRequest request,
   ) async {
-    await _apiClient.patch<void>(
-      ApiEndpoints.admin.profile,
-      data: request.toJson(),
-      options: _mutationOptions,
-      parser: (_) {},
+    try {
+      final response = await _apiClient.patch<void>(
+        ApiEndpoints.admin.profile,
+        data: request.toJson(),
+        options: _mutationOptions,
+        parser: (_) {},
+      );
+      _logProfileRequest(
+        method: 'PATCH',
+        statusCode: response.statusCode,
+        message: response.message,
+      );
+    } catch (error) {
+      _logProfileFailure(method: 'PATCH', error: error);
+      throw _profileApiException('Unable to save profile', error);
+    }
+
+    try {
+      return await getProfile();
+    } catch (error) {
+      throw _profileApiException('Profile saved, but refresh failed', error);
+    }
+  }
+
+  void _logProfileRequest({
+    required String method,
+    required int? statusCode,
+    String? message,
+  }) {
+    debugPrint(
+      '[admin-settings-profile] method=$method '
+      'url=${_apiClient.safeResolvedUrl(ApiEndpoints.admin.profile)} '
+      'status=${statusCode ?? 'unknown'} '
+      'message=${_sanitizeProfileDiagnostic(message ?? '')}',
     );
-    return getProfile();
+  }
+
+  void _logProfileFailure({required String method, required Object error}) {
+    final statusCode = switch (error) {
+      ApiException exception => exception.statusCode,
+      DioException exception => exception.response?.statusCode,
+      _ => null,
+    };
+    _logProfileRequest(
+      method: method,
+      statusCode: statusCode,
+      message: _safeProfileErrorMessage(error),
+    );
+  }
+
+  ApiException _profileApiException(String prefix, Object error) {
+    final statusCode = switch (error) {
+      ApiException exception => exception.statusCode,
+      DioException exception => exception.response?.statusCode,
+      _ => null,
+    };
+    return ApiException(
+      message: '$prefix: ${_safeProfileErrorMessage(error)}',
+      statusCode: statusCode,
+    );
+  }
+
+  static String _safeProfileErrorMessage(Object error) {
+    if (error is ApiException && error.message.trim().isNotEmpty) {
+      return error.message.trim();
+    }
+    if (error is DioException) {
+      final data = error.response?.data;
+      if (data is Map) {
+        final nested = data['data'];
+        if (nested is Map) {
+          final message = nested['message']?.toString().trim();
+          if (message != null && message.isNotEmpty) return message;
+        }
+        final message = data['message']?.toString().trim();
+        if (message != null && message.isNotEmpty) return message;
+      }
+      if (error.response?.statusCode == 404) return 'Route not found';
+    }
+    return 'Request failed';
+  }
+
+  static String _sanitizeProfileDiagnostic(String value) {
+    return value
+        .replaceAll(RegExp(r'[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}'), '[redacted]')
+        .replaceAll(RegExp(r'\+?\d[\d\s()-]{6,}\d'), '[redacted]')
+        .trim();
   }
 
   Future<void> updateCompany(AdminUpdateCompanyRequest request) async {
@@ -82,10 +174,9 @@ class AdminSettingsService {
   }
 
   Future<void> requestEmailOtp() async {
-    await _apiClient.post<void>(
-      ApiEndpoints.admin.profileVerifyEmailRequest,
-      options: _mutationOptions,
-      parser: (_) {},
+    await _requestOtp(
+      channel: 'email',
+      endpoint: ApiEndpoints.admin.profileVerifyEmailRequest,
     );
   }
 
@@ -99,11 +190,77 @@ class AdminSettingsService {
   }
 
   Future<void> requestWhatsAppOtp() async {
-    await _apiClient.post<void>(
-      ApiEndpoints.admin.profileVerifyWhatsAppRequest,
-      options: _mutationOptions,
-      parser: (_) {},
+    await _requestOtp(
+      channel: 'whatsapp',
+      endpoint: ApiEndpoints.admin.profileVerifyWhatsAppRequest,
     );
+  }
+
+  Future<void> _requestOtp({
+    required String channel,
+    required String endpoint,
+  }) async {
+    final safeUrl = _apiClient.safeResolvedUrl(endpoint);
+    try {
+      final response = await _apiClient.post<dynamic>(
+        endpoint,
+        options: _mutationOptions,
+        parser: (json) => json,
+      );
+      debugPrint(
+        '[admin-settings-otp] channel=$channel url=$safeUrl '
+        'status=${response.statusCode ?? 'unknown'} '
+        'business=${_safeOtpBusinessResponse(action: true, message: response.message)}',
+      );
+    } on ApiException catch (error) {
+      debugPrint(
+        '[admin-settings-otp] channel=$channel url=$safeUrl '
+        'status=${error.statusCode ?? 'unknown'} '
+        'business=${_safeOtpBusinessResponseFromError(error)}',
+      );
+      rethrow;
+    }
+  }
+
+  static String _safeOtpBusinessResponseFromError(ApiException error) {
+    final details = error.details;
+    final root = details is Map ? details : const <dynamic, dynamic>{};
+    final nestedValue = root['data'];
+    final nested =
+        nestedValue is Map ? nestedValue : const <dynamic, dynamic>{};
+    final payloadValue = nested['data'];
+    final payload =
+        payloadValue is Map ? payloadValue : const <dynamic, dynamic>{};
+    final action = nested['action'] ?? root['action'];
+    final code = payload['code'] ?? nested['code'] ?? root['code'];
+    final message = nested['message'] ?? root['message'] ?? error.message;
+    return _safeOtpBusinessResponse(
+      action: action == true,
+      code: code?.toString(),
+      message: message?.toString(),
+    );
+  }
+
+  static String _safeOtpBusinessResponse({
+    required bool action,
+    String? code,
+    String? message,
+  }) {
+    final safeCode = code?.trim();
+    final safeMessage = message?.trim();
+    return <String>[
+      'action:$action',
+      if (safeCode != null && safeCode.isNotEmpty) 'code:$safeCode',
+      if (safeMessage != null && safeMessage.isNotEmpty)
+        'message:${_sanitizeOtpDiagnostic(safeMessage)}',
+    ].join(',');
+  }
+
+  static String _sanitizeOtpDiagnostic(String value) {
+    return value
+        .replaceAll(RegExp(r'[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}'), '[redacted]')
+        .replaceAll(RegExp(r'\+?\d[\d\s()-]{6,}\d'), '[redacted]')
+        .replaceAll(RegExp(r'\b\d{4,8}\b'), '[redacted]');
   }
 
   Future<void> confirmWhatsAppOtp(String otp) async {
@@ -215,7 +372,7 @@ class AdminSettingsService {
   Future<void> testSmtp(String email) async {
     await _apiClient.post<void>(
       ApiEndpoints.admin.testSmtp,
-      data: {'email': email},
+      data: <String, dynamic>{'email': email.trim()},
       options: _mutationOptions,
       parser: (_) {},
     );

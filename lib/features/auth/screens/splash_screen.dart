@@ -24,20 +24,31 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Image.asset('assets/brand/icon.png', height: 56, errorBuilder: (_, __, ___) {
-              return const Icon(Icons.navigation_outlined, size: 56);
-            }),
-            const SizedBox(height: OpenVtsSpacing.md),
-            const Text('OpenVTS', style: OpenVtsTypography.titleMedium),
-            const SizedBox(height: OpenVtsSpacing.lg),
-            const OpenVtsLoader(),
-          ],
-        ),
+    return const Scaffold(body: SplashLoadingView());
+  }
+}
+
+class SplashLoadingView extends StatelessWidget {
+  const SplashLoadingView({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Image.asset(
+              isDark ? 'assets/brand/dark-icon.png' : 'assets/brand/icon.png',
+              height: 56, errorBuilder: (_, __, ___) {
+            return const Icon(Icons.navigation_outlined, size: 56);
+          }),
+          const SizedBox(height: OpenVtsSpacing.md),
+          const Text('OpenVTS', style: OpenVtsTypography.titleMedium),
+          const SizedBox(height: OpenVtsSpacing.lg),
+          const OpenVtsLoader(),
+        ],
       ),
     );
   }

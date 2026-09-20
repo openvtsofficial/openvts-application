@@ -23,12 +23,16 @@ class OpenVtsMetricCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: OpenVtsTypography.meta.copyWith(color: OpenVtsColors.textSecondary)),
+          Text(label,
+              style: OpenVtsTypography.meta
+                  .copyWith(color: OpenVtsColors.textSecondary)),
           const SizedBox(height: OpenVtsSpacing.xs),
           Text(value, style: OpenVtsTypography.titleMedium),
           if (caption != null) ...[
             const SizedBox(height: OpenVtsSpacing.xxs),
-            Text(caption!, style: OpenVtsTypography.meta.copyWith(color: OpenVtsColors.textTertiary)),
+            Text(caption!,
+                style: OpenVtsTypography.meta
+                    .copyWith(color: OpenVtsColors.textTertiary)),
           ],
         ],
       ),

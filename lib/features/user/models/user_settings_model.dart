@@ -837,13 +837,13 @@ class UserLocalizationSettings {
   }
 
   Map<String, dynamic> toPatchJson() => <String, dynamic>{
-        'languageCode': language,
-        'direction': layoutDirection.apiValue,
+        'language': language,
+        'layoutDirection': layoutDirection.apiValue,
         'dateFormat': dateFormat,
+        'use24Hour': use24Hour,
         'theme': theme.apiValue,
-        'timezone': timezoneOffset,
-        'timeFormat': use24Hour ? '24H' : '12H',
-        'distanceUnit': units.apiValue,
+        'timezoneOffset': timezoneOffset,
+        'units': units.apiValue,
         'defaultLat': defaultLat,
         'defaultLon': defaultLon,
         'mapZoom': mapZoom,

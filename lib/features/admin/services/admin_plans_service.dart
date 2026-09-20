@@ -29,9 +29,7 @@ class AdminPlansService {
       options: _mutationOptions,
       parser: (json) => json,
     );
-    final list = AdminPlan.listFromJson(response.data);
-    if (list.isNotEmpty) return list.first;
-    return null;
+    return _parseReturnedPlan(response.data);
   }
 
   Future<AdminPlan?> updatePlan({
@@ -44,9 +42,7 @@ class AdminPlansService {
       options: _mutationOptions,
       parser: (json) => json,
     );
-    final list = AdminPlan.listFromJson(response.data);
-    if (list.isNotEmpty) return list.first;
-    return null;
+    return _parseReturnedPlan(response.data);
   }
 
   Future<List<AdminCurrencyOption>> getCurrencies() async {
@@ -56,6 +52,13 @@ class AdminPlansService {
       parser: (json) => json,
     );
     return AdminCurrencyOption.listFromJson(response.data);
+  }
+
+  AdminPlan? _parseReturnedPlan(dynamic data) {
+    final single = AdminPlan.maybeFromJson(data);
+    if (single != null) return single;
+    final list = AdminPlan.listFromJson(data);
+    return list.isEmpty ? null : list.first;
   }
 
   Map<String, dynamic>? _query(String? refreshKey) {

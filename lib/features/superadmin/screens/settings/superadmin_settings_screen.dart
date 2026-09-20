@@ -1,12 +1,14 @@
-﻿import 'dart:async';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/widgets/app_legal_links.dart';
 import '../../../../core/theme/open_vts_colors.dart';
 import '../../../../core/theme/open_vts_radius.dart';
 import '../../../../core/theme/open_vts_spacing.dart';
 import '../../../../core/theme/open_vts_typography.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../../shared/widgets/open_vts_card.dart';
 import '../../../../shared/widgets/open_vts_page_scaffold.dart';
 import '../../controllers/superadmin_providers.dart';
@@ -15,7 +17,6 @@ import '../../models/superadmin_settings_state.dart';
 import 'widgets/general_settings_section.dart';
 import 'widgets/localization_settings_section.dart';
 import 'widgets/profile_settings_section.dart';
-import 'widgets/smtp_settings_section.dart';
 import 'widgets/white_label_settings_section.dart';
 
 class SuperadminSettingsScreen extends ConsumerStatefulWidget {
@@ -34,9 +35,7 @@ class _SuperadminSettingsScreenState
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       unawaited(
-        ref
-            .read(superadminSettingsControllerProvider.notifier)
-            .loadInitial(),
+        ref.read(superadminSettingsControllerProvider.notifier).loadInitial(),
       );
     });
   }
@@ -45,8 +44,9 @@ class _SuperadminSettingsScreenState
   Widget build(BuildContext context) {
     final state = ref.watch(superadminSettingsControllerProvider);
 
+    final l10n = AppLocalizations.of(context);
     return OpenVtsPageScaffold(
-      title: 'Settings',
+      title: l10n.settings,
       headerMode: OpenVtsPageHeaderMode.closeable,
       padding: const EdgeInsets.fromLTRB(
         OpenVtsSpacing.sm,
@@ -62,6 +62,7 @@ class _SuperadminSettingsScreenState
           _SectionSelector(selected: state.selectedSection),
           const SizedBox(height: OpenVtsSpacing.sm),
           _SectionContent(state: state),
+            const AppLegalLinks(),
         ],
       ),
     );
@@ -77,6 +78,7 @@ class _SettingsHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return OpenVtsCard(
       padding: const EdgeInsets.symmetric(
         horizontal: OpenVtsSpacing.md,
@@ -88,41 +90,49 @@ class _SettingsHeader extends StatelessWidget {
             width: 32,
             height: 32,
             decoration: BoxDecoration(
-              color: OpenVtsColors.brandInk,
+              color: isDark ? Colors.black : OpenVtsColors.white,
               borderRadius: BorderRadius.circular(OpenVtsRadius.md),
+              border: isDark
+                  ? Border.all(color: Colors.white, width: 1)
+                  : Border.all(color: OpenVtsColors.border, width: 1),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.tune_rounded,
               size: 18,
-              color: OpenVtsColors.white,
+              color: isDark ? Colors.white : OpenVtsColors.brandInk,
             ),
           ),
           const SizedBox(width: OpenVtsSpacing.sm),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Settings',
-                  style: TextStyle(
-                    fontFamily: OpenVtsTypography.primaryFontFamily,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: OpenVtsColors.textPrimary,
-                  ),
-                ),
-                SizedBox(height: 2),
-                Text(
-                  'Profile, branding, mail, localization, and platform preferences.',
-                  style: TextStyle(
-                    fontFamily: OpenVtsTypography.primaryFontFamily,
-                    fontSize: 11.5,
-                    height: 1.35,
-                    color: OpenVtsColors.textSecondary,
-                  ),
-                ),
-              ],
+          Expanded(
+            child: Builder(
+              builder: (context) {
+                final l10n = AppLocalizations.of(context);
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      l10n.settings,
+                      style: TextStyle(
+                        fontFamily: OpenVtsTypography.primaryFontFamily,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      l10n.settingsHeaderSubtitle,
+                      style: TextStyle(
+                        fontFamily: OpenVtsTypography.primaryFontFamily,
+                        fontSize: 11.5,
+                        height: 1.35,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
           ),
         ],
@@ -142,33 +152,28 @@ class _SectionItem {
   final IconData icon;
 }
 
-const List<_SectionItem> _kSections = <_SectionItem>[
-  _SectionItem(
-    SuperadminSettingsSection.profile,
-    'Profile',
-    Icons.person_outline_rounded,
-  ),
-  _SectionItem(
-    SuperadminSettingsSection.whiteLabel,
-    'White Label',
-    Icons.palette_outlined,
-  ),
-  _SectionItem(
-    SuperadminSettingsSection.smtp,
-    'SMTP',
-    Icons.mail_outline_rounded,
-  ),
-  _SectionItem(
-    SuperadminSettingsSection.localization,
-    'Localization',
-    Icons.public_rounded,
-  ),
-  _SectionItem(
-    SuperadminSettingsSection.general,
-    'Settings',
-    Icons.settings_suggest_outlined,
-  ),
-];
+List<_SectionItem> _buildSections(AppLocalizations l10n) => [
+      _SectionItem(
+        SuperadminSettingsSection.profile,
+        l10n.profile,
+        Icons.person_outline_rounded,
+      ),
+      _SectionItem(
+        SuperadminSettingsSection.whiteLabel,
+        l10n.whiteLabel,
+        Icons.palette_outlined,
+      ),
+      _SectionItem(
+        SuperadminSettingsSection.localization,
+        l10n.localization,
+        Icons.public_rounded,
+      ),
+      _SectionItem(
+        SuperadminSettingsSection.general,
+        l10n.settings,
+        Icons.settings_suggest_outlined,
+      ),
+    ];
 
 class _SectionSelector extends ConsumerWidget {
   const _SectionSelector({required this.selected});
@@ -177,16 +182,17 @@ class _SectionSelector extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final sections = _buildSections(AppLocalizations.of(context));
     return SizedBox(
       height: 36,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 2),
         physics: const BouncingScrollPhysics(),
-        itemCount: _kSections.length,
+        itemCount: sections.length,
         separatorBuilder: (_, __) => const SizedBox(width: OpenVtsSpacing.xs),
         itemBuilder: (context, index) {
-          final item = _kSections[index];
+          final item = sections[index];
           final isSelected = item.section == selected;
           return _SectionChip(
             item: item,
@@ -216,10 +222,10 @@ class _SectionChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bg = isSelected ? OpenVtsColors.brandInk : OpenVtsColors.surfaceElevated;
-    final fg = isSelected ? OpenVtsColors.white : OpenVtsColors.textPrimary;
-    final borderColor =
-        isSelected ? OpenVtsColors.brandInk : OpenVtsColors.border;
+    final scheme = Theme.of(context).colorScheme;
+    final bg = isSelected ? scheme.primary : scheme.surfaceContainer;
+    final fg = isSelected ? scheme.onPrimary : scheme.onSurface;
+    final borderColor = isSelected ? scheme.primary : scheme.outlineVariant;
 
     return Material(
       color: Colors.transparent,
@@ -274,8 +280,6 @@ class _SectionContent extends ConsumerWidget {
         return ProfileSettingsSection(state: state);
       case SuperadminSettingsSection.whiteLabel:
         return WhiteLabelSettingsSection(state: state);
-      case SuperadminSettingsSection.smtp:
-        return SmtpSettingsSection(state: state);
       case SuperadminSettingsSection.localization:
         return LocalizationSettingsSection(state: state);
       case SuperadminSettingsSection.general:

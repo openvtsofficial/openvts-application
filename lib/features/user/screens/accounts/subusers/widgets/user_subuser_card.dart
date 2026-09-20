@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../../core/theme/open_vts_radius.dart';
@@ -8,9 +9,7 @@ import '../../../../../../core/utils/date_time_formatter.dart';
 import '../../../../../../shared/widgets/open_vts_card.dart';
 import '../../../../models/user_subuser_model.dart';
 
-const DateTimeFormatter _dateFormatter = DateTimeFormatter();
-
-class UserSubUserCard extends StatelessWidget {
+class UserSubUserCard extends ConsumerWidget {
   const UserSubUserCard({
     required this.subUser,
     required this.isTogglingStatus,
@@ -25,7 +24,8 @@ class UserSubUserCard extends StatelessWidget {
   final VoidCallback? onTap;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final dateFormatter = ref.watch(appDateFormatterProvider);
     final isActive = subUser.isActive;
 
     return OpenVtsCard(
@@ -41,14 +41,15 @@ class UserSubUserCard extends StatelessWidget {
                 width: 32,
                 height: 32,
                 decoration: BoxDecoration(
-                  color: OpenVtsColors.surface,
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-                  border: Border.all(color: OpenVtsColors.border),
+                  border: Border.all(
+                      color: Theme.of(context).colorScheme.outlineVariant),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.person_outline_rounded,
                   size: 17,
-                  color: OpenVtsColors.textSecondary,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
               const SizedBox(width: OpenVtsSpacing.sm),
@@ -61,7 +62,7 @@ class UserSubUserCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: OpenVtsTypography.label.copyWith(
-                        color: OpenVtsColors.textPrimary,
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
@@ -71,24 +72,25 @@ class UserSubUserCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: OpenVtsTypography.meta.copyWith(
-                        color: OpenVtsColors.textSecondary,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
                   ],
                 ),
               ),
-              const Icon(
+              Icon(
                 Icons.chevron_right_rounded,
                 size: 18,
-                color: OpenVtsColors.textTertiary,
+                color: Theme.of(context).colorScheme.outline,
               ),
             ],
           ),
           const SizedBox(height: OpenVtsSpacing.xs),
           _InfoRow(label: 'Email', value: _displayEmail(subUser)),
           _InfoRow(label: 'Mobile', value: _displayMobile(subUser)),
-          _InfoRow(label: 'Created', value: _displayCreated(subUser)),
+          _InfoRow(
+              label: 'Created', value: _displayCreated(subUser, dateFormatter)),
           const SizedBox(height: OpenVtsSpacing.xs),
           Row(
             children: [
@@ -101,17 +103,19 @@ class UserSubUserCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
                   border: Border.all(
                     color: (isActive
-                            ? OpenVtsColors.textSecondary
-                            : OpenVtsColors.textTertiary)
+                            ? Theme.of(context).colorScheme.onSurfaceVariant
+                            : Theme.of(context).colorScheme.outline)
                         .withValues(alpha: 0.35),
                   ),
                 ),
                 child: Text(
                   isActive ? 'Active' : 'Inactive',
                   style: OpenVtsTypography.meta.copyWith(
-                    color: isActive
-                        ? OpenVtsColors.textSecondary
-                        : OpenVtsColors.textTertiary,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.white
+                        : (isActive
+                            ? Theme.of(context).colorScheme.onSurfaceVariant
+                            : Theme.of(context).colorScheme.outline),
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -120,7 +124,9 @@ class UserSubUserCard extends StatelessWidget {
               Text(
                 'Status',
                 style: OpenVtsTypography.meta.copyWith(
-                  color: OpenVtsColors.textSecondary,
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Colors.white
+                      : Theme.of(context).colorScheme.onSurfaceVariant,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -136,10 +142,22 @@ class UserSubUserCard extends StatelessWidget {
                   scale: 0.88,
                   child: Switch.adaptive(
                     value: isActive,
-                    activeThumbColor: OpenVtsColors.brandInk,
+                    activeThumbColor:
+                        Theme.of(context).brightness == Brightness.dark
+                            ? Colors.white
+                            : OpenVtsColors.brandInk,
                     activeTrackColor:
-                        OpenVtsColors.brandInk.withValues(alpha: 0.35),
-                    inactiveThumbColor: OpenVtsColors.textTertiary,
+                        Theme.of(context).brightness == Brightness.dark
+                            ? Colors.white.withValues(alpha: 0.4)
+                            : OpenVtsColors.brandInk.withValues(alpha: 0.35),
+                    inactiveThumbColor:
+                        Theme.of(context).brightness == Brightness.dark
+                            ? Colors.white
+                            : OpenVtsColors.textTertiary,
+                    inactiveTrackColor:
+                        Theme.of(context).brightness == Brightness.dark
+                            ? const Color(0xFF333333)
+                            : null,
                     materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     onChanged: onToggleStatus,
                   ),
@@ -173,7 +191,7 @@ class _InfoRow extends StatelessWidget {
             child: Text(
               label,
               style: OpenVtsTypography.meta.copyWith(
-                color: OpenVtsColors.textTertiary,
+                color: Theme.of(context).colorScheme.outline,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -185,7 +203,7 @@ class _InfoRow extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: OpenVtsTypography.meta.copyWith(
-                color: OpenVtsColors.textSecondary,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -227,10 +245,10 @@ String _displayMobile(UserSubUser subUser) {
   return merged.isEmpty ? '-' : merged;
 }
 
-String _displayCreated(UserSubUser subUser) {
+String _displayCreated(UserSubUser subUser, dynamic formatter) {
   final createdAt = subUser.createdAt;
   if (createdAt == null) {
     return 'Unknown';
   }
-  return _dateFormatter.formatDate(createdAt.toLocal());
+  return formatter.formatDate(createdAt.toLocal());
 }

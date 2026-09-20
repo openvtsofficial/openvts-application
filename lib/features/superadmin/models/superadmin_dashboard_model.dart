@@ -130,7 +130,12 @@ class SuperadminDashboardCounts {
       ),
       activeVehicles: _firstInt(
         source,
-        const ['activeVehicle', 'activeVehicles', 'onlineVehicles', 'liveVehicles'],
+        const [
+          'activeVehicle',
+          'activeVehicles',
+          'onlineVehicles',
+          'liveVehicles'
+        ],
       ),
       totalUsers: _firstInt(
         source,
@@ -174,7 +179,8 @@ class SuperadminAdoptionPoint {
   final int licenses;
 
   factory SuperadminAdoptionPoint.fromJson(Map<String, dynamic> json) {
-    final month = _firstString(json, const ['month', 'label', 'name', 'key', 'period']);
+    final month =
+        _firstString(json, const ['month', 'label', 'name', 'key', 'period']);
     final year = _firstNum(json, const ['year'])?.toInt();
 
     return SuperadminAdoptionPoint(
@@ -306,7 +312,14 @@ class SuperadminRecentVehicle {
           'Unnamed vehicle',
       subtitle: _firstString(
             vehicleType ?? json,
-            const ['name', 'type', 'vehicleType', 'category', 'subtitle', 'slug'],
+            const [
+              'name',
+              'type',
+              'vehicleType',
+              'category',
+              'subtitle',
+              'slug'
+            ],
           ) ??
           'Vehicle',
       status: _firstString(
@@ -394,8 +407,10 @@ class SuperadminRecentUser {
 
   factory SuperadminRecentUser.fromJson(Map<String, dynamic> json) {
     return SuperadminRecentUser(
-      id: _firstString(json, const ['id', '_id', 'userId', 'adminId', 'uid']) ?? '',
-      name: _firstString(json, const ['name', 'fullName', 'displayName']) ?? 'Unknown',
+      id: _firstString(json, const ['id', '_id', 'userId', 'adminId', 'uid']) ??
+          '',
+      name: _firstString(json, const ['name', 'fullName', 'displayName']) ??
+          'Unknown',
       email: _firstString(json, const ['email', 'mail']) ?? '—',
       createdAt: _firstDate(
         json,
@@ -446,8 +461,7 @@ class SuperadminActivityLogPage {
       nextCursorId: _firstNum(
         source,
         const ['nextCursorId', 'cursorId', 'nextId', 'nextCursor'],
-      )
-          ?.toInt(),
+      )?.toInt(),
     );
   }
 }
@@ -508,7 +522,8 @@ class SuperadminActorOption {
   factory SuperadminActorOption.fromJson(Map<String, dynamic> json) {
     return SuperadminActorOption(
       id: _firstInt(json, const ['id', 'adminId', 'userId']),
-      name: _firstString(json, const ['name', 'fullName', 'displayName']) ?? 'Unknown',
+      name: _firstString(json, const ['name', 'fullName', 'displayName']) ??
+          'Unknown',
     );
   }
 

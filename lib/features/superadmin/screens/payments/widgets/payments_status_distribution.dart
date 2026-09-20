@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
@@ -30,14 +29,14 @@ class PaymentsStatusDistribution extends StatelessWidget {
           Text(
             'Status Distribution',
             style: OpenVtsTypography.titleSmall.copyWith(
-              color: OpenVtsColors.textPrimary,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: OpenVtsSpacing.xxs),
           Text(
             'Success, pending, and failed share',
             style: OpenVtsTypography.meta.copyWith(
-              color: OpenVtsColors.textSecondary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
           const SizedBox(height: OpenVtsSpacing.sm),
@@ -51,57 +50,73 @@ class PaymentsStatusDistribution extends StatelessWidget {
               borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
               child: SizedBox(
                 height: 12,
-                child: Row(
-                  children: [
-                    if (success > 0)
-                      Expanded(
-                        flex: success,
-                        child: const DecoratedBox(
-                          decoration: BoxDecoration(color: Color(0xFF2D2A30)),
-                        ),
-                      ),
-                    if (pending > 0)
-                      Expanded(
-                        flex: pending,
-                        child: const DecoratedBox(
-                          decoration: BoxDecoration(color: Color(0xFF79737E)),
-                        ),
-                      ),
-                    if (failed > 0)
-                      Expanded(
-                        flex: failed,
-                        child: const DecoratedBox(
-                          decoration: BoxDecoration(color: Color(0xFFC7C2CC)),
-                        ),
-                      ),
-                  ],
+                child: Builder(
+                  builder: (context) {
+                    final scheme = Theme.of(context).colorScheme;
+                    return Row(
+                      children: [
+                        if (success > 0)
+                          Expanded(
+                            flex: success,
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                color: scheme.secondary,
+                              ),
+                            ),
+                          ),
+                        if (pending > 0)
+                          Expanded(
+                            flex: pending,
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                color: scheme.tertiary,
+                              ),
+                            ),
+                          ),
+                        if (failed > 0)
+                          Expanded(
+                            flex: failed,
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                color: scheme.error,
+                              ),
+                            ),
+                          ),
+                      ],
+                    );
+                  },
                 ),
               ),
             ),
             const SizedBox(height: OpenVtsSpacing.sm),
-            Wrap(
-              spacing: OpenVtsSpacing.sm,
-              runSpacing: OpenVtsSpacing.xs,
-              children: [
-                _LegendItem(
-                  label: 'Success',
-                  value: success,
-                  total: total,
-                  color: const Color(0xFF2D2A30),
-                ),
-                _LegendItem(
-                  label: 'Pending',
-                  value: pending,
-                  total: total,
-                  color: const Color(0xFF79737E),
-                ),
-                _LegendItem(
-                  label: 'Failed',
-                  value: failed,
-                  total: total,
-                  color: const Color(0xFFC7C2CC),
-                ),
-              ],
+            Builder(
+              builder: (context) {
+                final scheme = Theme.of(context).colorScheme;
+                return Wrap(
+                  spacing: OpenVtsSpacing.sm,
+                  runSpacing: OpenVtsSpacing.xs,
+                  children: [
+                    _LegendItem(
+                      label: 'Success',
+                      value: success,
+                      total: total,
+                      color: scheme.secondary,
+                    ),
+                    _LegendItem(
+                      label: 'Pending',
+                      value: pending,
+                      total: total,
+                      color: scheme.tertiary,
+                    ),
+                    _LegendItem(
+                      label: 'Failed',
+                      value: failed,
+                      total: total,
+                      color: scheme.error,
+                    ),
+                  ],
+                );
+              },
             ),
           ],
         ],
@@ -136,14 +151,15 @@ class _LegendItem extends StatelessWidget {
           decoration: BoxDecoration(
             color: color,
             borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
-            border: Border.all(color: OpenVtsColors.border),
+            border:
+                Border.all(color: Theme.of(context).colorScheme.outlineVariant),
           ),
         ),
         const SizedBox(width: OpenVtsSpacing.xxs),
         Text(
           '$label ${percent.toStringAsFixed(1)}%',
           style: OpenVtsTypography.meta.copyWith(
-            color: OpenVtsColors.textSecondary,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
             fontWeight: FontWeight.w600,
           ),
         ),

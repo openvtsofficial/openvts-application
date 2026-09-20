@@ -112,6 +112,18 @@ class SuperadminPaymentAdminOption {
     return uid > 0 ? 'Admin #$uid' : 'Admin';
   }
 
+  /// Space-joined corpus used by [OpenVtsSearchableDropdown] for local search.
+  /// Covers name, username, email, uid string, and currency.
+  String get searchText {
+    return [
+      name,
+      username,
+      email,
+      uid > 0 ? uid.toString() : '',
+      currency,
+    ].where((s) => s.trim().isNotEmpty).join(' ');
+  }
+
   factory SuperadminPaymentAdminOption.fromJson(dynamic json) {
     final source = _asMap(json);
     final uid = _firstInt(
@@ -386,9 +398,12 @@ class SuperadminTransaction {
           const <String, dynamic>{},
       createdAt: _parseDate(createdAtValue),
       createdAtRaw: _valueAsString(createdAtValue) ?? '',
-      fromUser:
-          fromUserMap == null ? null : SuperadminTransactionUser.fromJson(fromUserMap),
-      toUser: toUserMap == null ? null : SuperadminTransactionUser.fromJson(toUserMap),
+      fromUser: fromUserMap == null
+          ? null
+          : SuperadminTransactionUser.fromJson(fromUserMap),
+      toUser: toUserMap == null
+          ? null
+          : SuperadminTransactionUser.fromJson(toUserMap),
       recordedBy: recordedByMap == null
           ? null
           : SuperadminTransactionUser.fromJson(recordedByMap),
@@ -419,9 +434,8 @@ class SuperadminTransactionPage {
     final payload = _normalizeTransactionsPayload(json);
 
     if (payload is List) {
-      final items = payload
-          .map(SuperadminTransaction.fromJson)
-          .toList(growable: false);
+      final items =
+          payload.map(SuperadminTransaction.fromJson).toList(growable: false);
       final resolvedLimit = defaultLimit <= 0 ? 100 : defaultLimit;
       return SuperadminTransactionPage(
         page: defaultPage <= 0 ? 1 : defaultPage,
@@ -437,9 +451,8 @@ class SuperadminTransactionPage {
       preferredKeys: const ['items', 'transactions', 'rows', 'list', 'data'],
     );
 
-    final items = itemsList
-        .map(SuperadminTransaction.fromJson)
-        .toList(growable: false);
+    final items =
+        itemsList.map(SuperadminTransaction.fromJson).toList(growable: false);
 
     final resolvedPage =
         _firstInt(source, const ['page', 'currentPage', 'current_page']) ??
@@ -775,7 +788,8 @@ dynamic _normalizeTransactionsPayload(dynamic json) {
     return const <dynamic>[];
   }
 
-  if (_containsAnyKey(source, const ['items', 'transactions', 'rows', 'list']) ||
+  if (_containsAnyKey(
+          source, const ['items', 'transactions', 'rows', 'list']) ||
       _containsAnyKey(source, const ['page', 'limit', 'total'])) {
     return source;
   }
@@ -788,16 +802,15 @@ dynamic _normalizeTransactionsPayload(dynamic json) {
   return source;
 }
 
-List<SuperadminCurrencyTotal> _parseTotalsByCurrency(Map<String, dynamic> source) {
+List<SuperadminCurrencyTotal> _parseTotalsByCurrency(
+    Map<String, dynamic> source) {
   final list = _extractListPayload(
     source,
     preferredKeys: const ['totalsByCurrency', 'currencyTotals', 'totals'],
   );
 
   if (list.isNotEmpty) {
-    return list
-        .map(SuperadminCurrencyTotal.fromJson)
-        .toList(growable: false);
+    return list.map(SuperadminCurrencyTotal.fromJson).toList(growable: false);
   }
 
   final map = _firstMap(
@@ -825,7 +838,8 @@ List<SuperadminCurrencyTotal> _parseTotalsByCurrency(Map<String, dynamic> source
 
     items.add(
       SuperadminCurrencyTotal(
-        currency: _firstString(valueMap, const ['currency', 'code']) ?? entry.key,
+        currency:
+            _firstString(valueMap, const ['currency', 'code']) ?? entry.key,
         totalAmount: _toAmountString(
           _firstValue(
             valueMap,
@@ -897,9 +911,7 @@ List<SuperadminModeBreakdown> _parseModeBreakdown(Map<String, dynamic> source) {
   );
 
   if (list.isNotEmpty) {
-    return list
-        .map(SuperadminModeBreakdown.fromJson)
-        .toList(growable: false);
+    return list.map(SuperadminModeBreakdown.fromJson).toList(growable: false);
   }
 
   final map = _firstMap(
@@ -916,9 +928,9 @@ List<SuperadminModeBreakdown> _parseModeBreakdown(Map<String, dynamic> source) {
           mode: _parsePaymentMode(entry.key),
           count: _numFromDynamic(entry.value)?.toInt() ??
               _firstInt(
-                    _asMap(entry.value),
-                    const ['count', 'total', 'value'],
-                  ) ??
+                _asMap(entry.value),
+                const ['count', 'total', 'value'],
+              ) ??
               0,
         ),
       )
@@ -939,9 +951,7 @@ List<SuperadminDailySeries> _parseDailySeriesByCurrency(
   );
 
   if (list.isNotEmpty) {
-    return list
-        .map(SuperadminDailySeries.fromJson)
-        .toList(growable: false);
+    return list.map(SuperadminDailySeries.fromJson).toList(growable: false);
   }
 
   final map = _firstMap(
@@ -962,9 +972,7 @@ List<SuperadminDailySeries> _parseDailySeriesByCurrency(
     final points = _extractListPayload(
       entry.value,
       preferredKeys: const ['points', 'series', 'data', 'items'],
-    )
-        .map(SuperadminDailyPoint.fromJson)
-        .toList(growable: false);
+    ).map(SuperadminDailyPoint.fromJson).toList(growable: false);
 
     output.add(
       SuperadminDailySeries(
@@ -1047,7 +1055,8 @@ Map<String, dynamic> _asMap(dynamic value) {
   return const <String, dynamic>{};
 }
 
-Map<String, dynamic>? _firstMap(Map<String, dynamic> source, List<String> keys) {
+Map<String, dynamic>? _firstMap(
+    Map<String, dynamic> source, List<String> keys) {
   for (final key in keys) {
     final map = _asMap(source[key]);
     if (map.isNotEmpty) {

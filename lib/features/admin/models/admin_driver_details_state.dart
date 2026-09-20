@@ -1,4 +1,5 @@
 import 'admin_driver_details_model.dart';
+import 'admin_drivers_model.dart';
 
 enum AdminDriverDetailsTab { profile, documents, users }
 
@@ -6,6 +7,8 @@ class AdminDriverDetailsState {
   const AdminDriverDetailsState({
     required this.driverId,
     required this.driver,
+    this.initialDriver,
+    this.linkedUserCount,
     required this.selectedTab,
     required this.documents,
     required this.documentTypes,
@@ -25,34 +28,40 @@ class AdminDriverDetailsState {
     required this.unassigningUserIds,
     required this.errorMessage,
     required this.sectionErrorMessage,
+    this.profileUpdatedAt,
   });
 
   const AdminDriverDetailsState.initial({required this.driverId})
-    : driver = null,
-      selectedTab = AdminDriverDetailsTab.profile,
-      documents = const <AdminDriverDocument>[],
-      documentTypes = const <AdminDriverDocumentType>[],
-      linkedUsers = const <AdminDriverLinkedUser>[],
-      unlinkedUsers = const <AdminDriverLinkedUser>[],
-      isLoadingDriver = false,
-      isRefreshingDriver = false,
-      isSavingProfile = false,
-      isUpdatingStatus = false,
-      isUpdatingPassword = false,
-      isDeletingDriver = false,
-      isLoadingDocuments = false,
-      isUploadingDocument = false,
-      isDeletingDocument = false,
-      isLoadingUsers = false,
-      isAssigningUser = false,
-      unassigningUserIds = const <String>{},
-      errorMessage = null,
-      sectionErrorMessage = null;
+      : driver = null,
+        initialDriver = null,
+        linkedUserCount = null,
+        selectedTab = AdminDriverDetailsTab.profile,
+        documents = const <AdminDriverDocument>[],
+        documentTypes = const <AdminDriverDocumentType>[],
+        linkedUsers = const <AdminDriverLinkedUser>[],
+        unlinkedUsers = const <AdminDriverLinkedUser>[],
+        isLoadingDriver = false,
+        isRefreshingDriver = false,
+        isSavingProfile = false,
+        isUpdatingStatus = false,
+        isUpdatingPassword = false,
+        isDeletingDriver = false,
+        isLoadingDocuments = false,
+        isUploadingDocument = false,
+        isDeletingDocument = false,
+        isLoadingUsers = false,
+        isAssigningUser = false,
+        unassigningUserIds = const <String>{},
+        errorMessage = null,
+        sectionErrorMessage = null,
+        profileUpdatedAt = null;
 
   static const Object _unset = Object();
 
   final String driverId;
   final AdminDriverDetails? driver;
+  final AdminDriverListItem? initialDriver;
+  final int? linkedUserCount;
   final AdminDriverDetailsTab selectedTab;
   final List<AdminDriverDocument> documents;
   final List<AdminDriverDocumentType> documentTypes;
@@ -73,10 +82,30 @@ class AdminDriverDetailsState {
   final String? errorMessage;
   final String? sectionErrorMessage;
 
+  /// Effective Driver Updated timestamp resolved as:
+  ///   server updatedAt → persisted local edit time → createdAt.
+  /// Persisted via AdminDriverTimestampStorage so it survives provider
+  /// recreation and app restart. Restored during every loadProfile call.
+  final DateTime? profileUpdatedAt;
+
   bool get hasDriver => driver != null;
+
+  bool get effectiveIsActive =>
+      driver?.isActive ?? initialDriver?.isActive ?? false;
+
+  int? get resolvedLinkedUserCount =>
+      linkedUserCount ??
+      (linkedUsers.isNotEmpty ? linkedUsers.length : null) ??
+      (initialDriver?.primaryUserUid.isNotEmpty == true ? 1 : null);
+
+  bool get hasKnownData => driver != null || initialDriver != null;
+
+  bool get hasLoadedUsers => linkedUsers.isNotEmpty || unlinkedUsers.isNotEmpty;
 
   AdminDriverDetailsState copyWith({
     Object? driver = _unset,
+    Object? initialDriver = _unset,
+    Object? linkedUserCount = _unset,
     AdminDriverDetailsTab? selectedTab,
     List<AdminDriverDocument>? documents,
     List<AdminDriverDocumentType>? documentTypes,
@@ -96,12 +125,19 @@ class AdminDriverDetailsState {
     Set<String>? unassigningUserIds,
     Object? errorMessage = _unset,
     Object? sectionErrorMessage = _unset,
+    Object? profileUpdatedAt = _unset,
   }) {
     return AdminDriverDetailsState(
       driverId: driverId,
       driver: identical(driver, _unset)
           ? this.driver
           : driver as AdminDriverDetails?,
+      initialDriver: identical(initialDriver, _unset)
+          ? this.initialDriver
+          : initialDriver as AdminDriverListItem?,
+      linkedUserCount: identical(linkedUserCount, _unset)
+          ? this.linkedUserCount
+          : linkedUserCount as int?,
       selectedTab: selectedTab ?? this.selectedTab,
       documents: documents ?? this.documents,
       documentTypes: documentTypes ?? this.documentTypes,
@@ -125,6 +161,9 @@ class AdminDriverDetailsState {
       sectionErrorMessage: identical(sectionErrorMessage, _unset)
           ? this.sectionErrorMessage
           : sectionErrorMessage as String?,
+      profileUpdatedAt: identical(profileUpdatedAt, _unset)
+          ? this.profileUpdatedAt
+          : profileUpdatedAt as DateTime?,
     );
   }
 }

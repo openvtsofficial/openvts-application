@@ -84,7 +84,9 @@ class _UserSubUsersFilterBarState extends State<UserSubUsersFilterBar> {
                 child: Text(
                   '${widget.visibleCount} visible • ${widget.loadedCount}/${widget.totalCount} loaded',
                   style: OpenVtsTypography.label.copyWith(
-                    color: OpenVtsColors.textPrimary,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.white
+                        : OpenVtsColors.textPrimary,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -172,6 +174,8 @@ class _StatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return InkWell(
       borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
       onTap: onTap,
@@ -180,19 +184,24 @@ class _StatusChip extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12),
         decoration: BoxDecoration(
           color: selected
-              ? OpenVtsColors.brandInk.withValues(alpha: 0.9)
-              : OpenVtsColors.surface,
+              ? (isDarkMode ? OpenVtsColors.white : OpenVtsColors.brandInk)
+              : (isDarkMode ? const Color(0xFF1A1A1A) : OpenVtsColors.surface),
           borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
           border: Border.all(
-            color: selected ? OpenVtsColors.brandInk : OpenVtsColors.border,
+            color: selected
+                ? (isDarkMode ? OpenVtsColors.white : OpenVtsColors.brandInk)
+                : (isDarkMode ? const Color(0xFF333333) : OpenVtsColors.border),
           ),
         ),
         child: Center(
           child: Text(
             label,
             style: OpenVtsTypography.meta.copyWith(
-              color:
-                  selected ? OpenVtsColors.white : OpenVtsColors.textSecondary,
+              color: selected
+                  ? (isDarkMode ? OpenVtsColors.brandInk : OpenVtsColors.white)
+                  : (isDarkMode
+                      ? OpenVtsColors.white
+                      : OpenVtsColors.textSecondary),
               fontWeight: FontWeight.w800,
             ),
           ),

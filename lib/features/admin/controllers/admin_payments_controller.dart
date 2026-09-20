@@ -62,7 +62,8 @@ class AdminPaymentsController extends StateNotifier<AdminPaymentsState> {
 
   Future<void> setSearchQuery(String query) async {
     state = state.copyWith(searchQuery: query);
-    state = state.copyWith(transactions: _applyLocalFilters(_serverItems));
+    // q is a server-side filter; reload from page 1
+    await _loadPayments(page: 1, append: false, refreshing: false);
   }
 
   Future<void> setRangePreset(AdminPaymentsRangePreset preset) async {
@@ -107,7 +108,7 @@ class AdminPaymentsController extends StateNotifier<AdminPaymentsState> {
       selectedStatus: null,
       selectedMode: null,
       searchQuery: '',
-      rangePreset: AdminPaymentsRangePreset.thisMonth,
+      rangePreset: AdminPaymentsRangePreset.last30Days,
       customFrom: null,
       customTo: null,
     );
@@ -135,9 +136,30 @@ class AdminPaymentsController extends StateNotifier<AdminPaymentsState> {
   Future<bool> renewVehicles(AdminRenewPaymentRequest request) async {
     state = state.copyWith(isRenewing: true, errorMessage: null);
     try {
-      await _service.renewVehicles(request);
+      var renewed = await _service.renewVehicles(request);
       if (!mounted) return false;
-      state = state.copyWith(isRenewing: false);
+
+      // If the API response carried no vehicle info, inject it from the
+      // client-side hints the sheet provided (selected vehicle names/plates).
+      if (renewed != null &&
+          renewed.vehicleDisplayName.isEmpty &&
+          request.vehicleHints.isNotEmpty) {
+        final hint = request.vehicleHints.values.first;
+        renewed = renewed.copyWithVehicle(hint);
+      }
+
+      // Optimistically prepend the returned transaction before the full
+      // refresh so the list updates immediately even if the reload is slow.
+      if (renewed != null) {
+        final merged = _mergeById(_serverItems, [renewed]);
+        _serverItems = merged;
+        state = state.copyWith(
+          transactions: _applyLocalFilters(merged),
+          isRenewing: false,
+        );
+      } else {
+        state = state.copyWith(isRenewing: false);
+      }
       await refresh();
       return true;
     } catch (error) {
@@ -194,17 +216,16 @@ class AdminPaymentsController extends StateNotifier<AdminPaymentsState> {
         limit: state.limit,
         userId: state.selectedUserId,
         status: state.selectedStatus,
-        from: state.rangePreset == AdminPaymentsRangePreset.custom
-            ? range.from
-            : null,
-        to: state.rangePreset == AdminPaymentsRangePreset.custom
-            ? range.to
-            : null,
+        from: range.from,
+        to: range.to,
+        q: state.searchQuery.trim().isEmpty ? null : state.searchQuery.trim(),
         refreshKey: state.refreshKey.toString(),
       );
 
-      final merged =
-          append ? _mergeById(_serverItems, response.items) : response.items;
+      // Always merge so that vehicle/display info enriched by prior operations
+      // (e.g. the renewal response's updatedVehicles) is not wiped when the
+      // server returns the same transaction without a vehicle field.
+      final merged = _mergeById(_serverItems, response.items);
       _serverItems = merged;
 
       state = state.copyWith(
@@ -237,10 +258,19 @@ class AdminPaymentsController extends StateNotifier<AdminPaymentsState> {
 
     for (final item in incoming) {
       final key = item.id.isEmpty ? _fallbackKey(item) : item.id;
-      merged[key] = item;
+      // If the incoming item has no vehicle info but the cached copy does,
+      // preserve the cached vehicle map so it isn't wiped by a stale refresh.
+      final existing = merged[key];
+      if (existing != null &&
+          item.vehicleDisplayName.isEmpty &&
+          existing.vehicleDisplayName.isNotEmpty) {
+        merged[key] = item.copyWithVehicle(existing.vehicle);
+      } else {
+        merged[key] = item;
+      }
     }
 
-    final values = merged.values.toList(growable: false)
+    final values = merged.values.toList(growable: true)
       ..sort((a, b) => (b.createdAt?.millisecondsSinceEpoch ?? 0)
           .compareTo(a.createdAt?.millisecondsSinceEpoch ?? 0));
     return values;
@@ -252,45 +282,61 @@ class AdminPaymentsController extends StateNotifier<AdminPaymentsState> {
 
   List<AdminPaymentTransaction> _applyLocalFilters(
       List<AdminPaymentTransaction> items) {
-    final q = state.searchQuery.trim().toLowerCase();
+    // mode is a client-side filter (API does not expose a mode param for /admin/payments)
     return items.where((item) {
-      final modeOk =
-          state.selectedMode == null || item.paymentMode == state.selectedMode;
-      final searchOk = q.isEmpty ||
-          <String>[
-            item.reference,
-            item.provider,
-            item.providerRef,
-            item.toUser?.name ?? '',
-            item.toUser?.username ?? '',
-            item.vehicle['name']?.toString() ?? '',
-            item.vehicle['plateNumber']?.toString() ?? '',
-          ].any((v) => v.toLowerCase().contains(q));
-      return modeOk && searchOk;
-    }).toList(growable: false);
+      return state.selectedMode == null ||
+          item.paymentMode == state.selectedMode;
+    }).toList(growable: true);
   }
 
   _DateRange _resolveRange() {
     final now = DateTime.now();
-    if (state.rangePreset == AdminPaymentsRangePreset.thisMonth) {
-      final from = DateTime(now.year, now.month, 1);
-      final to = DateTime(now.year, now.month + 1, 0, 23, 59, 59);
-      return _DateRange(from, to);
-    }
 
-    if (state.rangePreset == AdminPaymentsRangePreset.last30) {
-      final to = DateTime(now.year, now.month, now.day, 23, 59, 59);
-      final from = to.subtract(const Duration(days: 29));
-      return _DateRange(from, to);
-    }
+    switch (state.rangePreset) {
+      case AdminPaymentsRangePreset.today:
+        final start = DateTime(now.year, now.month, now.day, 0, 0, 0);
+        final end = DateTime(now.year, now.month, now.day, 23, 59, 59);
+        return _DateRange(start, end);
 
-    if (state.rangePreset == AdminPaymentsRangePreset.thisYear) {
-      final from = DateTime(now.year, 1, 1);
-      final to = DateTime(now.year, 12, 31, 23, 59, 59);
-      return _DateRange(from, to);
-    }
+      case AdminPaymentsRangePreset.yesterday:
+        final yesterday = now.subtract(const Duration(days: 1));
+        final start =
+            DateTime(yesterday.year, yesterday.month, yesterday.day, 0, 0, 0);
+        final end = DateTime(
+            yesterday.year, yesterday.month, yesterday.day, 23, 59, 59);
+        return _DateRange(start, end);
 
-    return _DateRange(state.customFrom, state.customTo);
+      case AdminPaymentsRangePreset.last12Hours:
+        final start = now.subtract(const Duration(hours: 12));
+        return _DateRange(start, now);
+
+      case AdminPaymentsRangePreset.last24Hours:
+        final start = now.subtract(const Duration(hours: 24));
+        return _DateRange(start, now);
+
+      case AdminPaymentsRangePreset.last7Days:
+        final start = DateTime(now.year, now.month, now.day - 6, 0, 0, 0);
+        final end = DateTime(now.year, now.month, now.day, 23, 59, 59);
+        return _DateRange(start, end);
+
+      case AdminPaymentsRangePreset.last30Days:
+        final baseDay = DateTime(now.year, now.month, now.day, 23, 59, 59);
+        final start = baseDay.subtract(const Duration(days: 29));
+        return _DateRange(start, baseDay);
+
+      case AdminPaymentsRangePreset.thisMonth:
+        final from = DateTime(now.year, now.month, 1);
+        final to = DateTime(now.year, now.month + 1, 0, 23, 59, 59);
+        return _DateRange(from, to);
+
+      case AdminPaymentsRangePreset.thisYear:
+        final from = DateTime(now.year, 1, 1);
+        final to = DateTime(now.year, 12, 31, 23, 59, 59);
+        return _DateRange(from, to);
+
+      case AdminPaymentsRangePreset.custom:
+        return _DateRange(state.customFrom, state.customTo);
+    }
   }
 
   String _toErrorMessage(Object error) {
@@ -302,7 +348,7 @@ class AdminPaymentsController extends StateNotifier<AdminPaymentsState> {
       }
       return error.message?.trim().isNotEmpty == true
           ? error.message!.trim()
-          : 'Unable to process request.';
+          : 'Unable to load payments.';
     }
 
     final raw = error.toString().trim();

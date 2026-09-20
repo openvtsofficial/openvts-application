@@ -334,7 +334,9 @@ class AdminVehicleLiveStatus {
     );
     final notInstalled = _firstIntOrNull(json, const ['notInstalled']);
     final noDevice = _firstIntOrNull(json, const ['noDevice']) ?? notInstalled;
-    final derivedAll = connected + running + stop + inactive + noData;
+    // Backend invariant: all = running + stop + inactive + noData.
+    // `connected` is a cross-cutting subset, not an additive bucket.
+    final derivedAll = running + stop + inactive + noData;
     final all = explicitAll ?? derivedAll;
     final derivedNoDevice = totalVehicles - all;
 
@@ -454,6 +456,7 @@ class AdminRecentUser {
     required this.email,
     required this.createdAt,
     required this.isActive,
+    this.vehicleCount,
   });
 
   final int uid;
@@ -462,6 +465,8 @@ class AdminRecentUser {
   final String email;
   final DateTime? createdAt;
   final bool isActive;
+  // null means the endpoint did not return a vehicle count for this user.
+  final int? vehicleCount;
 
   factory AdminRecentUser.fromJson(Map<String, dynamic> json) {
     return AdminRecentUser(
@@ -471,6 +476,10 @@ class AdminRecentUser {
       email: _firstString(json, const ['email']) ?? '',
       createdAt: _firstDate(json, const ['createdAt', 'joinedAt']),
       isActive: _firstBool(json, const ['isActive', 'active']),
+      vehicleCount: _firstIntOrNull(
+        json,
+        const ['vehicleCount', 'totalvehicles', 'vehicles', 'vehiclesCount'],
+      ),
     );
   }
 

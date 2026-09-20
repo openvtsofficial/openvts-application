@@ -43,7 +43,11 @@ class AdminPaymentTransactionDetailsSheet extends StatelessWidget {
               Text('To: ${item.toUser?.displayName ?? '-'}'),
               Text('Recorded By: ${item.recordedBy?.displayName ?? '-'}'),
               Text(
-                  'Vehicle: ${item.vehicle['name']?.toString() ?? item.vehicle['plateNumber']?.toString() ?? '-'}'),
+                  'Vehicle: ${item.vehicleDisplayName.isEmpty ? '-' : item.vehicleDisplayName}'),
+              if (item.vehicleImei.isNotEmpty)
+                Text('IMEI: ${item.vehicleImei}'),
+              if (item.planDisplayName.isNotEmpty)
+                Text('Plan: ${item.planDisplayName}'),
               Text(
                   'Failure Code: ${item.failureCode.isEmpty ? '-' : item.failureCode}'),
               Text(

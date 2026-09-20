@@ -5,14 +5,32 @@ import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/utils/validators.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
+import '../../../../../shared/widgets/open_vts_searchable_dropdown.dart';
 import '../../../../../shared/widgets/open_vts_text_field.dart';
 import '../../../controllers/admin_providers.dart';
 import '../../../models/admin_team_model.dart';
 
 class AdminCreateTeamSheet extends ConsumerStatefulWidget {
-  const AdminCreateTeamSheet({required this.isSubmitting, super.key});
+  const AdminCreateTeamSheet({
+    required this.isSubmitting,
+    this.initialMember,
+    super.key,
+  });
+
+  factory AdminCreateTeamSheet.edit({
+    required AdminTeamListItem member,
+    bool isSubmitting = false,
+  }) {
+    return AdminCreateTeamSheet(
+      isSubmitting: isSubmitting,
+      initialMember: member,
+    );
+  }
 
   final bool isSubmitting;
+  final AdminTeamListItem? initialMember;
+
+  bool get isEditMode => initialMember != null;
 
   @override
   ConsumerState<AdminCreateTeamSheet> createState() =>
@@ -36,6 +54,18 @@ class _AdminCreateTeamSheetState extends ConsumerState<AdminCreateTeamSheet> {
   void initState() {
     super.initState();
     _loadMobilePrefixes();
+    _initializeFormData();
+  }
+
+  void _initializeFormData() {
+    final member = widget.initialMember;
+    if (member == null) return;
+
+    _nameController.text = member.teamName;
+    _emailController.text = member.email;
+    _mobileNumberController.text = member.mobileNumber;
+    _mobilePrefix = member.mobilePrefix.isNotEmpty ? member.mobilePrefix : null;
+    _usernameController.text = member.username;
   }
 
   @override
@@ -73,8 +103,7 @@ class _AdminCreateTeamSheetState extends ConsumerState<AdminCreateTeamSheet> {
                   controller: _nameController,
                   textInputAction: TextInputAction.next,
                   prefixIcon: Icons.person_outline_rounded,
-                  validator: (value) =>
-                      Validators.required(value, fieldName: 'Full name'),
+                  validator: Validators.adminName,
                 ),
                 const SizedBox(height: OpenVtsSpacing.sm),
                 OpenVtsTextField(
@@ -86,58 +115,60 @@ class _AdminCreateTeamSheetState extends ConsumerState<AdminCreateTeamSheet> {
                   validator: Validators.email,
                 ),
                 const SizedBox(height: OpenVtsSpacing.sm),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SizedBox(
-                      width: 124,
-                      child: DropdownButtonFormField<String>(
-                        key: ValueKey<String?>(
-                          'team-mobile-prefix-${_mobilePrefix ?? ''}',
-                        ),
-                        initialValue: _mobilePrefix,
-                        items: _mobilePrefixes
-                            .map(
-                              (item) => DropdownMenuItem<String>(
-                                value: item.code,
-                                child: Text(
-                                  item.code,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            )
-                            .toList(growable: false),
-                        decoration: const InputDecoration(
-                          labelText: 'Mobile Prefix',
-                          prefixIcon: Icon(
-                            Icons.phone_android_rounded,
-                            size: 20,
-                          ),
-                        ),
-                        onChanged: widget.isSubmitting
-                            ? null
-                            : (value) => setState(() => _mobilePrefix = value),
-                        validator: (value) => Validators.required(
-                          value,
-                          fieldName: 'Mobile prefix',
-                        ),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final availableWidth = constraints.maxWidth;
+                    final isTablet = availableWidth >= 600;
+
+                    final prefixDropdown = AdminTeamMobilePrefixDropdown(
+                      key: ValueKey<String?>(
+                        'team-mobile-prefix-${_mobilePrefix ?? ''}',
                       ),
-                    ),
-                    const SizedBox(width: OpenVtsSpacing.sm),
-                    Expanded(
-                      child: OpenVtsTextField(
-                        label: 'Mobile Number',
-                        controller: _mobileNumberController,
-                        keyboardType: TextInputType.phone,
-                        textInputAction: TextInputAction.next,
-                        prefixIcon: Icons.phone_rounded,
-                        validator: (value) => Validators.required(
-                          value,
-                          fieldName: 'Mobile number',
+                      value: _mobilePrefix,
+                      prefixes: _mobilePrefixes,
+                      isLoading: _isLoadingPrefixes,
+                      enabled: !widget.isSubmitting,
+                      onChanged: widget.isSubmitting
+                          ? (_) {}
+                          : (value) => setState(() => _mobilePrefix = value),
+                    );
+
+                    final numberField = OpenVtsTextField(
+                      label: 'Mobile Number',
+                      controller: _mobileNumberController,
+                      keyboardType: TextInputType.phone,
+                      textInputAction: TextInputAction.next,
+                      prefixIcon: Icons.phone_rounded,
+                      validator: Validators.mobileNumber,
+                    );
+
+                    if (!isTablet) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          prefixDropdown,
+                          const SizedBox(height: OpenVtsSpacing.sm),
+                          numberField,
+                        ],
+                      );
+                    }
+
+                    final prefixWidth =
+                        (availableWidth * 0.30).clamp(110.0, 140.0);
+                    final gapWidth = OpenVtsSpacing.md;
+
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(
+                          width: prefixWidth,
+                          child: prefixDropdown,
                         ),
-                      ),
-                    ),
-                  ],
+                        SizedBox(width: gapWidth),
+                        Expanded(child: numberField),
+                      ],
+                    );
+                  },
                 ),
                 const SizedBox(height: OpenVtsSpacing.sm),
                 OpenVtsTextField(
@@ -145,31 +176,33 @@ class _AdminCreateTeamSheetState extends ConsumerState<AdminCreateTeamSheet> {
                   controller: _usernameController,
                   textInputAction: TextInputAction.next,
                   prefixIcon: Icons.alternate_email_rounded,
-                  validator: (value) =>
-                      Validators.required(value, fieldName: 'Username'),
+                  validator: Validators.adminUsername,
                 ),
-                const SizedBox(height: OpenVtsSpacing.sm),
-                OpenVtsTextField(
-                  label: 'Password',
-                  controller: _passwordController,
-                  obscureText: _obscurePassword,
-                  textInputAction: TextInputAction.done,
-                  prefixIcon: Icons.lock_outline_rounded,
-                  suffixIcon: IconButton(
-                    tooltip:
-                        _obscurePassword ? 'Show password' : 'Hide password',
-                    onPressed: () {
-                      setState(() => _obscurePassword = !_obscurePassword);
-                    },
-                    icon: Icon(
-                      _obscurePassword
-                          ? Icons.visibility_outlined
-                          : Icons.visibility_off_outlined,
-                      size: 18,
+                if (!widget.isEditMode) ...[
+                  const SizedBox(height: OpenVtsSpacing.sm),
+                  OpenVtsTextField(
+                    label: 'Password',
+                    controller: _passwordController,
+                    obscureText: _obscurePassword,
+                    textInputAction: TextInputAction.done,
+                    prefixIcon: Icons.lock_outline_rounded,
+                    suffixIcon: IconButton(
+                      tooltip:
+                          _obscurePassword ? 'Show password' : 'Hide password',
+                      onPressed: () {
+                        setState(() => _obscurePassword = !_obscurePassword);
+                      },
+                      icon: Icon(
+                        _obscurePassword
+                            ? Icons.visibility_outlined
+                            : Icons.visibility_off_outlined,
+                        size: 18,
+                      ),
                     ),
+                    validator: _passwordValidator,
                   ),
-                  validator: _passwordValidator,
-                ),
+                ] else
+                  const SizedBox(height: 0),
               ],
             ),
           ),
@@ -177,7 +210,12 @@ class _AdminCreateTeamSheetState extends ConsumerState<AdminCreateTeamSheet> {
           SafeArea(
             top: false,
             child: Padding(
-              padding: const EdgeInsets.all(OpenVtsSpacing.md),
+              padding: EdgeInsets.fromLTRB(
+                OpenVtsSpacing.md,
+                OpenVtsSpacing.md,
+                OpenVtsSpacing.md,
+                OpenVtsSpacing.md + MediaQuery.of(context).viewInsets.bottom,
+              ),
               child: Row(
                 children: [
                   Expanded(
@@ -192,10 +230,12 @@ class _AdminCreateTeamSheetState extends ConsumerState<AdminCreateTeamSheet> {
                   const SizedBox(width: OpenVtsSpacing.sm),
                   Expanded(
                     child: OpenVtsButton(
-                      label: 'Save',
+                      label: widget.isEditMode ? 'Update' : 'Save',
                       onPressed: widget.isSubmitting ? null : _submit,
                       isLoading: widget.isSubmitting,
-                      trailingIcon: Icons.person_add_alt_1_rounded,
+                      trailingIcon: widget.isEditMode
+                          ? Icons.check_rounded
+                          : Icons.person_add_alt_1_rounded,
                     ),
                   ),
                 ],
@@ -247,6 +287,14 @@ class _AdminCreateTeamSheetState extends ConsumerState<AdminCreateTeamSheet> {
       return;
     }
 
+    if (widget.isEditMode) {
+      await _submitEdit();
+    } else {
+      await _submitCreate();
+    }
+  }
+
+  Future<void> _submitCreate() async {
     final request = AdminCreateTeamRequest(
       name: _nameController.text,
       email: _emailController.text,
@@ -277,6 +325,40 @@ class _AdminCreateTeamSheetState extends ConsumerState<AdminCreateTeamSheet> {
     );
   }
 
+  Future<void> _submitEdit() async {
+    final member = widget.initialMember;
+    if (member == null) {
+      return;
+    }
+
+    final request = AdminUpdateTeamRequest(
+      name: _nameController.text,
+      email: _emailController.text,
+      mobilePrefix: _mobilePrefix ?? '',
+      mobileNumber: _mobileNumberController.text,
+      username: _usernameController.text,
+    );
+
+    final success = await ref
+        .read(adminTeamControllerProvider.notifier)
+        .updateTeam(member.id, request);
+
+    if (!mounted) {
+      return;
+    }
+
+    if (success) {
+      Navigator.of(context).pop();
+      ToastHelper.showSuccess('Team member updated.', context: context);
+      return;
+    }
+
+    ToastHelper.showError(
+      'Unable to update team member.',
+      context: context,
+    );
+  }
+
   String? _passwordValidator(String? value) {
     final requiredError = Validators.required(value, fieldName: 'Password');
     if (requiredError != null) {
@@ -288,5 +370,51 @@ class _AdminCreateTeamSheetState extends ConsumerState<AdminCreateTeamSheet> {
     }
 
     return null;
+  }
+}
+
+class AdminTeamMobilePrefixDropdown extends StatelessWidget {
+  const AdminTeamMobilePrefixDropdown({
+    required this.value,
+    required this.prefixes,
+    required this.onChanged,
+    this.isLoading = false,
+    this.enabled = true,
+    super.key,
+  });
+
+  final String? value;
+  final List<AdminTeamMobilePrefixOption> prefixes;
+  final ValueChanged<String?> onChanged;
+  final bool isLoading;
+  final bool enabled;
+
+  @override
+  Widget build(BuildContext context) {
+    return OpenVtsSearchableDropdown<String>(
+      label: 'Mobile Prefix',
+      value: value,
+      options: prefixes
+          .map(
+            (item) => OpenVtsDropdownOption<String>(
+              value: item.code,
+              label: item.code,
+              subtitle: item.country.trim().isEmpty ? null : item.country,
+              searchText: '${item.code} ${item.country} ${item.label}',
+            ),
+          )
+          .toList(growable: false),
+      hintText: '+91',
+      searchHintText: 'Search dial code or country',
+      leadingIcon: Icons.phone_android_rounded,
+      isLoading: isLoading,
+      enabled: enabled,
+      required: true,
+      validator: (selected) => Validators.required(
+        selected,
+        fieldName: 'Mobile prefix',
+      ),
+      onChanged: onChanged,
+    );
   }
 }

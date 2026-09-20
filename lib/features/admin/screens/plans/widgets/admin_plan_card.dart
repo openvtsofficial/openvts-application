@@ -34,7 +34,9 @@ class AdminPlanCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: OpenVtsTypography.label.copyWith(
-                    color: OpenVtsColors.textPrimary,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? OpenVtsColors.darkTextPrimary
+                        : OpenVtsColors.textPrimary,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -106,12 +108,19 @@ class _InfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.only(top: OpenVtsSpacing.xxs),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 14, color: OpenVtsColors.textSecondary),
+          Icon(
+            icon,
+            size: 14,
+            color: isDark
+                ? OpenVtsColors.darkTextSecondary
+                : OpenVtsColors.textSecondary,
+          ),
           const SizedBox(width: OpenVtsSpacing.xs),
           Expanded(
             child: Text(
@@ -119,7 +128,9 @@ class _InfoRow extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: OpenVtsTypography.meta.copyWith(
-                color: OpenVtsColors.textSecondary,
+                color: isDark
+                    ? OpenVtsColors.darkTextSecondary
+                    : OpenVtsColors.textSecondary,
               ),
             ),
           ),

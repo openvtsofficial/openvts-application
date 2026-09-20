@@ -20,6 +20,8 @@ class UserNotificationChannelCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final groupLabel = _groupLabel(selectedGroup);
     final channels = <_ChannelRowItem>[
       _ChannelRowItem(
@@ -56,7 +58,7 @@ class UserNotificationChannelCard extends StatelessWidget {
           Text(
             '$groupLabel Delivery Channels',
             style: OpenVtsTypography.meta.copyWith(
-              color: OpenVtsColors.textSecondary,
+              color: isDark ? OpenVtsColors.white : OpenVtsColors.textSecondary,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -64,7 +66,9 @@ class UserNotificationChannelCard extends StatelessWidget {
           Text(
             'Choose where alerts are delivered for this notification group.',
             style: OpenVtsTypography.meta.copyWith(
-              color: OpenVtsColors.textTertiary,
+              color: isDark
+                  ? OpenVtsColors.white.withValues(alpha: 0.7)
+                  : OpenVtsColors.textTertiary,
             ),
           ),
           const SizedBox(height: OpenVtsSpacing.xs),
@@ -80,9 +84,9 @@ class UserNotificationChannelCard extends StatelessWidget {
                   onChanged: (value) => onChanged(item.channel, value),
                 ),
                 if (index != channels.length - 1)
-                  const Divider(
+                  Divider(
                     height: OpenVtsSpacing.sm,
-                    color: OpenVtsColors.border,
+                    color: isDark ? OpenVtsColors.white : OpenVtsColors.border,
                   ),
               ],
             );
@@ -98,8 +102,12 @@ class UserNotificationChannelCard extends StatelessWidget {
         return 'Basic';
       case UserNotificationGroup.overspeed:
         return 'Overspeed';
+      case UserNotificationGroup.duration:
+        return 'Duration';
       case UserNotificationGroup.geofence:
         return 'Geofence';
+      case UserNotificationGroup.route:
+        return 'Route';
     }
   }
 }
@@ -117,6 +125,9 @@ class _ChannelToggleRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return SizedBox(
       height: 44,
       child: Row(
@@ -124,14 +135,16 @@ class _ChannelToggleRow extends StatelessWidget {
           Icon(
             item.icon,
             size: 15,
-            color: OpenVtsColors.textSecondary,
+            color: isDark
+                ? OpenVtsColors.white.withValues(alpha: 0.7)
+                : OpenVtsColors.textSecondary,
           ),
           const SizedBox(width: OpenVtsSpacing.xs),
           Expanded(
             child: Text(
               item.label,
               style: OpenVtsTypography.body.copyWith(
-                color: OpenVtsColors.textPrimary,
+                color: isDark ? OpenVtsColors.white : OpenVtsColors.textPrimary,
               ),
               overflow: TextOverflow.ellipsis,
             ),

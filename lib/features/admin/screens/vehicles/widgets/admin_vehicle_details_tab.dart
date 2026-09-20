@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../core/theme/open_vts_spacing.dart';
+import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../models/admin_vehicle_model.dart';
@@ -28,63 +29,91 @@ class AdminVehicleDetailsOverviewTab extends StatelessWidget {
     return Column(
       children: [
         OpenVtsCard(
+          padding: const EdgeInsets.all(OpenVtsSpacing.md),
           child: _Section(
             title: 'Identity',
-            rows: [
-              _kv('Name', vehicle.name),
-              _kv('Plate Number', vehicle.plateNumber),
-              _kv('VIN', vehicle.vin),
-              _kv('Type', vehicle.vehicleType?.name ?? '-'),
+            items: [
+              _SectionItem(label: 'Name', value: vehicle.name),
+              _SectionItem(label: 'Plate Number', value: vehicle.plateNumber),
+              _SectionItem(label: 'VIN', value: vehicle.vin),
+              _SectionItem(
+                  label: 'Type', value: vehicle.vehicleType?.name ?? '-'),
             ],
           ),
         ),
         const SizedBox(height: OpenVtsSpacing.sm),
         OpenVtsCard(
+          padding: const EdgeInsets.all(OpenVtsSpacing.md),
           child: _Section(
             title: 'Device',
-            rows: [
-              _kv('IMEI', vehicle.imei),
-              _kv('SIM', vehicle.simNumber),
-              _kv('Speed Variation', _num(vehicle.device?.speedVariation)),
-              _kv('Distance Variation',
-                  _num(vehicle.device?.distanceVariation)),
-              _kv('Odometer', _num(vehicle.device?.odometer)),
-              _kv('Engine Hours', _num(vehicle.device?.engineHours)),
-              _kv('Ignition Source', vehicle.device?.ignitionSource ?? '-'),
+            items: [
+              _SectionItem(label: 'IMEI', value: vehicle.imei),
+              _SectionItem(label: 'SIM', value: vehicle.simNumber),
+              _SectionItem(
+                label: 'Speed Variation',
+                value: _num(vehicle.device?.speedVariation),
+              ),
+              _SectionItem(
+                label: 'Distance Variation',
+                value: _num(vehicle.device?.distanceVariation),
+              ),
+              _SectionItem(
+                  label: 'Odometer', value: _num(vehicle.device?.odometer)),
+              _SectionItem(
+                  label: 'Engine Hours',
+                  value: _num(vehicle.device?.engineHours)),
+              _SectionItem(
+                label: 'Ignition Source',
+                value: vehicle.device?.ignitionSource ?? '-',
+              ),
             ],
           ),
         ),
         const SizedBox(height: OpenVtsSpacing.sm),
         OpenVtsCard(
+          padding: const EdgeInsets.all(OpenVtsSpacing.md),
           child: _Section(
             title: 'Ownership',
-            rows: [
-              _kv('Primary User', vehicle.primaryUser?.name ?? '-'),
-              _kv('Plan', vehicle.plan?.name ?? '-'),
+            items: [
+              _SectionItem(
+                label: 'Primary User',
+                value: vehicle.primaryUser?.displayName.isNotEmpty == true
+                    ? vehicle.primaryUser!.displayName
+                    : '-',
+              ),
+              _SectionItem(label: 'Plan', value: vehicle.plan?.name ?? '-'),
             ],
           ),
         ),
         const SizedBox(height: OpenVtsSpacing.sm),
         OpenVtsCard(
+          padding: const EdgeInsets.all(OpenVtsSpacing.md),
           child: _Section(
             title: 'Dates',
-            rows: [
-              _kv('Created At', _date(vehicle.createdAt)),
-              _kv('Updated At', _date(vehicle.updatedAt)),
+            items: [
+              _SectionItem(
+                  label: 'Created At', value: _date(vehicle.createdAt)),
+              _SectionItem(
+                  label: 'Updated At', value: _date(vehicle.displayUpdatedAt)),
             ],
           ),
         ),
-        const SizedBox(height: OpenVtsSpacing.sm),
-        OpenVtsCard(
-          child: _Section(
-            title: 'Metadata',
-            rows: vehicle.vehicleMeta.entries
-                .map((entry) => _kv(entry.key, entry.value?.toString() ?? '-'))
-                .toList(growable: false),
+        if (vehicle.vehicleMeta.isNotEmpty) ...[
+          const SizedBox(height: OpenVtsSpacing.sm),
+          OpenVtsCard(
+            padding: const EdgeInsets.all(OpenVtsSpacing.md),
+            child: _Section(
+              title: 'Metadata',
+              items: vehicle.vehicleMeta.entries
+                  .map((e) => _SectionItem(
+                      label: e.key, value: e.value?.toString() ?? '-'))
+                  .toList(growable: false),
+            ),
           ),
-        ),
+        ],
         const SizedBox(height: OpenVtsSpacing.sm),
         OpenVtsCard(
+          padding: const EdgeInsets.all(OpenVtsSpacing.md),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -116,9 +145,6 @@ class AdminVehicleDetailsOverviewTab extends StatelessWidget {
     );
   }
 
-  List<_KV> _kv(String label, String value) =>
-      [_KV(label: label, value: value.trim().isEmpty ? '-' : value)];
-
   String _date(DateTime? value) {
     if (value == null) return '-';
     return value
@@ -133,31 +159,74 @@ class AdminVehicleDetailsOverviewTab extends StatelessWidget {
 }
 
 class _Section extends StatelessWidget {
-  const _Section({required this.title, required this.rows});
+  const _Section({required this.title, required this.items});
 
   final String title;
-  final List<List<_KV>> rows;
+  final List<_SectionItem> items;
 
   @override
   Widget build(BuildContext context) {
-    final flat = rows.expand((e) => e).toList(growable: false);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(title, style: Theme.of(context).textTheme.titleSmall),
-        const SizedBox(height: OpenVtsSpacing.xs),
-        ...flat.map((item) => Padding(
-              padding: const EdgeInsets.only(bottom: 2),
-              child: Text('${item.label}: ${item.value}'),
-            )),
+        const SizedBox(height: OpenVtsSpacing.sm),
+        ...items.asMap().entries.map((entry) {
+          final isLast = entry.key == items.length - 1;
+          return Padding(
+            padding: EdgeInsets.only(bottom: isLast ? 0 : OpenVtsSpacing.xs),
+            child: _LabelValueRow(
+              label: entry.value.label,
+              value: entry.value.value,
+            ),
+          );
+        }),
       ],
     );
   }
 }
 
-class _KV {
-  const _KV({required this.label, required this.value});
+class _SectionItem {
+  const _SectionItem({required this.label, required this.value});
 
   final String label;
   final String value;
+}
+
+class _LabelValueRow extends StatelessWidget {
+  const _LabelValueRow({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final displayValue = value.trim().isEmpty ? '-' : value;
+    return Row(
+      children: [
+        Expanded(
+          flex: 2,
+          child: Text(
+            label,
+            style: OpenVtsTypography.meta.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ),
+        Expanded(
+          flex: 3,
+          child: Text(
+            displayValue,
+            style: OpenVtsTypography.meta.copyWith(
+              fontWeight: FontWeight.w600,
+              color: colorScheme.onSurface,
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
+  }
 }

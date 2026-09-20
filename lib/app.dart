@@ -1,17 +1,20 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:open_vts/app_entry.dart';
 
 import 'core/notifications/mobile_push_lifecycle_observer.dart';
 import 'core/notifications/mobile_push_navigation.dart';
 import 'core/notifications/mobile_push_service.dart';
+import 'core/providers/app_preferences_provider.dart';
 import 'core/providers/core_providers.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/open_vts_theme.dart';
 import 'features/auth/controllers/auth_controller.dart';
 import 'features/auth/controllers/auth_state.dart';
+import 'l10n/app_localizations.dart';
 import 'shared/helpers/toast_helper.dart';
 
 class App extends ConsumerWidget {
@@ -20,7 +23,7 @@ class App extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(appRouterProvider);
-    final themeMode = ref.watch(themeModeProvider);
+    final prefs = ref.watch(appLocalizationPreferencesProvider);
 
     return _MobilePushLifecycleScope(
       child: MaterialApp.router(
@@ -29,11 +32,22 @@ class App extends ConsumerWidget {
         scaffoldMessengerKey: ToastHelper.messengerKey,
         theme: OpenVtsTheme.light,
         darkTheme: OpenVtsTheme.dark,
-        themeMode: themeMode,
+        themeMode: prefs.themeMode,
+        locale: Locale(prefs.languageCode),
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
         routerConfig: router,
-        builder: (context, child) => AppEntry(
-          child: child ?? const SizedBox.shrink(),
-        ),
+        builder: (context, child) {
+          return Directionality(
+            textDirection: prefs.textDirection,
+            child: AppEntry(child: child ?? const SizedBox.shrink()),
+          );
+        },
       ),
     );
   }
@@ -82,13 +96,13 @@ class _MobilePushLifecycleScopeState
         final authState = ref.read(authControllerProvider);
         final controller = ref.read(mobilePushControllerProvider.notifier);
         controller.updateAuthenticationState(
-          isAuthenticated: authState.isAuthenticated,
+          isAuthenticated: authState.isRealSession,
         );
         // Hydrate cached push state only. Do not trigger remote config
         // fetches or token registration at cold startup — those are gated
         // and performed only after auth/session restore when allowed.
         unawaited(controller.initializeAfterAppStart());
-        if (authState.isAuthenticated) {
+        if (authState.isRealSession) {
           unawaited(
             _mobilePushNavigation.consumePendingNotificationTapIfPossible(),
           );
@@ -111,7 +125,7 @@ class _MobilePushLifecycleScopeState
     ref.listen<AuthState>(authControllerProvider, (previous, next) {
       final controller = ref.read(mobilePushControllerProvider.notifier);
       controller.updateAuthenticationState(
-        isAuthenticated: next.isAuthenticated,
+        isAuthenticated: next.isRealSession,
       );
 
       if (_shouldRegisterForAuthChange(previous, next)) {
@@ -121,7 +135,7 @@ class _MobilePushLifecycleScopeState
           unawaited(controller.registerTokenForCurrentSession());
         }
       }
-      if (next.isAuthenticated) {
+      if (next.isRealSession) {
         unawaited(
           _mobilePushNavigation.consumePendingNotificationTapIfPossible(),
         );
@@ -135,23 +149,23 @@ class _MobilePushLifecycleScopeState
     final authState = ref.read(authControllerProvider);
     final controller = ref.read(mobilePushControllerProvider.notifier);
     controller.updateAuthenticationState(
-      isAuthenticated: authState.isAuthenticated,
+      isAuthenticated: authState.isRealSession,
     );
 
     // Resume path must not await network work and should only attempt
     // fire-and-forget registration when cached gating allows it.
-    if (authState.isAuthenticated &&
+    if (authState.isRealSession &&
         controller.shouldAttemptBackgroundRegistration) {
       unawaited(controller.registerTokenForCurrentSession());
     }
   }
 
   bool _shouldRegisterForAuthChange(AuthState? previous, AuthState next) {
-    if (!next.isAuthenticated) {
+    if (!next.isRealSession) {
       return false;
     }
 
-    return previous?.isAuthenticated != true ||
+    return previous?.isRealSession != true ||
         previous?.user?.id != next.user?.id ||
         previous?.activeRole != next.activeRole;
   }

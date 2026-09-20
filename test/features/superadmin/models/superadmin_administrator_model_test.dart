@@ -59,7 +59,8 @@ void main() {
     expect(second.lastLoginAt, isNotNull);
   });
 
-  test('falls back to username, list counts, and human-readable login strings', () {
+  test('falls back to username, list counts, and human-readable login strings',
+      () {
     final page = SuperadminAdministratorPage.fromJson(<String, dynamic>{
       'items': <Map<String, dynamic>>[
         <String, dynamic>{

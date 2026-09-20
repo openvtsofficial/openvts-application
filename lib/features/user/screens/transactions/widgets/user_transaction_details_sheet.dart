@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../../core/theme/open_vts_colors.dart';
@@ -14,8 +15,6 @@ import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../../../shared/widgets/open_vts_status_chip.dart';
 import '../../../models/user_transactions_model.dart';
 import 'user_transaction_detail_row.dart';
-
-const DateTimeFormatter _sheetDateFormatter = DateTimeFormatter();
 
 Future<void> showUserTransactionDetailsSheet({
   required BuildContext context,
@@ -34,7 +33,7 @@ Future<void> showUserTransactionDetailsSheet({
   );
 }
 
-class UserTransactionDetailsSheet extends StatelessWidget {
+class UserTransactionDetailsSheet extends ConsumerWidget {
   const UserTransactionDetailsSheet({
     required this.transaction,
     this.currentUserId,
@@ -45,7 +44,8 @@ class UserTransactionDetailsSheet extends StatelessWidget {
   final String? currentUserId;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final sheetDateFormatter = ref.watch(appDateFormatterProvider);
     final hasFailure = transaction.status == UserTransactionStatus.failed ||
         _hasReadable(transaction.failureCode) ||
         _hasReadable(transaction.failureMessage);
@@ -57,9 +57,15 @@ class UserTransactionDetailsSheet extends StatelessWidget {
       minChildSize: 0.52,
       maxChildSize: 0.96,
       builder: (context, scrollController) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        final sheetBgColor =
+            isDark ? Colors.black : OpenVtsColors.surfaceElevated;
+        final dividerColor = isDark ? Colors.white10 : OpenVtsColors.divider;
+        final titleColor = isDark ? Colors.white : OpenVtsColors.textPrimary;
+
         return DecoratedBox(
-          decoration: const BoxDecoration(
-            color: OpenVtsColors.surfaceElevated,
+          decoration: BoxDecoration(
+            color: sheetBgColor,
             borderRadius: BorderRadius.vertical(
               top: Radius.circular(OpenVtsRadius.lg),
             ),
@@ -72,7 +78,7 @@ class UserTransactionDetailsSheet extends StatelessWidget {
                   width: 42,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: OpenVtsColors.border,
+                    color: dividerColor,
                     borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
                   ),
                 ),
@@ -87,7 +93,7 @@ class UserTransactionDetailsSheet extends StatelessWidget {
                       child: Text(
                         'Transaction Details',
                         style: OpenVtsTypography.label.copyWith(
-                          color: OpenVtsColors.textPrimary,
+                          color: titleColor,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -104,7 +110,16 @@ class UserTransactionDetailsSheet extends StatelessWidget {
                   ],
                 ),
               ),
-              const Divider(height: 1, color: OpenVtsColors.divider),
+              Builder(
+                builder: (context) {
+                  final isDark =
+                      Theme.of(context).brightness == Brightness.dark;
+                  return Divider(
+                    height: 1,
+                    color: isDark ? Colors.white10 : OpenVtsColors.divider,
+                  );
+                },
+              ),
               Expanded(
                 child: ListView(
                   controller: scrollController,
@@ -126,7 +141,8 @@ class UserTransactionDetailsSheet extends StatelessWidget {
                         ),
                         _SheetRow(
                           label: 'Date/Time',
-                          value: _dateTimeLabel(transaction),
+                          value:
+                              _dateTimeLabel(transaction, sheetDateFormatter),
                         ),
                         _SheetRow(
                           label: 'Payment Type',
@@ -328,9 +344,9 @@ class UserTransactionDetailsSheet extends StatelessWidget {
     return normalizedCurrent == candidateId.toString();
   }
 
-  String _dateTimeLabel(UserTransaction source) {
+  String _dateTimeLabel(UserTransaction source, dynamic formatter) {
     if (source.createdAt != null) {
-      return _sheetDateFormatter.formatDateTime(source.createdAt!.toLocal());
+      return formatter.formatDateTime(source.createdAt!.toLocal());
     }
 
     return _safeValue(source.createdAtRaw);
@@ -371,6 +387,10 @@ class _AmountSummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final labelColor = isDark ? Colors.grey[300] : OpenVtsColors.textSecondary;
+    final amountColor = isDark ? Colors.white : OpenVtsColors.textPrimary;
+
     return OpenVtsCard(
       padding: const EdgeInsets.all(OpenVtsSpacing.sm),
       child: Row(
@@ -383,7 +403,7 @@ class _AmountSummaryCard extends StatelessWidget {
                 Text(
                   'Amount',
                   style: OpenVtsTypography.meta.copyWith(
-                    color: OpenVtsColors.textSecondary,
+                    color: labelColor,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -392,7 +412,7 @@ class _AmountSummaryCard extends StatelessWidget {
                   _amountText(transaction),
                   style: OpenVtsTypography.numeric.copyWith(
                     fontSize: 22,
-                    color: OpenVtsColors.textPrimary,
+                    color: amountColor,
                   ),
                 ),
               ],
@@ -451,6 +471,10 @@ class _SectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final titleColor = isDark ? Colors.grey[300] : OpenVtsColors.textSecondary;
+    final dividerColor = isDark ? Colors.white10 : OpenVtsColors.divider;
+
     return OpenVtsCard(
       padding: const EdgeInsets.all(OpenVtsSpacing.sm),
       child: Column(
@@ -459,7 +483,7 @@ class _SectionCard extends StatelessWidget {
           Text(
             title,
             style: OpenVtsTypography.meta.copyWith(
-              color: OpenVtsColors.textSecondary,
+              color: titleColor,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -469,10 +493,10 @@ class _SectionCard extends StatelessWidget {
             return Column(
               children: [
                 if (index > 0)
-                  const Divider(
+                  Divider(
                     height: 1,
                     thickness: 0.5,
-                    color: OpenVtsColors.divider,
+                    color: dividerColor,
                   ),
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 9),
@@ -500,6 +524,12 @@ class _MetadataCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final titleColor = isDark ? Colors.grey[300] : OpenVtsColors.textSecondary;
+    final containerBgColor = isDark ? Colors.black : OpenVtsColors.surface;
+    final borderColor = isDark ? Colors.white : OpenVtsColors.border;
+    final textColor = isDark ? Colors.white : OpenVtsColors.textPrimary;
+
     return OpenVtsCard(
       padding: const EdgeInsets.all(OpenVtsSpacing.sm),
       child: Column(
@@ -508,7 +538,7 @@ class _MetadataCard extends StatelessWidget {
           Text(
             'Metadata',
             style: OpenVtsTypography.meta.copyWith(
-              color: OpenVtsColors.textSecondary,
+              color: titleColor,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -518,9 +548,12 @@ class _MetadataCard extends StatelessWidget {
             constraints: const BoxConstraints(maxHeight: 220),
             padding: const EdgeInsets.all(OpenVtsSpacing.sm),
             decoration: BoxDecoration(
-              color: OpenVtsColors.surface,
+              color: containerBgColor,
               borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-              border: Border.all(color: OpenVtsColors.border),
+              border: Border.all(
+                color: borderColor,
+                width: isDark ? 1 : 1,
+              ),
             ),
             child: Scrollbar(
               thumbVisibility: false,
@@ -530,7 +563,7 @@ class _MetadataCard extends StatelessWidget {
                   child: SelectableText(
                     _prettyJson(meta),
                     style: OpenVtsTypography.meta.copyWith(
-                      color: OpenVtsColors.textPrimary,
+                      color: textColor,
                       fontFamily: 'Courier New',
                       height: 1.35,
                     ),

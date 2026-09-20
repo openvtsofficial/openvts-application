@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:file_picker/file_picker.dart';
 
+const Object _copyWithUnset = Object();
+
 class UserDriver {
   const UserDriver({
     required this.id,
@@ -47,6 +49,52 @@ class UserDriver {
 
   UserDriverVehicleMini? get assignedVehicle => vehicleAssignment?.vehicle;
   bool get hasAssignedVehicle => vehicleAssignment?.hasVehicle ?? false;
+
+  UserDriver copyWith({
+    String? id,
+    String? name,
+    String? mobilePrefix,
+    String? mobile,
+    String? email,
+    String? username,
+    String? countryCode,
+    String? stateCode,
+    String? city,
+    String? address,
+    String? pincode,
+    String? status,
+    bool? isActive,
+    bool? isVerified,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    Map<String, dynamic>? attributes,
+    UserDriverAddress? addressDetails,
+    Object? vehicleAssignment = _copyWithUnset,
+  }) {
+    return UserDriver(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      mobilePrefix: mobilePrefix ?? this.mobilePrefix,
+      mobile: mobile ?? this.mobile,
+      email: email ?? this.email,
+      username: username ?? this.username,
+      countryCode: countryCode ?? this.countryCode,
+      stateCode: stateCode ?? this.stateCode,
+      city: city ?? this.city,
+      address: address ?? this.address,
+      pincode: pincode ?? this.pincode,
+      status: status ?? this.status,
+      isActive: isActive ?? this.isActive,
+      isVerified: isVerified ?? this.isVerified,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      attributes: attributes ?? this.attributes,
+      addressDetails: addressDetails ?? this.addressDetails,
+      vehicleAssignment: identical(vehicleAssignment, _copyWithUnset)
+          ? this.vehicleAssignment
+          : vehicleAssignment as UserDriverVehicleAssignment?,
+    );
+  }
 
   String get searchContent {
     return <String>[
@@ -208,6 +256,26 @@ class UserDriverVehicleAssignment {
 
   bool get hasVehicle => vehicleId.isNotEmpty || vehicle != null;
 
+  UserDriverVehicleAssignment copyWith({
+    String? id,
+    String? driverId,
+    String? vehicleId,
+    UserDriverVehicleMini? vehicle,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    Map<String, dynamic>? raw,
+  }) {
+    return UserDriverVehicleAssignment(
+      id: id ?? this.id,
+      driverId: driverId ?? this.driverId,
+      vehicleId: vehicleId ?? this.vehicleId,
+      vehicle: vehicle ?? this.vehicle,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      raw: raw ?? this.raw,
+    );
+  }
+
   factory UserDriverVehicleAssignment.fromJson(dynamic json) {
     final source = _extractMapPayload(
       json,
@@ -270,11 +338,39 @@ class UserDriverVehicleMini {
         .toLowerCase();
   }
 
+  UserDriverVehicleMini copyWith({
+    String? id,
+    String? name,
+    String? plateNumber,
+    String? imei,
+    String? vin,
+    String? vehicleType,
+    DateTime? createdAt,
+  }) {
+    return UserDriverVehicleMini(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      plateNumber: plateNumber ?? this.plateNumber,
+      imei: imei ?? this.imei,
+      vin: vin ?? this.vin,
+      vehicleType: vehicleType ?? this.vehicleType,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
   factory UserDriverVehicleMini.fromJson(dynamic json) {
     final source = _extractMapPayload(
       json,
       preferredKeys: const ['vehicle', 'item', 'record', 'data'],
     );
+
+    // Top-level imei is the primary source. device.imei is a confirmed
+    // backend fallback returned by getUserVehicles when the vehicle row
+    // has no direct imei but is linked to a device with one.
+    final deviceMap = _firstMap(source, const ['device', 'deviceInfo']);
+    final deviceImei = deviceMap != null
+        ? _firstString(deviceMap, const ['imei', 'IMEI'])
+        : null;
 
     return UserDriverVehicleMini(
       id: _firstString(source, const ['id', '_id', 'uid', 'vehicleId']) ?? '',
@@ -287,7 +383,9 @@ class UserDriverVehicleMini {
             'vehicleNo',
           ]) ??
           '',
-      imei: _firstString(source, const ['imei', 'IMEI', 'deviceImei']) ?? '',
+      imei: _firstString(source, const ['imei', 'IMEI', 'deviceImei']) ??
+          deviceImei ??
+          '',
       vin: _firstString(source, const ['vin', 'VIN', 'chassisNo']) ?? '',
       vehicleType: _firstString(source, const [
             'vehicleType',
@@ -676,6 +774,8 @@ class UserDriverCountryOption {
                     'country_code',
                     'code',
                     'iso2',
+                    'isoCode',
+                    'iso_code',
                     'country',
                   ]) ??
                   '')
@@ -802,8 +902,15 @@ class UserDriverStateOption {
                     'state_code',
                     'code',
                     'iso2',
+                    'isoCode',
+                    'iso_code',
                     'state',
                     'value',
+                    'id',
+                    'provinceCode',
+                    'province_code',
+                    'regionCode',
+                    'region_code',
                   ]) ??
                   '')
               .toUpperCase();
@@ -812,6 +919,10 @@ class UserDriverStateOption {
                 'stateName',
                 'state_name',
                 'label',
+                'provinceName',
+                'province_name',
+                'regionName',
+                'region_name',
               ]) ??
               value;
 
@@ -855,6 +966,7 @@ class UserDriverCityOption {
                 'cityId',
                 'city_id',
                 'id',
+                'title',
               ]) ??
               '';
           final label = _firstString(itemMap, const [
@@ -863,6 +975,7 @@ class UserDriverCityOption {
                 'city_name',
                 'city',
                 'label',
+                'title',
               ]) ??
               value;
 
@@ -966,9 +1079,7 @@ class UpdateUserDriverRequest {
     _putIfNotNull(payload, 'city', _optionalString(city));
     _putIfNotNull(payload, 'address', _optionalString(address));
     _putIfNotNull(payload, 'pincode', _optionalString(pincode));
-    if (isActive != null) {
-      payload['isactive'] = isActive! ? 'true' : 'false';
-    }
+    if (isActive != null) payload['isactive'] = isActive.toString();
     if (attributes != null) {
       payload['attributes'] = Map<String, dynamic>.from(attributes!);
     }
@@ -1225,6 +1336,8 @@ List<dynamic> _extractOptionList(dynamic json) {
     json,
     preferredKeys: const [
       'data',
+      'results',
+      'response',
       'items',
       'records',
       'list',
@@ -1234,6 +1347,8 @@ List<dynamic> _extractOptionList(dynamic json) {
       'mobilePrefixes',
       'states',
       'cities',
+      'provinces',
+      'regions',
     ],
   );
 }

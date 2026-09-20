@@ -57,7 +57,8 @@ class UserNotificationSettingsController
       return;
     }
 
-    final validationError = _validateOverspeed(draft);
+    final validationError =
+        _validateOverspeed(draft) ?? _validateDuration(draft);
     if (validationError != null) {
       state = state.copyWith(errorMessage: validationError);
       return;
@@ -182,7 +183,7 @@ class UserNotificationSettingsController
 
   void updateOverspeedLimit(int vehicleId, int? speedLimitKph) {
     final normalizedLimit =
-      speedLimitKph != null && speedLimitKph < 0 ? null : speedLimitKph;
+        speedLimitKph != null && speedLimitKph < 0 ? null : speedLimitKph;
 
     _updateDraft((draft) {
       final rows = List<UserOverspeedNotificationRow>.from(draft.overspeed);
@@ -199,6 +200,58 @@ class UserNotificationSettingsController
       }
 
       return draft.copyWith(overspeed: rows);
+    });
+  }
+
+  void updateDurationEnabled(
+    int vehicleId,
+    UserDurationNotificationKind kind,
+    bool value,
+  ) {
+    _updateDuration(vehicleId, (row) {
+      return switch (kind) {
+        UserDurationNotificationKind.running =>
+          row.copyWith(runningEnabled: value),
+        UserDurationNotificationKind.stop => row.copyWith(stopEnabled: value),
+        UserDurationNotificationKind.idle => row.copyWith(idleEnabled: value),
+      };
+    });
+  }
+
+  void updateDurationLimit(
+    int vehicleId,
+    UserDurationNotificationKind kind,
+    int? minutes,
+  ) {
+    _updateDuration(vehicleId, (row) {
+      return switch (kind) {
+        UserDurationNotificationKind.running =>
+          row.copyWith(runningLimitMinutes: minutes),
+        UserDurationNotificationKind.stop =>
+          row.copyWith(stopLimitMinutes: minutes),
+        UserDurationNotificationKind.idle =>
+          row.copyWith(idleLimitMinutes: minutes),
+      };
+    });
+  }
+
+  void _updateDuration(
+    int vehicleId,
+    UserDurationNotificationRow Function(UserDurationNotificationRow) update,
+  ) {
+    _updateDraft((draft) {
+      final rows = List<UserDurationNotificationRow>.from(draft.duration);
+      final index = rows.indexWhere((item) => item.vehicleId == vehicleId);
+      final current = index >= 0
+          ? rows[index]
+          : UserDurationNotificationRow(vehicleId: vehicleId);
+      final updated = update(current);
+      if (index >= 0) {
+        rows[index] = updated;
+      } else {
+        rows.add(updated);
+      }
+      return draft.copyWith(duration: rows);
     });
   }
 
@@ -222,6 +275,25 @@ class UserNotificationSettingsController
       }
 
       return draft.copyWith(geofenceMatrix: rows);
+    });
+  }
+
+  void updateRouteToggle(int vehicleId, int routeId, bool value) {
+    _updateDraft((draft) {
+      final rows = List<UserRouteMatrixEntry>.from(draft.routeMatrix);
+      final index = rows.indexWhere(
+        (item) => item.vehicleId == vehicleId && item.routeId == routeId,
+      );
+      if (index >= 0) {
+        rows[index] = rows[index].copyWith(enabled: value);
+      } else {
+        rows.add(UserRouteMatrixEntry(
+          vehicleId: vehicleId,
+          routeId: routeId,
+          enabled: value,
+        ));
+      }
+      return draft.copyWith(routeMatrix: rows);
     });
   }
 
@@ -299,11 +371,17 @@ class UserNotificationSettingsController
       for (final geofence in preferences.geofences)
         if (geofence.id > 0) geofence.id: geofence,
     };
+    final routesById = <int, UserNotificationRoute>{
+      for (final route in preferences.routes)
+        if (route.id > 0) route.id: route,
+    };
 
     final vehicles = vehiclesById.values.toList(growable: false);
     final geofences = geofencesById.values.toList(growable: false);
+    final routes = routesById.values.toList(growable: false);
     final vehicleIds = vehiclesById.keys.toSet();
     final geofenceIds = geofencesById.keys.toSet();
+    final routeIds = routesById.keys.toSet();
 
     final basicByVehicle = <int, UserBasicNotificationRow>{};
     for (final item in preferences.basic) {
@@ -331,6 +409,14 @@ class UserNotificationSettingsController
       overspeedByVehicle[item.vehicleId] = item;
     }
 
+    final durationByVehicle = <int, UserDurationNotificationRow>{};
+    for (final item in preferences.duration) {
+      if (item.vehicleId > 0 &&
+          (vehicleIds.isEmpty || vehicleIds.contains(item.vehicleId))) {
+        durationByVehicle[item.vehicleId] = item;
+      }
+    }
+
     final geofenceMatrixByKey = <String, UserGeofenceMatrixEntry>{};
     for (final item in preferences.geofenceMatrix) {
       if (item.vehicleId <= 0 || item.geofenceId <= 0) {
@@ -346,6 +432,20 @@ class UserNotificationSettingsController
       }
 
       geofenceMatrixByKey['${item.vehicleId}:${item.geofenceId}'] = item;
+    }
+
+    final routeMatrixByKey = <String, UserRouteMatrixEntry>{};
+    for (final item in preferences.routeMatrix) {
+      if (item.vehicleId <= 0 || item.routeId <= 0) {
+        continue;
+      }
+      if (vehicleIds.isNotEmpty && !vehicleIds.contains(item.vehicleId)) {
+        continue;
+      }
+      if (routeIds.isNotEmpty && !routeIds.contains(item.routeId)) {
+        continue;
+      }
+      routeMatrixByKey['${item.vehicleId}:${item.routeId}'] = item;
     }
 
     final normalizedBasic = vehicles.isEmpty
@@ -368,9 +468,21 @@ class UserNotificationSettingsController
             )
             .toList(growable: false);
 
+    final normalizedDuration = vehicles.isEmpty
+        ? durationByVehicle.values.toList(growable: false)
+        : vehicles
+            .map((vehicle) =>
+                durationByVehicle[vehicle.id] ??
+                UserDurationNotificationRow(vehicleId: vehicle.id))
+            .toList(growable: false);
+
     final geofenceOrder = <int, int>{
       for (var index = 0; index < geofences.length; index += 1)
         geofences[index].id: index,
+    };
+    final routeOrder = <int, int>{
+      for (var index = 0; index < routes.length; index += 1)
+        routes[index].id: index,
     };
     final vehicleOrder = <int, int>{
       for (var index = 0; index < vehicles.length; index += 1)
@@ -392,12 +504,24 @@ class UserNotificationSettingsController
         return leftGeofence.compareTo(rightGeofence);
       });
 
+    final normalizedRouteMatrix = routeMatrixByKey.values.toList(growable: true)
+      ..sort((left, right) {
+        final byVehicle = (vehicleOrder[left.vehicleId] ?? left.vehicleId)
+            .compareTo(vehicleOrder[right.vehicleId] ?? right.vehicleId);
+        if (byVehicle != 0) return byVehicle;
+        return (routeOrder[left.routeId] ?? left.routeId)
+            .compareTo(routeOrder[right.routeId] ?? right.routeId);
+      });
+
     return preferences.copyWith(
       vehicles: vehicles,
       geofences: geofences,
+      routes: routes,
       basic: normalizedBasic,
       overspeed: normalizedOverspeed,
+      duration: normalizedDuration,
       geofenceMatrix: normalizedMatrix,
+      routeMatrix: normalizedRouteMatrix,
     );
   }
 
@@ -414,6 +538,27 @@ class UserNotificationSettingsController
       }
     }
 
+    return null;
+  }
+
+  String? _validateDuration(UserNotificationPreferences preferences) {
+    for (final row in preferences.duration) {
+      final label = _vehicleLabel(preferences, row.vehicleId);
+      if (row.runningEnabled && (row.runningLimitMinutes ?? 0) < 1) {
+        return 'Continuous running duration must be at least 1 minute for $label.';
+      }
+      if (row.stopEnabled && (row.stopLimitMinutes ?? 0) < 1) {
+        return 'Continuous stop duration must be at least 1 minute for $label.';
+      }
+      if (row.idleEnabled && (row.idleLimitMinutes ?? 0) < 1) {
+        return 'Continuous idle duration must be at least 1 minute for $label.';
+      }
+      if ((row.runningLimitMinutes ?? 0) > 10080 ||
+          (row.stopLimitMinutes ?? 0) > 10080 ||
+          (row.idleLimitMinutes ?? 0) > 10080) {
+        return 'Duration limits cannot exceed 10080 minutes.';
+      }
+    }
     return null;
   }
 

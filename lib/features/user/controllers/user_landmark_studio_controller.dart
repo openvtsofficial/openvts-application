@@ -57,7 +57,8 @@ String userLandmarkErrorMessage(Object error, {required String fallback}) {
   if (error is DioException) {
     final response = error.response?.data;
     if (response is Map<String, dynamic>) {
-      for (final key in const ['message', 'error']) {
+      // Try standard error/message fields
+      for (final key in const ['message', 'error', 'errors']) {
         final value = response[key];
         if (value is String && value.trim().isNotEmpty) {
           return value.trim();
@@ -71,6 +72,7 @@ String userLandmarkErrorMessage(Object error, {required String fallback}) {
           if (parts.isNotEmpty) return parts.join(', ');
         }
       }
+      // Try nested data.message
       final nested = response['data'];
       if (nested is Map<String, dynamic>) {
         final nestedMessage = nested['message'];
@@ -81,6 +83,7 @@ String userLandmarkErrorMessage(Object error, {required String fallback}) {
     } else if (response is String && response.trim().isNotEmpty) {
       return response.trim();
     }
+
     switch (error.type) {
       case DioExceptionType.connectionTimeout:
       case DioExceptionType.receiveTimeout:
@@ -88,16 +91,14 @@ String userLandmarkErrorMessage(Object error, {required String fallback}) {
         return 'The request timed out. Please try again.';
       case DioExceptionType.connectionError:
         return 'Unable to reach the server right now.';
+      case DioExceptionType.badResponse:
+        // Return fallback for bad response instead of raw Dio error
+        return fallback;
       default:
         break;
     }
-    final message = error.message?.trim();
-    if (message != null && message.isNotEmpty) return message;
   }
 
-  final raw = error.toString().trim();
-  if (raw.startsWith('Exception: ')) {
-    return raw.substring('Exception: '.length).trim();
-  }
-  return raw.isEmpty ? fallback : raw;
+  // Avoid showing raw Dio exception text — use fallback instead
+  return fallback;
 }

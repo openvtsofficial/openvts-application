@@ -185,17 +185,17 @@ class SuperadminAdministrator {
         ) ??
         '';
     final rawCountry = _firstString(
-      json,
-      const ['countryName', 'country_name', 'countryname', 'country'],
-    ) ??
+          json,
+          const ['countryName', 'country_name', 'countryname', 'country'],
+        ) ??
         _firstString(
           nestedIdentity,
           const ['countryName', 'country_name', 'countryname', 'country'],
         );
     final rawState = _firstString(
-      json,
-      const ['stateName', 'state_name', 'statename', 'state'],
-    ) ??
+          json,
+          const ['stateName', 'state_name', 'statename', 'state'],
+        ) ??
         _firstString(
           nestedIdentity,
           const ['stateName', 'state_name', 'statename', 'state'],
@@ -369,10 +369,8 @@ class SuperadminAdministrator {
           rawUsername ??
           _displayNameFromEmail(rawEmail) ??
           'Unknown administrator',
-      username: rawUsername ??
-          '—',
-      email: rawEmail ??
-          '—',
+      username: rawUsername ?? '—',
+      email: rawEmail ?? '—',
       role: rawRole.trim().isEmpty
           ? (_parseBool(
                     json['isSuperAdmin'] ??
@@ -489,10 +487,11 @@ class SuperadminAdministrator {
             nestedIdentity,
             const ['stateCode', 'state_code', 'statecode'],
           ) ??
-          (rawState != null && rawState.trim().length <= 4 ? rawState.trim() : ''),
-      stateName: rawState != null && rawState.trim().length > 4
-          ? rawState.trim()
-          : '',
+          (rawState != null && rawState.trim().length <= 4
+              ? rawState.trim()
+              : ''),
+      stateName:
+          rawState != null && rawState.trim().length > 4 ? rawState.trim() : '',
       cityName: _firstString(
             json,
             const ['cityName', 'city_name', 'cityname', 'city'],
@@ -1026,9 +1025,12 @@ class SuperadminCountryOption {
         .where((item) => item.isNotEmpty)
         .map(
           (item) => SuperadminCountryOption(
-            code: (_firstString(item, const ['isoCode', 'countryCode', 'code']) ?? '')
-                .toUpperCase(),
-            name: _firstString(item, const ['name', 'label']) ?? 'Unknown country',
+            code:
+                (_firstString(item, const ['isoCode', 'countryCode', 'code']) ??
+                        '')
+                    .toUpperCase(),
+            name: _firstString(item, const ['name', 'label']) ??
+                'Unknown country',
           ),
         )
         .where((item) => item.code.isNotEmpty && item.name.trim().isNotEmpty)
@@ -1056,8 +1058,10 @@ class SuperadminStateOption {
         .where((item) => item.isNotEmpty)
         .map(
           (item) => SuperadminStateOption(
-            code: _firstString(item, const ['isoCode', 'stateCode', 'code']) ?? '',
-            name: _firstString(item, const ['name', 'label']) ?? 'Unknown state',
+            code: _firstString(item, const ['isoCode', 'stateCode', 'code']) ??
+                '',
+            name:
+                _firstString(item, const ['name', 'label']) ?? 'Unknown state',
             countryCode: (_firstString(
                       item,
                       const ['countryCode', 'country_code'],
@@ -1095,7 +1099,8 @@ class SuperadminCityOption {
                     ) ??
                     '')
                 .toUpperCase(),
-            stateCode: _firstString(item, const ['stateCode', 'state_code']) ?? '',
+            stateCode:
+                _firstString(item, const ['stateCode', 'state_code']) ?? '',
           ),
         )
         .where((item) => item.name.trim().isNotEmpty)
@@ -1163,17 +1168,17 @@ class SuperadminAdministratorLoginOutcome {
 
     return SuperadminAdministratorLoginOutcome(
       accessToken: _firstString(
-        map,
-        const ['accessToken', 'access_token', 'token', 'jwt'],
-      ) ??
+            map,
+            const ['accessToken', 'access_token', 'token', 'jwt'],
+          ) ??
           _firstString(
             tokens,
             const ['accessToken', 'access_token', 'token', 'jwt'],
           ),
       refreshToken: _firstString(
-        map,
-        const ['refreshToken', 'refresh_token'],
-      ) ??
+            map,
+            const ['refreshToken', 'refresh_token'],
+          ) ??
           _firstString(
             tokens,
             const ['refreshToken', 'refresh_token'],
@@ -1182,9 +1187,9 @@ class SuperadminAdministratorLoginOutcome {
       message: _firstString(map, const ['message', 'detail']) ??
           _firstString(nested, const ['message', 'detail']),
       redirectUrl: _firstString(
-        map,
-        const ['redirectUrl', 'redirect_url', 'redirect', 'url'],
-      ) ??
+            map,
+            const ['redirectUrl', 'redirect_url', 'redirect', 'url'],
+          ) ??
           _firstString(
             nested,
             const ['redirectUrl', 'redirect_url', 'redirect', 'url'],
@@ -1283,7 +1288,8 @@ Map<String, dynamic>? _firstMap(Map<String, dynamic> json, List<String> keys) {
       return value;
     }
     if (value is Map) {
-      return value.map((nestedKey, item) => MapEntry(nestedKey.toString(), item));
+      return value
+          .map((nestedKey, item) => MapEntry(nestedKey.toString(), item));
     }
   }
   return null;

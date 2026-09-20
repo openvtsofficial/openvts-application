@@ -35,7 +35,8 @@ class ToastHelper {
       return;
     }
 
-    final themeContext = context ?? messengerKey.currentContext ?? messenger.context;
+    final themeContext =
+        context ?? messengerKey.currentContext ?? messenger.context;
     final colorScheme = Theme.of(themeContext).colorScheme;
     final icon = switch (type) {
       ToastType.success => Icons.check_circle_outline_rounded,

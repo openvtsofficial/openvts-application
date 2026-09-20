@@ -15,6 +15,8 @@ import '../../controllers/admin_providers.dart';
 import '../../models/admin_vehicle_state.dart';
 import 'widgets/admin_vehicle_card.dart';
 
+const List<int> _recordsPerPageOptions = <int>[10, 25, 50, 100];
+
 class AdminVehiclesScreen extends ConsumerWidget {
   const AdminVehiclesScreen({super.key});
 
@@ -30,9 +32,7 @@ class AdminVehiclesScreen extends ConsumerWidget {
     }.toList()
       ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
 
-    final hasActiveFilters = state.searchQuery.trim().isNotEmpty ||
-        state.statusFilter != AdminVehicleStatusFilter.all ||
-        state.typeFilter.trim().isNotEmpty;
+    final visibleVehicles = state.visibleVehicles;
 
     return OpenVtsPageScaffold(
       title: 'Vehicles',
@@ -65,7 +65,7 @@ class AdminVehiclesScreen extends ConsumerWidget {
               : Column(
                   children: [
                     _VehiclesHeaderCard(
-                      count: state.filteredVehicles.length,
+                      count: state.filteredCount,
                       totalCount: state.vehicles.length,
                       onCreateVehicle: () =>
                           context.push(RoutePaths.adminVehicleCreate),
@@ -73,19 +73,22 @@ class AdminVehiclesScreen extends ConsumerWidget {
                     const SizedBox(height: OpenVtsSpacing.sm),
                     _VehiclesToolbar(
                       searchQuery: state.searchQuery,
-                      hasActiveFilters: hasActiveFilters,
+                      recordsPerPage: state.recordsPerPage,
+                      hasActiveFilters: state.hasActiveFilters,
                       onSearchChanged: controller.setSearchQuery,
                       onOpenFilters: () => _openFiltersSheet(
                         context,
                         ref,
                         typeOptions: typeOptions,
                       ),
+                      onOpenSort: () => _openSortSheet(context, ref),
+                      onRecordsChanged: controller.setRecordsPerPage,
                     ),
                     const SizedBox(height: OpenVtsSpacing.sm),
                     Expanded(
                       child: RefreshIndicator(
                         onRefresh: controller.refresh,
-                        child: state.filteredVehicles.isEmpty
+                        child: state.filteredCount == 0
                             ? ListView(
                                 physics: const AlwaysScrollableScrollPhysics(),
                                 children: const [
@@ -99,11 +102,26 @@ class AdminVehiclesScreen extends ConsumerWidget {
                               )
                             : ListView.separated(
                                 physics: const AlwaysScrollableScrollPhysics(),
-                                itemCount: state.filteredVehicles.length,
+                                itemCount: visibleVehicles.length + 1,
                                 separatorBuilder: (_, __) =>
                                     const SizedBox(height: OpenVtsSpacing.sm),
                                 itemBuilder: (context, index) {
-                                  final vehicle = state.filteredVehicles[index];
+                                  if (index == visibleVehicles.length) {
+                                    return _PaginationFooter(
+                                      currentPage: state.safeCurrentPage,
+                                      pageCount: state.pageCount,
+                                      showingCount: visibleVehicles.length,
+                                      totalCount: state.filteredCount,
+                                      onPrev: () => controller.goToPage(
+                                        state.safeCurrentPage - 1,
+                                      ),
+                                      onNext: () => controller.goToPage(
+                                        state.safeCurrentPage + 1,
+                                      ),
+                                    );
+                                  }
+
+                                  final vehicle = visibleVehicles[index];
                                   return AdminVehicleCard(
                                     vehicle: vehicle,
                                     onTap: () => context.push(
@@ -209,6 +227,48 @@ class AdminVehiclesScreen extends ConsumerWidget {
       },
     );
   }
+
+  Future<void> _openSortSheet(BuildContext context, WidgetRef ref) async {
+    final controller = ref.read(adminVehiclesControllerProvider.notifier);
+    final state = ref.read(adminVehiclesControllerProvider);
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(OpenVtsRadius.xl),
+        ),
+      ),
+      builder: (sheetContext) {
+        return _OptionsSheet(
+          title: 'Sort vehicles',
+          sections: [
+            _OptionsSheetSection(
+              label: 'Order by',
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: AdminVehiclesSortOption.values
+                    .map(
+                      (option) => _RadioRow(
+                        label: option.label,
+                        selected: state.sortOption == option,
+                        onTap: () {
+                          controller.setSortOption(option);
+                          Navigator.of(sheetContext).pop();
+                        },
+                      ),
+                    )
+                    .toList(growable: false),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
 }
 
 String _statusFilterLabel(AdminVehicleStatusFilter filter) {
@@ -286,20 +346,15 @@ class _PrimaryCreateButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final background =
-        isDark ? OpenVtsColors.surfaceElevated : OpenVtsColors.brandInk;
-    final foreground =
-        isDark ? OpenVtsColors.brandInk : OpenVtsColors.white;
-
     return ElevatedButton.icon(
       onPressed: onPressed,
       icon: const Icon(Icons.add_rounded, size: 18),
       label: const Text('New Vehicle'),
       style: ElevatedButton.styleFrom(
-        backgroundColor: background,
-        foregroundColor: foreground,
+        backgroundColor: OpenVtsColors.brandInk,
+        foregroundColor: OpenVtsColors.white,
         elevation: 0,
+        side: const BorderSide(color: OpenVtsColors.white, width: 1),
         padding: const EdgeInsets.symmetric(
           horizontal: OpenVtsSpacing.md,
           vertical: OpenVtsSpacing.sm,
@@ -320,15 +375,21 @@ class _PrimaryCreateButton extends StatelessWidget {
 class _VehiclesToolbar extends StatefulWidget {
   const _VehiclesToolbar({
     required this.searchQuery,
+    required this.recordsPerPage,
     required this.hasActiveFilters,
     required this.onSearchChanged,
     required this.onOpenFilters,
+    required this.onOpenSort,
+    required this.onRecordsChanged,
   });
 
   final String searchQuery;
+  final int recordsPerPage;
   final bool hasActiveFilters;
   final ValueChanged<String> onSearchChanged;
   final VoidCallback onOpenFilters;
+  final VoidCallback onOpenSort;
+  final ValueChanged<int> onRecordsChanged;
 
   @override
   State<_VehiclesToolbar> createState() => _VehiclesToolbarState();
@@ -378,6 +439,17 @@ class _VehiclesToolbarState extends State<_VehiclesToolbar> {
             tooltip: 'Filter vehicles',
             onPressed: widget.onOpenFilters,
             showDot: widget.hasActiveFilters,
+          ),
+          const SizedBox(width: OpenVtsSpacing.xs),
+          _SquareIconButton(
+            icon: Icons.swap_vert_rounded,
+            tooltip: 'Sort vehicles',
+            onPressed: widget.onOpenSort,
+          ),
+          const SizedBox(width: OpenVtsSpacing.xs),
+          _RecordsPerPageDropdown(
+            value: widget.recordsPerPage,
+            onChanged: widget.onRecordsChanged,
           ),
         ],
       ),
@@ -431,7 +503,8 @@ class _SearchInput extends StatelessWidget {
             textAlignVertical: TextAlignVertical.center,
             cursorColor: _primaryInkColor(context),
             cursorWidth: 1.4,
-            style: _baseStyle.copyWith(color: OpenVtsColors.textPrimary),
+            style: _baseStyle.copyWith(
+                color: Theme.of(context).colorScheme.onSurface),
             strutStyle: const StrutStyle(
               fontFamily: OpenVtsTypography.primaryFontFamily,
               fontFamilyFallback: OpenVtsTypography.fontFallback,
@@ -447,18 +520,18 @@ class _SearchInput extends StatelessWidget {
               isCollapsed: false,
               hintText: 'Search vehicle, plate, VIN, IMEI, SIM, user\u2026',
               hintStyle: _baseStyle.copyWith(
-                color: OpenVtsColors.textTertiary,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
                 fontWeight: FontWeight.w400,
               ),
-              prefixIcon: const Padding(
-                padding: EdgeInsetsDirectional.only(
+              prefixIcon: Padding(
+                padding: const EdgeInsetsDirectional.only(
                   start: OpenVtsSpacing.sm,
                   end: OpenVtsSpacing.xs,
                 ),
                 child: Icon(
                   Icons.search_rounded,
                   size: 18,
-                  color: OpenVtsColors.textSecondary,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
               prefixIconConstraints: const BoxConstraints(
@@ -483,10 +556,10 @@ class _SearchInput extends StatelessWidget {
                           minHeight: 28,
                         ),
                         splashRadius: 16,
-                        icon: const Icon(
+                        icon: Icon(
                           Icons.close_rounded,
                           size: 16,
-                          color: OpenVtsColors.textSecondary,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ),
@@ -573,6 +646,176 @@ class _SquareIconButton extends StatelessWidget {
   }
 }
 
+class _RecordsPerPageDropdown extends StatelessWidget {
+  const _RecordsPerPageDropdown({
+    required this.value,
+    required this.onChanged,
+  });
+
+  final int value;
+  final ValueChanged<int> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final options = <int>[
+      ..._recordsPerPageOptions,
+      if (!_recordsPerPageOptions.contains(value)) value,
+    ]..sort();
+
+    return Container(
+      height: 40,
+      padding: const EdgeInsetsDirectional.symmetric(
+        horizontal: OpenVtsSpacing.xs,
+      ),
+      decoration: BoxDecoration(
+        color: _softSurfaceColor(context),
+        borderRadius: BorderRadius.circular(OpenVtsRadius.md),
+        border: Border.all(color: _softBorderColor(context)),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<int>(
+          value: value,
+          isDense: true,
+          icon: const Padding(
+            padding: EdgeInsetsDirectional.only(start: 2),
+            child: Icon(
+              Icons.keyboard_arrow_down_rounded,
+              size: 16,
+              color: OpenVtsColors.textSecondary,
+            ),
+          ),
+          style: OpenVtsTypography.label.copyWith(
+            color: _primaryInkColor(context),
+            fontWeight: FontWeight.w600,
+          ),
+          dropdownColor: Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.circular(OpenVtsRadius.md),
+          items: options
+              .map(
+                (option) => DropdownMenuItem<int>(
+                  value: option,
+                  child: Text('$option'),
+                ),
+              )
+              .toList(growable: false),
+          onChanged: (next) {
+            if (next != null) {
+              onChanged(next);
+            }
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _PaginationFooter extends StatelessWidget {
+  const _PaginationFooter({
+    required this.currentPage,
+    required this.pageCount,
+    required this.showingCount,
+    required this.totalCount,
+    required this.onPrev,
+    required this.onNext,
+  });
+
+  final int currentPage;
+  final int pageCount;
+  final int showingCount;
+  final int totalCount;
+  final VoidCallback onPrev;
+  final VoidCallback onNext;
+
+  @override
+  Widget build(BuildContext context) {
+    final canPrev = currentPage > 1;
+    final canNext = currentPage < pageCount;
+
+    return Padding(
+      padding: const EdgeInsets.only(top: OpenVtsSpacing.xs),
+      child: Column(
+        children: [
+          Text(
+            'Showing $showingCount of $totalCount',
+            style: OpenVtsTypography.meta.copyWith(
+              color: OpenVtsColors.textSecondary,
+            ),
+          ),
+          if (pageCount > 1) ...[
+            const SizedBox(height: OpenVtsSpacing.xs),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _PageButton(
+                  icon: Icons.chevron_left_rounded,
+                  onPressed: canPrev ? onPrev : null,
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: OpenVtsSpacing.sm,
+                  ),
+                  child: Text(
+                    'Page $currentPage of $pageCount',
+                    style: OpenVtsTypography.label.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                _PageButton(
+                  icon: Icons.chevron_right_rounded,
+                  onPressed: canNext ? onNext : null,
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _PageButton extends StatelessWidget {
+  const _PageButton({required this.icon, required this.onPressed});
+
+  final IconData icon;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = onPressed != null;
+    final baseColor = _softSurfaceColor(context);
+    return Material(
+      color: enabled
+          ? baseColor
+          : Color.alphaBlend(
+              Theme.of(context).colorScheme.surface.withValues(alpha: 0.4),
+              baseColor,
+            ),
+      borderRadius: BorderRadius.circular(OpenVtsRadius.md),
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(OpenVtsRadius.md),
+        child: Container(
+          height: 36,
+          width: 36,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(OpenVtsRadius.md),
+            border: Border.all(color: _softBorderColor(context)),
+          ),
+          alignment: Alignment.center,
+          child: Icon(
+            icon,
+            size: 18,
+            color: enabled
+                ? _primaryInkColor(context)
+                : OpenVtsColors.textTertiary,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _OptionsSheet extends StatelessWidget {
   const _OptionsSheet({
     required this.title,
@@ -610,7 +853,7 @@ class _OptionsSheet extends StatelessWidget {
                 width: 40,
                 margin: const EdgeInsets.only(bottom: OpenVtsSpacing.sm),
                 decoration: BoxDecoration(
-                  color: OpenVtsColors.border,
+                  color: Theme.of(context).colorScheme.outlineVariant,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -637,7 +880,7 @@ class _OptionsSheet extends StatelessWidget {
               Text(
                 section.label,
                 style: OpenVtsTypography.label.copyWith(
-                  color: OpenVtsColors.textSecondary,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -649,8 +892,8 @@ class _OptionsSheet extends StatelessWidget {
               ElevatedButton(
                 onPressed: onPrimaryAction,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: _primaryInkColor(context),
-                  foregroundColor: OpenVtsColors.white,
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
                   elevation: 0,
                   padding: const EdgeInsets.symmetric(
                     vertical: OpenVtsSpacing.sm,
@@ -699,18 +942,89 @@ class _ChoiceChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChoiceChip(
-      label: Text(label),
-      selected: selected,
-      checkmarkColor: OpenVtsColors.white,
-      selectedColor: _primaryInkColor(context),
-      backgroundColor: _softSurfaceColor(context),
-      side: BorderSide(color: _softBorderColor(context)),
-      labelStyle: OpenVtsTypography.label.copyWith(
-        color: selected ? OpenVtsColors.white : OpenVtsColors.textSecondary,
-        fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final backgroundColor =
+        selected ? (isDark ? Colors.black : Colors.white) : Colors.transparent;
+    final textColor = isDark ? Colors.white : Colors.black;
+    final borderColor =
+        isDark ? Colors.white : Colors.black.withValues(alpha: 0.2);
+
+    return Material(
+      color: backgroundColor,
+      borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
+        onTap: onSelected,
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 34),
+          padding: const EdgeInsets.symmetric(
+            horizontal: OpenVtsSpacing.sm,
+            vertical: OpenVtsSpacing.xs,
+          ),
+          decoration: selected
+              ? BoxDecoration(
+                  borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
+                  border: Border.all(color: borderColor, width: 1),
+                )
+              : null,
+          child: Text(
+            label,
+            style: OpenVtsTypography.label.copyWith(
+              color: textColor,
+              fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+            ),
+          ),
+        ),
       ),
-      onSelected: (_) => onSelected(),
+    );
+  }
+}
+
+class _RadioRow extends StatelessWidget {
+  const _RadioRow({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(OpenVtsRadius.md),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: OpenVtsSpacing.xs,
+          vertical: OpenVtsSpacing.sm,
+        ),
+        child: Row(
+          children: [
+            Icon(
+              selected
+                  ? Icons.radio_button_checked_rounded
+                  : Icons.radio_button_off_rounded,
+              size: 18,
+              color: selected
+                  ? _primaryInkColor(context)
+                  : OpenVtsColors.textTertiary,
+            ),
+            const SizedBox(width: OpenVtsSpacing.sm),
+            Expanded(
+              child: Text(
+                label,
+                style: OpenVtsTypography.label.copyWith(
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                  color: _primaryInkColor(context),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

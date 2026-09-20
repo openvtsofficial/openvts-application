@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:open_vts/shared/widgets/support/open_vts_support_ticket_card.dart';
 
 import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/utils/date_time_formatter.dart';
-
-import 'package:open_vts/shared/widgets/support/open_vts_support_ticket_card.dart';
 import '../../../models/admin_support_model.dart';
 
 const DateTimeFormatter _dateFormatter = DateTimeFormatter();
@@ -70,5 +69,3 @@ class AdminSupportTicketCard extends StatelessWidget {
     return tab == AdminSupportTab.userTickets ? 'User $name' : 'To $name';
   }
 }
-
-

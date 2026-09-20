@@ -146,20 +146,21 @@ class _UserSendCommandDashboardWidgetState
     });
 
     try {
-      final result =
-          await ref.read(userDashboardControllerProvider.notifier).sendBulkCommand(
-                mode: UserDashboardSendCommandMode.selected,
-                command: usesImei ? null : resolvedCommand,
-                vehicleIds: usesImei ? const <String>[] : <String>[vehicle.id],
-                items: usesImei
-                    ? <UserDashboardSendCommandItem>[
-                        UserDashboardSendCommandItem(
-                          vehicleId: vehicle.id,
-                          command: resolvedCommand,
-                        ),
-                      ]
-                    : const <UserDashboardSendCommandItem>[],
-              );
+      final result = await ref
+          .read(userDashboardControllerProvider.notifier)
+          .sendBulkCommand(
+            mode: UserDashboardSendCommandMode.selected,
+            command: usesImei ? null : resolvedCommand,
+            vehicleIds: usesImei ? const <String>[] : <String>[vehicle.id],
+            items: usesImei
+                ? <UserDashboardSendCommandItem>[
+                    UserDashboardSendCommandItem(
+                      vehicleId: vehicle.id,
+                      command: resolvedCommand,
+                    ),
+                  ]
+                : const <UserDashboardSendCommandItem>[],
+          );
       if (!mounted) return;
       setState(() => _result = result);
     } catch (error) {
@@ -318,7 +319,7 @@ class _UserSendCommandDashboardWidgetState
             minLines: 2,
             maxLines: 3,
             style: OpenVtsTypography.body.copyWith(
-              color: OpenVtsColors.textPrimary,
+              color: Theme.of(context).colorScheme.onSurface,
               fontFamily: 'monospace',
               fontWeight: FontWeight.w700,
             ),
@@ -327,7 +328,7 @@ class _UserSendCommandDashboardWidgetState
               hintText: 'Type command payload',
               isDense: true,
               counterStyle: OpenVtsTypography.meta.copyWith(
-                color: OpenVtsColors.textTertiary,
+                color: Theme.of(context).colorScheme.outline,
                 fontSize: 10,
               ),
               border: OutlineInputBorder(
@@ -400,7 +401,8 @@ class _VehicleSelector extends StatelessWidget {
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(OpenVtsRadius.md),
-          borderSide: const BorderSide(color: OpenVtsColors.border),
+          borderSide:
+              BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
         ),
       ),
       items: [
@@ -445,7 +447,8 @@ class _CommandSelector extends StatelessWidget {
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(OpenVtsRadius.md),
-          borderSide: const BorderSide(color: OpenVtsColors.border),
+          borderSide:
+              BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
         ),
       ),
       hint: const Text('Type manually'),
@@ -483,25 +486,25 @@ class _VariablePreview extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(OpenVtsSpacing.sm),
       decoration: BoxDecoration(
-        color: OpenVtsColors.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(OpenVtsRadius.md),
-        border: Border.all(color: OpenVtsColors.border),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.data_object_rounded,
                 size: 15,
-                color: OpenVtsColors.textSecondary,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
               const SizedBox(width: OpenVtsSpacing.xs),
               Text(
                 'Variable Preview',
                 style: OpenVtsTypography.meta.copyWith(
-                  color: OpenVtsColors.textSecondary,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                   fontWeight: FontWeight.w800,
                 ),
               ),
@@ -533,7 +536,7 @@ class _VariablePreview extends StatelessWidget {
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
               style: OpenVtsTypography.meta.copyWith(
-                color: OpenVtsColors.textPrimary,
+                color: Theme.of(context).colorScheme.onSurface,
                 fontFamily: 'monospace',
                 fontWeight: FontWeight.w700,
               ),
@@ -559,16 +562,16 @@ class _VariableChip extends StatelessWidget {
         vertical: 3,
       ),
       decoration: BoxDecoration(
-        color: OpenVtsColors.surfaceElevated,
+        color: Theme.of(context).colorScheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
-        border: Border.all(color: OpenVtsColors.border),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
       child: Text(
         '$label: ${value.isEmpty ? '-' : value}',
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: OpenVtsTypography.meta.copyWith(
-          color: OpenVtsColors.textSecondary,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
           fontSize: 10.5,
           fontWeight: FontWeight.w700,
         ),
@@ -587,7 +590,7 @@ class _CompactNotice extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 14, color: OpenVtsColors.textTertiary),
+        Icon(icon, size: 14, color: Theme.of(context).colorScheme.outline),
         const SizedBox(width: OpenVtsSpacing.xs),
         Expanded(
           child: Text(
@@ -595,7 +598,7 @@ class _CompactNotice extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: OpenVtsTypography.meta.copyWith(
-              color: OpenVtsColors.textTertiary,
+              color: Theme.of(context).colorScheme.outline,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -615,9 +618,9 @@ class _SendResultSummary extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(OpenVtsSpacing.sm),
       decoration: BoxDecoration(
-        color: OpenVtsColors.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(OpenVtsRadius.md),
-        border: Border.all(color: OpenVtsColors.border),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -683,7 +686,7 @@ class _CommandResultRow extends StatelessWidget {
             ? OpenVtsColors.warning
             : sent
                 ? OpenVtsColors.success
-                : OpenVtsColors.textSecondary;
+                : Theme.of(context).colorScheme.onSurfaceVariant;
     final vehicleLabel = (result.vehicleName ?? '').trim().isNotEmpty
         ? result.vehicleName!
         : (result.plateNumber ?? '').trim().isNotEmpty
@@ -702,7 +705,7 @@ class _CommandResultRow extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: OpenVtsTypography.label.copyWith(
-                  color: OpenVtsColors.textPrimary,
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontWeight: FontWeight.w800,
                 ),
               ),
@@ -718,7 +721,7 @@ class _CommandResultRow extends StatelessWidget {
                 style: OpenVtsTypography.meta.copyWith(
                   color: failed
                       ? OpenVtsColors.error
-                      : OpenVtsColors.textSecondary,
+                      : Theme.of(context).colorScheme.onSurfaceVariant,
                   fontWeight: FontWeight.w600,
                 ),
               ),

@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
-import '../../../../../core/utils/date_time_formatter.dart';
+import '../../../../../core/utils/date_time_formatter.dart'; // For appDateFormatterProvider
 import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../models/user_share_track_link_model.dart';
 
-const DateTimeFormatter _dateFormatter = DateTimeFormatter();
-
-class UserShareTrackLinkCard extends StatelessWidget {
+class UserShareTrackLinkCard extends ConsumerWidget {
   const UserShareTrackLinkCard({
     required this.link,
     required this.publicUrl,
@@ -33,10 +32,13 @@ class UserShareTrackLinkCard extends StatelessWidget {
   final bool isBusy;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final dateFormatter = ref.watch(appDateFormatterProvider);
     final displayUrl =
         _displayValue(publicUrl) ?? _displayValue(link.uniqueCode);
     final vehicleCount = link.vehicleCount;
+    final brightness = Theme.of(context).brightness;
+    final isDark = brightness == Brightness.dark;
 
     return OpenVtsCard(
       padding: const EdgeInsets.all(OpenVtsSpacing.sm),
@@ -70,7 +72,9 @@ class UserShareTrackLinkCard extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: OpenVtsTypography.label.copyWith(
-                        color: OpenVtsColors.textPrimary,
+                        color: isDark
+                            ? OpenVtsColors.white
+                            : OpenVtsColors.textPrimary,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
@@ -82,7 +86,9 @@ class UserShareTrackLinkCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: OpenVtsTypography.meta.copyWith(
-                        color: OpenVtsColors.textSecondary,
+                        color: isDark
+                            ? OpenVtsColors.white
+                            : OpenVtsColors.textSecondary,
                         fontFamily: 'monospace',
                         fontWeight: FontWeight.w700,
                       ),
@@ -124,14 +130,13 @@ class UserShareTrackLinkCard extends StatelessWidget {
               if (link.expiryAt != null)
                 _InfoPill(
                   icon: Icons.schedule_rounded,
-                  label:
-                      _dateFormatter.formatDateTime(link.expiryAt!.toLocal()),
+                  label: dateFormatter.formatDateTime(link.expiryAt!.toLocal()),
                 ),
               if (link.createdAt != null)
                 _InfoPill(
                   icon: Icons.calendar_today_outlined,
                   label:
-                      'Created ${_dateFormatter.formatDate(link.createdAt!.toLocal())}',
+                      'Created ${dateFormatter.formatDate(link.createdAt!.toLocal())}',
                 ),
               if (link.isGeofence)
                 const _InfoPill(
@@ -222,6 +227,9 @@ class _ActionIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    final isDark = brightness == Brightness.dark;
+
     return Tooltip(
       message: tooltip,
       child: SizedBox.square(
@@ -229,7 +237,8 @@ class _ActionIconButton extends StatelessWidget {
         child: IconButton(
           onPressed: onPressed,
           icon: Icon(icon, size: 17),
-          color: color ?? OpenVtsColors.textSecondary,
+          color: color ??
+              (isDark ? OpenVtsColors.white : OpenVtsColors.textPrimary),
           disabledColor: OpenVtsColors.textTertiary.withValues(alpha: 0.58),
           padding: EdgeInsets.zero,
           visualDensity: VisualDensity.compact,
@@ -237,7 +246,9 @@ class _ActionIconButton extends StatelessWidget {
             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-              side: const BorderSide(color: OpenVtsColors.border),
+              side: BorderSide(
+                color: isDark ? OpenVtsColors.white : OpenVtsColors.textPrimary,
+              ),
             ),
           ),
         ),

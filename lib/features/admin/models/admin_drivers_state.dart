@@ -22,6 +22,7 @@ class AdminDriversState {
     required this.isRefreshing,
     required this.errorMessage,
     required this.refreshKey,
+    required this.updatingDriverIds,
   });
 
   const AdminDriversState.initial()
@@ -38,7 +39,8 @@ class AdminDriversState {
         isLoading = true,
         isRefreshing = false,
         errorMessage = null,
-        refreshKey = 0;
+        refreshKey = 0,
+        updatingDriverIds = const <String>{};
 
   static const _unset = Object();
 
@@ -56,6 +58,7 @@ class AdminDriversState {
   final bool isRefreshing;
   final String? errorMessage;
   final int refreshKey;
+  final Set<String> updatingDriverIds;
 
   bool get hasDrivers => drivers.isNotEmpty;
   bool get hasActiveFilters =>
@@ -105,6 +108,7 @@ class AdminDriversState {
     bool? isRefreshing,
     Object? errorMessage = _unset,
     int? refreshKey,
+    Set<String>? updatingDriverIds,
   }) {
     return AdminDriversState(
       drivers: drivers ?? this.drivers,
@@ -125,6 +129,7 @@ class AdminDriversState {
           ? this.errorMessage
           : errorMessage as String?,
       refreshKey: refreshKey ?? this.refreshKey,
+      updatingDriverIds: updatingDriverIds ?? this.updatingDriverIds,
     );
   }
 }

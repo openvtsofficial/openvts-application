@@ -11,6 +11,8 @@ import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
+import '../../../../../shared/widgets/open_vts_loader.dart';
+import '../../../../../shared/widgets/open_vts_searchable_dropdown.dart';
 import '../../../controllers/admin_providers.dart';
 import '../../../models/admin_support_model.dart';
 import '../../../services/admin_support_service.dart';
@@ -40,7 +42,6 @@ class AdminSupportTicketForm extends ConsumerStatefulWidget {
 
 class _AdminSupportTicketFormState
     extends ConsumerState<AdminSupportTicketForm> {
-  final TextEditingController _userSearchController = TextEditingController();
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _messageController = TextEditingController();
 
@@ -54,7 +55,6 @@ class _AdminSupportTicketFormState
   @override
   void initState() {
     super.initState();
-    _userSearchController.addListener(_handleUserSearchChanged);
     _scheduleUsersLoadIfNeeded();
   }
 
@@ -68,17 +68,9 @@ class _AdminSupportTicketFormState
 
   @override
   void dispose() {
-    _userSearchController.removeListener(_handleUserSearchChanged);
-    _userSearchController.dispose();
     _titleController.dispose();
     _messageController.dispose();
     super.dispose();
-  }
-
-  void _handleUserSearchChanged() {
-    if (_isUserMode) {
-      setState(() {});
-    }
   }
 
   void _scheduleUsersLoadIfNeeded() {
@@ -166,63 +158,60 @@ class _AdminSupportTicketFormState
     final isCreating =
         _isUserMode ? state.isCreatingUserTicket : state.isCreatingMyTicket;
     final users = state.users;
-    final filteredUsers = _filterUsers(users, _userSearchController.text);
-    final dropdownUsers = _buildDropdownUsers(
-      allUsers: users,
-      filteredUsers: filteredUsers,
-      selectedId: _userId,
-    );
     final selectedUserId =
-        dropdownUsers.any((user) => user.id == _userId) ? _userId : null;
+        users.any((user) => user.id == _userId) ? _userId : null;
 
     return Column(
       children: [
         Expanded(
-          child: SingleChildScrollView(
-            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-            padding: widget.contentPadding,
-            child: Align(
-              alignment: Alignment.topCenter,
-              child: ConstrainedBox(
-                constraints: BoxConstraints(maxWidth: widget.maxContentWidth),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    if (widget.showHelperCard) ...[
-                      _CreateTicketHelperCard(mode: widget.mode),
-                      const SizedBox(height: OpenVtsSpacing.sm),
-                    ],
-                    OpenVtsCard(
-                      padding: const EdgeInsets.all(OpenVtsSpacing.md),
-                      child: _TicketFields(
-                        mode: widget.mode,
-                        userSearchController: _userSearchController,
-                        selectedUserId: selectedUserId,
-                        users: dropdownUsers,
-                        usersAreLoading: state.isLoadingUsers,
-                        titleController: _titleController,
-                        messageController: _messageController,
-                        category: _category,
-                        priority: _priority,
-                        attachments: _attachments,
-                        isCreating: isCreating,
-                        onUserChanged: (value) {
-                          setState(() => _userId = value);
-                        },
-                        onCategoryChanged: (value) {
-                          setState(() => _category = value ?? _category);
-                        },
-                        onPriorityChanged: (value) {
-                          setState(() => _priority = value ?? _priority);
-                        },
-                        onRemoveAttachment: _removeAttachment,
+          child: state.isLoadingUsers && users.isEmpty && _isUserMode
+              ? const Center(child: OpenVtsLoader())
+              : SingleChildScrollView(
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
+                  padding: widget.contentPadding,
+                  child: Align(
+                    alignment: Alignment.topCenter,
+                    child: ConstrainedBox(
+                      constraints:
+                          BoxConstraints(maxWidth: widget.maxContentWidth),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          if (widget.showHelperCard) ...[
+                            _CreateTicketHelperCard(mode: widget.mode),
+                            const SizedBox(height: OpenVtsSpacing.sm),
+                          ],
+                          OpenVtsCard(
+                            padding: const EdgeInsets.all(OpenVtsSpacing.md),
+                            child: _TicketFields(
+                              mode: widget.mode,
+                              selectedUserId: selectedUserId,
+                              users: users,
+                              usersAreLoading: state.isLoadingUsers,
+                              titleController: _titleController,
+                              messageController: _messageController,
+                              category: _category,
+                              priority: _priority,
+                              attachments: _attachments,
+                              isCreating: isCreating,
+                              onUserChanged: (value) {
+                                setState(() => _userId = value);
+                              },
+                              onCategoryChanged: (value) {
+                                setState(() => _category = value ?? _category);
+                              },
+                              onPriorityChanged: (value) {
+                                setState(() => _priority = value ?? _priority);
+                              },
+                              onRemoveAttachment: _removeAttachment,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
+                  ),
                 ),
-              ),
-            ),
-          ),
         ),
         _TicketFormActionBar(
           submitLabel: widget.submitLabel,
@@ -301,54 +290,6 @@ class _AdminSupportTicketFormState
     return true;
   }
 
-  List<AdminSupportUserMini> _filterUsers(
-    List<AdminSupportUserMini> users,
-    String query,
-  ) {
-    final normalized = query.trim().toLowerCase();
-    if (normalized.isEmpty) {
-      return users;
-    }
-
-    return users.where((user) {
-      final haystack = [
-        user.displayName,
-        user.username,
-        user.email,
-        user.phone,
-      ].join(' ').toLowerCase();
-      return haystack.contains(normalized);
-    }).toList(growable: false);
-  }
-
-  List<AdminSupportUserMini> _buildDropdownUsers({
-    required List<AdminSupportUserMini> allUsers,
-    required List<AdminSupportUserMini> filteredUsers,
-    required String? selectedId,
-  }) {
-    final resolved = <AdminSupportUserMini>[...filteredUsers];
-    final id = selectedId?.trim();
-    if (id == null || id.isEmpty) {
-      return resolved;
-    }
-
-    AdminSupportUserMini? selected;
-    for (final user in allUsers) {
-      if (user.id == id) {
-        selected = user;
-        break;
-      }
-    }
-
-    final selectedUser = selected;
-    if (selectedUser != null &&
-        !resolved.any((user) => user.id == selectedUser.id)) {
-      resolved.insert(0, selectedUser);
-    }
-
-    return resolved;
-  }
-
   bool _containsLetterOrNumber(String value) {
     return RegExp(r'[A-Za-z0-9]').hasMatch(value);
   }
@@ -361,6 +302,7 @@ class _CreateTicketHelperCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final detail = mode == AdminSupportTicketFormMode.user
         ? 'Select a user, describe the issue, and attach files if needed.'
         : 'Briefly describe the issue and attach files if needed.';
@@ -373,7 +315,9 @@ class _CreateTicketHelperCard extends StatelessWidget {
           Text(
             'New support ticket',
             style: OpenVtsTypography.titleSmall.copyWith(
-              color: OpenVtsColors.textPrimary,
+              color: isDark
+                  ? OpenVtsColors.darkTextPrimary
+                  : OpenVtsColors.textPrimary,
               fontWeight: FontWeight.w800,
               fontSize: 16,
             ),
@@ -382,7 +326,9 @@ class _CreateTicketHelperCard extends StatelessWidget {
           Text(
             detail,
             style: OpenVtsTypography.meta.copyWith(
-              color: OpenVtsColors.textSecondary,
+              color: isDark
+                  ? OpenVtsColors.darkTextSecondary
+                  : OpenVtsColors.textSecondary,
             ),
           ),
         ],
@@ -394,7 +340,6 @@ class _CreateTicketHelperCard extends StatelessWidget {
 class _TicketFields extends StatelessWidget {
   const _TicketFields({
     required this.mode,
-    required this.userSearchController,
     required this.selectedUserId,
     required this.users,
     required this.usersAreLoading,
@@ -411,7 +356,6 @@ class _TicketFields extends StatelessWidget {
   });
 
   final AdminSupportTicketFormMode mode;
-  final TextEditingController userSearchController;
   final String? selectedUserId;
   final List<AdminSupportUserMini> users;
   final bool usersAreLoading;
@@ -434,44 +378,27 @@ class _TicketFields extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (showUserFields) ...[
-          TextField(
-            controller: userSearchController,
-            enabled: !isCreating,
-            decoration: _fieldDecoration('Search user').copyWith(
-              hintText: 'Name, username, email',
-              prefixIcon: const Icon(Icons.search_rounded),
-            ),
-          ),
-          const SizedBox(height: OpenVtsSpacing.sm),
-          DropdownButtonFormField<String>(
-            initialValue: selectedUserId,
-            isDense: true,
-            isExpanded: true,
-            decoration: _fieldDecoration('User'),
-            items: users
+          OpenVtsSearchableDropdown<String>(
+            label: 'User',
+            value: selectedUserId,
+            options: users
                 .map(
-                  (user) => DropdownMenuItem<String>(
+                  (user) => OpenVtsDropdownOption<String>(
                     value: user.id,
-                    child: Text(
-                      '${user.displayName} (${user.username})',
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                    label: user.displayName,
+                    subtitle: user.email.isNotEmpty ? user.email : null,
+                    searchText: '${user.username} ${user.email} ${user.phone}',
                   ),
                 )
                 .toList(growable: false),
-            onChanged: isCreating ? null : onUserChanged,
+            onChanged: isCreating ? (_) {} : onUserChanged,
+            isLoading: usersAreLoading,
+            enabled: !isCreating,
+            sheetTitle: 'Select User',
+            searchHintText: 'Search by name, username or email',
+            emptyMessage: 'No users found.',
+            required: true,
           ),
-          if (users.isEmpty && !usersAreLoading) ...[
-            const SizedBox(height: OpenVtsSpacing.xs),
-            Text(
-              userSearchController.text.trim().isEmpty
-                  ? 'No users found.'
-                  : 'No users match this search.',
-              style: OpenVtsTypography.meta.copyWith(
-                color: OpenVtsColors.textSecondary,
-              ),
-            ),
-          ],
           const SizedBox(height: OpenVtsSpacing.sm),
         ],
         TextField(
@@ -587,6 +514,7 @@ class _TicketFormActionBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return SafeArea(
       top: false,
       child: Container(
@@ -596,9 +524,13 @@ class _TicketFormActionBar extends StatelessWidget {
           OpenVtsSpacing.md,
           OpenVtsSpacing.md,
         ),
-        decoration: const BoxDecoration(
-          color: OpenVtsColors.surface,
-          border: Border(top: BorderSide(color: OpenVtsColors.border)),
+        decoration: BoxDecoration(
+          color: isDark ? OpenVtsColors.darkSurface : OpenVtsColors.surface,
+          border: Border(
+            top: BorderSide(
+              color: isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border,
+            ),
+          ),
         ),
         child: Align(
           alignment: Alignment.center,
@@ -606,10 +538,30 @@ class _TicketFormActionBar extends StatelessWidget {
             constraints: const BoxConstraints(maxWidth: 720),
             child: Row(
               children: [
-                IconButton.filledTonal(
-                  tooltip: 'Attach files',
-                  onPressed: onAttach,
-                  icon: const Icon(Icons.attach_file_rounded, size: 18),
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? OpenVtsColors.darkSurfaceElevated
+                        : OpenVtsColors.textPrimary,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isDark
+                          ? OpenVtsColors.darkBorder
+                          : OpenVtsColors.white,
+                    ),
+                  ),
+                  child: IconButton(
+                    tooltip: 'Attach files',
+                    onPressed: onAttach,
+                    icon: const Icon(
+                      Icons.attach_file_rounded,
+                      size: 18,
+                      color: OpenVtsColors.white,
+                    ),
+                    padding: EdgeInsets.zero,
+                  ),
                 ),
                 const SizedBox(width: OpenVtsSpacing.sm),
                 Expanded(
@@ -641,6 +593,7 @@ class _DraftAttachmentWrap extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Wrap(
       spacing: OpenVtsSpacing.xs,
       runSpacing: OpenVtsSpacing.xs,
@@ -652,17 +605,23 @@ class _DraftAttachmentWrap extends StatelessWidget {
                 end: OpenVtsSpacing.xxs,
               ),
               decoration: BoxDecoration(
-                border: Border.all(color: OpenVtsColors.border),
+                border: Border.all(
+                  color:
+                      isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border,
+                ),
                 borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
-                color: OpenVtsColors.surface,
+                color:
+                    isDark ? OpenVtsColors.darkSurface : OpenVtsColors.surface,
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.insert_drive_file_outlined,
                     size: 14,
-                    color: OpenVtsColors.textTertiary,
+                    color: isDark
+                        ? OpenVtsColors.darkTextSecondary
+                        : OpenVtsColors.textTertiary,
                   ),
                   const SizedBox(width: OpenVtsSpacing.xxs),
                   ConstrainedBox(

@@ -18,14 +18,14 @@ class UserTransactionsFilterCard extends StatefulWidget {
     required this.customTo,
     required this.selectedStatus,
     required this.selectedPaymentMode,
-    required this.selectedPaymentType,
+    required this.selectedDirection,
     required this.hasActiveFilters,
     required this.onSearchChanged,
     required this.onRangePresetChanged,
     required this.onCustomRangeChanged,
     required this.onStatusChanged,
     required this.onPaymentModeChanged,
-    required this.onPaymentTypeChanged,
+    required this.onDirectionChanged,
     required this.onClearFilters,
     super.key,
   });
@@ -36,7 +36,7 @@ class UserTransactionsFilterCard extends StatefulWidget {
   final DateTime? customTo;
   final UserTransactionStatus? selectedStatus;
   final UserPaymentMode? selectedPaymentMode;
-  final String? selectedPaymentType;
+  final UserTransactionDirection? selectedDirection;
   final bool hasActiveFilters;
 
   final ValueChanged<String> onSearchChanged;
@@ -44,7 +44,7 @@ class UserTransactionsFilterCard extends StatefulWidget {
   final void Function(DateTime? from, DateTime? to) onCustomRangeChanged;
   final ValueChanged<UserTransactionStatus?> onStatusChanged;
   final ValueChanged<UserPaymentMode?> onPaymentModeChanged;
-  final ValueChanged<String?> onPaymentTypeChanged;
+  final ValueChanged<UserTransactionDirection?> onDirectionChanged;
   final VoidCallback onClearFilters;
 
   @override
@@ -69,11 +69,11 @@ class _UserTransactionsFilterCardState
 
   @override
   Widget build(BuildContext context) {
-    final selectedPaymentType =
-        widget.selectedPaymentType?.trim().toUpperCase();
-    final hasAdvancedSelection = widget.selectedPaymentMode != null ||
-        (selectedPaymentType != null && selectedPaymentType.isNotEmpty);
+    final hasAdvancedSelection =
+        widget.selectedPaymentMode != null || widget.selectedDirection != null;
     final showAdvancedFilters = _showAdvancedFilters || hasAdvancedSelection;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final headingColor = isDark ? Colors.white : OpenVtsColors.textPrimary;
 
     return OpenVtsCard(
       padding: const EdgeInsets.all(OpenVtsSpacing.sm),
@@ -86,6 +86,7 @@ class _UserTransactionsFilterCardState
                 'Filters',
                 style: OpenVtsTypography.label.copyWith(
                   fontWeight: FontWeight.w700,
+                  color: headingColor,
                 ),
               ),
               const Spacer(),
@@ -307,18 +308,22 @@ class _UserTransactionsFilterCardState
               children: [
                 _CompactChoiceChip(
                   label: 'All',
-                  selected: selectedPaymentType == null,
-                  onTap: () => widget.onPaymentTypeChanged(null),
+                  selected: widget.selectedDirection == null,
+                  onTap: () => widget.onDirectionChanged(null),
                 ),
                 _CompactChoiceChip(
                   label: 'Credit',
-                  selected: selectedPaymentType == 'CREDIT',
-                  onTap: () => widget.onPaymentTypeChanged('CREDIT'),
+                  selected: widget.selectedDirection ==
+                      UserTransactionDirection.credit,
+                  onTap: () => widget
+                      .onDirectionChanged(UserTransactionDirection.credit),
                 ),
                 _CompactChoiceChip(
                   label: 'Debit',
-                  selected: selectedPaymentType == 'DEBIT',
-                  onTap: () => widget.onPaymentTypeChanged('DEBIT'),
+                  selected: widget.selectedDirection ==
+                      UserTransactionDirection.debit,
+                  onTap: () =>
+                      widget.onDirectionChanged(UserTransactionDirection.debit),
                 ),
               ],
             ),
@@ -344,10 +349,13 @@ class _SectionLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.grey[300] : OpenVtsColors.textSecondary;
+
     return Text(
       text,
       style: OpenVtsTypography.meta.copyWith(
-        color: OpenVtsColors.textSecondary,
+        color: textColor,
         fontWeight: FontWeight.w700,
       ),
     );
@@ -367,25 +375,38 @@ class _CompactChoiceChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChoiceChip(
-      selected: selected,
-      showCheckmark: false,
-      onSelected: (_) => onTap(),
-      labelPadding: const EdgeInsets.symmetric(horizontal: 2),
-      materialTapTargetSize: MaterialTapTargetSize.padded,
-      selectedColor: OpenVtsColors.brandInk,
-      backgroundColor: OpenVtsColors.surfaceElevated,
-      side: BorderSide(
-        color: selected ? OpenVtsColors.brandInk : OpenVtsColors.border,
-      ),
-      shape: RoundedRectangleBorder(
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final backgroundColor =
+        selected ? (isDark ? Colors.black : Colors.white) : Colors.transparent;
+    final textColor = isDark ? Colors.white : Colors.black;
+    final borderColor =
+        isDark ? Colors.white : Colors.black.withValues(alpha: 0.2);
+
+    return Material(
+      color: backgroundColor,
+      borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
+      child: InkWell(
         borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
-      ),
-      label: Text(
-        label,
-        style: OpenVtsTypography.meta.copyWith(
-          color: selected ? OpenVtsColors.white : OpenVtsColors.textPrimary,
-          fontWeight: FontWeight.w600,
+        onTap: onTap,
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 34),
+          padding: const EdgeInsets.symmetric(
+            horizontal: OpenVtsSpacing.sm,
+            vertical: OpenVtsSpacing.xs,
+          ),
+          decoration: selected
+              ? BoxDecoration(
+                  borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
+                  border: Border.all(color: borderColor, width: 1),
+                )
+              : null,
+          child: Text(
+            label,
+            style: OpenVtsTypography.meta.copyWith(
+              color: textColor,
+              fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+            ),
+          ),
         ),
       ),
     );

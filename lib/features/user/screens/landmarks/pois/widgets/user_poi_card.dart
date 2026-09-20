@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../../core/theme/open_vts_radius.dart';
@@ -12,7 +13,7 @@ import '../user_poi_constants.dart';
 
 /// Compact POI list card. Renders name, category, status, color dot, icon,
 /// tolerance (when set), coordinates, updated date, and edit/delete actions.
-class UserPoiCard extends StatelessWidget {
+class UserPoiCard extends ConsumerWidget {
   const UserPoiCard({
     super.key,
     required this.poi,
@@ -30,10 +31,9 @@ class UserPoiCard extends StatelessWidget {
   final VoidCallback onDelete;
   final bool isDeleting;
 
-  static const DateTimeFormatter _formatter = DateTimeFormatter();
-
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final formatter = ref.watch(appDateFormatterProvider);
     final color = _parseHex(poi.color);
     final inactive = !poi.isActive;
 
@@ -74,7 +74,9 @@ class UserPoiCard extends StatelessWidget {
                                         : poi.name,
                                     style:
                                         OpenVtsTypography.titleSmall.copyWith(
-                                      color: OpenVtsColors.textPrimary,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface,
                                       fontWeight: FontWeight.w600,
                                     ),
                                     maxLines: 1,
@@ -122,7 +124,7 @@ class UserPoiCard extends StatelessWidget {
                     Text(
                       poi.description.trim(),
                       style: OpenVtsTypography.meta.copyWith(
-                        color: OpenVtsColors.textSecondary,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                         height: 1.35,
                       ),
                       maxLines: 2,
@@ -136,7 +138,8 @@ class UserPoiCard extends StatelessWidget {
                         child: Text(
                           _metaSummary(poi),
                           style: OpenVtsTypography.meta.copyWith(
-                            color: OpenVtsColors.textSecondary,
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -145,9 +148,9 @@ class UserPoiCard extends StatelessWidget {
                       if (poi.updatedAt != null) ...[
                         const SizedBox(width: OpenVtsSpacing.sm),
                         Text(
-                          _formatter.formatDate(poi.updatedAt!),
+                          formatter.formatDate(poi.updatedAt!),
                           style: OpenVtsTypography.meta.copyWith(
-                            color: OpenVtsColors.textTertiary,
+                            color: Theme.of(context).colorScheme.outline,
                           ),
                         ),
                       ],
@@ -205,9 +208,9 @@ class UserPoiCard extends StatelessWidget {
 
   static Color _parseHex(String value) {
     final cleaned = value.replaceAll('#', '').trim();
-    if (cleaned.length != 6) return OpenVtsColors.textTertiary;
+    if (cleaned.length != 6) return OpenVtsColors.brandInk;
     final parsed = int.tryParse('FF$cleaned', radix: 16);
-    if (parsed == null) return OpenVtsColors.textTertiary;
+    if (parsed == null) return OpenVtsColors.brandInk;
     return Color(parsed);
   }
 }
@@ -269,8 +272,9 @@ class _RowAction extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final disabled = onTap == null;
-    final color =
-        destructive ? OpenVtsColors.error : OpenVtsColors.textSecondary;
+    final color = destructive
+        ? OpenVtsColors.error
+        : Theme.of(context).colorScheme.onSurfaceVariant;
     return Tooltip(
       message: tooltip,
       child: InkResponse(
@@ -281,7 +285,7 @@ class _RowAction extends StatelessWidget {
           child: Icon(
             icon,
             size: 18,
-            color: disabled ? OpenVtsColors.textTertiary : color,
+            color: disabled ? Theme.of(context).colorScheme.outline : color,
           ),
         ),
       ),

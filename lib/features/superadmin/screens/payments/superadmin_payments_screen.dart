@@ -45,6 +45,11 @@ class _SuperadminPaymentsScreenState
       }
 
       _hasLoadedInitial = true;
+
+      // Invalidate any surviving autoDispose provider state from a prior
+      // session so we always fetch fresh data when the screen mounts.
+      ref.invalidate(superadminPaymentsControllerProvider);
+
       unawaited(
         ref.read(superadminPaymentsControllerProvider.notifier).loadInitial(),
       );
@@ -185,10 +190,17 @@ class _SuperadminPaymentsScreenState
     }
 
     if (!state.hasTransactions) {
-      return const OpenVtsCard(
+      final hasFilters = state.hasActiveFilters;
+      return OpenVtsCard(
         child: OpenVtsEmptyState(
-          title: 'No transactions found',
-          message: 'Try changing filters or record a manual payment.',
+          title: hasFilters
+              ? 'No transactions match your filters'
+              : 'No transactions found',
+          message: hasFilters
+              ? state.selectedAdminId != null
+                  ? 'No payments found for this admin. Try clearing filters.'
+                  : 'Try adjusting your filters or date range.'
+              : 'Record a manual payment to get started.',
         ),
       );
     }
@@ -197,7 +209,7 @@ class _SuperadminPaymentsScreenState
       children: [
         ...state.transactions.map(
           (transaction) => Padding(
-            padding: const EdgeInsets.only(bottom: OpenVtsSpacing.sm),
+            padding: const EdgeInsets.only(bottom: OpenVtsSpacing.xs),
             child: SuperadminTransactionCard(
               transaction: transaction,
               onTap: () => _openTransactionDetails(transaction),
@@ -206,7 +218,7 @@ class _SuperadminPaymentsScreenState
         ),
         if (state.hasMoreTransactions)
           Padding(
-            padding: const EdgeInsets.only(top: OpenVtsSpacing.xs),
+            padding: const EdgeInsets.only(top: OpenVtsSpacing.sm),
             child: OpenVtsButton(
               label: 'Load More',
               variant: OpenVtsButtonVariant.secondary,
@@ -230,40 +242,23 @@ class _PaymentsHeaderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return OpenVtsCard(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Payments',
-                  style: OpenVtsTypography.titleMedium.copyWith(
-                    color: OpenVtsColors.textPrimary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  'Transactions and revenue',
-                  style: OpenVtsTypography.meta.copyWith(
-                    color: OpenVtsColors.textTertiary,
-                  ),
-                ),
-              ],
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            'Transactions and revenue',
+            style: OpenVtsTypography.meta.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
-          const SizedBox(width: OpenVtsSpacing.xs),
-          OpenVtsButton(
-            label: 'Record Payment',
-            trailingIcon: Icons.add_rounded,
-            onPressed: onRecordPressed,
-          ),
-        ],
-      ),
+        ),
+        const SizedBox(width: OpenVtsSpacing.xs),
+        OpenVtsButton(
+          label: 'Record Payment',
+          trailingIcon: Icons.add_rounded,
+          onPressed: onRecordPressed,
+        ),
+      ],
     );
   }
 }
@@ -277,6 +272,7 @@ class _TransactionsHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final loaded = state.transactions.length;
     final total = state.total;
+    final scheme = Theme.of(context).colorScheme;
 
     return Row(
       children: [
@@ -284,7 +280,7 @@ class _TransactionsHeader extends StatelessWidget {
           child: Text(
             'Transactions',
             style: OpenVtsTypography.titleSmall.copyWith(
-              color: OpenVtsColors.textPrimary,
+              color: scheme.onSurface,
             ),
           ),
         ),
@@ -294,14 +290,14 @@ class _TransactionsHeader extends StatelessWidget {
             vertical: OpenVtsSpacing.xxs,
           ),
           decoration: BoxDecoration(
-            color: OpenVtsColors.surface,
+            color: scheme.surface,
             borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
-            border: Border.all(color: OpenVtsColors.border),
+            border: Border.all(color: scheme.outlineVariant),
           ),
           child: Text(
             total > 0 ? '$loaded / $total' : '$loaded',
             style: OpenVtsTypography.meta.copyWith(
-              color: OpenVtsColors.textSecondary,
+              color: scheme.onSurfaceVariant,
               fontWeight: FontWeight.w600,
             ),
           ),

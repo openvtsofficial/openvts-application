@@ -26,6 +26,14 @@ Options heavyReadOptions() {
   );
 }
 
+/// Options for report generation — aggregation can be slow on large fleets.
+Options reportGenerateOptions() {
+  return Options(
+    sendTimeout: const Duration(seconds: 30),
+    receiveTimeout: const Duration(seconds: 60),
+  );
+}
+
 /// Options for uploads / exports / long-running endpoints.
 Options uploadOptions() {
   return Options(

@@ -23,10 +23,14 @@ class SuperadminSupportTicketCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final activityDate =
         ticket.lastMessageAt ?? ticket.updatedAt ?? ticket.createdAt;
+    final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final statusColor = switch (ticket.status) {
-      SuperadminSupportTicketStatus.open => OpenVtsColors.success,
-      SuperadminSupportTicketStatus.inProgress => OpenVtsColors.info,
-      SuperadminSupportTicketStatus.closed => OpenVtsColors.textTertiary,
+      SuperadminSupportTicketStatus.open =>
+        isDark ? const Color(0xFF5DB588) : OpenVtsColors.success,
+      SuperadminSupportTicketStatus.inProgress =>
+        isDark ? const Color(0xFFD4A852) : OpenVtsColors.warning,
+      SuperadminSupportTicketStatus.closed => cs.onSurfaceVariant,
     };
 
     final priorityColor = switch (ticket.priority) {
@@ -54,4 +58,3 @@ class SuperadminSupportTicketCard extends StatelessWidget {
     );
   }
 }
-

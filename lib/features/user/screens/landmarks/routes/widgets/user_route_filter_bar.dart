@@ -104,10 +104,10 @@ class _SearchFieldState extends State<_SearchField> {
           hintStyle: OpenVtsTypography.body.copyWith(
             color: OpenVtsColors.textTertiary,
           ),
-          prefixIcon: const Icon(
+          prefixIcon: Icon(
             Icons.search,
             size: 18,
-            color: OpenVtsColors.textSecondary,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
           suffixIcon: widget.value.isEmpty
               ? null
@@ -118,9 +118,9 @@ class _SearchFieldState extends State<_SearchField> {
                     _controller.clear();
                     widget.onChanged('');
                   },
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.close,
-                    color: OpenVtsColors.textSecondary,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
           contentPadding: const EdgeInsets.symmetric(
@@ -154,11 +154,15 @@ class _FilterGroup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final borderColor = isDark ? Colors.white : OpenVtsColors.border;
+    final containerColor = isDark ? Colors.black : OpenVtsColors.white;
     return Container(
+      constraints: const BoxConstraints(minHeight: 34),
       decoration: BoxDecoration(
-        color: OpenVtsColors.surface,
+        color: containerColor,
         borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
-        border: Border.all(color: OpenVtsColors.border),
+        border: Border.all(color: borderColor),
       ),
       padding: const EdgeInsets.all(2),
       child: Row(
@@ -187,6 +191,13 @@ class _FilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final backgroundColor = selected
+        ? (isDark ? Colors.black : OpenVtsColors.white)
+        : Colors.transparent;
+    final textColor = isDark ? Colors.white : OpenVtsColors.brandInk;
+    final borderColor = isDark ? Colors.white : OpenVtsColors.border;
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
@@ -194,17 +205,18 @@ class _FilterChip extends StatelessWidget {
         duration: const Duration(milliseconds: 140),
         padding: const EdgeInsets.symmetric(
           horizontal: OpenVtsSpacing.sm,
-          vertical: 6,
+          vertical: OpenVtsSpacing.xs,
         ),
         decoration: BoxDecoration(
-          color: selected ? OpenVtsColors.brandInk : Colors.transparent,
+          color: backgroundColor,
           borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
+          border: selected ? Border.all(color: borderColor) : null,
         ),
         child: Text(
           label,
           style: OpenVtsTypography.meta.copyWith(
-            color: selected ? OpenVtsColors.white : OpenVtsColors.textPrimary,
-            fontWeight: FontWeight.w600,
+            color: textColor,
+            fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
           ),
         ),
       ),

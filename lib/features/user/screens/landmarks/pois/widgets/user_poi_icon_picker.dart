@@ -28,7 +28,7 @@ class UserPoiIconPicker extends StatelessWidget {
         Text(
           label,
           style: OpenVtsTypography.label.copyWith(
-            color: OpenVtsColors.textPrimary,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         const SizedBox(height: 6),
@@ -75,17 +75,17 @@ class _IconChip extends StatelessWidget {
           width: 32,
           height: 32,
           decoration: BoxDecoration(
-            color: selected ? OpenVtsColors.brandInk : OpenVtsColors.surface,
+            color: OpenVtsColors.brandInk,
             borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
             border: Border.all(
-              color: selected ? OpenVtsColors.brandInk : OpenVtsColors.border,
+              color: selected ? OpenVtsColors.white : OpenVtsColors.brandInk,
             ),
           ),
           alignment: Alignment.center,
           child: Icon(
             icon,
             size: 16,
-            color: selected ? OpenVtsColors.white : OpenVtsColors.textPrimary,
+            color: OpenVtsColors.white,
           ),
         ),
       ),

@@ -72,6 +72,7 @@ class AdminUsersState {
     required this.loggingInIds,
     required this.errorMessage,
     required this.refreshKey,
+    required this.countryOptions,
   });
 
   const AdminUsersState.initial()
@@ -91,7 +92,8 @@ class AdminUsersState {
         deletingIds = const <String>{},
         loggingInIds = const <String>{},
         errorMessage = null,
-        refreshKey = 0;
+        refreshKey = 0,
+        countryOptions = const <AdminUserCountryOption>[];
 
   static const _unset = Object();
 
@@ -113,6 +115,10 @@ class AdminUsersState {
   final String? errorMessage;
   final int refreshKey;
 
+  /// Country reference options loaded once from the API (or fallback).
+  /// Used to resolve raw country codes into readable labels everywhere.
+  final List<AdminUserCountryOption> countryOptions;
+
   bool get hasUsers => users.isNotEmpty;
   bool get hasFilteredUsers => filteredUsers.isNotEmpty;
   bool get hasActiveFilters =>
@@ -123,7 +129,8 @@ class AdminUsersState {
 
   int get filteredCount => filteredUsers.length;
 
-  int get pageCount => math.max<int>(1, (filteredCount / recordsPerPage).ceil());
+  int get pageCount =>
+      math.max<int>(1, (filteredCount / recordsPerPage).ceil());
 
   int get safeCurrentPage => currentPage.clamp(1, pageCount);
 
@@ -162,6 +169,7 @@ class AdminUsersState {
     Set<String>? loggingInIds,
     Object? errorMessage = _unset,
     int? refreshKey,
+    List<AdminUserCountryOption>? countryOptions,
   }) {
     return AdminUsersState(
       users: users ?? this.users,
@@ -185,6 +193,7 @@ class AdminUsersState {
           ? this.errorMessage
           : errorMessage as String?,
       refreshKey: refreshKey ?? this.refreshKey,
+      countryOptions: countryOptions ?? this.countryOptions,
     );
   }
 }

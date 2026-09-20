@@ -7,6 +7,7 @@ import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../core/utils/date_time_formatter.dart';
+import '../../../../../core/utils/validators.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../shared/widgets/open_vts_text_field.dart';
@@ -14,7 +15,6 @@ import '../../../controllers/user_vehicle_details_controller.dart';
 import '../../../models/user_vehicle_model.dart';
 import '../../../models/user_vehicle_state.dart';
 
-const DateTimeFormatter _dateFormatter = DateTimeFormatter();
 const int _maxDocumentBytes = 10 * 1024 * 1024;
 const List<String> _blockedDocumentExtensions = <String>[
   'exe',
@@ -130,12 +130,7 @@ class _UserVehicleDocumentSheetState
                     hintText: 'Document title',
                     prefixIcon: Icons.title_rounded,
                     textInputAction: TextInputAction.next,
-                    validator: (value) {
-                      if ((value?.trim() ?? '').isEmpty) {
-                        return 'Title is required.';
-                      }
-                      return null;
-                    },
+                    validator: Validators.documentTitle,
                   ),
                   const SizedBox(height: OpenVtsSpacing.sm),
                   _FilePickerField(
@@ -419,18 +414,20 @@ class _FilePickerField extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(OpenVtsSpacing.sm),
           decoration: BoxDecoration(
-            color: OpenVtsColors.surface,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
             border: Border.all(
-              color: showError ? OpenVtsColors.error : OpenVtsColors.border,
+              color: showError
+                  ? OpenVtsColors.error
+                  : Theme.of(context).colorScheme.outlineVariant,
             ),
           ),
           child: Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.attach_file_rounded,
                 size: 18,
-                color: OpenVtsColors.textSecondary,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
               const SizedBox(width: OpenVtsSpacing.xs),
               Expanded(
@@ -440,8 +437,8 @@ class _FilePickerField extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: OpenVtsTypography.meta.copyWith(
                     color: currentName.isEmpty
-                        ? OpenVtsColors.textTertiary
-                        : OpenVtsColors.textPrimary,
+                        ? Theme.of(context).colorScheme.onSurfaceVariant
+                        : Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -481,7 +478,7 @@ class _FilePickerField extends StatelessWidget {
   }
 }
 
-class _ExpiryField extends StatelessWidget {
+class _ExpiryField extends ConsumerWidget {
   const _ExpiryField({
     required this.value,
     required this.onPick,
@@ -493,7 +490,8 @@ class _ExpiryField extends StatelessWidget {
   final VoidCallback onClear;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final formatter = ref.watch(appDateFormatterProvider);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -508,25 +506,26 @@ class _ExpiryField extends StatelessWidget {
               vertical: OpenVtsSpacing.xs,
             ),
             decoration: BoxDecoration(
-              color: OpenVtsColors.surface,
+              color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-              border: Border.all(color: OpenVtsColors.border),
+              border: Border.all(
+                  color: Theme.of(context).colorScheme.outlineVariant),
             ),
             child: Row(
               children: [
-                const Icon(
+                Icon(
                   Icons.event_outlined,
                   size: 18,
-                  color: OpenVtsColors.textSecondary,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
                 const SizedBox(width: OpenVtsSpacing.xs),
                 Expanded(
                   child: Text(
-                    value == null ? 'No expiry' : _dateText(value),
+                    value == null ? 'No expiry' : _dateText(value, formatter),
                     style: OpenVtsTypography.meta.copyWith(
                       color: value == null
-                          ? OpenVtsColors.textTertiary
-                          : OpenVtsColors.textPrimary,
+                          ? Theme.of(context).colorScheme.onSurfaceVariant
+                          : Theme.of(context).colorScheme.onSurface,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -543,10 +542,10 @@ class _ExpiryField extends StatelessWidget {
                     ),
                   )
                 else
-                  const Icon(
+                  Icon(
                     Icons.expand_more_rounded,
                     size: 18,
-                    color: OpenVtsColors.textSecondary,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
               ],
             ),
@@ -571,16 +570,16 @@ class _VisibilityToggle extends StatelessWidget {
         vertical: OpenVtsSpacing.xs,
       ),
       decoration: BoxDecoration(
-        color: OpenVtsColors.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-        border: Border.all(color: OpenVtsColors.border),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
       child: Row(
         children: [
           Icon(
             value ? Icons.visibility_outlined : Icons.visibility_off_outlined,
             size: 18,
-            color: OpenVtsColors.textSecondary,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
           const SizedBox(width: OpenVtsSpacing.xs),
           Expanded(
@@ -590,13 +589,13 @@ class _VisibilityToggle extends StatelessWidget {
                 Text(
                   'Visible',
                   style: OpenVtsTypography.label.copyWith(
-                    color: OpenVtsColors.textPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 Text(
                   value ? 'Shown in vehicle documents' : 'Hidden from users',
                   style: OpenVtsTypography.meta.copyWith(
-                    color: OpenVtsColors.textSecondary,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
               ],
@@ -625,8 +624,8 @@ class _TagChip extends StatelessWidget {
       onDeleted: onDelete,
       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
       visualDensity: VisualDensity.compact,
-      side: const BorderSide(color: OpenVtsColors.border),
-      backgroundColor: OpenVtsColors.surface,
+      side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
+      backgroundColor: Theme.of(context).colorScheme.surface,
     );
   }
 }
@@ -669,9 +668,9 @@ class _InlineError extends StatelessWidget {
   }
 }
 
-String _dateText(DateTime? value) {
+String _dateText(DateTime? value, AppDateFormatter formatter) {
   if (value == null) return '-';
-  return _dateFormatter.formatDate(value.toLocal());
+  return formatter.formatDate(value);
 }
 
 String _formatYmd(DateTime value) {

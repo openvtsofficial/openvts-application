@@ -14,9 +14,9 @@ class AdminSupportService {
   static const int maxAttachmentCount = 5;
   static const int maxAttachmentBytes = 5 * 1024 * 1024;
   static const int minTitleLength = 3;
-  static const int maxTitleLength = 80;
+  static const int maxTitleLength = 120;
   static const int minMessageLength = 10;
-  static const int maxMessageLength = 1000;
+  static const int maxMessageLength = 5000;
   static final RegExp _alphaNum = RegExp(r'[A-Za-z0-9]');
 
   static const Set<String> allowedExtensions = <String>{
@@ -53,6 +53,7 @@ class AdminSupportService {
     String? refreshKey,
     AdminSupportTicketStatus? status,
     String? search,
+    String? userId,
   }) async {
     final response = await _apiClient.get<dynamic>(
       ApiEndpoints.admin.tickets,
@@ -61,6 +62,7 @@ class AdminSupportService {
           'rk': refreshKey.trim(),
         if (status != null) 'status': status.apiValue,
         if (search != null && search.trim().isNotEmpty) 'search': search.trim(),
+        if (userId != null && userId.trim().isNotEmpty) 'userId': userId.trim(),
       },
       options: _readOptions,
       parser: (json) => json,

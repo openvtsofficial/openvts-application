@@ -1,9 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import '../../../../../core/theme/open_vts_colors.dart';
+import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
+import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../shared/widgets/open_vts_bottom_sheet.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
@@ -48,6 +52,7 @@ class _AdminVehicleCommandsTabState extends State<AdminVehicleCommandsTab> {
   final TextEditingController _noteController = TextEditingController();
 
   String? _selectedTemplateId;
+  int _dropdownEpoch = 0;
   String _latestStatus = '-';
   bool _polling = false;
 
@@ -58,6 +63,21 @@ class _AdminVehicleCommandsTabState extends State<AdminVehicleCommandsTab> {
     'TIMEOUT',
     'ERROR',
   };
+
+  @override
+  void didUpdateWidget(AdminVehicleCommandsTab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (_selectedTemplateId != null) {
+      final stillExists =
+          widget.customCommands.any((cmd) => cmd.id == _selectedTemplateId);
+      if (!stillExists) {
+        setState(() {
+          _selectedTemplateId = null;
+          _dropdownEpoch++;
+        });
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -78,35 +98,48 @@ class _AdminVehicleCommandsTabState extends State<AdminVehicleCommandsTab> {
 
     return Column(
       children: [
+        _TargetVehicleCard(vehicle: widget.vehicle),
+        const SizedBox(height: OpenVtsSpacing.sm),
         OpenVtsCard(
+          padding: const EdgeInsets.all(OpenVtsSpacing.md),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Target Vehicle',
-                  style: Theme.of(context).textTheme.titleSmall),
-              const SizedBox(height: OpenVtsSpacing.xs),
-              Text('Name: ${_safe(widget.vehicle.name)}'),
-              Text('IMEI: ${_safe(widget.vehicle.imei)}'),
-              Text('Plate: ${_safe(widget.vehicle.plateNumber)}'),
-            ],
-          ),
-        ),
-        const SizedBox(height: OpenVtsSpacing.sm),
-        OpenVtsCard(
-          child: Column(
-            children: [
+              Text(
+                'Command',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+              ),
+              const SizedBox(height: OpenVtsSpacing.sm),
               DropdownButtonFormField<String>(
+                key: ValueKey(_dropdownEpoch),
                 initialValue: _selectedTemplateId,
+                decoration: const InputDecoration(
+                  labelText: 'Template',
+                  isDense: true,
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: OpenVtsSpacing.sm,
+                    vertical: OpenVtsSpacing.xs,
+                  ),
+                ),
                 hint: const Text('Select command template'),
                 items: widget.customCommands
                     .map(
                       (item) => DropdownMenuItem<String>(
                         value: item.id,
-                        child: Text(item.displayTitle),
+                        child: Text(item.displaySelectedLabel),
                       ),
                     )
                     .toList(growable: false),
                 onChanged: (value) {
+                  if (kDebugMode) {
+                    debugPrint(
+                      '[CommandsTab] template selected: value="$value" '
+                      'total=${widget.customCommands.length} '
+                      'ids=[${widget.customCommands.map((c) => c.id).join(", ")}]',
+                    );
+                  }
                   setState(() => _selectedTemplateId = value);
                   final selected = widget.customCommands
                       .where((item) => item.id == value)
@@ -123,29 +156,63 @@ class _AdminVehicleCommandsTabState extends State<AdminVehicleCommandsTab> {
                 maxLines: 3,
                 maxLength: 500,
                 decoration: const InputDecoration(
-                  labelText: 'Command text',
-                  hintText: 'Enter command',
+                  labelText: 'Command',
+                  hintText: 'Enter command text',
                 ),
               ),
-              const SizedBox(height: OpenVtsSpacing.xs),
+              const SizedBox(height: OpenVtsSpacing.sm),
               TextField(
                 controller: _noteController,
                 maxLines: 2,
                 decoration: const InputDecoration(
-                  labelText: 'Note (optional)',
+                  labelText: 'Note',
+                  hintText: 'Optional notes',
                 ),
               ),
-              const SizedBox(height: OpenVtsSpacing.sm),
-              OpenVtsButton(
-                label: _polling ? 'Polling status...' : 'Send Command',
-                isLoading: widget.isSending,
-                onPressed: widget.isSending ? null : _send,
+              const SizedBox(height: OpenVtsSpacing.md),
+              Row(
+                children: [
+                  Expanded(
+                    child: OpenVtsButton(
+                      label: _polling ? 'Polling status...' : 'Send',
+                      isLoading: widget.isSending,
+                      onPressed: widget.isSending || _polling ? null : _send,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: OpenVtsSpacing.xs),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Text('Latest status: $_latestStatus'),
-              ),
+              if (_latestStatus != '-') ...[
+                const SizedBox(height: OpenVtsSpacing.sm),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: OpenVtsSpacing.sm,
+                    vertical: OpenVtsSpacing.xs,
+                  ),
+                  decoration: BoxDecoration(
+                    color: OpenVtsColors.background,
+                    borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
+                    border: Border.all(color: OpenVtsColors.border),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.info_rounded,
+                        size: 16,
+                        color: OpenVtsColors.textSecondary,
+                      ),
+                      const SizedBox(width: OpenVtsSpacing.xs),
+                      Expanded(
+                        child: Text(
+                          'Status: $_latestStatus',
+                          style: OpenVtsTypography.meta.copyWith(
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ],
           ),
         ),
@@ -161,21 +228,9 @@ class _AdminVehicleCommandsTabState extends State<AdminVehicleCommandsTab> {
           ...widget.history.map(
             (item) => Padding(
               padding: const EdgeInsets.only(bottom: OpenVtsSpacing.sm),
-              child: OpenVtsCard(
+              child: _CommandHistoryCard(
+                item: item,
                 onTap: () => _openHistoryDetails(item),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(item.command,
-                        style: Theme.of(context).textTheme.titleSmall),
-                    const SizedBox(height: OpenVtsSpacing.xxs),
-                    Text('Status: ${item.status}'),
-                    Text(
-                        'Requested: ${_fmtDateTime(item.requestedAt ?? item.displayTime)}'),
-                    Text(
-                        'Response/Error: ${_safe(item.responseRaw ?? item.errorMessage ?? '-')}'),
-                  ],
-                ),
               ),
             ),
           ),
@@ -326,5 +381,277 @@ class _AdminVehicleCommandsTabState extends State<AdminVehicleCommandsTab> {
     final t =
         '${local.hour.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')}:${local.second.toString().padLeft(2, '0')}';
     return '$d $t';
+  }
+}
+
+class _TargetVehicleCard extends StatelessWidget {
+  const _TargetVehicleCard({required this.vehicle});
+
+  final AdminVehicleDetails vehicle;
+
+  @override
+  Widget build(BuildContext context) {
+    final name =
+        vehicle.name.trim().isEmpty ? vehicle.plateNumber : vehicle.name;
+    final hasType = vehicle.vehicleType != null;
+
+    return OpenVtsCard(
+      padding: const EdgeInsets.all(OpenVtsSpacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Target Vehicle',
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+          ),
+          const SizedBox(height: OpenVtsSpacing.sm),
+          Text(
+            name.isEmpty ? '-' : name,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -0.2,
+                ),
+          ),
+          if (vehicle.plateNumber.trim().isNotEmpty) ...[
+            const SizedBox(height: 2),
+            Text(
+              vehicle.plateNumber,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: OpenVtsTypography.meta.copyWith(
+                color: OpenVtsColors.textSecondary,
+                fontSize: 12,
+              ),
+            ),
+          ],
+          const SizedBox(height: OpenVtsSpacing.sm),
+          const Divider(height: 1, color: OpenVtsColors.border),
+          const SizedBox(height: OpenVtsSpacing.sm),
+          Row(
+            children: [
+              Expanded(
+                child: _DetailItem(
+                  icon: Icons.device_unknown_rounded,
+                  label: 'IMEI',
+                  value: vehicle.imei.trim().isEmpty ? '-' : vehicle.imei,
+                ),
+              ),
+              if (vehicle.simNumber.trim().isNotEmpty) ...[
+                const SizedBox(width: OpenVtsSpacing.sm),
+                Expanded(
+                  child: _DetailItem(
+                    icon: Icons.sim_card_rounded,
+                    label: 'SIM',
+                    value: vehicle.simNumber,
+                  ),
+                ),
+              ],
+            ],
+          ),
+          if (hasType || vehicle.primaryUser != null) ...[
+            const SizedBox(height: OpenVtsSpacing.sm),
+            Row(
+              children: [
+                if (hasType)
+                  Expanded(
+                    child: _DetailItem(
+                      icon: Icons.category_rounded,
+                      label: 'Type',
+                      value: vehicle.vehicleType?.name ?? '-',
+                    ),
+                  ),
+                if (vehicle.primaryUser != null) ...[
+                  if (hasType) const SizedBox(width: OpenVtsSpacing.sm),
+                  Expanded(
+                    child: _DetailItem(
+                      icon: Icons.person_rounded,
+                      label: 'Primary User',
+                      value: vehicle.primaryUser?.displayName ?? '-',
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _DetailItem extends StatelessWidget {
+  const _DetailItem({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: 14, color: OpenVtsColors.textTertiary),
+        const SizedBox(width: OpenVtsSpacing.xs),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                label,
+                style: OpenVtsTypography.meta.copyWith(
+                  color: OpenVtsColors.textSecondary,
+                  fontSize: 10,
+                ),
+              ),
+              Text(
+                value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: OpenVtsTypography.meta.copyWith(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 11,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _CommandHistoryCard extends StatelessWidget {
+  const _CommandHistoryCard({
+    required this.item,
+    required this.onTap,
+  });
+
+  final AdminVehicleCommandItem item;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return OpenVtsCard(
+      onTap: onTap,
+      padding: const EdgeInsets.all(OpenVtsSpacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  item.command,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -0.2,
+                      ),
+                ),
+              ),
+              const SizedBox(width: OpenVtsSpacing.xs),
+              _StatusChip(status: item.status),
+            ],
+          ),
+          const SizedBox(height: OpenVtsSpacing.sm),
+          const Divider(height: 1, color: OpenVtsColors.border),
+          const SizedBox(height: OpenVtsSpacing.sm),
+          Row(
+            children: [
+              Expanded(
+                child: _DetailItem(
+                  icon: Icons.access_time_rounded,
+                  label: 'Requested',
+                  value: _formatTime(item.requestedAt ?? item.displayTime),
+                ),
+              ),
+              const SizedBox(width: OpenVtsSpacing.sm),
+              Expanded(
+                child: _DetailItem(
+                  icon: Icons.check_circle_outline_rounded,
+                  label: 'Status',
+                  value: item.status,
+                ),
+              ),
+            ],
+          ),
+          if (item.responseRaw?.trim().isNotEmpty == true ||
+              item.errorMessage?.trim().isNotEmpty == true) ...[
+            const SizedBox(height: OpenVtsSpacing.sm),
+            Text(
+              (item.responseRaw ?? item.errorMessage ?? '-'),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: OpenVtsTypography.meta.copyWith(
+                color: OpenVtsColors.textSecondary,
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  String _formatTime(DateTime? dt) {
+    if (dt == null) return '-';
+    final local = dt.toLocal();
+    return '${local.year.toString().padLeft(4, '0')}-${local.month.toString().padLeft(2, '0')}-${local.day.toString().padLeft(2, '0')} ${local.hour.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')}';
+  }
+}
+
+class _StatusChip extends StatelessWidget {
+  const _StatusChip({required this.status});
+
+  final String status;
+
+  Color _getStatusColor() {
+    switch (status.toUpperCase()) {
+      case 'RESPONDED':
+        return OpenVtsColors.success;
+      case 'FAILED':
+      case 'ENCODE_FAILED':
+      case 'ERROR':
+        return OpenVtsColors.error;
+      case 'TIMEOUT':
+        return OpenVtsColors.warning;
+      default:
+        return OpenVtsColors.textSecondary;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _getStatusColor();
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: OpenVtsSpacing.xs,
+        vertical: 2,
+      ),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
+        border: Border.all(color: color.withValues(alpha: 0.35)),
+      ),
+      child: Text(
+        status.toUpperCase(),
+        style: OpenVtsTypography.meta.copyWith(
+          color: color,
+          fontSize: 9,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.5,
+        ),
+      ),
+    );
   }
 }

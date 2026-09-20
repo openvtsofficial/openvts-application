@@ -28,6 +28,7 @@ class MobilePushLocalNotifications {
   );
 
   static const _androidNotificationIcon = 'ic_stat_open_vts';
+  static const _androidLargeIcon = 'ic_launcher';
 
   final FlutterLocalNotificationsPlugin _notifications;
 
@@ -63,6 +64,8 @@ class MobilePushLocalNotifications {
     }
   }
 
+  Future<void> cancelAll() => _notifications.cancelAll();
+
   Future<void> showForegroundMessage(MobilePushMessage message) async {
     if (!_initialized) {
       await initialize(onTap: _tapHandler);
@@ -75,21 +78,36 @@ class MobilePushLocalNotifications {
         ? message.body!.trim()
         : 'New notification received.';
 
-    // Primary attempt: use the branded notification icon.
+    // Primary attempt: use the branded notification small icon with full-color large icon.
     try {
       await _showWithIcon(
         message,
         title: title,
         body: body,
         androidIcon: _androidNotificationIcon,
+        largeIconResourceName: _androidLargeIcon,
       );
       return;
     } catch (_) {
-      // Icon may be unavailable at runtime; fall through to retry without it.
+      // Icon may be unavailable at runtime; fall through to retry without large icon.
     }
 
-    // Fallback: omit the custom icon so the plugin uses the default configured
-    // in AndroidInitializationSettings.
+    // Fallback: use small icon without large icon.
+    try {
+      await _showWithIcon(
+        message,
+        title: title,
+        body: body,
+        androidIcon: _androidNotificationIcon,
+        largeIconResourceName: null,
+      );
+      return;
+    } catch (_) {
+      // Fallback: omit the custom icon so the plugin uses the default configured
+      // in AndroidInitializationSettings.
+    }
+
+    // Final fallback: use default icon.
     try {
       await _showWithIcon(message, title: title, body: body, androidIcon: null);
     } catch (_) {
@@ -102,6 +120,7 @@ class MobilePushLocalNotifications {
     required String title,
     required String body,
     required String? androidIcon,
+    String? largeIconResourceName,
   }) async {
     await _notifications.show(
       id: message.localNotificationId,
@@ -113,6 +132,9 @@ class MobilePushLocalNotifications {
           androidChannelName,
           channelDescription: androidChannelDescription,
           icon: androidIcon,
+          largeIcon: largeIconResourceName != null
+              ? DrawableResourceAndroidBitmap(largeIconResourceName)
+              : null,
           importance: Importance.high,
           priority: Priority.high,
         ),

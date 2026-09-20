@@ -88,18 +88,13 @@ class UserTransactionsController extends StateNotifier<UserTransactionsState> {
     );
   }
 
-  void setPaymentTypeFilter(String? type) {
-    final normalized = type?.trim();
-    final nextType = (normalized == null || normalized.isEmpty)
-        ? null
-        : normalized.toUpperCase();
-
-    if (nextType == state.selectedPaymentType) {
+  void setDirectionFilter(UserTransactionDirection? direction) {
+    if (direction == state.selectedDirection) {
       return;
     }
 
     state = state.copyWith(
-      selectedPaymentType: nextType,
+      selectedDirection: direction,
       errorMessage: null,
     );
   }
@@ -176,7 +171,7 @@ class UserTransactionsController extends StateNotifier<UserTransactionsState> {
     state = state.copyWith(
       selectedStatus: null,
       selectedPaymentMode: null,
-      selectedPaymentType: null,
+      selectedDirection: null,
       searchQuery: '',
       rangePreset: UserTransactionsRangePreset.thisMonth,
       customFrom: null,

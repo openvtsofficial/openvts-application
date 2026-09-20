@@ -122,7 +122,7 @@ class _CardHeader extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: OpenVtsTypography.label.copyWith(
-                    color: OpenVtsColors.textSecondary,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
               ],
@@ -158,7 +158,7 @@ class _PlateBadge extends StatelessWidget {
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: OpenVtsTypography.meta.copyWith(
-          color: OpenVtsColors.textSecondary,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
           fontWeight: FontWeight.w600,
         ),
       ),
@@ -309,13 +309,15 @@ class _InfoField extends StatelessWidget {
   Widget build(BuildContext context) {
     final resolved = value.trim().isEmpty ? '-' : value.trim();
 
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Icon(
           icon,
           size: 16,
-          color: OpenVtsColors.textSecondary,
+          color: colorScheme.onSurfaceVariant,
         ),
         const SizedBox(width: OpenVtsSpacing.xs),
         Expanded(
@@ -324,7 +326,7 @@ class _InfoField extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             text: TextSpan(
               style: OpenVtsTypography.label.copyWith(
-                color: OpenVtsColors.textPrimary,
+                color: colorScheme.onSurface,
                 height: 1.4,
               ),
               children: [
@@ -363,37 +365,42 @@ class _CreatedFooter extends StatelessWidget {
         borderRadius: BorderRadius.circular(OpenVtsRadius.md),
         border: Border.all(color: _softBorderColor(context)),
       ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.schedule_outlined,
-            size: 16,
-            color: OpenVtsColors.textSecondary,
-          ),
-          const SizedBox(width: OpenVtsSpacing.xs),
-          Expanded(
-            child: RichText(
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              text: TextSpan(
-                style: OpenVtsTypography.label.copyWith(
-                  color: OpenVtsColors.textPrimary,
-                  height: 1.4,
-                ),
-                children: [
-                  const TextSpan(
-                    text: 'Created : ',
-                    style: TextStyle(fontWeight: FontWeight.w700),
-                  ),
-                  TextSpan(
-                    text: createdValue,
-                    style: const TextStyle(fontWeight: FontWeight.w500),
-                  ),
-                ],
+      child: Builder(
+        builder: (context) {
+          final colorScheme = Theme.of(context).colorScheme;
+          return Row(
+            children: [
+              Icon(
+                Icons.schedule_outlined,
+                size: 16,
+                color: colorScheme.onSurfaceVariant,
               ),
-            ),
-          ),
-        ],
+              const SizedBox(width: OpenVtsSpacing.xs),
+              Expanded(
+                child: RichText(
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  text: TextSpan(
+                    style: OpenVtsTypography.label.copyWith(
+                      color: colorScheme.onSurface,
+                      height: 1.4,
+                    ),
+                    children: [
+                      const TextSpan(
+                        text: 'Created : ',
+                        style: TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                      TextSpan(
+                        text: createdValue,
+                        style: const TextStyle(fontWeight: FontWeight.w500),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

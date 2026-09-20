@@ -150,8 +150,7 @@ class UserSupportParticipant {
   factory UserSupportParticipant.fromJson(dynamic json) {
     final source = _asMap(json);
     return UserSupportParticipant(
-      id:
-          _firstId(source, const [
+      id: _firstId(source, const [
             'id',
             '_id',
             'uid',
@@ -160,8 +159,7 @@ class UserSupportParticipant {
             'senderId',
           ]) ??
           '',
-      name:
-          _firstString(source, const [
+      name: _firstString(source, const [
             'name',
             'username',
             'fullName',
@@ -170,15 +168,13 @@ class UserSupportParticipant {
           ]) ??
           '',
       email: _firstString(source, const ['email', 'emailId', 'email_id']) ?? '',
-      mobilePrefix:
-          _firstString(source, const [
+      mobilePrefix: _firstString(source, const [
             'mobilePrefix',
             'mobile_prefix',
             'countryCode',
           ]) ??
           '',
-      mobileNumber:
-          _firstString(source, const [
+      mobileNumber: _firstString(source, const [
             'mobileNumber',
             'mobile_number',
             'phone',
@@ -241,8 +237,7 @@ class UserSupportTicketAttachment {
     final source = _asMap(json);
     return UserSupportTicketAttachment(
       id: _firstId(source, const ['id', '_id', 'uid', 'attachmentId']) ?? '',
-      originalName:
-          _firstString(source, const [
+      originalName: _firstString(source, const [
             'originalName',
             'original_name',
             'fileName',
@@ -252,16 +247,14 @@ class UserSupportTicketAttachment {
             'title',
           ]) ??
           '',
-      storedName:
-          _firstString(source, const [
+      storedName: _firstString(source, const [
             'storedName',
             'stored_name',
             'storageName',
             'key',
           ]) ??
           '',
-      filePath:
-          _firstString(source, const [
+      filePath: _firstString(source, const [
             'filePath',
             'file_path',
             'fileUrl',
@@ -270,8 +263,7 @@ class UserSupportTicketAttachment {
             'path',
           ]) ??
           '',
-      mimeType:
-          _firstString(source, const [
+      mimeType: _firstString(source, const [
             'mimeType',
             'mime_type',
             'contentType',
@@ -279,8 +271,7 @@ class UserSupportTicketAttachment {
             'type',
           ]) ??
           '',
-      sizeBytes:
-          _firstInt(source, const [
+      sizeBytes: _firstInt(source, const [
             'sizeBytes',
             'size_bytes',
             'size',
@@ -357,13 +348,10 @@ class UserSupportTicketMessage {
   bool isFromCurrentUser(String currentUserId) {
     final normalizedCurrentUserId = currentUserId.trim();
     final normalizedSenderId = senderId.trim();
-    if (normalizedCurrentUserId.isNotEmpty &&
-        normalizedSenderId == normalizedCurrentUserId) {
-      return true;
+    if (normalizedCurrentUserId.isEmpty || normalizedSenderId.isEmpty) {
+      return false;
     }
-
-    final role = sender?.role.trim().toLowerCase() ?? '';
-    return role == 'user' || role == 'customer' || role == 'end_user';
+    return normalizedSenderId == normalizedCurrentUserId;
   }
 
   String get identity {
@@ -393,11 +381,9 @@ class UserSupportTicketMessage {
       'admin',
       'supportUser',
     ]);
-    final sender = senderMap == null
-        ? null
-        : UserSupportParticipant.fromJson(senderMap);
-    final senderId =
-        _firstId(source, const [
+    final sender =
+        senderMap == null ? null : UserSupportParticipant.fromJson(senderMap);
+    final senderId = _firstId(source, const [
           'senderId',
           'sender_id',
           'fromUserId',
@@ -410,11 +396,9 @@ class UserSupportTicketMessage {
         '';
 
     return UserSupportTicketMessage(
-      id:
-          _firstId(source, const ['id', '_id', 'messageId', 'message_id']) ??
+      id: _firstId(source, const ['id', '_id', 'messageId', 'message_id']) ??
           '',
-      message:
-          _firstString(source, const [
+      message: _firstString(source, const [
             'message',
             'body',
             'text',
@@ -449,9 +433,8 @@ class UserSupportTicketMessage {
       'senderId': senderId,
       'createdAt': createdAt?.toIso8601String(),
       'sender': sender?.toJson(),
-      'attachments': attachments
-          .map((attachment) => attachment.toJson())
-          .toList(),
+      'attachments':
+          attachments.map((attachment) => attachment.toJson()).toList(),
     };
   }
 
@@ -574,12 +557,11 @@ class UserSupportTicketListItem {
     ]);
     final id =
         _firstId(source, const ['id', '_id', 'ticketId', 'ticket_id', 'uid']) ??
-        '';
+            '';
 
     return UserSupportTicketListItem(
       id: id,
-      ticketNo:
-          _firstString(source, const [
+      ticketNo: _firstString(source, const [
             'ticketNo',
             'ticket_no',
             'ticketNumber',
@@ -589,7 +571,7 @@ class UserSupportTicketListItem {
           '',
       title:
           _firstString(source, const ['title', 'subject', 'issue', 'name']) ??
-          'Support ticket',
+              'Support ticket',
       status: parseUserSupportTicketStatus(
         _firstValue(source, const ['status', 'ticketStatus', 'ticket_status']),
       ),
@@ -599,8 +581,7 @@ class UserSupportTicketListItem {
       priority: parseUserSupportTicketPriority(
         _firstValue(source, const ['priority', 'ticketPriority', 'severity']),
       ),
-      messageCount:
-          _firstInt(source, const [
+      messageCount: _firstInt(source, const [
             'messageCount',
             'message_count',
             'messagesCount',
@@ -622,9 +603,8 @@ class UserSupportTicketListItem {
       fromUser: fromUserMap == null
           ? null
           : UserSupportParticipant.fromJson(fromUserMap),
-      toUser: toUserMap == null
-          ? null
-          : UserSupportParticipant.fromJson(toUserMap),
+      toUser:
+          toUserMap == null ? null : UserSupportParticipant.fromJson(toUserMap),
     );
   }
 
@@ -756,8 +736,7 @@ class UserSupportTicketDetail {
       'assignedTo',
       'supportUser',
     ]);
-    final messagesSource =
-        _firstValueDeep(json, const [
+    final messagesSource = _firstValueDeep(json, const [
           'messages',
           'conversation',
           'replies',
@@ -765,8 +744,7 @@ class UserSupportTicketDetail {
         ]) ??
         _firstValue(payload, const ['messages', 'conversation', 'replies']);
     final messages = UserSupportTicketMessage.listFromJson(messagesSource);
-    final id =
-        _firstId(payload, const [
+    final id = _firstId(payload, const [
           'id',
           '_id',
           'ticketId',
@@ -778,8 +756,7 @@ class UserSupportTicketDetail {
 
     return UserSupportTicketDetail(
       id: id,
-      ticketNo:
-          _firstString(payload, const [
+      ticketNo: _firstString(payload, const [
             'ticketNo',
             'ticket_no',
             'ticketNumber',
@@ -789,7 +766,7 @@ class UserSupportTicketDetail {
           '',
       title:
           _firstString(payload, const ['title', 'subject', 'issue', 'name']) ??
-          'Support ticket',
+              'Support ticket',
       status: parseUserSupportTicketStatus(
         _firstValue(payload, const ['status', 'ticketStatus', 'ticket_status']),
       ),
@@ -799,8 +776,7 @@ class UserSupportTicketDetail {
       priority: parseUserSupportTicketPriority(
         _firstValue(payload, const ['priority', 'ticketPriority', 'severity']),
       ),
-      messageCount:
-          _firstInt(payload, const [
+      messageCount: _firstInt(payload, const [
             'messageCount',
             'message_count',
             'messagesCount',
@@ -826,9 +802,8 @@ class UserSupportTicketDetail {
       fromUser: fromUserMap == null
           ? null
           : UserSupportParticipant.fromJson(fromUserMap),
-      toUser: toUserMap == null
-          ? null
-          : UserSupportParticipant.fromJson(toUserMap),
+      toUser:
+          toUserMap == null ? null : UserSupportParticipant.fromJson(toUserMap),
       messages: messages,
     );
   }

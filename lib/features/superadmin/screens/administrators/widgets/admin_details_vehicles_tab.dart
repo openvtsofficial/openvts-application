@@ -2,11 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 
 import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
+import '../../../../../core/utils/date_time_formatter.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../../../shared/widgets/open_vts_error_view.dart';
 import '../../../../../shared/widgets/open_vts_loader.dart';
@@ -152,14 +152,19 @@ class _AdminDetailsVehiclesTabState
         ),
         if (errorMessage != null && hasLoaded) ...[
           const SizedBox(height: OpenVtsSpacing.xs),
-          Text(
-            errorMessage.trim().isEmpty
-                ? 'Unable to refresh vehicles.'
-                : errorMessage,
-            style: const TextStyle(
-              fontSize: 11,
-              color: OpenVtsColors.error,
-            ),
+          Builder(
+            builder: (ctx) {
+              final theme = Theme.of(ctx);
+              return Text(
+                errorMessage.trim().isEmpty
+                    ? 'Unable to refresh vehicles.'
+                    : errorMessage,
+                style: TextStyle(
+                  fontSize: 11,
+                  color: theme.colorScheme.error,
+                ),
+              );
+            },
           ),
         ],
         const SizedBox(height: OpenVtsSpacing.sm),
@@ -214,6 +219,11 @@ class _SummaryRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final surface = theme.colorScheme.surface;
+    final outlineVariant = theme.colorScheme.outlineVariant;
+    final onSurfaceVariant = theme.colorScheme.onSurfaceVariant;
+
     return Row(
       children: [
         Expanded(
@@ -234,7 +244,7 @@ class _SummaryRow extends StatelessWidget {
         const SizedBox(width: OpenVtsSpacing.xs),
         Expanded(
           child: _SummaryTile(
-            label: 'Expiring',
+            label: 'Expired',
             value: expiring.toString(),
             icon: Icons.schedule_outlined,
           ),
@@ -247,23 +257,23 @@ class _SummaryRow extends StatelessWidget {
             height: 36,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: OpenVtsColors.surface,
+              color: surface,
               borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-              border: Border.all(color: OpenVtsColors.border),
+              border: Border.all(color: outlineVariant),
             ),
             child: isRefreshing
-                ? const SizedBox(
+                ? SizedBox(
                     width: 14,
                     height: 14,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      color: OpenVtsColors.textSecondary,
+                      color: onSurfaceVariant,
                     ),
                   )
-                : const Icon(
+                : Icon(
                     Icons.refresh,
                     size: 16,
-                    color: OpenVtsColors.textSecondary,
+                    color: onSurfaceVariant,
                   ),
           ),
         ),
@@ -285,6 +295,10 @@ class _SummaryTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final onSurfaceVariant = theme.colorScheme.onSurfaceVariant;
+    final onSurface = theme.colorScheme.onSurface;
+
     return OpenVtsCard(
       padding: const EdgeInsets.symmetric(
         horizontal: OpenVtsSpacing.sm,
@@ -293,22 +307,22 @@ class _SummaryTile extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 14, color: OpenVtsColors.textSecondary),
+          Icon(icon, size: 14, color: onSurfaceVariant),
           const SizedBox(height: 6),
           Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w700,
-              color: OpenVtsColors.textPrimary,
+              color: onSurface,
             ),
           ),
           const SizedBox(height: 2),
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 10,
-              color: OpenVtsColors.textSecondary,
+              color: onSurfaceVariant,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -330,38 +344,44 @@ class _SearchField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final surface = theme.colorScheme.surface;
+    final outlineVariant = theme.colorScheme.outlineVariant;
+    final onSurfaceVariant = theme.colorScheme.onSurfaceVariant;
+    final onSurface = theme.colorScheme.onSurface;
+
     return Container(
       decoration: BoxDecoration(
-        color: OpenVtsColors.surface,
+        color: surface,
         borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-        border: Border.all(color: OpenVtsColors.border),
+        border: Border.all(color: outlineVariant),
       ),
       padding: const EdgeInsets.symmetric(horizontal: OpenVtsSpacing.sm),
       child: Row(
         children: [
-          const Icon(
+          Icon(
             Icons.search,
             size: 16,
-            color: OpenVtsColors.textSecondary,
+            color: onSurfaceVariant,
           ),
           const SizedBox(width: OpenVtsSpacing.xs),
           Expanded(
             child: TextField(
               controller: controller,
               onChanged: (_) => onChanged(),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
-                color: OpenVtsColors.textPrimary,
+                color: onSurface,
               ),
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 isDense: true,
                 hintText: 'Search name, IMEI, SIM, type',
                 hintStyle: TextStyle(
                   fontSize: 12,
-                  color: OpenVtsColors.textTertiary,
+                  color: onSurfaceVariant,
                 ),
                 border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(vertical: 12),
+                contentPadding: const EdgeInsets.symmetric(vertical: 12),
               ),
             ),
           ),
@@ -371,10 +391,10 @@ class _SearchField extends StatelessWidget {
                 controller.clear();
                 onChanged();
               },
-              child: const Icon(
+              child: Icon(
                 Icons.close,
                 size: 16,
-                color: OpenVtsColors.textSecondary,
+                color: onSurfaceVariant,
               ),
             ),
         ],
@@ -392,7 +412,7 @@ class _FilterChips extends StatelessWidget {
     (_VehicleFilter.all, 'All'),
     (_VehicleFilter.activeLicense, 'Active'),
     (_VehicleFilter.blockedLicense, 'Blocked'),
-    (_VehicleFilter.expiring, 'Expiring'),
+    (_VehicleFilter.expiring, 'Expired'),
   ];
 
   @override
@@ -427,24 +447,36 @@ class _FilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final backgroundColor =
+        selected ? (isDark ? Colors.black : Colors.white) : Colors.transparent;
+    final textColor = isDark ? Colors.white : Colors.black;
+    final borderColor =
+        isDark ? Colors.white : Colors.black.withValues(alpha: 0.2);
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        constraints: const BoxConstraints(minHeight: 34),
+        padding: const EdgeInsets.symmetric(
+          horizontal: OpenVtsSpacing.sm,
+          vertical: OpenVtsSpacing.xs,
+        ),
         decoration: BoxDecoration(
-          color: selected ? OpenVtsColors.brandInk : OpenVtsColors.surface,
+          color: backgroundColor,
           borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
           border: Border.all(
-            color: selected ? OpenVtsColors.brandInk : OpenVtsColors.border,
+            color:
+                selected ? (isDark ? Colors.white : Colors.black) : borderColor,
           ),
         ),
         child: Text(
           label,
           style: TextStyle(
             fontSize: 11,
-            fontWeight: FontWeight.w700,
-            color: selected ? OpenVtsColors.white : OpenVtsColors.textSecondary,
+            fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+            color: textColor,
           ),
         ),
       ),
@@ -462,7 +494,11 @@ class _VehicleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fmt = DateFormat('dd MMM yyyy');
+    const fmt = DateTimeFormatter();
+    final theme = Theme.of(context);
+    final onSurface = theme.colorScheme.onSurface;
+    final onSurfaceVariant = theme.colorScheme.onSurfaceVariant;
+
     return OpenVtsCard(
       padding: const EdgeInsets.symmetric(
         horizontal: OpenVtsSpacing.sm,
@@ -482,10 +518,10 @@ class _VehicleCard extends StatelessWidget {
                   children: [
                     Text(
                       vehicle.name.isNotEmpty ? vehicle.name : 'Vehicle',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
-                        color: OpenVtsColors.textPrimary,
+                        color: onSurface,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -495,9 +531,9 @@ class _VehicleCard extends StatelessWidget {
                       vehicle.vehicleTypeName.isNotEmpty
                           ? vehicle.vehicleTypeName
                           : '—',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11,
-                        color: OpenVtsColors.textSecondary,
+                        color: onSurfaceVariant,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -530,7 +566,7 @@ class _VehicleCard extends StatelessWidget {
               if (vehicle.createdAt != null)
                 _MetaChip(
                   icon: Icons.calendar_today_outlined,
-                  label: 'Added ${fmt.format(vehicle.createdAt!)}',
+                  label: 'Added ${fmt.formatDate(vehicle.createdAt!)}',
                 ),
             ],
           ),
@@ -540,17 +576,17 @@ class _VehicleCard extends StatelessWidget {
   }
 }
 
-String _expiryLabel(DateTime? expiry, DateFormat fmt) {
+String _expiryLabel(DateTime? expiry, DateTimeFormatter fmt) {
   if (expiry == null) return 'Expiry not set';
   final now = DateTime.now();
   final today = DateTime(now.year, now.month, now.day);
   final dueDay = DateTime(expiry.year, expiry.month, expiry.day);
   final diffDays = dueDay.difference(today).inDays;
-  if (diffDays < 0) return 'Expired ${fmt.format(expiry)}';
+  if (diffDays < 0) return 'Expired ${fmt.formatDate(expiry)}';
   if (diffDays == 0) return 'Expires today';
   if (diffDays == 1) return 'Expires tomorrow';
   if (diffDays <= 30) return 'Expires in $diffDays days';
-  return 'Expires ${fmt.format(expiry)}';
+  return 'Expires ${fmt.formatDate(expiry)}';
 }
 
 class _VehicleIcon extends StatelessWidget {
@@ -589,19 +625,24 @@ class _VehicleIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final surface = theme.colorScheme.surface;
+    final outlineVariant = theme.colorScheme.outlineVariant;
+    final onSurface = theme.colorScheme.onSurface;
+
     return Container(
       width: 40,
       height: 40,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: OpenVtsColors.surface,
+        color: surface,
         borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-        border: Border.all(color: OpenVtsColors.border),
+        border: Border.all(color: outlineVariant),
       ),
       child: Icon(
         _iconForSlug(slug),
         size: 20,
-        color: OpenVtsColors.textPrimary,
+        color: onSurface,
       ),
     );
   }
@@ -612,24 +653,29 @@ class _BlockedBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final surface = theme.colorScheme.surface;
+    final outlineVariant = theme.colorScheme.outlineVariant;
+    final onSurface = theme.colorScheme.onSurface;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: OpenVtsColors.surface,
+        color: surface,
         borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-        border: Border.all(color: OpenVtsColors.border),
+        border: Border.all(color: outlineVariant),
       ),
-      child: const Row(
+      child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.lock_outline, size: 11, color: OpenVtsColors.textPrimary),
-          SizedBox(width: 4),
+          Icon(Icons.lock_outline, size: 11, color: onSurface),
+          const SizedBox(width: 4),
           Text(
             'Blocked',
             style: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.w700,
-              color: OpenVtsColors.textPrimary,
+              color: onSurface,
             ),
           ),
         ],
@@ -645,6 +691,10 @@ class _MetaRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final onSurfaceVariant = theme.colorScheme.onSurfaceVariant;
+    final onSurface = theme.colorScheme.onSurface;
+
     return Padding(
       padding: const EdgeInsets.only(top: 2),
       child: Row(
@@ -654,18 +704,18 @@ class _MetaRow extends StatelessWidget {
             width: 40,
             child: Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 11,
-                color: OpenVtsColors.textSecondary,
+                color: onSurfaceVariant,
               ),
             ),
           ),
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
-                color: OpenVtsColors.textPrimary,
+                color: onSurface,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -684,23 +734,28 @@ class _MetaChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final surface = theme.colorScheme.surface;
+    final outlineVariant = theme.colorScheme.outlineVariant;
+    final onSurfaceVariant = theme.colorScheme.onSurfaceVariant;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: OpenVtsColors.surface,
+        color: surface,
         borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-        border: Border.all(color: OpenVtsColors.border),
+        border: Border.all(color: outlineVariant),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 11, color: OpenVtsColors.textSecondary),
+          Icon(icon, size: 11, color: onSurfaceVariant),
           const SizedBox(width: 4),
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 10,
-              color: OpenVtsColors.textSecondary,
+              color: onSurfaceVariant,
             ),
           ),
         ],
@@ -715,14 +770,15 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return OpenVtsCard(
       padding: const EdgeInsets.symmetric(vertical: OpenVtsSpacing.lg),
       child: Center(
         child: Text(
           message,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 12,
-            color: OpenVtsColors.textSecondary,
+            color: theme.colorScheme.onSurfaceVariant,
           ),
         ),
       ),

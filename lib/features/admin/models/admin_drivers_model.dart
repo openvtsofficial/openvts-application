@@ -226,6 +226,38 @@ class AdminDriverListItem {
       statusLabel,
     ].any((value) => value.toLowerCase().contains(normalized));
   }
+
+  static const Object _unset = Object();
+
+  AdminDriverListItem copyWith({
+    bool? isActive,
+    Object? updatedAt = _unset,
+  }) {
+    return AdminDriverListItem(
+      id: id,
+      firstName: firstName,
+      email: email,
+      username: username,
+      mobilePrefix: mobilePrefix,
+      mobile: mobile,
+      phone: phone,
+      address: address,
+      fullAddress: fullAddress,
+      countryCode: countryCode,
+      stateCode: stateCode,
+      city: city,
+      pincode: pincode,
+      primaryUserName: primaryUserName,
+      primaryUserUid: primaryUserUid,
+      isVerified: isVerified,
+      isActive: isActive ?? this.isActive,
+      statusLabel: (isActive ?? this.isActive) ? 'Active' : 'Inactive',
+      createdAt: createdAt,
+      updatedAt: identical(updatedAt, _unset)
+          ? this.updatedAt
+          : updatedAt as DateTime?,
+    );
+  }
 }
 
 class AdminDriverCreateRequest {
@@ -265,13 +297,23 @@ class AdminDriverCreateRequest {
       'primaryUserid': primaryUserid.trim(),
       'username': username.trim(),
       'password': password.trim(),
-      'countryCode': countryCode.trim(),
+      'countryCode': countryCode.trim().toUpperCase(),
     };
-    if (email.trim().isNotEmpty) payload['email'] = email.trim();
-    if (stateCode.trim().isNotEmpty) payload['stateCode'] = stateCode.trim();
-    if (city.trim().isNotEmpty) payload['city'] = city.trim();
-    if (address.trim().isNotEmpty) payload['address'] = address.trim();
-    if (pincode.trim().isNotEmpty) payload['pincode'] = pincode.trim();
+    final trimmedEmail = email.trim();
+    if (trimmedEmail.isNotEmpty) payload['email'] = trimmedEmail;
+
+    final trimmedStateCode = stateCode.trim().toUpperCase();
+    if (trimmedStateCode.isNotEmpty) payload['stateCode'] = trimmedStateCode;
+
+    final trimmedCity = city.trim();
+    if (trimmedCity.isNotEmpty) payload['city'] = trimmedCity;
+
+    final trimmedAddress = address.trim();
+    if (trimmedAddress.isNotEmpty) payload['address'] = trimmedAddress;
+
+    final trimmedPincode = pincode.trim();
+    if (trimmedPincode.isNotEmpty) payload['pincode'] = trimmedPincode;
+
     return payload;
   }
 }

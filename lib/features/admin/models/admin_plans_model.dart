@@ -33,7 +33,23 @@ class AdminPlan {
     );
   }
 
+  static AdminPlan? maybeFromJson(dynamic json) {
+    final m = _asMap(_extractMap(json));
+    final hasPlanFields = m.containsKey('id') ||
+        m.containsKey('uid') ||
+        m.containsKey('planId') ||
+        m.containsKey('plan_id') ||
+        m.containsKey('name') ||
+        m.containsKey('Name');
+    if (!hasPlanFields) return null;
+    final plan = AdminPlan.fromJson(m);
+    return plan.id.trim().isEmpty ? null : plan;
+  }
+
   static List<AdminPlan> listFromJson(dynamic json) {
+    final single = maybeFromJson(json);
+    if (single != null) return <AdminPlan>[single];
+
     final list = _asList(json);
     return list
         .map(AdminPlan.fromJson)

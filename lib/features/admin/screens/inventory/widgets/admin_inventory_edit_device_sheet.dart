@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
+import '../../../../../shared/widgets/searchable_dropdown_field.dart';
 import '../../../controllers/admin_providers.dart';
 import '../../../models/admin_inventory_model.dart';
 
@@ -54,27 +55,36 @@ class _AdminInventoryEditDeviceSheetState
                 const LinearProgressIndicator(minHeight: 2),
                 const SizedBox(height: OpenVtsSpacing.sm),
               ],
-              DropdownButtonFormField<String>(
+              SearchableDropdownField<String>(
+                label: 'Device Type',
+                hintText: 'Select device type',
+                searchHint: 'Search device type…',
                 initialValue: _deviceTypeId,
                 items: _deviceTypes
-                    .map((item) => DropdownMenuItem<String>(
-                        value: item.id, child: Text(item.name)))
+                    .map((item) => SearchableDropdownItem<String>(
+                          value: item.id,
+                          label: item.name,
+                        ))
                     .toList(growable: false),
-                decoration: const InputDecoration(labelText: 'Device Type'),
-                onChanged: isSubmitting
-                    ? null
-                    : (v) => setState(() => _deviceTypeId = v),
+                enabled: !isSubmitting,
+                validator: (v) =>
+                    (v == null || v.isEmpty) ? 'Device type is required' : null,
+                onChanged: (v) => setState(() => _deviceTypeId = v),
               ),
               const SizedBox(height: OpenVtsSpacing.sm),
-              DropdownButtonFormField<String>(
+              SearchableDropdownField<String>(
+                label: 'SIM Number',
+                hintText: 'Select SIM',
+                searchHint: 'Search SIM number…',
                 initialValue: _simId,
                 items: _simCards
-                    .map((item) => DropdownMenuItem<String>(
-                        value: item.id, child: Text(item.simNumber)))
+                    .map((item) => SearchableDropdownItem<String>(
+                          value: item.id,
+                          label: item.simNumber,
+                        ))
                     .toList(growable: false),
-                decoration: const InputDecoration(labelText: 'SIM Number'),
-                onChanged:
-                    isSubmitting ? null : (v) => setState(() => _simId = v),
+                enabled: !isSubmitting,
+                onChanged: (v) => setState(() => _simId = v),
               ),
               const SizedBox(height: OpenVtsSpacing.sm),
               DropdownButtonFormField<String>(

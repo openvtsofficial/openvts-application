@@ -216,7 +216,7 @@ class CreateUserSubUserRequest {
     this.email,
     this.mobilePrefix,
     this.mobileNumber,
-    this.password,
+    required this.password,
     this.isActive = true,
   });
 
@@ -225,20 +225,23 @@ class CreateUserSubUserRequest {
   final String? email;
   final String? mobilePrefix;
   final String? mobileNumber;
-  final String? password;
+  final String password;
   final bool isActive;
 
   Map<String, dynamic> toJson() {
+    if (password.trim().isEmpty || password.length < 6 || password.length > 100) {
+      throw ArgumentError('Password must be between 6 and 100 characters.');
+    }
     final payload = <String, dynamic>{
       'name': _requiredString(name, 'name'),
       'isActive': isActive,
+      'password': password,
     };
 
     _putIfNotNull(payload, 'username', _optionalString(username));
     _putIfNotNull(payload, 'email', _optionalString(email));
     _putIfNotNull(payload, 'mobilePrefix', _optionalString(mobilePrefix));
     _putIfNotNull(payload, 'mobileNumber', _optionalString(mobileNumber));
-    _putIfNotNull(payload, 'password', _optionalString(password));
 
     return payload;
   }

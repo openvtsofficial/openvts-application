@@ -1,6 +1,16 @@
 import '../models/admin_users_model.dart';
 
-enum AdminPaymentsRangePreset { thisMonth, last30, thisYear, custom }
+enum AdminPaymentsRangePreset {
+  today,
+  yesterday,
+  last12Hours,
+  last24Hours,
+  last7Days,
+  last30Days,
+  thisMonth,
+  thisYear,
+  custom,
+}
 
 enum AdminPaymentStatus { success, pending, failed }
 
@@ -160,6 +170,89 @@ class AdminPaymentTransaction {
     return c.isEmpty ? a : '$c $a';
   }
 
+  /// Vehicle display name, resolved from backend-alias fallback list.
+  String get vehicleDisplayName => _vehicleFirstNonEmpty(const [
+        'name',
+        'vehicleName',
+        'vehicle_name',
+        'plateNumber',
+        'plate_number',
+      ]);
+
+  /// Vehicle IMEI, resolved from direct fields then nested device object.
+  String get vehicleImei {
+    final direct = _vehicleFirstNonEmpty(const [
+      'imei',
+      'IMEI',
+      'deviceImei',
+      'device_imei',
+      'imeiNumber',
+      'imei_number',
+      'trackerImei',
+      'tracker_imei',
+    ]);
+    if (direct.isNotEmpty) return direct;
+    final rawDevice =
+        vehicle['device'] ?? vehicle['gpsDevice'] ?? vehicle['tracker'];
+    if (rawDevice is Map) {
+      for (final key in const ['imei', 'IMEI', 'deviceImei', 'imeiNumber']) {
+        final v = rawDevice[key]?.toString().trim();
+        if (v != null && v.isNotEmpty) return v;
+      }
+    }
+    return '';
+  }
+
+  /// Plan name, resolved from the nested vehicle.plan object.
+  String get planDisplayName {
+    final planMap = vehicle['plan'];
+    if (planMap is Map) {
+      for (final key in const [
+        'name',
+        'planName',
+        'plan_name',
+        'title',
+        'label'
+      ]) {
+        final v = planMap[key]?.toString().trim();
+        if (v != null && v.isNotEmpty) return v;
+      }
+    }
+    return '';
+  }
+
+  String _vehicleFirstNonEmpty(List<String> keys) {
+    for (final key in keys) {
+      final v = vehicle[key]?.toString().trim();
+      if (v != null && v.isNotEmpty && v.toLowerCase() != 'null') return v;
+    }
+    return '';
+  }
+
+  AdminPaymentTransaction copyWithVehicle(Map<String, dynamic> vehicleMap) {
+    return AdminPaymentTransaction(
+      id: id,
+      amount: amount,
+      currency: currency,
+      statusRaw: statusRaw,
+      paymentModeRaw: paymentModeRaw,
+      paymentType: paymentType,
+      reference: reference,
+      provider: provider,
+      providerRef: providerRef,
+      createdAt: createdAt,
+      createdAtRaw: createdAtRaw,
+      fromUser: fromUser,
+      toUser: toUser,
+      recordedBy: recordedBy,
+      vehicle: vehicleMap,
+      meta: meta,
+      failureCode: failureCode,
+      failureMessage: failureMessage,
+      idempotencyKey: idempotencyKey,
+    );
+  }
+
   factory AdminPaymentTransaction.fromJson(dynamic json) {
     final source = _asMap(json);
     final createdAtValue =
@@ -223,8 +316,16 @@ class AdminPaymentTransaction {
           ? null
           : AdminPaymentsUserRef.fromJson(
               _firstMap(source, const ['recordedBy', 'recorded_by'])),
-      vehicle:
-          _firstMap(source, const ['vehicle']) ?? const <String, dynamic>{},
+      vehicle: _firstMap(source, const [
+            'vehicle',
+            'vehicleInfo',
+            'vehicle_info',
+            'linkedVehicle',
+            'linked_vehicle',
+            'vehicleData',
+            'vehicle_data',
+          ]) ??
+          const <String, dynamic>{},
       meta: _firstMap(source, const ['meta', 'metadata']) ??
           const <String, dynamic>{},
       failureCode:
@@ -499,6 +600,72 @@ class AdminRenewVehicleOption {
   }
 }
 
+/// Parses the renewal response `{transaction, updatedVehicles, validationWarnings}`.
+/// Returns the `transaction` object as an [AdminPaymentTransaction], or null
+/// when the backend shape does not include a parseable transaction.
+AdminPaymentTransaction? parseRenewalTransaction(dynamic json) {
+  if (json == null) return null;
+  final root = _asMap(json);
+  if (root.isEmpty) return null;
+
+  // Try each candidate map in order: root → data → data.data
+  for (final candidate in _renewalCandidates(root)) {
+    AdminPaymentTransaction? tx;
+
+    final txMap =
+        _firstMap(candidate, const ['transaction', 'tx', 'payment', 'record']);
+    if (txMap != null && txMap.isNotEmpty) {
+      final parsed = AdminPaymentTransaction.fromJson(txMap);
+      if (parsed.id.trim().isNotEmpty) tx = parsed;
+    }
+
+    // Candidate itself may be the transaction.
+    if (tx == null &&
+        candidate.containsKey('id') &&
+        (candidate.containsKey('amount') || candidate.containsKey('status'))) {
+      final parsed = AdminPaymentTransaction.fromJson(candidate);
+      if (parsed.id.trim().isNotEmpty) tx = parsed;
+    }
+
+    if (tx == null) continue;
+
+    // If the transaction has no vehicle info, try to back-fill it from the
+    // updatedVehicles list that the renewal endpoint returns alongside the tx.
+    if (tx.vehicleDisplayName.isEmpty) {
+      final vehicleMap = _extractFirstUpdatedVehicle(candidate);
+      if (vehicleMap.isNotEmpty) tx = tx.copyWithVehicle(vehicleMap);
+    }
+
+    return tx;
+  }
+  return null;
+}
+
+/// Extracts the first entry of `updatedVehicles` as a plain Map so it can be
+/// stored in `AdminPaymentTransaction.vehicle` for display purposes.
+Map<String, dynamic> _extractFirstUpdatedVehicle(
+    Map<String, dynamic> candidate) {
+  for (final key in const ['updatedVehicles', 'updated_vehicles', 'vehicles']) {
+    final raw = candidate[key];
+    if (raw is List && raw.isNotEmpty) {
+      final first = _asMap(raw.first);
+      if (first.isNotEmpty) return first;
+    }
+  }
+  return const <String, dynamic>{};
+}
+
+List<Map<String, dynamic>> _renewalCandidates(Map<String, dynamic> root) {
+  final candidates = <Map<String, dynamic>>[root];
+  final data = _asMap(root['data']);
+  if (data.isNotEmpty) {
+    candidates.add(data);
+    final nested = _asMap(data['data']);
+    if (nested.isNotEmpty) candidates.add(nested);
+  }
+  return candidates;
+}
+
 class AdminRenewPaymentRequest {
   const AdminRenewPaymentRequest({
     required this.userId,
@@ -506,6 +673,7 @@ class AdminRenewPaymentRequest {
     required this.paymentMode,
     this.reference,
     this.amountOverride,
+    this.vehicleHints = const <String, Map<String, dynamic>>{},
   });
 
   final String userId;
@@ -513,6 +681,11 @@ class AdminRenewPaymentRequest {
   final AdminPaymentMode paymentMode;
   final String? reference;
   final String? amountOverride;
+
+  /// Client-only: maps vehicle ID → display fields (name, plateNumber).
+  /// Never sent to the server — used to populate the transaction card when
+  /// the API response contains no vehicle data.
+  final Map<String, Map<String, dynamic>> vehicleHints;
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{

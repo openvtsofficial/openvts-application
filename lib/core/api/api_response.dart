@@ -4,12 +4,14 @@ class ApiResponse<T> {
     required this.data,
     this.message,
     this.timestamp,
+    this.statusCode,
   });
 
   final bool success;
   final T data;
   final String? message;
   final String? timestamp;
+  final int? statusCode;
 
   factory ApiResponse.fromJson(
     Map<String, dynamic> json,

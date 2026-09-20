@@ -124,15 +124,10 @@ class LiveMapVehicleService {
       return _parsers.getMapTelemetry(refreshKey: refreshKey);
     }
 
-    final response = await _apiClient.get<LiveMapTelemetry>(
+    return _parsers.loadMapTelemetryEndpoint(
       _config.mapTelemetryEndpoint,
-      queryParameters: <String, dynamic>{
-        'rk': refreshKey ?? DateTime.now().millisecondsSinceEpoch.toString(),
-      },
-      options: _readOptions,
-      parser: _parsers.parseMapTelemetryPayload,
+      refreshKey: refreshKey,
     );
-    return response.data;
   }
 
   // -------------------------------------------------------------------------
@@ -545,16 +540,42 @@ class LiveMapVehicleService {
       throw ArgumentError('Command text must be 500 characters or less.');
     }
 
-    final response = await _apiClient.post<LiveMapSendCommandResult>(
+    final response = await _apiClient.post<dynamic>(
       endpoint,
       data: <String, dynamic>{
-        'vehicleIds': normalizedIds,
+        'mode': 'SELECTED',
+        'vehicleIds': normalizedIds.map((id) {
+          final value = int.tryParse(id);
+          if (value == null || value <= 0) {
+            throw ArgumentError('Vehicle IDs must be positive integers.');
+          }
+          return value;
+        }).toSet().toList(growable: false),
         'command': normalizedCommand,
       },
       options: _readOptions,
-      parser: _parsers.parseSendCommandResponsePayload,
+      parser: (json) => json,
     );
-    return response.data;
+    final payload = response.data;
+    final results = payload is Map ? payload['results'] : null;
+    if (results is! List || results.isEmpty) {
+      throw StateError('The server did not dispatch a command to this vehicle.');
+    }
+    for (final result in results) {
+      if (result is Map && result['error'] != null) {
+        throw StateError(result['error'].toString());
+      }
+    }
+    // The map sends to its selected vehicle; bulk results wrap its command ID.
+    // Unwrap the matching item so status polling follows the actual dispatch.
+    final selected = results.whereType<Map>().where(
+      (result) => result['vehicleId']?.toString() ==
+          int.parse(normalizedIds.first).toString(),
+    );
+    if (selected.isEmpty) {
+      throw StateError('The server did not return this vehicle command.');
+    }
+    return _parsers.parseSendCommandResponsePayload(selected.first);
   }
 
   /// Per-IMEI command history (superadmin/admin).

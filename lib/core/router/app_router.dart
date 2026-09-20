@@ -21,7 +21,6 @@ import '../../features/admin/screens/settings/admin_settings_screen.dart';
 import '../../features/admin/screens/support/admin_create_support_ticket_screen.dart';
 import '../../features/admin/screens/support/admin_support_screen.dart';
 import '../../features/admin/screens/team/admin_team_screen.dart';
-import '../../features/admin/screens/transactions/admin_transactions_screen.dart';
 import '../../features/admin/screens/users/admin_create_user_screen.dart';
 import '../../features/admin/screens/users/admin_user_details_screen.dart';
 import '../../features/admin/screens/users/admin_users_screen.dart';
@@ -67,7 +66,9 @@ import '../../features/user/screens/landmarks/user_landmark_studio_screen.dart';
 import '../../features/user/screens/map/user_map_screen.dart';
 import '../../features/user/screens/notification_settings/user_notification_settings_screen.dart';
 import '../../features/user/screens/notifications/user_notification_center_screen.dart';
-import '../../features/user/screens/route_optimisation/user_route_optimisation_screen.dart';
+import '../../features/user/models/user_report_model.dart';
+import '../../features/user/screens/reports/user_reports_catalog_screen.dart';
+import '../../features/user/screens/reports/user_report_workspace_screen.dart';
 import '../../features/user/screens/settings/user_settings_screen.dart';
 import '../../features/user/screens/support/user_create_support_ticket_screen.dart';
 import '../../features/user/screens/support/user_support_screen.dart';
@@ -77,7 +78,6 @@ import '../../features/user/screens/user_home_screen.dart';
 import '../../features/user/screens/user_shell.dart';
 import '../../features/user/screens/vehicles/user_vehicle_details_screen.dart';
 import '../../features/user/screens/vehicles/user_vehicles_screen.dart';
-import '../../shared/widgets/placeholder_role_screen.dart';
 import 'route_paths.dart';
 
 final appRootNavigatorKey = GlobalKey<NavigatorState>();
@@ -95,17 +95,6 @@ final _appRouterRefreshProvider = Provider<ValueNotifier<int>>((ref) {
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final refreshNotifier = ref.watch(_appRouterRefreshProvider);
-  GoRoute placeholderRoute({
-    required String path,
-    required String title,
-    required String message,
-  }) {
-    return GoRoute(
-      path: path,
-      builder: (context, state) =>
-          PlaceholderRoleScreen(title: title, message: message),
-    );
-  }
 
   return GoRouter(
     navigatorKey: appRootNavigatorKey,
@@ -118,6 +107,25 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           path == RoutePaths.forgotPassword ||
           path == RoutePaths.apiBaseUrlSettings;
       final isSplash = path == RoutePaths.splash;
+      final emailedResetToken =
+          state.uri.queryParameters['reset-password']?.trim();
+      final routeToken = path == RoutePaths.forgotPassword
+          ? state.uri.queryParameters['token']?.trim()
+          : null;
+      final resetToken = emailedResetToken?.isNotEmpty == true
+          ? emailedResetToken
+          : routeToken;
+      final isResetFlow = resetToken?.isNotEmpty == true;
+
+      if (isResetFlow && path != RoutePaths.forgotPassword) {
+        return Uri(
+          path: RoutePaths.forgotPassword,
+          queryParameters: <String, String>{'token': resetToken!},
+        ).toString();
+      }
+      if (isResetFlow) {
+        return null;
+      }
 
       if (authState.status == AuthStatus.initial ||
           authState.status == AuthStatus.loading) {
@@ -137,6 +145,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         return activeRole.homePath;
       }
 
+      if (authState.user?.isSubuser == true &&
+          (path == RoutePaths.userSubUsers ||
+              path.startsWith('${RoutePaths.userSubUsers}/'))) {
+        return RoutePaths.userAccounts;
+      }
+
       if (!path.startsWith(activeRole.routePrefix)) {
         return activeRole.homePath;
       }
@@ -154,7 +168,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: RoutePaths.forgotPassword,
-        builder: (context, state) => const ForgotPasswordScreen(),
+        builder: (context, state) => ForgotPasswordScreen(
+          initialToken: state.uri.queryParameters['token'] ??
+              state.uri.queryParameters['reset-password'],
+        ),
       ),
       GoRoute(
         path: RoutePaths.apiBaseUrlSettings,
@@ -206,10 +223,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: RoutePaths.superadminDevices,
-            builder: (context, state) => const PlaceholderRoleScreen(
-              title: 'Devices',
-              message: 'Device management screen placeholder.',
-            ),
+            redirect: (context, state) => RoutePaths.superadminVehicles,
           ),
           GoRoute(
             path: RoutePaths.superadminNotifications,
@@ -221,10 +235,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: RoutePaths.superadminReports,
-            builder: (context, state) => const PlaceholderRoleScreen(
-              title: 'Reports',
-              message: 'Reports screen placeholder.',
-            ),
+            redirect: (context, state) => RoutePaths.superadminDashboard,
           ),
           GoRoute(
             path: RoutePaths.superadminSettings,
@@ -316,10 +327,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const AdminInventoryScreen(),
           ),
           GoRoute(
-            path: RoutePaths.adminTransactions,
-            builder: (context, state) => const AdminTransactionsScreen(),
-          ),
-          GoRoute(
             path: RoutePaths.adminPayments,
             builder: (context, state) => const AdminPaymentsScreen(),
           ),
@@ -355,14 +362,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: RoutePaths.adminReports,
-            builder: (context, state) => const PlaceholderRoleScreen(
-              title: 'Reports',
-              message: 'Reports screen placeholder.',
-            ),
+            redirect: (context, state) => RoutePaths.adminDashboard,
           ),
           GoRoute(
             path: RoutePaths.adminSettings,
             builder: (context, state) => const AdminSettingsScreen(),
+          ),
+          GoRoute(
+            path: RoutePaths.adminRoles,
+            redirect: (context, state) => RoutePaths.adminDashboard,
           ),
         ],
       ),
@@ -405,10 +413,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             },
           ),
           GoRoute(
-            path: RoutePaths.userRouteOptimisation,
-            builder: (context, state) => const UserRouteOptimisationScreen(),
-          ),
-          GoRoute(
             path: RoutePaths.userTrackLinks,
             builder: (context, state) => const UserShareTrackLinksScreen(),
           ),
@@ -428,20 +432,17 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             path: RoutePaths.userLandmarkRoutes,
             builder: (context, state) => const UserRoutesScreen(),
           ),
-          placeholderRoute(
+          GoRoute(
             path: RoutePaths.userGeofenceEditor,
-            title: 'Geofence Editor',
-            message: 'Geofence editor is not implemented yet.',
+            redirect: (context, state) => RoutePaths.userLandmarkGeofences,
           ),
-          placeholderRoute(
+          GoRoute(
             path: RoutePaths.userPoiEditor,
-            title: 'POI Editor',
-            message: 'POI editor is not implemented yet.',
+            redirect: (context, state) => RoutePaths.userLandmarkPois,
           ),
-          placeholderRoute(
+          GoRoute(
             path: RoutePaths.userRouteEditor,
-            title: 'Route Editor',
-            message: 'Route editor is not implemented yet.',
+            redirect: (context, state) => RoutePaths.userLandmarkRoutes,
           ),
           GoRoute(
             path: RoutePaths.userSupport,
@@ -491,10 +492,24 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: RoutePaths.userHistory,
-            builder: (context, state) => const PlaceholderRoleScreen(
-              title: 'History',
-              message: 'Vehicle history and replay screen placeholder.',
-            ),
+            redirect: (context, state) => RoutePaths.userMap,
+          ),
+          GoRoute(
+            path: RoutePaths.userReports,
+            builder: (context, state) => const UserReportsCatalogScreen(),
+            routes: [
+              GoRoute(
+                path: ':reportKey',
+                builder: (context, state) {
+                  final keyStr = state.pathParameters['reportKey'] ?? '';
+                  final reportKey = UserReportKey.values.firstWhere(
+                    (k) => k.name == keyStr,
+                    orElse: () => UserReportKey.distance,
+                  );
+                  return UserReportWorkspaceScreen(reportKey: reportKey);
+                },
+              ),
+            ],
           ),
           GoRoute(
             path: RoutePaths.userNotifications,

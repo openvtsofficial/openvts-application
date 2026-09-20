@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../../core/providers/app_preferences_provider.dart';
 import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../core/utils/date_time_formatter.dart';
 
 class AdminInventoryRoundedSurface extends StatelessWidget {
   const AdminInventoryRoundedSurface({required this.child, super.key});
@@ -33,6 +35,7 @@ class AdminInventoryCardHeader extends StatelessWidget {
     required this.isActive,
     required this.onEdit,
     required this.isEditing,
+    this.showActiveBadge = true,
     super.key,
   });
 
@@ -41,6 +44,7 @@ class AdminInventoryCardHeader extends StatelessWidget {
   final bool isActive;
   final VoidCallback onEdit;
   final bool isEditing;
+  final bool showActiveBadge;
 
   @override
   Widget build(BuildContext context) {
@@ -79,10 +83,12 @@ class AdminInventoryCardHeader extends StatelessWidget {
           onPressed: isEditing ? null : onEdit,
           isLoading: isEditing,
         ),
-        const SizedBox(width: OpenVtsSpacing.xxs),
-        AdminInventoryStatusBadge(
-          label: isActive ? 'Active' : 'Inactive',
-        ),
+        if (showActiveBadge) ...[
+          const SizedBox(width: OpenVtsSpacing.xxs),
+          AdminInventoryStatusBadge(
+            label: isActive ? 'Active' : 'Inactive',
+          ),
+        ],
       ],
     );
   }
@@ -174,7 +180,7 @@ class AdminInventoryInfoField extends StatelessWidget {
         Icon(
           icon,
           size: 16,
-          color: OpenVtsColors.textSecondary,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),
         const SizedBox(width: OpenVtsSpacing.xs),
         Expanded(
@@ -183,7 +189,7 @@ class AdminInventoryInfoField extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             text: TextSpan(
               style: OpenVtsTypography.label.copyWith(
-                color: OpenVtsColors.textPrimary,
+                color: Theme.of(context).colorScheme.onSurface,
                 height: 1.4,
               ),
               children: [
@@ -265,27 +271,27 @@ class AdminInventoryInfoGrid extends StatelessWidget {
   }
 }
 
-class AdminInventoryCardFooter extends StatelessWidget {
+class AdminInventoryCardFooter extends ConsumerWidget {
   const AdminInventoryCardFooter({
-    required this.createdValue,
+    required this.createdAt,
     required this.statusLabel,
     super.key,
   });
 
-  final String createdValue;
+  final DateTime? createdAt;
   final String statusLabel;
 
-  static final DateFormat createdFormat = DateFormat('yyyy-MM-dd HH:mm');
-
-  static String formatCreatedAt(DateTime? value) {
-    if (value == null) {
-      return '-';
-    }
-    return createdFormat.format(value.toLocal());
-  }
-
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final prefs = ref.watch(appLocalizationPreferencesProvider);
+    final formatter = AppDateFormatter(
+      datePattern: prefs.dateFormat,
+      use24Hour: prefs.use24Hour,
+      timezone: prefs.timezone,
+    );
+    final createdValue =
+        createdAt != null ? formatter.formatDateTime(createdAt) : '-';
+
     return Row(
       children: [
         Expanded(
@@ -317,20 +323,21 @@ class _CreatedPill extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(
+          Icon(
             Icons.schedule_outlined,
             size: 16,
-            color: OpenVtsColors.textSecondary,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
           const SizedBox(width: OpenVtsSpacing.xs),
           Expanded(
             child: RichText(
-              maxLines: 1,
+              maxLines: 2,
               overflow: TextOverflow.ellipsis,
               text: TextSpan(
                 style: OpenVtsTypography.label.copyWith(
-                  color: OpenVtsColors.textPrimary,
-                  height: 1.4,
+                  color: Theme.of(context).colorScheme.onSurface,
+                  height: 1.3,
+                  fontSize: 12,
                 ),
                 children: [
                   const TextSpan(
@@ -339,6 +346,87 @@ class _CreatedPill extends StatelessWidget {
                   ),
                   TextSpan(
                     text: createdValue,
+                    style: const TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class AdminInventorySimCardFooter extends StatelessWidget {
+  const AdminInventorySimCardFooter({
+    required this.isActive,
+    required this.statusLabel,
+    super.key,
+  });
+
+  final bool isActive;
+  final String statusLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: _ActivePill(isActive: isActive),
+        ),
+        const SizedBox(width: OpenVtsSpacing.sm),
+        _StockStatusPill(label: statusLabel),
+      ],
+    );
+  }
+}
+
+class _ActivePill extends StatelessWidget {
+  const _ActivePill({required this.isActive});
+
+  final bool isActive;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = isActive ? 'Active' : 'Inactive';
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: OpenVtsSpacing.sm,
+        vertical: OpenVtsSpacing.xs + 2,
+      ),
+      decoration: BoxDecoration(
+        color: inventorySoftSurfaceColor(context),
+        borderRadius: BorderRadius.circular(OpenVtsRadius.md),
+        border: Border.all(color: inventorySoftBorderColor(context)),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            isActive
+                ? Icons.radio_button_checked_rounded
+                : Icons.radio_button_unchecked_rounded,
+            size: 16,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(width: OpenVtsSpacing.xs),
+          Expanded(
+            child: RichText(
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              text: TextSpan(
+                style: OpenVtsTypography.label.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                  height: 1.3,
+                  fontSize: 12,
+                ),
+                children: [
+                  const TextSpan(
+                    text: 'Status : ',
+                    style: TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  TextSpan(
+                    text: label,
                     style: const TextStyle(fontWeight: FontWeight.w500),
                   ),
                 ],
@@ -375,7 +463,7 @@ class _StockStatusPill extends StatelessWidget {
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: OpenVtsTypography.label.copyWith(
-          color: OpenVtsColors.textPrimary,
+          color: Theme.of(context).colorScheme.onSurface,
           fontWeight: FontWeight.w600,
         ),
       ),

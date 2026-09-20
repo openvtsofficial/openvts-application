@@ -143,6 +143,7 @@ class _VehicleGeofenceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return OpenVtsCard(
       padding: const EdgeInsets.symmetric(
@@ -154,22 +155,30 @@ class _VehicleGeofenceCard extends StatelessWidget {
         child: ExpansionTile(
           tilePadding: EdgeInsets.zero,
           childrenPadding: const EdgeInsets.only(bottom: OpenVtsSpacing.xs),
-          iconColor: OpenVtsColors.textSecondary,
-          collapsedIconColor: OpenVtsColors.textSecondary,
+          iconColor: isDark
+              ? OpenVtsColors.white.withValues(alpha: 0.7)
+              : OpenVtsColors.textSecondary,
+          collapsedIconColor: isDark
+              ? OpenVtsColors.white.withValues(alpha: 0.7)
+              : OpenVtsColors.textSecondary,
           title: Row(
             children: [
               Container(
                 width: 24,
                 height: 24,
                 decoration: BoxDecoration(
-                  color: OpenVtsColors.surface,
+                  color: isDark ? Colors.black : OpenVtsColors.surface,
                   borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-                  border: Border.all(color: OpenVtsColors.border),
+                  border: Border.all(
+                      color:
+                          isDark ? OpenVtsColors.white : OpenVtsColors.border),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.directions_car_outlined,
                   size: 14,
-                  color: OpenVtsColors.textSecondary,
+                  color: isDark
+                      ? OpenVtsColors.white.withValues(alpha: 0.7)
+                      : OpenVtsColors.textSecondary,
                 ),
               ),
               const SizedBox(width: OpenVtsSpacing.xs),
@@ -180,7 +189,9 @@ class _VehicleGeofenceCard extends StatelessWidget {
                     Text(
                       userNotificationVehicleName(vehicle.name, vehicle.id),
                       style: OpenVtsTypography.body.copyWith(
-                        color: OpenVtsColors.textPrimary,
+                        color: isDark
+                            ? OpenVtsColors.white
+                            : OpenVtsColors.textPrimary,
                         fontWeight: FontWeight.w600,
                       ),
                       maxLines: 1,
@@ -189,7 +200,9 @@ class _VehicleGeofenceCard extends StatelessWidget {
                     Text(
                       userNotificationVehiclePlate(vehicle.plateNumber),
                       style: OpenVtsTypography.meta.copyWith(
-                        color: OpenVtsColors.textSecondary,
+                        color: isDark
+                            ? OpenVtsColors.white.withValues(alpha: 0.7)
+                            : OpenVtsColors.textSecondary,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -205,7 +218,9 @@ class _VehicleGeofenceCard extends StatelessWidget {
             child: Text(
               'Tap to edit geofence notifications',
               style: OpenVtsTypography.meta.copyWith(
-                color: OpenVtsColors.textTertiary,
+                color: isDark
+                    ? OpenVtsColors.white.withValues(alpha: 0.5)
+                    : OpenVtsColors.textTertiary,
               ),
             ),
           ),
@@ -232,9 +247,10 @@ class _VehicleGeofenceCard extends StatelessWidget {
                       },
                     ),
                     if (index != geofences.length - 1)
-                      const Divider(
+                      Divider(
                         height: OpenVtsSpacing.sm,
-                        color: OpenVtsColors.border,
+                        color:
+                            isDark ? OpenVtsColors.white : OpenVtsColors.border,
                       ),
                   ],
                 ),
@@ -262,6 +278,8 @@ class _GeofenceToggleRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final normalizedName = geofence.name.trim();
     final name =
         normalizedName.isEmpty ? 'Geofence #${geofence.id}' : normalizedName;
@@ -270,12 +288,14 @@ class _GeofenceToggleRow extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
-          padding: EdgeInsets.only(top: 2),
+        Padding(
+          padding: const EdgeInsets.only(top: 2),
           child: Icon(
             Icons.location_on_outlined,
             size: 14,
-            color: OpenVtsColors.textSecondary,
+            color: isDark
+                ? OpenVtsColors.white.withValues(alpha: 0.7)
+                : OpenVtsColors.textSecondary,
           ),
         ),
         const SizedBox(width: OpenVtsSpacing.xs),
@@ -286,7 +306,8 @@ class _GeofenceToggleRow extends StatelessWidget {
               Text(
                 name,
                 style: OpenVtsTypography.meta.copyWith(
-                  color: OpenVtsColors.textPrimary,
+                  color:
+                      isDark ? OpenVtsColors.white : OpenVtsColors.textPrimary,
                   fontWeight: FontWeight.w600,
                 ),
                 maxLines: 1,
@@ -338,14 +359,22 @@ class _MetaChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final textColor = isStatus
-        ? (isActive ? OpenVtsColors.success : OpenVtsColors.textSecondary)
-        : OpenVtsColors.textSecondary;
+        ? (isActive
+            ? OpenVtsColors.success
+            : (isDark
+                ? OpenVtsColors.white.withValues(alpha: 0.7)
+                : OpenVtsColors.textSecondary))
+        : (isDark
+            ? OpenVtsColors.white.withValues(alpha: 0.7)
+            : OpenVtsColors.textSecondary);
     final borderColor = isStatus
         ? (isActive
             ? OpenVtsColors.success.withValues(alpha: 0.28)
-            : OpenVtsColors.border)
-        : OpenVtsColors.border;
+            : (isDark ? OpenVtsColors.white : OpenVtsColors.border))
+        : (isDark ? OpenVtsColors.white : OpenVtsColors.border);
 
     return Container(
       padding: const EdgeInsets.symmetric(
@@ -353,7 +382,7 @@ class _MetaChip extends StatelessWidget {
         vertical: 3,
       ),
       decoration: BoxDecoration(
-        color: OpenVtsColors.surfaceElevated,
+        color: isDark ? Colors.black : OpenVtsColors.surfaceElevated,
         borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
         border: Border.all(color: borderColor),
       ),
@@ -375,20 +404,26 @@ class _EnabledCountChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: OpenVtsSpacing.xs,
         vertical: 4,
       ),
       decoration: BoxDecoration(
-        color: OpenVtsColors.surfaceElevated,
+        color: isDark ? Colors.black : OpenVtsColors.surfaceElevated,
         borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-        border: Border.all(color: OpenVtsColors.border),
+        border: Border.all(
+            color: isDark ? OpenVtsColors.white : OpenVtsColors.border),
       ),
       child: Text(
         '$enabledCount enabled',
         style: OpenVtsTypography.meta.copyWith(
-          color: OpenVtsColors.textSecondary,
+          color: isDark
+              ? OpenVtsColors.white.withValues(alpha: 0.7)
+              : OpenVtsColors.textSecondary,
           fontWeight: FontWeight.w600,
         ),
       ),
@@ -411,6 +446,8 @@ class _WideGeofenceMatrix extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final columnWidths = <int, TableColumnWidth>{
       0: const FlexColumnWidth(2.8),
       for (var i = 0; i < geofences.length; i += 1)
@@ -425,7 +462,9 @@ class _WideGeofenceMatrix extends StatelessWidget {
           Text(
             'Vehicle-Geofence Matrix',
             style: OpenVtsTypography.meta.copyWith(
-              color: OpenVtsColors.textSecondary,
+              color: isDark
+                  ? OpenVtsColors.white.withValues(alpha: 0.7)
+                  : OpenVtsColors.textSecondary,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -504,10 +543,14 @@ class _MatrixHeaderCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final text = Text(
       label,
       style: OpenVtsTypography.meta.copyWith(
-        color: OpenVtsColors.textSecondary,
+        color: isDark
+            ? OpenVtsColors.white.withValues(alpha: 0.7)
+            : OpenVtsColors.textSecondary,
         fontWeight: FontWeight.w700,
       ),
       maxLines: 1,
@@ -532,6 +575,9 @@ class _MatrixVehicleCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: OpenVtsSpacing.xxs,
@@ -543,7 +589,7 @@ class _MatrixVehicleCell extends StatelessWidget {
           Text(
             userNotificationVehicleName(vehicle.name, vehicle.id),
             style: OpenVtsTypography.meta.copyWith(
-              color: OpenVtsColors.textPrimary,
+              color: isDark ? OpenVtsColors.white : OpenVtsColors.textPrimary,
               fontWeight: FontWeight.w600,
             ),
             maxLines: 1,
@@ -552,7 +598,9 @@ class _MatrixVehicleCell extends StatelessWidget {
           Text(
             userNotificationVehiclePlate(vehicle.plateNumber),
             style: OpenVtsTypography.meta.copyWith(
-              color: OpenVtsColors.textTertiary,
+              color: isDark
+                  ? OpenVtsColors.white.withValues(alpha: 0.5)
+                  : OpenVtsColors.textTertiary,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,

@@ -31,6 +31,19 @@ class _UserTopPerformingAssetsWidgetState
   _TopAssetsRange _range = _TopAssetsRange.today;
   int _refreshKey = 0;
 
+  // Resolved once per range selection / refresh so build() never calls
+  // DateTime.now() and accidentally shifts the provider identity.
+  late DateTime _resolvedFrom;
+  late DateTime _resolvedTo;
+
+  @override
+  void initState() {
+    super.initState();
+    final r = _range.resolve();
+    _resolvedFrom = r.from;
+    _resolvedTo = r.to;
+  }
+
   @override
   void didUpdateWidget(covariant UserTopPerformingAssetsWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -40,26 +53,35 @@ class _UserTopPerformingAssetsWidgetState
     }
   }
 
-  void _reload() => setState(() => _refreshKey++);
+  void _reload() {
+    final r = _range.resolve();
+    setState(() {
+      _resolvedFrom = r.from;
+      _resolvedTo = r.to;
+      _refreshKey++;
+    });
+  }
 
   void _changeRange(Set<_TopAssetsRange> value) {
     if (value.isEmpty) return;
+    final r = value.first.resolve();
     setState(() {
       _range = value.first;
+      _resolvedFrom = r.from;
+      _resolvedTo = r.to;
       _refreshKey++;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final range = _range.resolve();
     final state = ref.watch(
       userDashboardTopAssetsProvider(
         UserDashboardTopAssetsArgs(
           widgetId: widget.config.id,
           refreshKey: _refreshKey,
-          from: range.from,
-          to: range.to,
+          from: _resolvedFrom,
+          to: _resolvedTo,
           limit:
               userDashboardPropInt(widget.config.props, const ['limit']) ?? 10,
         ),
@@ -176,14 +198,15 @@ class _TopAssetRow extends StatelessWidget {
           height: 30,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: OpenVtsColors.surface,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-            border: Border.all(color: OpenVtsColors.border),
+            border:
+                Border.all(color: Theme.of(context).colorScheme.outlineVariant),
           ),
           child: Text(
             '$rank',
             style: OpenVtsTypography.meta.copyWith(
-              color: OpenVtsColors.textPrimary,
+              color: Theme.of(context).colorScheme.onSurface,
               fontWeight: FontWeight.w900,
             ),
           ),
@@ -203,7 +226,7 @@ class _TopAssetRow extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: OpenVtsTypography.label.copyWith(
-                        color: OpenVtsColors.textPrimary,
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
@@ -212,7 +235,7 @@ class _TopAssetRow extends StatelessWidget {
                   Text(
                     userDashboardFormatDistance(item.drivenKm),
                     style: OpenVtsTypography.meta.copyWith(
-                      color: OpenVtsColors.textPrimary,
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontWeight: FontWeight.w900,
                     ),
                   ),
@@ -225,7 +248,7 @@ class _TopAssetRow extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: OpenVtsTypography.meta.copyWith(
-                    color: OpenVtsColors.textSecondary,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
               ],
@@ -236,7 +259,7 @@ class _TopAssetRow extends StatelessWidget {
                   value: percent,
                   minHeight: 7,
                   color: OpenVtsColors.brandInk,
-                  backgroundColor: OpenVtsColors.surface,
+                  backgroundColor: Theme.of(context).colorScheme.surface,
                 ),
               ),
             ],
@@ -275,9 +298,9 @@ class _SkeletonBlock extends StatelessWidget {
     return Container(
       height: height,
       decoration: BoxDecoration(
-        color: OpenVtsColors.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(OpenVtsRadius.md),
-        border: Border.all(color: OpenVtsColors.border),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
     );
   }

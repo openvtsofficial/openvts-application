@@ -260,7 +260,9 @@ class _VehicleOptionCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: OpenVtsTypography.label.copyWith(
-                    color: OpenVtsColors.textPrimary,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.white
+                        : OpenVtsColors.textPrimary,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -291,15 +293,20 @@ class _VehicleOptionCard extends StatelessWidget {
                   ? OpenVtsColors.brandInk.withValues(alpha: 0.12)
                   : OpenVtsColors.surface,
               border: Border.all(
-                color:
-                    isSelected ? OpenVtsColors.brandInk : OpenVtsColors.border,
+                color: isSelected
+                    ? (Theme.of(context).brightness == Brightness.dark
+                        ? Colors.white
+                        : OpenVtsColors.brandInk)
+                    : OpenVtsColors.border,
               ),
             ),
             child: Icon(
               isSelected ? Icons.check_rounded : Icons.circle_outlined,
               size: 14,
               color: isSelected
-                  ? OpenVtsColors.brandInk
+                  ? (Theme.of(context).brightness == Brightness.dark
+                      ? Colors.white
+                      : OpenVtsColors.brandInk)
                   : OpenVtsColors.textTertiary,
             ),
           ),

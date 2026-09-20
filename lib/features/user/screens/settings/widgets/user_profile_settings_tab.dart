@@ -6,19 +6,24 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../../../core/providers/core_providers.dart';
+import '../../../../../core/widgets/app_legal_links.dart';
 import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../../../shared/widgets/open_vts_empty_state.dart';
 import '../../../../../shared/widgets/open_vts_role_home.dart';
+import '../../../../auth/controllers/auth_controller.dart';
+import '../../../../auth/widgets/account_closure_card.dart';
 import '../../../controllers/user_providers.dart';
 import '../../../controllers/user_settings_controller.dart';
 import '../../../models/user_settings_model.dart';
 import '../../../models/user_settings_state.dart';
+import 'user_address_card.dart';
 import 'user_company_edit_sheet.dart';
 import 'user_company_settings_card.dart';
 import 'user_email_subscription_card.dart';
+import 'user_logout_card.dart';
 import 'user_otp_verification_sheet.dart';
 import 'user_password_change_sheet.dart';
 import 'user_profile_edit_sheet.dart';
@@ -55,19 +60,26 @@ class _UserProfileSettingsTabState
   @override
   void initState() {
     super.initState();
+    // The provider's loadInitial() already covers reference data and email
+    // subscription. This post-frame guard is kept only as a safety net for
+    // cases where the Profile tab is opened directly after a partial failure
+    // (e.g. references timed out). The controller's own idempotency flags
+    // prevent duplicate network requests.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
 
       final needsProfileReferences =
           widget.state.countries.isEmpty || widget.state.mobilePrefixes.isEmpty;
-      if (needsProfileReferences && !widget.state.isLoadingReferences) {
+      if (needsProfileReferences &&
+          !widget.state.isLoadingReferences &&
+          !widget.state.isLoadingInitial) {
         unawaited(widget.controller.loadReferenceData());
       }
 
       final needsSubscription = widget.state.emailSubscription == null;
-      if (needsSubscription && !widget.state.isLoadingEmailSubscription) {
+      if (needsSubscription &&
+          !widget.state.isLoadingEmailSubscription &&
+          !widget.state.isLoadingInitial) {
         unawaited(widget.controller.loadEmailSubscription());
       }
     });
@@ -98,6 +110,28 @@ class _UserProfileSettingsTabState
         hasReferenceError &&
         (widget.state.countries.isEmpty || widget.state.mobilePrefixes.isEmpty);
 
+    // Resolve human-readable labels from reference catalogue for the address
+    // card. The statesForCountryCode guard ensures we only use state options
+    // that actually belong to the profile's current country.
+    final profileCountryCode =
+        (draft.address?.countryCode ?? '').trim().toUpperCase();
+    final profileStateCode =
+        (draft.address?.stateCode ?? '').trim().toUpperCase();
+
+    final countryLabel = widget.state.countries
+        .where((c) => c.value == profileCountryCode)
+        .map((c) => c.label)
+        .firstOrNull;
+
+    final stateLabel =
+        (widget.state.statesForCountryCode == profileCountryCode &&
+                profileCountryCode.isNotEmpty)
+            ? widget.state.states
+                .where((s) => s.value == profileStateCode)
+                .map((s) => s.label)
+                .firstOrNull
+            : null;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -121,6 +155,12 @@ class _UserProfileSettingsTabState
         const SizedBox(height: OpenVtsSpacing.sm),
         UserProfileInfoCard(profile: draft),
         const SizedBox(height: OpenVtsSpacing.sm),
+        UserAddressCard(
+          address: draft.address,
+          countryLabel: countryLabel,
+          stateLabel: stateLabel,
+        ),
+        const SizedBox(height: OpenVtsSpacing.sm),
         UserVerificationCard(
           isEmailVerified: draft.isEmailVerified,
           isMobileVerified: draft.isMobileVerified,
@@ -143,7 +183,8 @@ class _UserProfileSettingsTabState
               : () => _openCompanyEditSheet(draft.company!),
         ),
         const SizedBox(height: OpenVtsSpacing.sm),
-        _PasswordActionCard(onPressed: _openPasswordSheet),
+        if (ref.watch(authControllerProvider).user?.isSubuser != true)
+          _PasswordActionCard(onPressed: _openPasswordSheet),
         const SizedBox(height: OpenVtsSpacing.sm),
         UserEmailSubscriptionCard(
           subscription: widget.state.emailSubscription,
@@ -155,8 +196,25 @@ class _UserProfileSettingsTabState
           },
           onSubscribe: _subscribeEmail,
         ),
+        const SizedBox(height: OpenVtsSpacing.sm),
+        const AccountClosureCard(),
+        const SizedBox(height: OpenVtsSpacing.sm),
+        UserLogoutCard(onLogout: _handleLogout),
+        const AppLegalLinks(),
       ],
     );
+  }
+
+  Future<void> _handleLogout() async {
+    final activeRole = ref.read(authControllerProvider).activeRole;
+    final loggedOut = await ref.read(authControllerProvider.notifier).logout();
+    if (!mounted) {
+      return;
+    }
+    final label = (loggedOut ?? activeRole)?.displayLabel;
+    if (label != null) {
+      ToastHelper.showInfo('Logged out from $label');
+    }
   }
 
   Future<void> _pickPhoto() async {
@@ -226,6 +284,13 @@ class _UserProfileSettingsTabState
   }
 
   Future<void> _openProfileEditSheet(UserSettingsProfile profile) async {
+    // Kick off reference loading now so dropdown options arrive as early as
+    // possible. The controller's idempotency guard prevents double-fetching
+    // when references are already loading or loaded.
+    if (widget.state.countries.isEmpty && !widget.state.isLoadingReferences) {
+      unawaited(widget.controller.loadReferenceData());
+    }
+
     final ok = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
@@ -267,8 +332,9 @@ class _UserProfileSettingsTabState
       ),
     );
 
-    if (ok == true) {
-      ToastHelper.showSuccess('Password changed');
+    if (ok == true && mounted) {
+      ToastHelper.showSuccess('Password changed. Please sign in again.');
+      await ref.read(authControllerProvider.notifier).logoutAllRoles();
     }
   }
 
@@ -355,14 +421,14 @@ class _PasswordActionCard extends StatelessWidget {
             'Security',
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.w700,
-                  color: OpenVtsColors.textPrimary,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
           ),
           const SizedBox(height: OpenVtsSpacing.xxs),
           Text(
             'Change your password to secure account access.',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: OpenVtsColors.textSecondary,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
           ),
           const SizedBox(height: OpenVtsSpacing.xs),
@@ -407,7 +473,7 @@ class _ProfileReferenceWarningCard extends StatelessWidget {
                   ? message!.trim()
                   : 'Country and mobile prefix references are unavailable. You can still edit manually.',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: OpenVtsColors.textSecondary,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
             ),
           ),

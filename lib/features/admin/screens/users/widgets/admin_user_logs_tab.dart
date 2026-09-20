@@ -100,7 +100,7 @@ class _AdminUserLogsTabState extends ConsumerState<AdminUserLogsTab> {
               icon: const Icon(Icons.refresh_rounded, size: 14),
               label: const Text('Reset filters'),
               style: TextButton.styleFrom(
-                foregroundColor: OpenVtsColors.textSecondary,
+                foregroundColor: Theme.of(context).colorScheme.onSurfaceVariant,
                 minimumSize: const Size(0, 30),
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -223,13 +223,20 @@ class _SearchField extends StatelessWidget {
       controller: controller,
       onChanged: onChanged,
       textInputAction: TextInputAction.search,
-      style: OpenVtsTypography.body.copyWith(fontSize: 13),
+      cursorColor: Theme.of(context).colorScheme.primary,
+      style: OpenVtsTypography.body.copyWith(
+        fontSize: 13,
+        color: Theme.of(context).colorScheme.onSurface,
+      ),
       decoration: InputDecoration(
         hintText: 'Search logs',
-        prefixIcon: const Icon(
+        hintStyle: TextStyle(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
+        prefixIcon: Icon(
           Icons.search_rounded,
           size: 18,
-          color: OpenVtsColors.textSecondary,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),
         suffixIcon: controller.text.isEmpty
             ? null
@@ -239,7 +246,9 @@ class _SearchField extends StatelessWidget {
                   controller.clear();
                   onChanged('');
                 },
-                icon: const Icon(Icons.close_rounded, size: 17),
+                icon: Icon(Icons.close_rounded,
+                    size: 17,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant),
               ),
       ),
     );
@@ -264,29 +273,36 @@ class _ActionGroupChips extends StatelessWidget {
         itemBuilder: (context, index) {
           final group = _actionGroups[index];
           final isSelected = group.prefix == selected;
+          final isDark = Theme.of(context).brightness == Brightness.dark;
+          final backgroundColor = isSelected
+              ? OpenVtsColors.brandInk
+              : Theme.of(context).colorScheme.surfaceContainerHigh;
+          final foregroundColor = isSelected
+              ? (isDark ? OpenVtsColors.darkTextPrimary : OpenVtsColors.white)
+              : Theme.of(context).colorScheme.onSurface;
+          final borderColor = isSelected
+              ? OpenVtsColors.brandInk
+              : Theme.of(context).colorScheme.outline;
           return Material(
-            color: isSelected ? OpenVtsColors.brandInk : OpenVtsColors.white,
+            color: backgroundColor,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
-              side: BorderSide(
-                color:
-                    isSelected ? OpenVtsColors.brandInk : OpenVtsColors.border,
-              ),
+              side: BorderSide(color: borderColor, width: 1),
             ),
             child: InkWell(
               borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
               onTap: () => onChanged(group.prefix),
               child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-                child: Text(
-                  group.label,
-                  style: OpenVtsTypography.meta.copyWith(
-                    color: isSelected
-                        ? OpenVtsColors.white
-                        : OpenVtsColors.textSecondary,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                child: Center(
+                  child: Text(
+                    group.label,
+                    style: OpenVtsTypography.meta.copyWith(
+                      color: foregroundColor,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      height: 1,
+                    ),
                   ),
                 ),
               ),
@@ -298,14 +314,16 @@ class _ActionGroupChips extends StatelessWidget {
   }
 }
 
-class _LogCard extends StatelessWidget {
+class _LogCard extends ConsumerWidget {
   const _LogCard({required this.log, required this.onTap});
 
   final AdminUserActivityLog log;
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final formatter = ref.watch(appDateFormatterProvider);
     final entity = _entityLabel(log.entity, log.entityId);
     final platform = _platformLine(log);
     return OpenVtsCard(
@@ -319,14 +337,14 @@ class _LogCard extends StatelessWidget {
             height: 34,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: OpenVtsColors.surface,
+              color: colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-              border: Border.all(color: OpenVtsColors.border),
+              border: Border.all(color: colorScheme.outlineVariant),
             ),
             child: Icon(
               _iconForAction(log.action),
               size: 16,
-              color: OpenVtsColors.textSecondary,
+              color: colorScheme.onSurfaceVariant,
             ),
           ),
           const SizedBox(width: OpenVtsSpacing.sm),
@@ -343,7 +361,7 @@ class _LogCard extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: OpenVtsTypography.label.copyWith(
-                          color: OpenVtsColors.textPrimary,
+                          color: colorScheme.onSurface,
                           fontSize: 13,
                           fontWeight: FontWeight.w800,
                         ),
@@ -351,9 +369,9 @@ class _LogCard extends StatelessWidget {
                     ),
                     const SizedBox(width: OpenVtsSpacing.xs),
                     Text(
-                      _relativeTime(log.createdAt),
+                      _relativeTime(log.createdAt, formatter: formatter),
                       style: OpenVtsTypography.meta.copyWith(
-                        color: OpenVtsColors.textTertiary,
+                        color: colorScheme.onSurfaceVariant,
                         fontSize: 10,
                       ),
                     ),
@@ -366,7 +384,7 @@ class _LogCard extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: OpenVtsTypography.meta.copyWith(
-                      color: OpenVtsColors.textSecondary,
+                      color: colorScheme.onSurfaceVariant,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -378,7 +396,7 @@ class _LogCard extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: OpenVtsTypography.meta.copyWith(
-                      color: OpenVtsColors.textTertiary,
+                      color: colorScheme.onSurfaceVariant,
                       fontSize: 11,
                     ),
                   ),
@@ -399,6 +417,7 @@ class _LogDetailSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final userLabel = _userLabel(log.user);
     final metaJson = log.meta.isEmpty
         ? '-'
@@ -417,14 +436,14 @@ class _LogDetailSheet extends StatelessWidget {
                 height: 38,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: OpenVtsColors.surface,
+                  color: colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-                  border: Border.all(color: OpenVtsColors.border),
+                  border: Border.all(color: colorScheme.outlineVariant),
                 ),
                 child: Icon(
                   _iconForAction(log.action),
                   size: 18,
-                  color: OpenVtsColors.textSecondary,
+                  color: colorScheme.onSurfaceVariant,
                 ),
               ),
               const SizedBox(width: OpenVtsSpacing.sm),
@@ -437,7 +456,7 @@ class _LogDetailSheet extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: OpenVtsTypography.label.copyWith(
-                        color: OpenVtsColors.textPrimary,
+                        color: colorScheme.onSurface,
                         fontSize: 14,
                         fontWeight: FontWeight.w800,
                       ),
@@ -446,7 +465,7 @@ class _LogDetailSheet extends StatelessWidget {
                     Text(
                       _dateTimeText(log.createdAt),
                       style: OpenVtsTypography.meta.copyWith(
-                        color: OpenVtsColors.textSecondary,
+                        color: colorScheme.onSurfaceVariant,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -479,7 +498,7 @@ class _LogDetailSheet extends StatelessWidget {
               Text(
                 'Meta',
                 style: OpenVtsTypography.label.copyWith(
-                  color: OpenVtsColors.textPrimary,
+                  color: colorScheme.onSurface,
                   fontWeight: FontWeight.w800,
                 ),
               ),
@@ -488,14 +507,14 @@ class _LogDetailSheet extends StatelessWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.all(OpenVtsSpacing.sm),
                 decoration: BoxDecoration(
-                  color: OpenVtsColors.surface,
+                  color: colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-                  border: Border.all(color: OpenVtsColors.border),
+                  border: Border.all(color: colorScheme.outlineVariant),
                 ),
                 child: SelectableText(
                   metaJson,
                   style: OpenVtsTypography.meta.copyWith(
-                    color: OpenVtsColors.textPrimary,
+                    color: colorScheme.onSurface,
                     height: 1.35,
                   ),
                 ),
@@ -516,6 +535,7 @@ class _DetailsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return OpenVtsCard(
       padding: const EdgeInsets.all(OpenVtsSpacing.md),
       child: Column(
@@ -524,7 +544,7 @@ class _DetailsCard extends StatelessWidget {
           Text(
             title,
             style: OpenVtsTypography.label.copyWith(
-              color: OpenVtsColors.textPrimary,
+              color: colorScheme.onSurface,
               fontWeight: FontWeight.w800,
             ),
           ),
@@ -543,6 +563,7 @@ class _DetailRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.only(bottom: OpenVtsSpacing.xs),
       child: Row(
@@ -553,7 +574,7 @@ class _DetailRow extends StatelessWidget {
             child: Text(
               row.label,
               style: OpenVtsTypography.meta.copyWith(
-                color: OpenVtsColors.textTertiary,
+                color: colorScheme.onSurfaceVariant,
               ),
             ),
           ),
@@ -561,7 +582,7 @@ class _DetailRow extends StatelessWidget {
             child: Text(
               row.value,
               style: OpenVtsTypography.meta.copyWith(
-                color: OpenVtsColors.textPrimary,
+                color: colorScheme.onSurface,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -589,9 +610,9 @@ class _InlineError extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(OpenVtsSpacing.sm),
       decoration: BoxDecoration(
-        color: OpenVtsColors.error.withValues(alpha: 0.05),
+        color: OpenVtsColors.error.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-        border: Border.all(color: OpenVtsColors.error.withValues(alpha: 0.2)),
+        border: Border.all(color: OpenVtsColors.error.withValues(alpha: 0.3)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -637,7 +658,7 @@ class _SectionLoader extends StatelessWidget {
           Text(
             'Loading $title',
             style: OpenVtsTypography.label.copyWith(
-              color: OpenVtsColors.textSecondary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -655,6 +676,7 @@ class _SectionErrorCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return OpenVtsCard(
       padding: const EdgeInsets.all(OpenVtsSpacing.md),
       child: Column(
@@ -672,7 +694,7 @@ class _SectionErrorCard extends StatelessWidget {
                 child: Text(
                   'Unable to load logs',
                   style: OpenVtsTypography.label.copyWith(
-                    color: OpenVtsColors.textPrimary,
+                    color: colorScheme.onSurface,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -683,7 +705,7 @@ class _SectionErrorCard extends StatelessWidget {
           Text(
             message,
             style: OpenVtsTypography.meta.copyWith(
-              color: OpenVtsColors.textSecondary,
+              color: colorScheme.onSurfaceVariant,
             ),
           ),
           const SizedBox(height: OpenVtsSpacing.sm),
@@ -706,18 +728,19 @@ class _EmptyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(OpenVtsSpacing.md),
       decoration: BoxDecoration(
-        color: OpenVtsColors.surface,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-        border: Border.all(color: OpenVtsColors.border),
+        border: Border.all(color: colorScheme.outlineVariant),
       ),
       child: Text(
         label,
         style: OpenVtsTypography.meta.copyWith(
-          color: OpenVtsColors.textSecondary,
+          color: colorScheme.onSurfaceVariant,
           fontWeight: FontWeight.w700,
         ),
       ),
@@ -814,7 +837,7 @@ String _shortText(String value, int maxLength) {
   return '${normalized.substring(0, maxLength - 3)}...';
 }
 
-String _relativeTime(DateTime? value) {
+String _relativeTime(DateTime? value, {AppDateFormatter? formatter}) {
   if (value == null) {
     return '-';
   }
@@ -831,6 +854,10 @@ String _relativeTime(DateTime? value) {
   }
   if (diff.inDays >= 0 && diff.inDays < 7) {
     return '${diff.inDays}d ago';
+  }
+
+  if (formatter != null) {
+    return formatter.formatDate(value.toLocal());
   }
   return DateFormat('dd MMM yyyy').format(value.toLocal());
 }

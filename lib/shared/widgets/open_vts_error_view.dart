@@ -24,7 +24,8 @@ class OpenVtsErrorView extends StatelessWidget {
           children: [
             const Text('Unable to load', style: OpenVtsTypography.titleSmall),
             const SizedBox(height: OpenVtsSpacing.xs),
-            Text(message, style: OpenVtsTypography.body, textAlign: TextAlign.center),
+            Text(message,
+                style: OpenVtsTypography.body, textAlign: TextAlign.center),
             if (onRetry != null) ...[
               const SizedBox(height: OpenVtsSpacing.md),
               OpenVtsButton(

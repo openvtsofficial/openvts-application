@@ -1,0 +1,40 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(flutter test *)",
+      "Bash(git reset *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git commit *)",
+      "Bash(timeout 180 flutter run -d chrome --no-source-maps)",
+      "Bash(timeout 240 flutter run -d chrome)",
+      "Bash(cat)",
+      "Read(//tmp/**)",
+      "Bash(dart format *)",
+      "Bash(flutter build *)",
+      "Bash(flutter run *)",
+      "Bash(node /tmp/test_driver_profile.js)",
+      "Bash(sed -n '608,641p' lib/features/admin/screens/users/widgets/admin_user_profile_tab.dart)",
+      "Bash(sed -n '99,132p' lib/features/admin/screens/drivers/widgets/admin_driver_profile_tab.dart)",
+      "Bash(sed -n '62,92p' lib/features/admin/screens/users/widgets/admin_user_profile_tab.dart)",
+      "Bash(sed -n '42,84p' lib/features/admin/screens/drivers/widgets/admin_driver_profile_tab.dart)",
+      "Bash(cat > *)",
+      "Bash(dart analyze *)",
+      "Bash(grep -v \"//\")",
+      "Bash(xargs ls -la)",
+      "Bash(curl -s http://localhost:5050/)",
+      "Bash(xargs grep -l \"AdminVehicleLogItem\")",
+      "Bash(xargs grep -l \"class AdminVehicleLogItem\")",
+      "Bash(xargs grep -l \"class AppNotification\")",
+      "Bash(tmux new-session *)",
+      "Bash(flutter run -d chrome 2>&1 > /tmp/flutter_run.log & *)",
+      "Bash(curl -s http://localhost:3000)",
+      "Bash(python3 /tmp/test_dark.py)",
+      "Bash(curl -s http://localhost:8080)"
+    ],
+    "additionalDirectories": [
+      "d:\\Users\\shash\\.claude\\projects\\d--development-openvts-application-main\\memory",
+      "\\tmp",
+      "d:\\tmp"
+    ]
+  }
+}

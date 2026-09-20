@@ -1,6 +1,72 @@
+import 'dart:convert';
+import 'dart:math' as math;
+
 import 'admin_vehicle_model.dart';
 
+class AdminVehicleEventFilters {
+  const AdminVehicleEventFilters({
+    this.from,
+    this.to,
+    this.source,
+    this.severity,
+  });
+
+  const AdminVehicleEventFilters.empty()
+      : from = null,
+        to = null,
+        source = null,
+        severity = null;
+
+  final DateTime? from;
+  final DateTime? to;
+  final String? source;
+  final String? severity;
+
+  bool get isEmpty =>
+      from == null && to == null && source == null && severity == null;
+
+  AdminVehicleEventFilters copyWith({
+    Object? from = _unset,
+    Object? to = _unset,
+    Object? source = _unset,
+    Object? severity = _unset,
+  }) {
+    return AdminVehicleEventFilters(
+      from: identical(from, _unset) ? this.from : from as DateTime?,
+      to: identical(to, _unset) ? this.to : to as DateTime?,
+      source: identical(source, _unset) ? this.source : source as String?,
+      severity:
+          identical(severity, _unset) ? this.severity : severity as String?,
+    );
+  }
+
+  static const Object _unset = Object();
+}
+
 enum AdminVehicleStatusFilter { all, active, inactive, licenseBlocked }
+
+enum AdminVehiclesSortOption {
+  newest,
+  oldest,
+  nameAz,
+  nameZa,
+  activeFirst;
+
+  String get label {
+    switch (this) {
+      case AdminVehiclesSortOption.newest:
+        return 'Newest first';
+      case AdminVehiclesSortOption.oldest:
+        return 'Oldest first';
+      case AdminVehiclesSortOption.nameAz:
+        return 'Name A-Z';
+      case AdminVehiclesSortOption.nameZa:
+        return 'Name Z-A';
+      case AdminVehiclesSortOption.activeFirst:
+        return 'Active first';
+    }
+  }
+}
 
 enum AdminVehicleDetailsTab {
   details,
@@ -20,6 +86,9 @@ class AdminVehiclesState {
     required this.searchQuery,
     required this.statusFilter,
     required this.typeFilter,
+    required this.sortOption,
+    required this.recordsPerPage,
+    required this.currentPage,
     required this.isLoading,
     required this.isRefreshing,
     required this.isCreating,
@@ -34,6 +103,9 @@ class AdminVehiclesState {
         searchQuery: '',
         statusFilter: AdminVehicleStatusFilter.all,
         typeFilter: '',
+        sortOption: AdminVehiclesSortOption.newest,
+        recordsPerPage: 10,
+        currentPage: 1,
         isLoading: false,
         isRefreshing: false,
         isCreating: false,
@@ -47,12 +119,38 @@ class AdminVehiclesState {
   final String searchQuery;
   final AdminVehicleStatusFilter statusFilter;
   final String typeFilter;
+  final AdminVehiclesSortOption sortOption;
+  final int recordsPerPage;
+  final int currentPage;
   final bool isLoading;
   final bool isRefreshing;
   final bool isCreating;
   final Set<String> updatingIds;
   final Set<String> deletingIds;
   final String? errorMessage;
+
+  bool get hasActiveFilters =>
+      searchQuery.trim().isNotEmpty ||
+      statusFilter != AdminVehicleStatusFilter.all ||
+      typeFilter.trim().isNotEmpty;
+
+  int get filteredCount => filteredVehicles.length;
+
+  int get pageCount =>
+      math.max<int>(1, (filteredCount / recordsPerPage).ceil());
+
+  int get safeCurrentPage => currentPage.clamp(1, pageCount);
+
+  List<AdminVehicleListItem> get visibleVehicles {
+    final start = (safeCurrentPage - 1) * recordsPerPage;
+    if (start >= filteredCount) {
+      return const <AdminVehicleListItem>[];
+    }
+    return filteredVehicles
+        .skip(start)
+        .take(recordsPerPage)
+        .toList(growable: false);
+  }
 
   static const Object _unset = Object();
 
@@ -62,6 +160,9 @@ class AdminVehiclesState {
     String? searchQuery,
     AdminVehicleStatusFilter? statusFilter,
     String? typeFilter,
+    AdminVehiclesSortOption? sortOption,
+    int? recordsPerPage,
+    int? currentPage,
     bool? isLoading,
     bool? isRefreshing,
     bool? isCreating,
@@ -75,6 +176,9 @@ class AdminVehiclesState {
       searchQuery: searchQuery ?? this.searchQuery,
       statusFilter: statusFilter ?? this.statusFilter,
       typeFilter: typeFilter ?? this.typeFilter,
+      sortOption: sortOption ?? this.sortOption,
+      recordsPerPage: recordsPerPage ?? this.recordsPerPage,
+      currentPage: currentPage ?? this.currentPage,
       isLoading: isLoading ?? this.isLoading,
       isRefreshing: isRefreshing ?? this.isRefreshing,
       isCreating: isCreating ?? this.isCreating,
@@ -96,9 +200,11 @@ class AdminVehicleDetailsState {
     required this.linkedUsers,
     required this.availableUsers,
     required this.logs,
+    required this.logSearchQuery,
     required this.logNextCursor,
     required this.events,
     required this.eventNextCursor,
+    required this.eventFilters,
     required this.commandHistory,
     required this.sensors,
     required this.documents,
@@ -135,6 +241,7 @@ class AdminVehicleDetailsState {
     required this.isRunningSensor,
     required this.errorMessage,
     required this.sectionErrorMessage,
+    required this.localUpdatedAt,
   });
 
   factory AdminVehicleDetailsState.initial({
@@ -149,9 +256,11 @@ class AdminVehicleDetailsState {
       linkedUsers: const <AdminVehicleUserMini>[],
       availableUsers: const <AdminVehicleUserMini>[],
       logs: const <AdminVehicleLogItem>[],
+      logSearchQuery: '',
       logNextCursor: null,
       events: const <AdminVehicleEventItem>[],
       eventNextCursor: null,
+      eventFilters: const AdminVehicleEventFilters.empty(),
       commandHistory: const <AdminVehicleCommandItem>[],
       sensors: const <AdminVehicleSensor>[],
       documents: const <AdminVehicleDocument>[],
@@ -188,6 +297,7 @@ class AdminVehicleDetailsState {
       isRunningSensor: false,
       errorMessage: null,
       sectionErrorMessage: null,
+      localUpdatedAt: null,
     );
   }
 
@@ -198,9 +308,11 @@ class AdminVehicleDetailsState {
   final List<AdminVehicleUserMini> linkedUsers;
   final List<AdminVehicleUserMini> availableUsers;
   final List<AdminVehicleLogItem> logs;
+  final String logSearchQuery;
   final String? logNextCursor;
   final List<AdminVehicleEventItem> events;
   final String? eventNextCursor;
+  final AdminVehicleEventFilters eventFilters;
   final List<AdminVehicleCommandItem> commandHistory;
   final List<AdminVehicleSensor> sensors;
   final List<AdminVehicleDocument> documents;
@@ -240,6 +352,15 @@ class AdminVehicleDetailsState {
 
   final String? errorMessage;
   final String? sectionErrorMessage;
+  final DateTime? localUpdatedAt;
+
+  List<AdminVehicleLogItem> get filteredLogs {
+    final query = logSearchQuery.trim().toLowerCase();
+    if (query.isEmpty) return logs;
+    return logs
+        .where((log) => _vehicleLogSearchText(log).contains(query))
+        .toList(growable: false);
+  }
 
   static const Object _unset = Object();
 
@@ -250,9 +371,11 @@ class AdminVehicleDetailsState {
     List<AdminVehicleUserMini>? linkedUsers,
     List<AdminVehicleUserMini>? availableUsers,
     List<AdminVehicleLogItem>? logs,
+    String? logSearchQuery,
     Object? logNextCursor = _unset,
     List<AdminVehicleEventItem>? events,
     Object? eventNextCursor = _unset,
+    AdminVehicleEventFilters? eventFilters,
     List<AdminVehicleCommandItem>? commandHistory,
     List<AdminVehicleSensor>? sensors,
     List<AdminVehicleDocument>? documents,
@@ -289,6 +412,7 @@ class AdminVehicleDetailsState {
     bool? isRunningSensor,
     Object? errorMessage = _unset,
     Object? sectionErrorMessage = _unset,
+    DateTime? localUpdatedAt,
   }) {
     return AdminVehicleDetailsState(
       vehicleId: vehicleId,
@@ -302,6 +426,7 @@ class AdminVehicleDetailsState {
       linkedUsers: linkedUsers ?? this.linkedUsers,
       availableUsers: availableUsers ?? this.availableUsers,
       logs: logs ?? this.logs,
+      logSearchQuery: logSearchQuery ?? this.logSearchQuery,
       logNextCursor: identical(logNextCursor, _unset)
           ? this.logNextCursor
           : logNextCursor as String?,
@@ -309,6 +434,7 @@ class AdminVehicleDetailsState {
       eventNextCursor: identical(eventNextCursor, _unset)
           ? this.eventNextCursor
           : eventNextCursor as String?,
+      eventFilters: eventFilters ?? this.eventFilters,
       commandHistory: commandHistory ?? this.commandHistory,
       sensors: sensors ?? this.sensors,
       documents: documents ?? this.documents,
@@ -349,6 +475,32 @@ class AdminVehicleDetailsState {
       sectionErrorMessage: identical(sectionErrorMessage, _unset)
           ? this.sectionErrorMessage
           : sectionErrorMessage as String?,
+      localUpdatedAt: localUpdatedAt ?? this.localUpdatedAt,
     );
   }
+}
+
+String _vehicleLogSearchText(AdminVehicleLogItem log) {
+  String attributes;
+  try {
+    attributes = jsonEncode(log.attributes);
+  } catch (_) {
+    attributes = log.attributes?.toString() ?? '';
+  }
+
+  String booleanText(String label, bool? value) {
+    if (value == null) return '';
+    return '$label ${value ? 'on true' : 'off false'}';
+  }
+
+  return [
+    log.id,
+    log.imei,
+    log.packetType,
+    log.protocol,
+    log.rawPacket,
+    attributes,
+    booleanText('ignition', log.ignition),
+    booleanText('acc', log.acc),
+  ].join(' ').toLowerCase();
 }

@@ -26,6 +26,9 @@ class UserNotificationSettingsHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return OpenVtsCard(
       padding: const EdgeInsets.all(OpenVtsSpacing.sm),
       child: Column(
@@ -38,14 +41,18 @@ class UserNotificationSettingsHeader extends StatelessWidget {
                 width: 28,
                 height: 28,
                 decoration: BoxDecoration(
-                  color: OpenVtsColors.surface,
+                  color: isDark ? Colors.black : OpenVtsColors.surface,
                   borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-                  border: Border.all(color: OpenVtsColors.border),
+                  border: Border.all(
+                    color: isDark ? OpenVtsColors.white : OpenVtsColors.border,
+                  ),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.notifications_none_rounded,
                   size: 16,
-                  color: OpenVtsColors.textSecondary,
+                  color: isDark
+                      ? OpenVtsColors.white.withValues(alpha: 0.7)
+                      : OpenVtsColors.textSecondary,
                 ),
               ),
               const SizedBox(width: OpenVtsSpacing.xs),
@@ -56,7 +63,9 @@ class UserNotificationSettingsHeader extends StatelessWidget {
                     Text(
                       'Notification Preferences',
                       style: OpenVtsTypography.label.copyWith(
-                        color: OpenVtsColors.textPrimary,
+                        color: isDark
+                            ? OpenVtsColors.white
+                            : OpenVtsColors.textPrimary,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -64,7 +73,9 @@ class UserNotificationSettingsHeader extends StatelessWidget {
                     Text(
                       'Choose how vehicle alerts, overspeed events, and geofence events reach you.',
                       style: OpenVtsTypography.meta.copyWith(
-                        color: OpenVtsColors.textSecondary,
+                        color: isDark
+                            ? OpenVtsColors.white.withValues(alpha: 0.7)
+                            : OpenVtsColors.textSecondary,
                       ),
                     ),
                   ],
@@ -99,7 +110,9 @@ class UserNotificationSettingsHeader extends StatelessWidget {
             Text(
               'Last saved ${_headerDateFormatter.formatDateTime(lastSavedAt!.toLocal())}',
               style: OpenVtsTypography.meta.copyWith(
-                color: OpenVtsColors.textTertiary,
+                color: isDark
+                    ? OpenVtsColors.white.withValues(alpha: 0.5)
+                    : OpenVtsColors.textTertiary,
               ),
             ),
           ],
@@ -120,15 +133,20 @@ class _MetricChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: OpenVtsSpacing.xs,
         vertical: 6,
       ),
       decoration: BoxDecoration(
-        color: OpenVtsColors.surfaceElevated,
+        color: isDark ? Colors.black : OpenVtsColors.surfaceElevated,
         borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-        border: Border.all(color: OpenVtsColors.border),
+        border: Border.all(
+          color: isDark ? OpenVtsColors.white : OpenVtsColors.border,
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -136,13 +154,15 @@ class _MetricChip extends StatelessWidget {
           Icon(
             icon,
             size: 14,
-            color: OpenVtsColors.textSecondary,
+            color: isDark
+                ? OpenVtsColors.white.withValues(alpha: 0.7)
+                : OpenVtsColors.textSecondary,
           ),
           const SizedBox(width: OpenVtsSpacing.xxs),
           Text(
             label,
             style: OpenVtsTypography.meta.copyWith(
-              color: OpenVtsColors.textPrimary,
+              color: isDark ? OpenVtsColors.white : OpenVtsColors.textPrimary,
               fontWeight: FontWeight.w600,
             ),
           ),

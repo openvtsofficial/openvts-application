@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../../core/theme/open_vts_radius.dart';
@@ -14,7 +15,7 @@ import '../../../../models/user_landmark_model.dart';
 /// Compact route list card. Renders name, status chip, color dot,
 /// point/distance/tolerance meta, updated date and edit/delete actions.
 /// Tapping the card body invokes [onSelect] which fits the route on the map.
-class UserRouteCard extends StatelessWidget {
+class UserRouteCard extends ConsumerWidget {
   const UserRouteCard({
     super.key,
     required this.route,
@@ -32,10 +33,9 @@ class UserRouteCard extends StatelessWidget {
   final VoidCallback onDelete;
   final bool isDeleting;
 
-  static const DateTimeFormatter _formatter = DateTimeFormatter();
-
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final formatter = ref.watch(appDateFormatterProvider);
     final color = _parseHex(route.color);
     final inactive = !route.isActive;
 
@@ -70,7 +70,7 @@ class UserRouteCard extends StatelessWidget {
                                   ? 'Untitled route'
                                   : route.name,
                               style: OpenVtsTypography.titleSmall.copyWith(
-                                color: OpenVtsColors.textPrimary,
+                                color: Theme.of(context).colorScheme.onSurface,
                                 fontWeight: FontWeight.w600,
                               ),
                               maxLines: 1,
@@ -104,7 +104,7 @@ class UserRouteCard extends StatelessWidget {
                     Text(
                       route.description.trim(),
                       style: OpenVtsTypography.meta.copyWith(
-                        color: OpenVtsColors.textSecondary,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                         height: 1.35,
                       ),
                       maxLines: 2,
@@ -118,7 +118,8 @@ class UserRouteCard extends StatelessWidget {
                         child: Text(
                           _meta(route),
                           style: OpenVtsTypography.meta.copyWith(
-                            color: OpenVtsColors.textSecondary,
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -127,9 +128,9 @@ class UserRouteCard extends StatelessWidget {
                       if (route.updatedAt != null) ...[
                         const SizedBox(width: OpenVtsSpacing.sm),
                         Text(
-                          _formatter.formatDate(route.updatedAt!),
+                          formatter.formatDate(route.updatedAt!),
                           style: OpenVtsTypography.meta.copyWith(
-                            color: OpenVtsColors.textTertiary,
+                            color: Theme.of(context).colorScheme.outline,
                           ),
                         ),
                       ],
@@ -169,6 +170,8 @@ class UserRouteCard extends StatelessWidget {
       if (coords.isNotEmpty) '${coords.length} pts',
       if (coords.length >= 2) _formatMeters(_lengthMeters(coords)),
       if (tolerance != null && tolerance > 0) '±${_formatMeters(tolerance)}',
+      if (r.assignedVehicleCount > 0)
+        '${r.assignedVehicleCount} vehicle${r.assignedVehicleCount == 1 ? '' : 's'}',
     ];
     if (parts.isEmpty) return 'Route';
     return parts.join(' • ');
@@ -203,9 +206,9 @@ class UserRouteCard extends StatelessWidget {
 
   static Color _parseHex(String value) {
     final cleaned = value.replaceAll('#', '').trim();
-    if (cleaned.length != 6) return OpenVtsColors.textTertiary;
+    if (cleaned.length != 6) return OpenVtsColors.brandInk;
     final parsed = int.tryParse('FF$cleaned', radix: 16);
-    if (parsed == null) return OpenVtsColors.textTertiary;
+    if (parsed == null) return OpenVtsColors.brandInk;
     return Color(parsed);
   }
 }
@@ -246,8 +249,9 @@ class _RowAction extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final disabled = onTap == null;
-    final color =
-        destructive ? OpenVtsColors.error : OpenVtsColors.textSecondary;
+    final color = destructive
+        ? OpenVtsColors.error
+        : Theme.of(context).colorScheme.onSurfaceVariant;
     return Tooltip(
       message: tooltip,
       child: InkResponse(
@@ -258,7 +262,7 @@ class _RowAction extends StatelessWidget {
           child: Icon(
             icon,
             size: 18,
-            color: disabled ? OpenVtsColors.textTertiary : color,
+            color: disabled ? Theme.of(context).colorScheme.outline : color,
           ),
         ),
       ),

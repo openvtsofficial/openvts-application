@@ -2,7 +2,6 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
@@ -16,6 +15,8 @@ class AdminPaymentsRevenueTrendChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
     final points = analytics.dailySeriesByCurrency.isEmpty
         ? const <AdminDailyPoint>[]
         : [...analytics.dailySeriesByCurrency.first.points]
@@ -26,11 +27,19 @@ class AdminPaymentsRevenueTrendChart extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Revenue Trend', style: OpenVtsTypography.titleSmall),
+          Text(
+            'Revenue Trend',
+            style: OpenVtsTypography.titleSmall.copyWith(
+              color: cs.onSurface,
+            ),
+          ),
           const SizedBox(height: OpenVtsSpacing.xxs),
-          Text('Daily totals for selected range',
-              style: OpenVtsTypography.meta
-                  .copyWith(color: OpenVtsColors.textSecondary)),
+          Text(
+            'Daily totals for selected range',
+            style: OpenVtsTypography.meta.copyWith(
+              color: cs.onSurfaceVariant,
+            ),
+          ),
           const SizedBox(height: OpenVtsSpacing.sm),
           if (points.isEmpty)
             const OpenVtsEmptyState(
@@ -41,7 +50,11 @@ class AdminPaymentsRevenueTrendChart extends StatelessWidget {
             SizedBox(
               height: 150,
               child: CustomPaint(
-                painter: _TrendPainter(points),
+                painter: _TrendPainter(
+                  points,
+                  lineColor: cs.primary,
+                  gridColor: cs.outlineVariant,
+                ),
                 child: const SizedBox.expand(),
               ),
             ),
@@ -52,9 +65,15 @@ class AdminPaymentsRevenueTrendChart extends StatelessWidget {
 }
 
 class _TrendPainter extends CustomPainter {
-  _TrendPainter(this.points);
+  _TrendPainter(
+    this.points, {
+    required this.lineColor,
+    required this.gridColor,
+  });
 
   final List<AdminDailyPoint> points;
+  final Color lineColor;
+  final Color gridColor;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -64,7 +83,7 @@ class _TrendPainter extends CustomPainter {
     final safeMax = maxValue <= 0 ? 1 : maxValue;
 
     final grid = Paint()
-      ..color = OpenVtsColors.border.withValues(alpha: 0.7)
+      ..color = gridColor.withValues(alpha: 0.7)
       ..strokeWidth = 1;
     for (var i = 0; i <= 4; i++) {
       final y = size.height * i / 4;
@@ -72,7 +91,7 @@ class _TrendPainter extends CustomPainter {
     }
 
     final line = Paint()
-      ..color = OpenVtsColors.textPrimary
+      ..color = lineColor
       ..strokeWidth = 2
       ..style = PaintingStyle.stroke;
 
@@ -92,5 +111,7 @@ class _TrendPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _TrendPainter oldDelegate) =>
-      oldDelegate.points != points;
+      oldDelegate.points != points ||
+      oldDelegate.lineColor != lineColor ||
+      oldDelegate.gridColor != gridColor;
 }

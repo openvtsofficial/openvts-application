@@ -5,6 +5,7 @@ import 'package:http_parser/http_parser.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/api/api_endpoints.dart';
 import '../../../core/api/api_options.dart';
+import '../../../core/data/location_data.dart';
 import '../models/user_driver_model.dart';
 
 class UserDriverService {
@@ -120,6 +121,7 @@ class UserDriverService {
     final id = _requireId(driverId, 'driverId');
     await _apiClient.post<void>(
       ApiEndpoints.user.driverUnassignVehicle(id),
+      data: <String, dynamic>{},
       options: _mutationOptions,
       parser: (_) {},
     );
@@ -253,13 +255,27 @@ class UserDriverService {
   }
 
   Future<List<UserDriverCountryOption>> fetchCountries() async {
-    final response = await _apiClient.get<dynamic>(
-      ApiEndpoints.public.countries,
-      options: _readOptions,
-      parser: (json) => json,
-    );
+    try {
+      final response = await _apiClient.get<dynamic>(
+        ApiEndpoints.public.countries,
+        options: _readOptions,
+        parser: (json) => json,
+      );
 
-    return UserDriverCountryOption.listFromJson(response.data);
+      final results = UserDriverCountryOption.listFromJson(response.data);
+      if (results.isNotEmpty) {
+        return results;
+      }
+    } catch (_) {
+      // Fall through to local fallback.
+    }
+
+    return LocationData.countries
+        .map((item) => UserDriverCountryOption(
+              value: item['code']!,
+              label: item['name']!,
+            ))
+        .toList(growable: false);
   }
 
   Future<List<UserDriverMobilePrefixOption>> fetchMobilePrefixes() async {
@@ -278,13 +294,53 @@ class UserDriverService {
       return const <UserDriverStateOption>[];
     }
 
-    final response = await _apiClient.get<dynamic>(
-      ApiEndpoints.public.states(normalizedCountryCode),
-      options: _readOptions,
-      parser: (json) => json,
-    );
+    // Attempt 1: Try with country code
+    try {
+      final response = await _apiClient.get<dynamic>(
+        ApiEndpoints.public.states(normalizedCountryCode),
+        options: _readOptions,
+        parser: (json) => json,
+      );
 
-    return UserDriverStateOption.listFromJson(response.data);
+      final results = UserDriverStateOption.listFromJson(response.data);
+      if (results.isNotEmpty) {
+        return results;
+      }
+    } catch (_) {
+      // Continue to next attempt
+    }
+
+    // Attempt 2: Try with country name from LocationData
+    final countryName = _countryNameFromCode(normalizedCountryCode);
+    if (countryName != null && countryName.isNotEmpty) {
+      try {
+        final response = await _apiClient.get<dynamic>(
+          ApiEndpoints.public.states(countryName),
+          options: _readOptions,
+          parser: (json) => json,
+        );
+
+        final results = UserDriverStateOption.listFromJson(response.data);
+        if (results.isNotEmpty) {
+          return results;
+        }
+      } catch (_) {
+        // Continue to next attempt
+      }
+    }
+
+    // Attempt 3: Use local fallback data
+    final localStates = LocationData.statesByCountry[normalizedCountryCode];
+    if (localStates != null) {
+      return localStates
+          .map((item) => UserDriverStateOption(
+                value: item['code']!,
+                label: item['name']!,
+              ))
+          .toList(growable: false);
+    }
+
+    return const <UserDriverStateOption>[];
   }
 
   Future<List<UserDriverCityOption>> fetchCities(
@@ -297,13 +353,59 @@ class UserDriverService {
       return const <UserDriverCityOption>[];
     }
 
-    final response = await _apiClient.get<dynamic>(
-      ApiEndpoints.public.cities(normalizedCountryCode, normalizedStateCode),
-      options: _readOptions,
-      parser: (json) => json,
-    );
+    // Attempt 1: Try with country code and state code
+    try {
+      final response = await _apiClient.get<dynamic>(
+        ApiEndpoints.public.cities(normalizedCountryCode, normalizedStateCode),
+        options: _readOptions,
+        parser: (json) => json,
+      );
 
-    return UserDriverCityOption.listFromJson(response.data);
+      final results = UserDriverCityOption.listFromJson(response.data);
+      if (results.isNotEmpty) {
+        return results;
+      }
+    } catch (_) {
+      // Continue to next attempt
+    }
+
+    // Attempt 2: Try with country name and state name from LocationData
+    final countryName = _countryNameFromCode(normalizedCountryCode);
+    final stateName =
+        _stateNameFromCode(normalizedCountryCode, normalizedStateCode);
+    if ((countryName != null && countryName.isNotEmpty) &&
+        (stateName != null && stateName.isNotEmpty)) {
+      try {
+        final response = await _apiClient.get<dynamic>(
+          ApiEndpoints.public.cities(countryName, stateName),
+          options: _readOptions,
+          parser: (json) => json,
+        );
+
+        final results = UserDriverCityOption.listFromJson(response.data);
+        if (results.isNotEmpty) {
+          return results;
+        }
+      } catch (_) {
+        // Continue to next attempt
+      }
+    }
+
+    // Attempt 3: Use local fallback data
+    final countryCities = LocationData.citiesByState[normalizedCountryCode];
+    if (countryCities != null) {
+      final stateCities = countryCities[normalizedStateCode];
+      if (stateCities != null) {
+        return stateCities
+            .map((name) => UserDriverCityOption(
+                  value: name,
+                  label: name,
+                ))
+            .toList(growable: false);
+      }
+    }
+
+    return const <UserDriverCityOption>[];
   }
 
   Future<FormData> _buildDocumentFormData(
@@ -489,5 +591,29 @@ class UserDriverService {
       default:
         return MediaType('application', 'octet-stream');
     }
+  }
+
+  String? _countryNameFromCode(String countryCode) {
+    final normalized = countryCode.trim().toUpperCase();
+    for (final country in LocationData.countries) {
+      if (country['code'] == normalized) {
+        return country['name'];
+      }
+    }
+    return null;
+  }
+
+  String? _stateNameFromCode(String countryCode, String stateCode) {
+    final normalizedCountry = countryCode.trim().toUpperCase();
+    final normalizedState = stateCode.trim().toUpperCase();
+    final statesForCountry = LocationData.statesByCountry[normalizedCountry];
+    if (statesForCountry != null) {
+      for (final state in statesForCountry) {
+        if (state['code']?.toUpperCase() == normalizedState) {
+          return state['name'];
+        }
+      }
+    }
+    return null;
   }
 }

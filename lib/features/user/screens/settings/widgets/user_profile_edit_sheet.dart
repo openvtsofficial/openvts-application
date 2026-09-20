@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,7 +8,9 @@ import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../core/utils/validators.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
+import '../../../../../shared/widgets/open_vts_searchable_dropdown.dart';
 import '../../../controllers/user_providers.dart';
 import '../../../controllers/user_settings_controller.dart';
 import '../../../models/user_settings_model.dart';
@@ -27,8 +31,6 @@ class UserProfileEditSheet extends ConsumerStatefulWidget {
 }
 
 class _UserProfileEditSheetState extends ConsumerState<UserProfileEditSheet> {
-  static final RegExp _emailPattern = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
-
   final _formKey = GlobalKey<FormState>();
 
   late final TextEditingController _nameController;
@@ -36,11 +38,12 @@ class _UserProfileEditSheetState extends ConsumerState<UserProfileEditSheet> {
   late final TextEditingController _mobilePrefixController;
   late final TextEditingController _mobileNumberController;
   late final TextEditingController _addressController;
-  late final TextEditingController _countryController;
-  late final TextEditingController _stateController;
-  late final TextEditingController _cityController;
   late final TextEditingController _pincodeController;
+  // Separate controller used ONLY when the state field falls back to free
+  // text (i.e. the reference API returned no states for this country).
+  late final TextEditingController _stateController;
 
+  // Controlled selection state — always drives the dropdown value.
   late String _selectedCountry;
   late String _selectedState;
   late String _selectedCity;
@@ -62,10 +65,6 @@ class _UserProfileEditSheetState extends ConsumerState<UserProfileEditSheet> {
         TextEditingController(text: widget.profile.mobileNumber ?? '');
     _addressController =
         TextEditingController(text: address?.addressLine ?? '');
-    _countryController =
-        TextEditingController(text: address?.countryCode ?? '');
-    _stateController = TextEditingController(text: address?.stateCode ?? '');
-    _cityController = TextEditingController(text: address?.cityName ?? '');
     _pincodeController = TextEditingController(text: address?.pincode ?? '');
 
     _selectedCountry = (address?.countryCode ?? '').trim().toUpperCase();
@@ -73,8 +72,19 @@ class _UserProfileEditSheetState extends ConsumerState<UserProfileEditSheet> {
     _selectedCity = (address?.cityName ?? '').trim();
     _selectedMobilePrefix = (widget.profile.mobilePrefix ?? '').trim();
 
+    // Initialise the free-text state controller with the saved state code so
+    // any existing value is visible if the API returns no states list.
+    _stateController =
+        TextEditingController(text: address?.stateCode?.trim() ?? '');
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadDependentOptions();
+      // Ensure reference catalogue is loaded; the controller's idempotency
+      // guard prevents duplicate requests if loading is already in progress.
+      final st = ref.read(userSettingsControllerProvider);
+      if (st.countries.isEmpty && !st.isLoadingReferences) {
+        unawaited(widget.controller.loadReferenceData());
+      }
     });
   }
 
@@ -85,10 +95,8 @@ class _UserProfileEditSheetState extends ConsumerState<UserProfileEditSheet> {
     _mobilePrefixController.dispose();
     _mobileNumberController.dispose();
     _addressController.dispose();
-    _countryController.dispose();
-    _stateController.dispose();
-    _cityController.dispose();
     _pincodeController.dispose();
+    _stateController.dispose();
     super.dispose();
   }
 
@@ -103,35 +111,33 @@ class _UserProfileEditSheetState extends ConsumerState<UserProfileEditSheet> {
 
   Future<void> _onCountryChanged(String countryCode) async {
     final normalized = countryCode.trim().toUpperCase();
+    // Immediately clear dependent selections so old values are never
+    // visible while new options load.
     setState(() {
       _selectedCountry = normalized;
       _selectedState = '';
       _selectedCity = '';
-      _countryController.text = normalized;
-      _stateController.clear();
-      _cityController.clear();
       _submitError = null;
     });
+    _stateController.text = '';
     await widget.controller.loadStates(normalized);
   }
 
   Future<void> _onStateChanged(String stateCode) async {
     final normalized = stateCode.trim().toUpperCase();
+    // Immediately clear city selection.
     setState(() {
       _selectedState = normalized;
       _selectedCity = '';
-      _stateController.text = normalized;
-      _cityController.clear();
       _submitError = null;
     });
+    _stateController.text = normalized;
     await widget.controller.loadCities(_selectedCountry, normalized);
   }
 
   Future<void> _handleSave() async {
     final form = _formKey.currentState;
-    if (form == null || !form.validate()) {
-      return;
-    }
+    if (form == null || !form.validate()) return;
 
     final normalizedName = _nameController.text.trim();
     final normalizedEmail = _emailController.text.trim();
@@ -161,9 +167,7 @@ class _UserProfileEditSheetState extends ConsumerState<UserProfileEditSheet> {
     });
 
     final ok = await widget.controller.saveProfile();
-    if (!mounted) {
-      return;
-    }
+    if (!mounted) return;
 
     setState(() {
       _isSaving = false;
@@ -189,10 +193,43 @@ class _UserProfileEditSheetState extends ConsumerState<UserProfileEditSheet> {
     final stateOptions = state.states;
     final cityOptions = state.cities;
 
+    // For controlled dropdowns the value must exist in the items list,
+    // or be null (shows hint). Compute safe controlled values once.
+    final safePrefix = _safeDropdownValue(
+      _selectedMobilePrefix,
+      mobilePrefixOptions.map((o) => o.value),
+    );
+    final safeCountry = _safeDropdownValue(
+      _selectedCountry,
+      countryOptions.map((o) => o.value),
+    );
+    // Only show a saved state selection when the loaded list actually belongs
+    // to the current country – prevents stale options showing briefly.
+    final statesAreForCurrentCountry =
+        state.statesForCountryCode == _selectedCountry;
+    final safeState = statesAreForCurrentCountry
+        ? _safeDropdownValue(
+            _selectedState,
+            stateOptions.map((o) => o.value),
+          )
+        : null;
+
+    // Only show a saved city selection when the loaded list belongs to the
+    // current country+state pair.
+    final expectedCityKey = '$_selectedCountry/$_selectedState';
+    final citiesAreForCurrentSelection =
+        state.citiesForCountryAndStateCode == expectedCityKey;
+    final safeCity = citiesAreForCurrentSelection
+        ? _safeDropdownValue(
+            _selectedCity,
+            cityOptions.map((o) => o.value),
+          )
+        : null;
+
     return DecoratedBox(
-      decoration: const BoxDecoration(
-        color: OpenVtsColors.surface,
-        borderRadius: BorderRadius.vertical(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainer,
+        borderRadius: const BorderRadius.vertical(
           top: Radius.circular(OpenVtsRadius.lg),
         ),
       ),
@@ -215,15 +252,16 @@ class _UserProfileEditSheetState extends ConsumerState<UserProfileEditSheet> {
                 Text(
                   'Edit Profile',
                   style: OpenVtsTypography.label.copyWith(
-                    color: OpenVtsColors.textPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
                 const SizedBox(height: OpenVtsSpacing.xxs),
                 Text(
-                  'Update personal and address details. Changes are saved only when you confirm.',
+                  'Update personal and address details. '
+                  'Changes are saved only when you confirm.',
                   style: OpenVtsTypography.meta.copyWith(
-                    color: OpenVtsColors.textSecondary,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
                 const SizedBox(height: OpenVtsSpacing.sm),
@@ -231,13 +269,7 @@ class _UserProfileEditSheetState extends ConsumerState<UserProfileEditSheet> {
                   controller: _nameController,
                   label: 'Name',
                   textInputAction: TextInputAction.next,
-                  validator: (value) {
-                    final name = (value ?? '').trim();
-                    if (name.length < 2) {
-                      return 'Name must be at least 2 characters.';
-                    }
-                    return null;
-                  },
+                  validator: Validators.adminName,
                 ),
                 const SizedBox(height: OpenVtsSpacing.xs),
                 _textField(
@@ -245,16 +277,7 @@ class _UserProfileEditSheetState extends ConsumerState<UserProfileEditSheet> {
                   label: 'Email (optional)',
                   keyboardType: TextInputType.emailAddress,
                   textInputAction: TextInputAction.next,
-                  validator: (value) {
-                    final email = (value ?? '').trim();
-                    if (email.isEmpty) {
-                      return null;
-                    }
-                    if (!_emailPattern.hasMatch(email)) {
-                      return 'Enter a valid email.';
-                    }
-                    return null;
-                  },
+                  validator: Validators.adminEmailOptional,
                 ),
                 const SizedBox(height: OpenVtsSpacing.xs),
                 if (mobilePrefixOptions.isEmpty)
@@ -264,35 +287,29 @@ class _UserProfileEditSheetState extends ConsumerState<UserProfileEditSheet> {
                     hint: '+1',
                     keyboardType: TextInputType.phone,
                     textInputAction: TextInputAction.next,
-                    validator: (value) {
-                      if ((value ?? '').trim().isEmpty) {
-                        return 'Mobile prefix is required.';
-                      }
-                      return null;
-                    },
+                    validator: Validators.mobilePrefix,
                   )
                 else
-                  _dropdownField<String>(
+                  OpenVtsSearchableDropdown<String>(
+                    key: ValueKey('prefix_${mobilePrefixOptions.length}'),
                     label: 'Mobile Prefix',
-                    value: _safeDropdownValue(
-                      _selectedMobilePrefix,
-                      mobilePrefixOptions.map((option) => option.value),
-                    ),
-                    items: mobilePrefixOptions
+                    value: safePrefix,
+                    options: mobilePrefixOptions
                         .map(
-                          (option) => DropdownMenuItem<String>(
+                          (option) => OpenVtsDropdownOption<String>(
                             value: option.value,
-                            child: Text(
-                              option.label,
-                              overflow: TextOverflow.ellipsis,
-                            ),
+                            label: option.label,
+                            subtitle: option.countryCode.isNotEmpty
+                                ? option.countryCode
+                                : null,
+                            searchText: '${option.value} ${option.countryCode}',
                           ),
                         )
                         .toList(growable: false),
+                    searchHintText: 'Dial code or country',
+                    sheetTitle: 'Select Mobile Prefix',
                     onChanged: (value) {
-                      if (value == null) {
-                        return;
-                      }
+                      if (value == null) return;
                       setState(() {
                         _selectedMobilePrefix = value;
                         _mobilePrefixController.text = value;
@@ -307,49 +324,37 @@ class _UserProfileEditSheetState extends ConsumerState<UserProfileEditSheet> {
                   textInputAction: TextInputAction.next,
                   inputFormatters: [
                     FilteringTextInputFormatter.digitsOnly,
-                    LengthLimitingTextInputFormatter(15),
+                    LengthLimitingTextInputFormatter(
+                      Validators.maxMobileNumberLength,
+                    ),
                   ],
-                  validator: (value) {
-                    final mobile = (value ?? '').trim();
-                    if (mobile.length < 7 || mobile.length > 15) {
-                      return 'Mobile must be 7 to 15 digits.';
-                    }
-                    return null;
-                  },
+                  validator: Validators.mobileNumber,
                 ),
                 const SizedBox(height: OpenVtsSpacing.xs),
                 _textField(
                   controller: _addressController,
                   label: 'Address Line',
                   textInputAction: TextInputAction.next,
-                  validator: (value) {
-                    if ((value ?? '').trim().isEmpty) {
-                      return 'Address is required.';
-                    }
-                    return null;
-                  },
+                  validator: Validators.address,
                 ),
                 const SizedBox(height: OpenVtsSpacing.xs),
-                if (countryOptions.isEmpty)
-                  _textField(
-                    controller: _countryController,
-                    label: 'Country Code',
-                    hint: 'US',
-                    textInputAction: TextInputAction.next,
-                    validator: (value) {
-                      if ((value ?? '').trim().isEmpty) {
-                        return 'Country is required.';
-                      }
-                      return null;
-                    },
+                if (state.isLoadingReferences && countryOptions.isEmpty)
+                  const _LoadingFieldPlaceholder(label: 'Country')
+                else if (countryOptions.isEmpty)
+                  // Reference load failed. Show error + retry; a FormField
+                  // validator blocks submission while no code is resolved.
+                  _ReferenceRetryField(
+                    label: 'Country',
+                    selectedValue: _selectedCountry,
+                    message: state.errorMessage,
+                    onRetry: () =>
+                        widget.controller.loadReferenceData(force: true),
                   )
                 else
-                  _dropdownField<String>(
+                  _controlledDropdownField<String>(
+                    key: ValueKey('country_${countryOptions.length}'),
                     label: 'Country',
-                    value: _safeDropdownValue(
-                      _selectedCountry,
-                      countryOptions.map((option) => option.value),
-                    ),
+                    value: safeCountry,
                     items: countryOptions
                         .map(
                           (option) => DropdownMenuItem<String>(
@@ -362,33 +367,36 @@ class _UserProfileEditSheetState extends ConsumerState<UserProfileEditSheet> {
                         )
                         .toList(growable: false),
                     onChanged: (value) {
-                      if (value == null) {
-                        return;
-                      }
+                      if (value == null) return;
                       _onCountryChanged(value);
                     },
                   ),
                 const SizedBox(height: OpenVtsSpacing.xs),
-                if (stateOptions.isEmpty)
-                  _textField(
-                    controller: _stateController,
-                    label: 'State Code',
-                    hint: 'CA',
-                    textInputAction: TextInputAction.next,
-                    validator: (value) {
-                      if ((value ?? '').trim().isEmpty) {
-                        return 'State is required.';
-                      }
-                      return null;
-                    },
-                  )
-                else
-                  _dropdownField<String>(
+                // State field — shows loading, dropdown, or a free-text
+                // fallback when the reference API returns no states.
+                if (state.isLoadingStates ||
+                    (!statesAreForCurrentCountry &&
+                        _selectedCountry.isNotEmpty))
+                  // Loading states OR country just changed and states are
+                  // still in-flight / not yet matched.
+                  const _LoadingFieldPlaceholder(label: 'State')
+                else if (_selectedCountry.isEmpty)
+                  // No country selected yet – prompt user to choose first.
+                  const _DisabledFieldPlaceholder(
                     label: 'State',
-                    value: _safeDropdownValue(
-                      _selectedState,
-                      stateOptions.map((option) => option.value),
+                    hint: 'Select a country first',
+                  )
+                else if (stateOptions.isNotEmpty)
+                  _controlledDropdownField<String>(
+                    // ValueKey ensures the dropdown rebuilds entirely when the
+                    // country changes and a new list arrives; prevents the old
+                    // FormField internal value from persisting.
+                    key: ValueKey(
+                      'state_${state.statesForCountryCode}_'
+                      '${stateOptions.length}',
                     ),
+                    label: 'State',
+                    value: safeState,
                     items: stateOptions
                         .map(
                           (option) => DropdownMenuItem<String>(
@@ -401,32 +409,55 @@ class _UserProfileEditSheetState extends ConsumerState<UserProfileEditSheet> {
                         )
                         .toList(growable: false),
                     onChanged: (value) {
-                      if (value == null) {
-                        return;
-                      }
+                      if (value == null) return;
                       _onStateChanged(value);
-                    },
-                  ),
-                const SizedBox(height: OpenVtsSpacing.xs),
-                if (cityOptions.isEmpty)
-                  _textField(
-                    controller: _cityController,
-                    label: 'City',
-                    textInputAction: TextInputAction.next,
-                    validator: (value) {
-                      if ((value ?? '').trim().isEmpty) {
-                        return 'City is required.';
-                      }
-                      return null;
                     },
                   )
                 else
-                  _dropdownField<String>(
-                    label: 'City',
-                    value: _safeDropdownValue(
-                      _selectedCity,
-                      cityOptions.map((option) => option.value),
+                  // statesAreForCurrentCountry && stateOptions.isEmpty:
+                  // catalogue returned no states for this country — allow
+                  // free-text entry using the tracked _stateController.
+                  TextFormField(
+                    controller: _stateController,
+                    textInputAction: TextInputAction.next,
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedState = '';
+                      });
+                    },
+                    decoration: const InputDecoration(
+                      labelText: 'State',
+                      hintText: 'Enter state or territory',
                     ),
+                    validator: (value) {
+                      final s = (value ?? '').trim();
+                      if (s.isEmpty) return 'State is required.';
+                      return null;
+                    },
+                  ),
+                const SizedBox(height: OpenVtsSpacing.xs),
+                // City field — shows loading indicator or dropdown/text.
+                if (state.isLoadingCities)
+                  const _LoadingFieldPlaceholder(label: 'City')
+                else if (cityOptions.isEmpty && citiesAreForCurrentSelection)
+                  _textField(
+                    controller: TextEditingController(text: _selectedCity),
+                    label: 'City',
+                    textInputAction: TextInputAction.next,
+                    validator: (value) {
+                      final c = (value ?? '').trim();
+                      if (c.isEmpty) return 'City is required.';
+                      return null;
+                    },
+                  )
+                else if (cityOptions.isNotEmpty)
+                  _controlledDropdownField<String>(
+                    key: ValueKey(
+                      'city_${state.citiesForCountryAndStateCode}_'
+                      '${cityOptions.length}',
+                    ),
+                    label: 'City',
+                    value: safeCity,
                     items: cityOptions
                         .map(
                           (option) => DropdownMenuItem<String>(
@@ -439,13 +470,21 @@ class _UserProfileEditSheetState extends ConsumerState<UserProfileEditSheet> {
                         )
                         .toList(growable: false),
                     onChanged: (value) {
-                      if (value == null) {
-                        return;
-                      }
+                      if (value == null) return;
                       setState(() {
                         _selectedCity = value;
-                        _cityController.text = value;
                       });
+                    },
+                  )
+                else
+                  _textField(
+                    controller: TextEditingController(text: _selectedCity),
+                    label: 'City',
+                    textInputAction: TextInputAction.next,
+                    validator: (value) {
+                      final c = (value ?? '').trim();
+                      if (c.isEmpty) return 'City is required.';
+                      return null;
                     },
                   ),
                 const SizedBox(height: OpenVtsSpacing.xs),
@@ -453,17 +492,15 @@ class _UserProfileEditSheetState extends ConsumerState<UserProfileEditSheet> {
                   controller: _pincodeController,
                   label: 'Pincode',
                   hint: 'Optional',
+                  keyboardType: TextInputType.number,
                   textInputAction: TextInputAction.done,
                   inputFormatters: [
-                    LengthLimitingTextInputFormatter(12),
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(
+                      Validators.maxPincodeLength,
+                    ),
                   ],
-                  validator: (value) {
-                    final pin = (value ?? '').trim();
-                    if (pin.length > 12) {
-                      return 'Pincode max length is 12.';
-                    }
-                    return null;
-                  },
+                  validator: Validators.pincodeOptional,
                 ),
                 if (_submitError != null) ...[
                   const SizedBox(height: OpenVtsSpacing.xs),
@@ -507,6 +544,8 @@ class _UserProfileEditSheetState extends ConsumerState<UserProfileEditSheet> {
     );
   }
 
+  // ── Field helpers ─────────────────────────────────────────────────────────
+
   Widget _textField({
     required TextEditingController controller,
     required String label,
@@ -529,20 +568,25 @@ class _UserProfileEditSheetState extends ConsumerState<UserProfileEditSheet> {
     );
   }
 
-  Widget _dropdownField<T>({
+  /// Fully controlled dropdown: [value] drives the visible selection; the
+  /// [key] forces a full widget replacement when the option list changes so
+  /// the FormField's internal cache can never show a stale value.
+  Widget _controlledDropdownField<T>({
+    required Key key,
     required String label,
     required T? value,
     required List<DropdownMenuItem<T>> items,
     required ValueChanged<T?> onChanged,
   }) {
     return DropdownButtonFormField<T>(
+      key: key,
       initialValue: value,
       isExpanded: true,
       decoration: InputDecoration(labelText: label),
       items: items,
       onChanged: onChanged,
-      validator: (value) {
-        if (value == null || (value is String && value.trim().isEmpty)) {
+      validator: (v) {
+        if (v == null || (v is String && v.trim().isEmpty)) {
           return '$label is required.';
         }
         return null;
@@ -552,42 +596,149 @@ class _UserProfileEditSheetState extends ConsumerState<UserProfileEditSheet> {
 
   T? _safeDropdownValue<T>(T value, Iterable<T> values) {
     for (final item in values) {
-      if (item == value) {
-        return item;
-      }
+      if (item == value) return item;
     }
     return null;
   }
 
   String _effectivePrefix() {
     final selected = _selectedMobilePrefix.trim();
-    if (selected.isNotEmpty) {
-      return selected;
-    }
+    if (selected.isNotEmpty) return selected;
     return _mobilePrefixController.text.trim();
   }
 
   String _effectiveCountry() {
     final selected = _selectedCountry.trim().toUpperCase();
-    if (selected.isNotEmpty) {
-      return selected;
-    }
-    return _countryController.text.trim().toUpperCase();
+    if (selected.isNotEmpty) return selected;
+    return '';
   }
 
   String _effectiveState() {
     final selected = _selectedState.trim().toUpperCase();
-    if (selected.isNotEmpty) {
-      return selected;
-    }
+    if (selected.isNotEmpty) return selected;
+    // When free-text state field is shown (no states in catalogue), use it.
     return _stateController.text.trim().toUpperCase();
   }
 
   String _effectiveCity() {
     final selected = _selectedCity.trim();
-    if (selected.isNotEmpty) {
-      return selected;
-    }
-    return _cityController.text.trim();
+    if (selected.isNotEmpty) return selected;
+    return '';
+  }
+}
+
+/// Placeholder that shows a disabled-looking row while states/cities load.
+class _LoadingFieldPlaceholder extends StatelessWidget {
+  const _LoadingFieldPlaceholder({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return InputDecorator(
+      decoration: InputDecoration(
+        labelText: label,
+        suffixIcon: const SizedBox.square(
+          dimension: 20,
+          child: Padding(
+            padding: EdgeInsets.all(2),
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ),
+      ),
+      child: const SizedBox(height: 20),
+    );
+  }
+}
+
+/// Shows a disabled hint when a field cannot be populated until a prior
+/// selection is made (e.g. State before a Country is chosen).
+class _DisabledFieldPlaceholder extends StatelessWidget {
+  const _DisabledFieldPlaceholder({
+    required this.label,
+    required this.hint,
+  });
+
+  final String label;
+  final String hint;
+
+  @override
+  Widget build(BuildContext context) {
+    return InputDecorator(
+      decoration: InputDecoration(labelText: label),
+      child: Text(
+        hint,
+        style: OpenVtsTypography.body.copyWith(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
+      ),
+    );
+  }
+}
+
+/// Shown when a reference catalogue (e.g. country list) failed to load.
+/// Wraps a [FormField] so that the form validator blocks submission when
+/// [selectedValue] is empty (nothing pre-selected from the profile).
+class _ReferenceRetryField extends StatelessWidget {
+  const _ReferenceRetryField({
+    required this.label,
+    required this.selectedValue,
+    required this.onRetry,
+    this.message,
+  });
+
+  final String label;
+
+  /// The canonical code already resolved from the profile (may be non-empty
+  /// even when the dropdown list has not loaded). Validation passes when
+  /// non-empty so users with an existing selection can still save.
+  final String selectedValue;
+  final VoidCallback onRetry;
+  final String? message;
+
+  @override
+  Widget build(BuildContext context) {
+    return FormField<String>(
+      initialValue: selectedValue,
+      autovalidateMode: AutovalidateMode.onUserInteraction,
+      validator: (value) {
+        if ((value ?? '').trim().isEmpty) {
+          return '$label is required. Tap Retry to reload options.';
+        }
+        return null;
+      },
+      builder: (field) => InputDecorator(
+        decoration: InputDecoration(
+          labelText: label,
+          errorText: field.errorText,
+        ),
+        child: Row(
+          children: [
+            const Icon(
+              Icons.sync_problem_rounded,
+              size: 16,
+              color: OpenVtsColors.warning,
+            ),
+            const SizedBox(width: OpenVtsSpacing.xxs),
+            Expanded(
+              child: Text(
+                (message?.trim().isNotEmpty == true)
+                    ? message!.trim()
+                    : 'Options unavailable.',
+                style: OpenVtsTypography.meta.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            TextButton(
+              onPressed: onRetry,
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

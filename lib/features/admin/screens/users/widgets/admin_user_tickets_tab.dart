@@ -205,16 +205,16 @@ class _SummaryCard extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.confirmation_number_outlined,
                       size: 17,
-                      color: OpenVtsColors.textSecondary,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                     const SizedBox(width: OpenVtsSpacing.xs),
                     Text(
                       'Tickets',
                       style: OpenVtsTypography.label.copyWith(
-                        color: OpenVtsColors.textPrimary,
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
@@ -232,7 +232,7 @@ class _SummaryCard extends StatelessWidget {
                 Text(
                   ticketCount == 1 ? '1 ticket' : '$ticketCount tickets',
                   style: OpenVtsTypography.meta.copyWith(
-                    color: OpenVtsColors.textSecondary,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -272,13 +272,20 @@ class _SearchField extends StatelessWidget {
       controller: controller,
       onChanged: onChanged,
       textInputAction: TextInputAction.search,
-      style: OpenVtsTypography.body.copyWith(fontSize: 13),
+      cursorColor: Theme.of(context).colorScheme.primary,
+      style: OpenVtsTypography.body.copyWith(
+        fontSize: 13,
+        color: Theme.of(context).colorScheme.onSurface,
+      ),
       decoration: InputDecoration(
         hintText: hintText,
-        prefixIcon: const Icon(
+        hintStyle: TextStyle(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
+        prefixIcon: Icon(
           Icons.search_rounded,
           size: 18,
-          color: OpenVtsColors.textSecondary,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),
         suffixIcon: controller.text.isEmpty
             ? null
@@ -288,7 +295,9 @@ class _SearchField extends StatelessWidget {
                   controller.clear();
                   onChanged('');
                 },
-                icon: const Icon(Icons.close_rounded, size: 17),
+                icon: Icon(Icons.close_rounded,
+                    size: 17,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant),
               ),
       ),
     );
@@ -326,7 +335,7 @@ class _TicketCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: OpenVtsTypography.label.copyWith(
-                        color: OpenVtsColors.textPrimary,
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontSize: 13,
                         fontWeight: FontWeight.w800,
                       ),
@@ -337,7 +346,7 @@ class _TicketCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: OpenVtsTypography.meta.copyWith(
-                        color: OpenVtsColors.textSecondary,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -726,10 +735,20 @@ class _TicketConversationSheetState
                   minLines: 2,
                   maxLines: 4,
                   maxLength: _maxMessageLength,
-                  style: OpenVtsTypography.body.copyWith(fontSize: 13),
-                  decoration: const InputDecoration(
+                  cursorColor: Theme.of(context).colorScheme.primary,
+                  style: OpenVtsTypography.body.copyWith(
+                    fontSize: 13,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                  decoration: InputDecoration(
                     hintText: 'Write a reply',
-                    prefixIcon: Icon(Icons.reply_rounded),
+                    hintStyle: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                    prefixIcon: Icon(
+                      Icons.reply_rounded,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ),
                 if (_replyAttachments.isNotEmpty) ...[
@@ -921,7 +940,7 @@ class _TicketDetailsHeader extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: OpenVtsTypography.label.copyWith(
-                        color: OpenVtsColors.textPrimary,
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontSize: 13,
                         fontWeight: FontWeight.w800,
                       ),
@@ -930,7 +949,7 @@ class _TicketDetailsHeader extends StatelessWidget {
                     Text(
                       _displayValue(ticket.ticketNo),
                       style: OpenVtsTypography.meta.copyWith(
-                        color: OpenVtsColors.textSecondary,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -999,7 +1018,7 @@ class _StatusAction extends StatelessWidget {
               child: Text(
                 _statusLabel(status),
                 style: OpenVtsTypography.meta.copyWith(
-                  color: OpenVtsColors.textPrimary,
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontWeight: FontWeight.w800,
                 ),
               ),
@@ -1009,9 +1028,10 @@ class _StatusAction extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
         decoration: BoxDecoration(
-          color: OpenVtsColors.surface,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
-          border: Border.all(color: OpenVtsColors.border),
+          border:
+              Border.all(color: Theme.of(context).colorScheme.outlineVariant),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -1023,12 +1043,13 @@ class _StatusAction extends StatelessWidget {
                 child: CircularProgressIndicator(strokeWidth: 2),
               )
             else
-              const Icon(Icons.swap_horiz_rounded, size: 13),
+              Icon(Icons.swap_horiz_rounded,
+                  size: 13, color: Theme.of(context).colorScheme.onSurface),
             const SizedBox(width: 4),
             Text(
               _statusLabel(status),
               style: OpenVtsTypography.meta.copyWith(
-                color: OpenVtsColors.textPrimary,
+                color: Theme.of(context).colorScheme.onSurface,
                 fontSize: 11,
                 fontWeight: FontWeight.w800,
               ),
@@ -1057,73 +1078,95 @@ class _MessageBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isUserMessage = _isFromUser(ticket, message);
-    final color = isUserMessage ? OpenVtsColors.surface : OpenVtsColors.white;
+    final backgroundColor = isUserMessage
+        ? Theme.of(context).colorScheme.surface
+        : OpenVtsColors.brandInk;
+    final textColor =
+        isUserMessage ? Theme.of(context).colorScheme.onSurface : Colors.white;
     final sender = _senderLabel(message, isUserMessage: isUserMessage);
-    return Container(
-      padding: const EdgeInsets.all(OpenVtsSpacing.sm),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-        border: Border.all(color: OpenVtsColors.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  sender,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: OpenVtsTypography.meta.copyWith(
-                    color: OpenVtsColors.textSecondary,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-              Text(
-                _dateTimeText(message.createdAt),
-                style: OpenVtsTypography.meta.copyWith(
-                  color: OpenVtsColors.textTertiary,
-                  fontSize: 10,
-                ),
-              ),
-            ],
+
+    return Align(
+      alignment: isUserMessage ? Alignment.centerLeft : Alignment.centerRight,
+      child: Container(
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.of(context).size.width * 0.75,
+        ),
+        padding: const EdgeInsets.all(OpenVtsSpacing.sm),
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
+          border: Border.all(
+            color: isUserMessage
+                ? Theme.of(context).colorScheme.outlineVariant
+                : Colors.white,
           ),
-          const SizedBox(height: OpenVtsSpacing.xs),
-          Text(
-            _displayValue(message.message),
-            style: OpenVtsTypography.body.copyWith(
-              color: OpenVtsColors.textPrimary,
-              fontSize: 13,
-            ),
-          ),
-          if (message.attachments.isNotEmpty) ...[
-            const SizedBox(height: OpenVtsSpacing.xs),
-            Wrap(
-              spacing: OpenVtsSpacing.xs,
-              runSpacing: OpenVtsSpacing.xs,
+        ),
+        child: Column(
+          crossAxisAlignment:
+              isUserMessage ? CrossAxisAlignment.start : CrossAxisAlignment.end,
+          children: [
+            Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                for (final attachment in message.attachments)
-                  _RemoteAttachmentChip(
-                    name: _attachmentName(attachment),
-                    onTap: () {
-                      final url = _attachmentUrl(attachment, baseUrl);
-                      if (url == null) {
-                        ToastHelper.showError(
-                          'Attachment URL is not available.',
-                          context: context,
-                        );
-                        return;
-                      }
-                      onOpenAttachment(url);
-                    },
+                Expanded(
+                  child: Text(
+                    sender,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: OpenVtsTypography.meta.copyWith(
+                      color: isUserMessage
+                          ? Theme.of(context).colorScheme.onSurface
+                          : Colors.white,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
+                ),
+                const SizedBox(width: OpenVtsSpacing.xs),
+                Text(
+                  _dateTimeText(message.createdAt),
+                  style: OpenVtsTypography.meta.copyWith(
+                    color: isUserMessage
+                        ? Theme.of(context).colorScheme.onSurfaceVariant
+                        : Colors.white,
+                    fontSize: 10,
+                  ),
+                ),
               ],
             ),
+            const SizedBox(height: OpenVtsSpacing.xs),
+            Text(
+              _displayValue(message.message),
+              style: OpenVtsTypography.body.copyWith(
+                color: textColor,
+                fontSize: 13,
+              ),
+            ),
+            if (message.attachments.isNotEmpty) ...[
+              const SizedBox(height: OpenVtsSpacing.xs),
+              Wrap(
+                spacing: OpenVtsSpacing.xs,
+                runSpacing: OpenVtsSpacing.xs,
+                children: [
+                  for (final attachment in message.attachments)
+                    _RemoteAttachmentChip(
+                      name: _attachmentName(attachment),
+                      onTap: () {
+                        final url = _attachmentUrl(attachment, baseUrl);
+                        if (url == null) {
+                          ToastHelper.showError(
+                            'Attachment URL is not available.',
+                            context: context,
+                          );
+                          return;
+                        }
+                        onOpenAttachment(url);
+                      },
+                    ),
+                ],
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
@@ -1192,26 +1235,26 @@ class _AttachmentPicker extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(OpenVtsSpacing.sm),
       decoration: BoxDecoration(
-        color: OpenVtsColors.surface,
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-        border: Border.all(color: OpenVtsColors.border),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.attach_file_rounded,
                 size: 18,
-                color: OpenVtsColors.textSecondary,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
               const SizedBox(width: OpenVtsSpacing.xs),
               Expanded(
                 child: Text(
                   'Attachments',
                   style: OpenVtsTypography.label.copyWith(
-                    color: OpenVtsColors.textPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -1242,7 +1285,7 @@ class _AttachmentPicker extends StatelessWidget {
             Text(
               'Optional files, up to $_maxAttachmentCount.',
               style: OpenVtsTypography.meta.copyWith(
-                color: OpenVtsColors.textSecondary,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             )
           else ...[
@@ -1340,31 +1383,32 @@ class _MetaPill extends StatelessWidget {
   const _MetaPill({
     required this.icon,
     required this.label,
-    this.color = OpenVtsColors.textSecondary,
+    this.color,
   });
 
   final IconData icon;
   final String label;
-  final Color color;
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
+    final pillColor = color ?? Theme.of(context).colorScheme.onSurfaceVariant;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.06),
+        color: pillColor.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
-        border: Border.all(color: color.withValues(alpha: 0.18)),
+        border: Border.all(color: pillColor.withValues(alpha: 0.18)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12, color: color),
+          Icon(icon, size: 12, color: pillColor),
           const SizedBox(width: 4),
           Text(
             label,
             style: OpenVtsTypography.meta.copyWith(
-              color: color,
+              color: pillColor,
               fontSize: 11,
               fontWeight: FontWeight.w700,
             ),
@@ -1385,9 +1429,10 @@ class _InlineError extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(OpenVtsSpacing.sm),
       decoration: BoxDecoration(
-        color: OpenVtsColors.error.withValues(alpha: 0.05),
+        color: Theme.of(context).colorScheme.error.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-        border: Border.all(color: OpenVtsColors.error.withValues(alpha: 0.2)),
+        border: Border.all(
+            color: Theme.of(context).colorScheme.error.withValues(alpha: 0.2)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1433,7 +1478,7 @@ class _SectionLoader extends StatelessWidget {
           Text(
             'Loading $title',
             style: OpenVtsTypography.label.copyWith(
-              color: OpenVtsColors.textSecondary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -1468,7 +1513,7 @@ class _SectionErrorCard extends StatelessWidget {
                 child: Text(
                   'Unable to load tickets',
                   style: OpenVtsTypography.label.copyWith(
-                    color: OpenVtsColors.textPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -1479,7 +1524,7 @@ class _SectionErrorCard extends StatelessWidget {
           Text(
             message,
             style: OpenVtsTypography.meta.copyWith(
-              color: OpenVtsColors.textSecondary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
           const SizedBox(height: OpenVtsSpacing.sm),
@@ -1506,14 +1551,14 @@ class _EmptyCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(OpenVtsSpacing.md),
       decoration: BoxDecoration(
-        color: OpenVtsColors.surface,
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-        border: Border.all(color: OpenVtsColors.border),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
       child: Text(
         label,
         style: OpenVtsTypography.meta.copyWith(
-          color: OpenVtsColors.textSecondary,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
           fontWeight: FontWeight.w700,
         ),
       ),

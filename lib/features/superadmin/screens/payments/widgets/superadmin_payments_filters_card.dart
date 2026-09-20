@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
-import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../../../shared/widgets/open_vts_date_time_range_selector.dart';
 import '../../../../../shared/widgets/open_vts_search_field.dart';
+import '../../../../../shared/widgets/open_vts_searchable_dropdown.dart';
 import '../../../models/superadmin_payments_model.dart';
 import '../../../models/superadmin_payments_state.dart';
 
@@ -40,13 +40,13 @@ class SuperadminPaymentsFiltersCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Expanded(
+              Expanded(
                 child: Text(
                   'Filters',
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: OpenVtsColors.textPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
               ),
@@ -111,12 +111,54 @@ class _CollapsibleFiltersSectionState
     extends State<_CollapsibleFiltersSection> {
   bool _isExpanded = false;
 
+  List<SuperadminPaymentAdminOption> _resolveAdminOptions() {
+    if (widget.state.selectedAdminId == null) {
+      return widget.state.admins;
+    }
+
+    final selectedId = widget.state.selectedAdminId!;
+    final hasSelected =
+        widget.state.admins.any((item) => item.uid == selectedId);
+    if (hasSelected) {
+      return widget.state.admins;
+    }
+
+    return [
+      SuperadminPaymentAdminOption(
+        uid: selectedId,
+        name: 'Admin #$selectedId',
+        username: '',
+        email: '',
+        currency: '',
+      ),
+      ...widget.state.admins,
+    ];
+  }
+
+  List<OpenVtsDropdownOption<int>> _buildAdminOptions(
+    List<SuperadminPaymentAdminOption> admins,
+  ) {
+    return admins.map((admin) {
+      final parts = <String>[
+        if (admin.username.trim().isNotEmpty) '@${admin.username.trim()}',
+        if (admin.email.trim().isNotEmpty) admin.email.trim(),
+      ];
+      return OpenVtsDropdownOption<int>(
+        value: admin.uid,
+        label: admin.displayName,
+        subtitle: parts.isNotEmpty ? parts.join(' • ') : null,
+        searchText: admin.searchText,
+      );
+    }).toList(growable: false);
+  }
+
   @override
   Widget build(BuildContext context) {
     final admins = _resolveAdminOptions();
     final selectedAdmin = widget.state.selectedAdminId;
     final selectedAdminValue =
         admins.any((item) => item.uid == selectedAdmin) ? selectedAdmin : null;
+    final adminOptions = _buildAdminOptions(admins);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -132,7 +174,7 @@ class _CollapsibleFiltersSectionState
                 Text(
                   'Advanced Filters',
                   style: OpenVtsTypography.label.copyWith(
-                    color: OpenVtsColors.textSecondary,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -142,7 +184,7 @@ class _CollapsibleFiltersSectionState
                       ? Icons.expand_less_rounded
                       : Icons.expand_more_rounded,
                   size: 18,
-                  color: OpenVtsColors.textSecondary,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ],
             ),
@@ -150,41 +192,21 @@ class _CollapsibleFiltersSectionState
         ),
         if (_isExpanded) ...[
           const SizedBox(height: OpenVtsSpacing.sm),
-          DropdownButtonFormField<int?>(
-            initialValue: selectedAdminValue,
-            isExpanded: true,
-            decoration: InputDecoration(
-              labelText: 'Administrator',
-              suffixIcon: widget.state.isLoadingAdmins
-                  ? const Padding(
-                      padding: EdgeInsets.all(12),
-                      child: SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                    )
-                  : null,
-            ),
-            items: [
-              const DropdownMenuItem<int?>(
-                value: null,
-                child: Text('All Admins'),
-              ),
-              ...admins.map(
-                (admin) => DropdownMenuItem<int?>(
-                  value: admin.uid,
-                  child: _AdminDropdownLabel(admin: admin),
-                ),
-              ),
-            ],
+          OpenVtsSearchableDropdown<int>(
+            label: 'Administrator',
+            hintText: 'All Admins',
+            searchHintText: 'Search by name, username, email or ID',
+            sheetTitle: 'Filter by Administrator',
+            options: adminOptions,
+            value: selectedAdminValue,
+            isLoading: widget.state.isLoadingAdmins,
             onChanged: (value) => widget.onAdminChanged(value?.toString()),
           ),
           const SizedBox(height: OpenVtsSpacing.sm),
           Text(
             'Date Range',
             style: OpenVtsTypography.label.copyWith(
-              color: OpenVtsColors.textSecondary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
           const SizedBox(height: OpenVtsSpacing.xs),
@@ -192,6 +214,14 @@ class _CollapsibleFiltersSectionState
             spacing: OpenVtsSpacing.xs,
             runSpacing: OpenVtsSpacing.xs,
             children: [
+              _FilterChoiceChip(
+                label: 'All Time',
+                selected: widget.state.rangePreset ==
+                    SuperadminPaymentsRangePreset.allTime,
+                onTap: () => widget.onRangePresetChanged(
+                  SuperadminPaymentsRangePreset.allTime,
+                ),
+              ),
               _FilterChoiceChip(
                 label: 'This Month',
                 selected: widget.state.rangePreset ==
@@ -248,7 +278,7 @@ class _CollapsibleFiltersSectionState
           Text(
             'Status',
             style: OpenVtsTypography.label.copyWith(
-              color: OpenVtsColors.textSecondary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
           const SizedBox(height: OpenVtsSpacing.xs),
@@ -288,67 +318,6 @@ class _CollapsibleFiltersSectionState
       ],
     );
   }
-
-  List<SuperadminPaymentAdminOption> _resolveAdminOptions() {
-    if (widget.state.selectedAdminId == null) {
-      return widget.state.admins;
-    }
-
-    final selectedId = widget.state.selectedAdminId!;
-    final hasSelected =
-        widget.state.admins.any((item) => item.uid == selectedId);
-    if (hasSelected) {
-      return widget.state.admins;
-    }
-
-    return [
-      SuperadminPaymentAdminOption(
-        uid: selectedId,
-        name: 'Admin #$selectedId',
-        username: '',
-        email: '',
-        currency: '',
-      ),
-      ...widget.state.admins,
-    ];
-  }
-}
-
-class _AdminDropdownLabel extends StatelessWidget {
-  const _AdminDropdownLabel({required this.admin});
-
-  final SuperadminPaymentAdminOption admin;
-
-  @override
-  Widget build(BuildContext context) {
-    final username = admin.username.trim();
-    final currency = admin.currency.trim();
-    final subtitleParts = <String>[
-      if (username.isNotEmpty) '@$username',
-      if (currency.isNotEmpty) currency,
-    ];
-
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          admin.displayName,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        if (subtitleParts.isNotEmpty)
-          Text(
-            subtitleParts.join(' • '),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: OpenVtsTypography.meta.copyWith(
-              color: OpenVtsColors.textSecondary,
-            ),
-          ),
-      ],
-    );
-  }
 }
 
 class _FilterChoiceChip extends StatelessWidget {
@@ -364,30 +333,39 @@ class _FilterChoiceChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final backgroundColor =
+        selected ? (isDark ? Colors.black : Colors.white) : Colors.transparent;
+    final textColor = isDark ? Colors.white : Colors.black;
+    final borderColor =
+        isDark ? Colors.white : Colors.black.withValues(alpha: 0.2);
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(OpenVtsRadius.md),
+        borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
         onTap: onTap,
         child: Container(
-          constraints: const BoxConstraints(minHeight: 40),
+          constraints: const BoxConstraints(minHeight: 34),
           alignment: Alignment.center,
           padding: const EdgeInsets.symmetric(
             horizontal: OpenVtsSpacing.sm,
             vertical: OpenVtsSpacing.xs,
           ),
           decoration: BoxDecoration(
-            color: selected ? OpenVtsColors.brandInk : OpenVtsColors.surface,
-            borderRadius: BorderRadius.circular(OpenVtsRadius.md),
+            color: backgroundColor,
+            borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
             border: Border.all(
-              color: selected ? OpenVtsColors.brandInk : OpenVtsColors.border,
+              color: selected
+                  ? (isDark ? Colors.white : Colors.black)
+                  : borderColor,
             ),
           ),
           child: Text(
             label,
             style: OpenVtsTypography.meta.copyWith(
-              color: selected ? OpenVtsColors.white : OpenVtsColors.textPrimary,
-              fontWeight: FontWeight.w600,
+              color: textColor,
+              fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
             ),
           ),
         ),

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:open_vts/core/theme/open_vts_colors.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:open_vts/core/theme/open_vts_radius.dart';
 import 'package:open_vts/core/theme/open_vts_spacing.dart';
 import 'package:open_vts/core/theme/open_vts_typography.dart';
@@ -7,9 +7,7 @@ import 'package:open_vts/core/utils/date_time_formatter.dart';
 import 'package:open_vts/features/user/models/user_support_model.dart';
 import 'package:open_vts/features/user/screens/support/widgets/user_support_attachment_widgets.dart';
 
-const DateTimeFormatter _dateFormatter = DateTimeFormatter();
-
-class UserSupportMessageBubble extends StatelessWidget {
+class UserSupportMessageBubble extends ConsumerWidget {
   const UserSupportMessageBubble({
     required this.message,
     required this.isCurrentUser,
@@ -22,7 +20,9 @@ class UserSupportMessageBubble extends StatelessWidget {
   final String baseUrl;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final dateFormatter = ref.watch(appDateFormatterProvider);
+    final colorScheme = Theme.of(context).colorScheme;
     if (_isSystemMessage) {
       return _SystemMessageBubble(message: message, baseUrl: baseUrl);
     }
@@ -30,11 +30,11 @@ class UserSupportMessageBubble extends StatelessWidget {
     final alignment =
         isCurrentUser ? Alignment.centerRight : Alignment.centerLeft;
     final borderColor = isCurrentUser
-        ? OpenVtsColors.brandInk.withValues(alpha: 0.18)
-        : OpenVtsColors.border;
+        ? colorScheme.primary.withValues(alpha: 0.18)
+        : colorScheme.outlineVariant;
     final backgroundColor = isCurrentUser
-        ? OpenVtsColors.brandInk.withValues(alpha: 0.045)
-        : Theme.of(context).colorScheme.surface;
+        ? colorScheme.primary.withValues(alpha: 0.045)
+        : colorScheme.surface;
     final senderLabel = _senderLabel;
 
     return Align(
@@ -61,7 +61,7 @@ class UserSupportMessageBubble extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: OpenVtsTypography.meta.copyWith(
-                        color: OpenVtsColors.textSecondary,
+                        color: colorScheme.onSurfaceVariant,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
@@ -69,9 +69,9 @@ class UserSupportMessageBubble extends StatelessWidget {
                   if (message.createdAt != null) ...[
                     const SizedBox(width: OpenVtsSpacing.xs),
                     Text(
-                      _dateFormatter.formatDateTime(message.createdAt!),
+                      dateFormatter.formatDateTime(message.createdAt!),
                       style: OpenVtsTypography.meta.copyWith(
-                        color: OpenVtsColors.textTertiary,
+                        color: colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ],
@@ -82,7 +82,7 @@ class UserSupportMessageBubble extends StatelessWidget {
                 Text(
                   message.message.trim(),
                   style: OpenVtsTypography.body.copyWith(
-                    color: OpenVtsColors.textPrimary,
+                    color: colorScheme.onSurface,
                     height: 1.38,
                   ),
                 ),
@@ -123,14 +123,16 @@ class UserSupportMessageBubble extends StatelessWidget {
   }
 }
 
-class _SystemMessageBubble extends StatelessWidget {
+class _SystemMessageBubble extends ConsumerWidget {
   const _SystemMessageBubble({required this.message, required this.baseUrl});
 
   final UserSupportTicketMessage message;
   final String baseUrl;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final dateFormatter = ref.watch(appDateFormatterProvider);
+    final colorScheme = Theme.of(context).colorScheme;
     final text = message.message.trim();
     final timestamp = message.createdAt;
 
@@ -143,8 +145,8 @@ class _SystemMessageBubble extends StatelessWidget {
           vertical: OpenVtsSpacing.xs,
         ),
         decoration: BoxDecoration(
-          color: OpenVtsColors.surface,
-          border: Border.all(color: OpenVtsColors.border),
+          color: colorScheme.surface,
+          border: Border.all(color: colorScheme.outline),
           borderRadius: BorderRadius.circular(OpenVtsRadius.md),
         ),
         child: Column(
@@ -155,17 +157,17 @@ class _SystemMessageBubble extends StatelessWidget {
                 text,
                 textAlign: TextAlign.center,
                 style: OpenVtsTypography.meta.copyWith(
-                  color: OpenVtsColors.textSecondary,
+                  color: colorScheme.onSurfaceVariant,
                   fontWeight: FontWeight.w600,
                 ),
               ),
             if (timestamp != null) ...[
               const SizedBox(height: OpenVtsSpacing.xxs),
               Text(
-                _dateFormatter.formatDateTime(timestamp),
+                dateFormatter.formatDateTime(timestamp),
                 textAlign: TextAlign.center,
                 style: OpenVtsTypography.meta.copyWith(
-                  color: OpenVtsColors.textTertiary,
+                  color: colorScheme.onSurfaceVariant,
                 ),
               ),
             ],

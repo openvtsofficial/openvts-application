@@ -18,8 +18,6 @@ import '../../../../models/user_driver_model.dart';
 import '../../../../models/user_drivers_state.dart';
 import 'user_driver_document_sheet.dart';
 
-const DateTimeFormatter _dateFormatter = DateTimeFormatter();
-
 class UserDriverDocumentsTab extends ConsumerWidget {
   const UserDriverDocumentsTab({required this.provider, super.key});
 
@@ -28,6 +26,7 @@ class UserDriverDocumentsTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final dateFormatter = ref.watch(appDateFormatterProvider);
     final state = ref.watch(provider);
     final controller = ref.read(provider.notifier);
     final baseUrl = ref.watch(apiBaseUrlProvider);
@@ -209,7 +208,9 @@ class _SummaryCard extends StatelessWidget {
                     Text(
                       'Documents',
                       style: OpenVtsTypography.label.copyWith(
-                        color: OpenVtsColors.textPrimary,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.white
+                            : OpenVtsColors.textPrimary,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
@@ -252,7 +253,7 @@ class _SummaryCard extends StatelessWidget {
   }
 }
 
-class _DocumentCard extends StatelessWidget {
+class _DocumentCard extends ConsumerWidget {
   const _DocumentCard({
     required this.document,
     required this.isBusy,
@@ -268,7 +269,8 @@ class _DocumentCard extends StatelessWidget {
   final VoidCallback? onDelete;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final dateFormatter = ref.watch(appDateFormatterProvider);
     final extension = _fileExtension(document);
 
     return OpenVtsCard(
@@ -291,7 +293,9 @@ class _DocumentCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: OpenVtsTypography.label.copyWith(
-                        color: OpenVtsColors.textPrimary,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.white
+                            : OpenVtsColors.textPrimary,
                         fontSize: 13,
                         fontWeight: FontWeight.w800,
                       ),
@@ -319,7 +323,13 @@ class _DocumentCard extends StatelessWidget {
                         height: 16,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Icon(Icons.more_vert_rounded, size: 18),
+                    : Icon(
+                        Icons.more_vert_rounded,
+                        size: 18,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.white
+                            : null,
+                      ),
                 onSelected: (action) {
                   switch (action) {
                     case _DocumentAction.view:
@@ -375,7 +385,7 @@ class _DocumentCard extends StatelessWidget {
                 icon: Icons.event_outlined,
                 label: document.expiryAt == null
                     ? 'No expiry'
-                    : 'Expiry ${_dateText(document.expiryAt)}',
+                    : 'Expiry ${_dateText(document.expiryAt, dateFormatter)}',
               ),
               _MetaPill(
                 icon: document.isVisible
@@ -399,7 +409,7 @@ class _DocumentCard extends StatelessWidget {
               ),
               _MetaPill(
                 icon: Icons.calendar_today_outlined,
-                label: 'Added ${_dateText(document.createdAt)}',
+                label: 'Added ${_dateText(document.createdAt, dateFormatter)}',
               ),
               for (final tag in document.tags.take(4))
                 _MetaPill(icon: Icons.label_outline_rounded, label: tag),
@@ -611,18 +621,21 @@ class _MetaPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final displayColor =
+        isDarkMode && color == OpenVtsColors.brandInk ? Colors.white : color;
     return Container(
       constraints: const BoxConstraints(maxWidth: 260),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.06),
+        color: displayColor.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
-        border: Border.all(color: color.withValues(alpha: 0.18)),
+        border: Border.all(color: displayColor.withValues(alpha: 0.18)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12, color: color),
+          Icon(icon, size: 12, color: displayColor),
           const SizedBox(width: 4),
           Flexible(
             child: Text(
@@ -630,7 +643,7 @@ class _MetaPill extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: OpenVtsTypography.meta.copyWith(
-                color: color,
+                color: displayColor,
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
               ),
@@ -655,8 +668,10 @@ class _MenuRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color =
-        isDestructive ? OpenVtsColors.error : OpenVtsColors.textPrimary;
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final color = isDestructive
+        ? OpenVtsColors.error
+        : (isDarkMode ? Colors.white : OpenVtsColors.textPrimary);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -727,9 +742,9 @@ String _extensionFromName(String value) {
   return normalized.substring(dot + 1);
 }
 
-String _dateText(DateTime? value) {
+String _dateText(DateTime? value, dynamic formatter) {
   if (value == null) return '-';
-  return _dateFormatter.formatDate(value.toLocal());
+  return formatter.formatDate(value.toLocal());
 }
 
 String _display(String value) {

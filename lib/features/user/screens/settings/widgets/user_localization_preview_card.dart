@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../core/utils/date_time_formatter.dart';
+import '../../../../../l10n/app_localizations.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../models/user_settings_model.dart';
 
-const DateTimeFormatter _dateTimeFormatter = DateTimeFormatter();
-
-class UserLocalizationPreviewCard extends StatelessWidget {
+class UserLocalizationPreviewCard extends ConsumerWidget {
   const UserLocalizationPreviewCard({
     required this.settings,
     required this.languageLabel,
@@ -22,15 +21,17 @@ class UserLocalizationPreviewCard extends StatelessWidget {
   final String languageLabel;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final dateTimeFormatter = ref.watch(appDateFormatterProvider);
     final now = DateTime.now();
-    final dateText = _formatDate(now, settings.dateFormat);
-    final timeText = _formatTime(now, settings.use24Hour);
+    final dateText = _formatDate(now, settings.dateFormat, dateTimeFormatter);
+    final timeText = _formatTime(now, settings.use24Hour, dateTimeFormatter);
 
     final directionText =
         settings.layoutDirection == UserLayoutDirection.rtl ? 'RTL' : 'LTR';
     final distanceText =
-        settings.units == UserDistanceUnit.miles ? 'Miles' : 'Kilometers';
+        settings.units == UserDistanceUnit.miles ? l10n.miles : l10n.kilometers;
 
     final mapText =
         '${settings.defaultLat.toStringAsFixed(4)}, ${settings.defaultLon.toStringAsFixed(4)} · z${settings.mapZoom}';
@@ -42,16 +43,16 @@ class UserLocalizationPreviewCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.visibility_outlined,
                 size: 14,
-                color: OpenVtsColors.textTertiary,
+                color: Theme.of(context).colorScheme.outline,
               ),
               const SizedBox(width: 6),
               Text(
-                'Localization Preview',
+                l10n.localizationPreview,
                 style: OpenVtsTypography.meta.copyWith(
-                  color: OpenVtsColors.textTertiary,
+                  color: Theme.of(context).colorScheme.outline,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 0.2,
                 ),
@@ -61,13 +62,14 @@ class UserLocalizationPreviewCard extends StatelessWidget {
           const SizedBox(height: OpenVtsSpacing.xs),
           _PreviewGrid(
             tiles: [
-              _PreviewTile(label: 'Language', value: languageLabel),
-              _PreviewTile(label: 'Direction', value: directionText),
-              _PreviewTile(label: 'Timezone', value: settings.timezoneOffset),
-              _PreviewTile(label: 'Date', value: dateText),
-              _PreviewTile(label: 'Time', value: timeText),
-              _PreviewTile(label: 'Distance Unit', value: distanceText),
-              _PreviewTile(label: 'Map Center', value: mapText),
+              _PreviewTile(label: l10n.language, value: languageLabel),
+              _PreviewTile(label: l10n.direction, value: directionText),
+              _PreviewTile(
+                  label: l10n.timezone, value: settings.timezoneOffset),
+              _PreviewTile(label: l10n.date, value: dateText),
+              _PreviewTile(label: l10n.time, value: timeText),
+              _PreviewTile(label: l10n.units, value: distanceText),
+              _PreviewTile(label: l10n.mapCenter, value: mapText),
             ],
           ),
         ],
@@ -75,22 +77,22 @@ class UserLocalizationPreviewCard extends StatelessWidget {
     );
   }
 
-  String _formatDate(DateTime now, String dateFormat) {
+  String _formatDate(DateTime now, String dateFormat, dynamic formatter) {
     final normalized = dateFormat.trim();
     if (normalized.isEmpty) {
-      return _dateTimeFormatter.formatDate(now);
+      return formatter.formatDate(now);
     }
 
     try {
       return DateFormat(_toIntlPattern(normalized)).format(now);
     } catch (_) {
-      return _dateTimeFormatter.formatDate(now);
+      return formatter.formatDate(now);
     }
   }
 
-  String _formatTime(DateTime now, bool use24Hour) {
+  String _formatTime(DateTime now, bool use24Hour, dynamic formatter) {
     if (!use24Hour) {
-      return _dateTimeFormatter.formatTime(now);
+      return formatter.formatTime(now);
     }
 
     try {
@@ -157,9 +159,9 @@ class _PreviewTile extends StatelessWidget {
         vertical: 7,
       ),
       decoration: BoxDecoration(
-        color: OpenVtsColors.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-        border: Border.all(color: OpenVtsColors.border),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -167,7 +169,7 @@ class _PreviewTile extends StatelessWidget {
           Text(
             label,
             style: OpenVtsTypography.meta.copyWith(
-              color: OpenVtsColors.textTertiary,
+              color: Theme.of(context).colorScheme.outline,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -177,7 +179,7 @@ class _PreviewTile extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: OpenVtsTypography.body.copyWith(
-              color: OpenVtsColors.textPrimary,
+              color: Theme.of(context).colorScheme.onSurface,
               fontWeight: FontWeight.w600,
             ),
           ),

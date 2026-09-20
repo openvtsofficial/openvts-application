@@ -97,6 +97,88 @@ class AdminTeamController extends StateNotifier<AdminTeamState> {
     }
   }
 
+  Future<bool> updateTeamStatus(String teamId, bool isActive) async {
+    final teamIndex = state.teams.indexWhere((t) => t.id == teamId);
+    if (teamIndex == -1) {
+      return false;
+    }
+
+    final previousTeam = state.teams[teamIndex];
+
+    try {
+      await _service.updateTeamStatus(teamId, isActive);
+      if (!mounted) {
+        return false;
+      }
+
+      final updatedTeam = previousTeam.copyWith(isActive: isActive);
+      final updatedTeams = <AdminTeamListItem>[...state.teams];
+      updatedTeams[teamIndex] = updatedTeam;
+
+      state = _withFilteredTeams(
+        state.copyWith(teams: updatedTeams),
+      );
+      return true;
+    } catch (error) {
+      if (!mounted) {
+        return false;
+      }
+      return false;
+    }
+  }
+
+  Future<bool> updateTeam(String teamId, AdminUpdateTeamRequest request) async {
+    final teamIndex = state.teams.indexWhere((t) => t.id == teamId);
+    if (teamIndex == -1) {
+      return false;
+    }
+
+    state = state.copyWith(isUpdating: true);
+
+    try {
+      final updated = await _service.updateTeam(teamId, request);
+      if (!mounted) {
+        return false;
+      }
+
+      final updatedTeams = <AdminTeamListItem>[...state.teams];
+      updatedTeams[teamIndex] = updated;
+
+      state = _withFilteredTeams(
+        state.copyWith(teams: updatedTeams, isUpdating: false),
+      );
+      return true;
+    } catch (error) {
+      if (!mounted) {
+        return false;
+      }
+      state = state.copyWith(isUpdating: false);
+      return false;
+    }
+  }
+
+  Future<bool> changeTeamMemberPassword(
+    String teamId,
+    String password,
+  ) async {
+    state = state.copyWith(isChangingPassword: true);
+
+    try {
+      await _service.changeTeamMemberPassword(teamId, password);
+      if (!mounted) {
+        return false;
+      }
+      state = state.copyWith(isChangingPassword: false);
+      return true;
+    } catch (error) {
+      if (!mounted) {
+        return false;
+      }
+      state = state.copyWith(isChangingPassword: false);
+      return false;
+    }
+  }
+
   Future<List<AdminTeamMobilePrefixOption>> getMobilePrefixes() {
     return _service.getMobilePrefixes();
   }

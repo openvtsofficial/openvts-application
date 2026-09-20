@@ -10,11 +10,13 @@ import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../core/utils/validators.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../../../shared/widgets/open_vts_loader.dart';
 import '../../../../../shared/widgets/open_vts_role_home.dart';
+import '../../../../../shared/widgets/open_vts_searchable_dropdown.dart';
 import '../../../../../shared/widgets/open_vts_text_field.dart';
 import '../../../../auth/controllers/auth_controller.dart';
 import '../../../controllers/admin_providers.dart';
@@ -22,9 +24,38 @@ import '../../../controllers/admin_settings_controller.dart';
 import '../../../models/admin_settings_model.dart';
 import '../../../models/admin_settings_state.dart';
 import '../../../models/admin_users_model.dart';
+import '../../../utils/location_label_resolver.dart';
 
 const _allowedImageExts = ['png', 'jpg', 'jpeg', 'webp'];
 const int _maxImageBytes = 2 * 1024 * 1024;
+
+String _normalizeHexColor(dynamic value) {
+  if (value == null || (value is String && value.trim().isEmpty)) return '';
+  var hex = value.toString().trim();
+
+  // Handle color names
+  final colorMap = {
+    'black': '#111827',
+    'blue': '#2563EB',
+    'green': '#16A34A',
+    'red': '#DC2626',
+    'orange': '#EA580C',
+    'purple': '#7C3AED',
+  };
+  final normalized = hex.toLowerCase();
+  if (colorMap.containsKey(normalized)) {
+    return colorMap[normalized]!;
+  }
+
+  if (hex.startsWith('0xFF') || hex.startsWith('0xff')) {
+    hex = hex.substring(4);
+  } else if (hex.startsWith('0x')) {
+    hex = hex.substring(2);
+    if (hex.length == 8) hex = hex.substring(2);
+  }
+  if (!hex.startsWith('#')) hex = '#$hex';
+  return hex.toUpperCase();
+}
 
 class ProfileSettingsSection extends ConsumerStatefulWidget {
   const ProfileSettingsSection({super.key, required this.state});
@@ -92,10 +123,10 @@ class _ProfileSettingsSectionState
           children: [
             Text(
               state.sectionErrorMessage ?? 'No profile available.',
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: OpenVtsTypography.primaryFontFamily,
                 fontSize: 12.5,
-                color: OpenVtsColors.textSecondary,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
             const SizedBox(height: OpenVtsSpacing.sm),
@@ -128,30 +159,18 @@ class _ProfileSettingsSectionState
           onVerifyWhatsApp: () => _openOtpSheet(_OtpChannel.whatsapp),
         ),
         const SizedBox(height: OpenVtsSpacing.sm),
-        _ActionCard(
-          icon: Icons.edit_outlined,
-          title: 'Edit Profile',
-          subtitle: 'Update personal details and address.',
-          onTap: _openEditProfileSheet,
-        ),
-        const SizedBox(height: OpenVtsSpacing.xs),
-        _ActionCard(
-          icon: Icons.lock_outline_rounded,
-          title: 'Change Password',
-          subtitle: 'Rotate your account password.',
-          onTap: _openChangePasswordSheet,
-        ),
-        if (profile.company != null) ...[
-          const SizedBox(height: OpenVtsSpacing.xs),
-          _ActionCard(
-            icon: Icons.business_outlined,
-            title: 'Company Details',
-            subtitle: profile.company?.name?.trim().isNotEmpty == true
-                ? profile.company!.name!
-                : 'Edit company information.',
-            onTap: _openEditCompanySheet,
+        AdminProfileAddressCard(profile: profile),
+        const SizedBox(height: OpenVtsSpacing.sm),
+        if (profile.company != null)
+          _CompanyCard(
+            company: profile.company,
+            onEditCompany: _openEditCompanySheet,
           ),
-        ],
+        if (profile.company != null) const SizedBox(height: OpenVtsSpacing.sm),
+        _ActionsCard(
+          onEditProfile: _openEditProfileSheet,
+          onChangePassword: _openChangePasswordSheet,
+        ),
         const SizedBox(height: OpenVtsSpacing.sm),
         _EmailSubscriptionCard(
           subscribed: state.emailSubscribed,
@@ -277,9 +296,10 @@ class _ProfileSettingsSectionState
   }
 
   Future<void> _openChangePasswordSheet() async {
-    final ok = await _showSheet<bool>(child: const _ChangePasswordSheet());
+    final ok = await _showSheet<bool>(child: const AdminChangePasswordSheet());
     if (ok == true && mounted) {
-      ToastHelper.showSuccess('Password changed');
+      ToastHelper.showSuccess('Password changed. Please sign in again.');
+      await ref.read(authControllerProvider.notifier).logoutAllRoles();
     }
   }
 
@@ -375,96 +395,159 @@ class _ProfileHeaderCard extends ConsumerWidget {
     ].where((s) => s.isNotEmpty).join(' ');
 
     return OpenVtsCard(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
+      padding: const EdgeInsets.all(OpenVtsSpacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _AvatarWithEdit(
-            url: url,
-            name: name.isNotEmpty ? name : 'S',
-            isUploading: isUploading,
-            onTap: onPickPhoto,
-          ),
-          const SizedBox(width: OpenVtsSpacing.sm),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name.isNotEmpty ? name : 'Admin',
-                  style: const TextStyle(
-                    fontFamily: OpenVtsTypography.primaryFontFamily,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: OpenVtsColors.textPrimary,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                if (username.isNotEmpty) ...[
-                  const SizedBox(height: 1),
-                  Text(
-                    '@$username',
-                    style: const TextStyle(
-                      fontFamily: OpenVtsTypography.primaryFontFamily,
-                      fontSize: 11.5,
-                      color: OpenVtsColors.textSecondary,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-                if (email.isNotEmpty) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    email,
-                    style: const TextStyle(
-                      fontFamily: OpenVtsTypography.primaryFontFamily,
-                      fontSize: 11.5,
-                      color: OpenVtsColors.textSecondary,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-                if (mobile.isNotEmpty) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    mobile,
-                    style: const TextStyle(
-                      fontFamily: OpenVtsTypography.primaryFontFamily,
-                      fontSize: 11.5,
-                      color: OpenVtsColors.textSecondary,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-                if (profile.credits != null) ...[
-                  const SizedBox(height: OpenVtsSpacing.xs),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 3,
-                    ),
-                    decoration: BoxDecoration(
-                      color: OpenVtsColors.surface,
-                      borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
-                      border: Border.all(color: OpenVtsColors.border),
-                    ),
-                    child: Text(
-                      '${profile.credits!.toStringAsFixed(0)} credits',
-                      style: const TextStyle(
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              _AvatarWithEdit(
+                url: url,
+                name: name.isNotEmpty ? name : 'S',
+                isUploading: isUploading,
+                onTap: onPickPhoto,
+              ),
+              const SizedBox(width: OpenVtsSpacing.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      name.isNotEmpty ? name : 'Admin',
+                      style: TextStyle(
                         fontFamily: OpenVtsTypography.primaryFontFamily,
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.w600,
-                        color: OpenVtsColors.textPrimary,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: Theme.of(context).colorScheme.onSurface,
+                        height: 1.2,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (username.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        '@$username',
+                        style: TextStyle(
+                          fontFamily: OpenVtsTypography.primaryFontFamily,
+                          fontSize: 12,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          height: 1.2,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (email.isNotEmpty || mobile.isNotEmpty) ...[
+            const SizedBox(height: OpenVtsSpacing.sm),
+            if (email.isNotEmpty)
+              Row(
+                children: [
+                  Icon(Icons.mail_outline_rounded,
+                      size: 14, color: Theme.of(context).colorScheme.outline),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      email,
+                      style: TextStyle(
+                        fontFamily: OpenVtsTypography.primaryFontFamily,
+                        fontSize: 12,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        height: 1.2,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],
-              ],
+              ),
+            if (email.isNotEmpty && mobile.isNotEmpty)
+              const SizedBox(height: 4),
+            if (mobile.isNotEmpty)
+              Row(
+                children: [
+                  Icon(Icons.phone_outlined,
+                      size: 14, color: Theme.of(context).colorScheme.outline),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      mobile,
+                      style: TextStyle(
+                        fontFamily: OpenVtsTypography.primaryFontFamily,
+                        fontSize: 12,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        height: 1.2,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+          ],
+          if (profile.credits != null) ...[
+            const SizedBox(height: OpenVtsSpacing.md),
+            Divider(
+                height: 1, color: Theme.of(context).colorScheme.outlineVariant),
+            const SizedBox(height: OpenVtsSpacing.md),
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: OpenVtsSpacing.sm,
+                vertical: OpenVtsSpacing.sm,
+              ),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                borderRadius: BorderRadius.circular(OpenVtsRadius.md),
+                border: Border.all(
+                    color: Theme.of(context).colorScheme.outlineVariant),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.credit_card_outlined,
+                      size: 16,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Credits',
+                          style: TextStyle(
+                            fontFamily: OpenVtsTypography.primaryFontFamily,
+                            fontSize: 11,
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                            height: 1.1,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          profile.credits!.toStringAsFixed(0),
+                          style: TextStyle(
+                            fontFamily: OpenVtsTypography.primaryFontFamily,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: Theme.of(context).colorScheme.onSurface,
+                            height: 1.1,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
+          ],
         ],
       ),
     );
@@ -486,6 +569,7 @@ class _AvatarWithEdit extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final hasUrl = (url ?? '').trim().isNotEmpty;
     final initial = name.isNotEmpty ? name[0].toUpperCase() : 'S';
 
@@ -499,8 +583,11 @@ class _AvatarWithEdit extends StatelessWidget {
             width: 56,
             height: 56,
             decoration: BoxDecoration(
-              color: OpenVtsColors.brandInk,
+              color: isDark ? OpenVtsColors.brandInk : OpenVtsColors.white,
               borderRadius: BorderRadius.circular(OpenVtsRadius.md),
+              border: isDark
+                  ? null
+                  : Border.all(color: OpenVtsColors.border, width: 1),
               image: hasUrl
                   ? DecorationImage(
                       image: NetworkImage(url!),
@@ -514,11 +601,12 @@ class _AvatarWithEdit extends StatelessWidget {
                 ? null
                 : Text(
                     initial,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: OpenVtsTypography.primaryFontFamily,
                       fontSize: 20,
                       fontWeight: FontWeight.w700,
-                      color: OpenVtsColors.white,
+                      color:
+                          isDark ? OpenVtsColors.white : OpenVtsColors.brandInk,
                     ),
                   ),
           ),
@@ -526,7 +614,9 @@ class _AvatarWithEdit extends StatelessWidget {
             Positioned.fill(
               child: DecoratedBox(
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.45),
+                  color: isDark
+                      ? Colors.black.withValues(alpha: 0.45)
+                      : OpenVtsColors.darkTextPrimary.withValues(alpha: 0.45),
                   borderRadius: BorderRadius.circular(OpenVtsRadius.md),
                 ),
                 child: const Center(
@@ -555,16 +645,16 @@ class _AvatarWithEdit extends StatelessWidget {
                   width: 22,
                   height: 22,
                   decoration: BoxDecoration(
-                    color: OpenVtsColors.white,
+                    color: Theme.of(context).colorScheme.surface,
                     border: Border.all(
-                      color: OpenVtsColors.border,
+                      color: Theme.of(context).colorScheme.outlineVariant,
                     ),
                     borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.camera_alt_rounded,
                     size: 12,
-                    color: OpenVtsColors.textPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
               ),
@@ -609,9 +699,9 @@ class _VerificationCard extends StatelessWidget {
             busy: isRequestingEmailOtp,
             onVerify: onVerifyEmail,
           ),
-          const Divider(
+          Divider(
             height: OpenVtsSpacing.md,
-            color: OpenVtsColors.border,
+            color: Theme.of(context).colorScheme.outlineVariant,
           ),
           _VerificationRow(
             icon: Icons.chat_outlined,
@@ -651,7 +741,8 @@ class _VerificationRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 18, color: OpenVtsColors.textSecondary),
+        Icon(icon,
+            size: 18, color: Theme.of(context).colorScheme.onSurfaceVariant),
         const SizedBox(width: OpenVtsSpacing.xs),
         Expanded(
           child: Column(
@@ -659,10 +750,10 @@ class _VerificationRow extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: OpenVtsTypography.primaryFontFamily,
                   fontSize: 11,
-                  color: OpenVtsColors.textTertiary,
+                  color: Theme.of(context).colorScheme.outline,
                   fontWeight: FontWeight.w600,
                   letterSpacing: 0.4,
                 ),
@@ -670,10 +761,10 @@ class _VerificationRow extends StatelessWidget {
               const SizedBox(height: 1),
               Text(
                 value.isNotEmpty ? value : '—',
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: OpenVtsTypography.primaryFontFamily,
                   fontSize: 12.5,
-                  color: OpenVtsColors.textPrimary,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -705,26 +796,46 @@ class _VerificationRow extends StatelessWidget {
         else
           SizedBox(
             height: 30,
-            child: TextButton(
-              onPressed: busy || value.isEmpty ? null : onVerify,
-              style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                minimumSize: const Size(0, 30),
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                foregroundColor: OpenVtsColors.brandInk,
-                textStyle: const TextStyle(
-                  fontFamily: OpenVtsTypography.primaryFontFamily,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              child: busy
-                  ? const SizedBox(
-                      width: 14,
-                      height: 14,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Text('Verify'),
+            child: Builder(
+              builder: (context) {
+                final isDark = Theme.of(context).brightness == Brightness.dark;
+                return TextButton(
+                  onPressed: busy || value.isEmpty ? null : onVerify,
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    minimumSize: const Size(0, 30),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    foregroundColor:
+                        isDark ? OpenVtsColors.white : Colors.black,
+                    backgroundColor:
+                        isDark ? OpenVtsColors.brandInk : Colors.white,
+                    side: BorderSide(
+                      color: isDark ? OpenVtsColors.white : Colors.black,
+                      width: 1,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
+                    ),
+                    textStyle: const TextStyle(
+                      fontFamily: OpenVtsTypography.primaryFontFamily,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  child: busy
+                      ? SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation(
+                              isDark ? OpenVtsColors.white : Colors.black,
+                            ),
+                          ),
+                        )
+                      : const Text('Verify'),
+                );
+              },
             ),
           ),
       ],
@@ -733,74 +844,359 @@ class _VerificationRow extends StatelessWidget {
 }
 
 // =====================================================================
-// Action card
+// Address card
 // =====================================================================
 
-class _ActionCard extends StatelessWidget {
-  const _ActionCard({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
+class AdminProfileAddressCard extends ConsumerStatefulWidget {
+  const AdminProfileAddressCard({
+    super.key,
+    required this.profile,
+    this.initialCountries = const [],
+    this.initialStates = const [],
+    this.initialCities = const [],
+    this.loadCatalogs = true,
   });
 
-  final IconData icon;
+  final AdminProfileSettings profile;
+  final List<AdminUserCountryOption> initialCountries;
+  final List<AdminUserStateOption> initialStates;
+  final List<AdminUserCityOption> initialCities;
+  final bool loadCatalogs;
+
+  @override
+  ConsumerState<AdminProfileAddressCard> createState() =>
+      _AdminProfileAddressCardState();
+}
+
+class _AdminProfileAddressCardState
+    extends ConsumerState<AdminProfileAddressCard> {
+  late List<AdminUserCountryOption> _countries;
+  late List<AdminUserStateOption> _states;
+  late List<AdminUserCityOption> _cities;
+
+  @override
+  void initState() {
+    super.initState();
+    _countries = widget.initialCountries;
+    _states = widget.initialStates;
+    _cities = widget.initialCities;
+    if (widget.loadCatalogs) {
+      unawaited(_loadLocationLabels());
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant AdminProfileAddressCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final previous = oldWidget.profile.address;
+    final current = widget.profile.address;
+    if (previous?.countryCode != current?.countryCode ||
+        previous?.stateCode != current?.stateCode ||
+        previous?.cityValue != current?.cityValue) {
+      if (widget.loadCatalogs) {
+        unawaited(_loadLocationLabels());
+      }
+    }
+  }
+
+  Future<void> _loadLocationLabels() async {
+    final address = widget.profile.address;
+    final countryCode = address?.countryCode?.trim() ?? '';
+    final stateCode = address?.stateCode?.trim() ?? '';
+    final controller = ref.read(adminUsersControllerProvider.notifier);
+
+    try {
+      final countries = await controller.getCountries();
+      final states = countryCode.isEmpty
+          ? const <AdminUserStateOption>[]
+          : await controller.getStates(countryCode);
+      final cities = countryCode.isEmpty || stateCode.isEmpty
+          ? const <AdminUserCityOption>[]
+          : await controller.getCities(countryCode, stateCode);
+      if (!mounted || widget.profile.address != address) return;
+      setState(() {
+        _countries = countries;
+        _states = states;
+        _cities = cities;
+      });
+    } catch (_) {
+      // The synchronous resolver still supplies local country/state labels.
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final profile = widget.profile;
+    final address = profile.address;
+    final addressLine = address?.addressLine ?? '';
+    final countryCode = address?.countryCode ?? '';
+    final stateCode = address?.stateCode ?? '';
+    final country = (address?.countryName?.trim().isNotEmpty ?? false)
+        ? address!.countryName!.trim()
+        : LocationLabelResolver.resolveCountry(
+            countryCode,
+            apiOptions: _countries,
+          );
+    final state = (address?.stateName?.trim().isNotEmpty ?? false)
+        ? address!.stateName!.trim()
+        : LocationLabelResolver.resolveState(
+            countryCode,
+            stateCode,
+            apiOptions: _states,
+          );
+    final explicitCity = address?.cityName ?? profile.cityName;
+    final city = (explicitCity?.trim().isNotEmpty ?? false)
+        ? explicitCity!.trim()
+        : LocationLabelResolver.resolveCity(
+            address?.cityValue ?? '',
+            apiOptions: _cities,
+          );
+    final pincode = address?.pincode ?? '';
+
+    final hasAddress = addressLine.trim().isNotEmpty ||
+        countryCode.trim().isNotEmpty ||
+        stateCode.trim().isNotEmpty ||
+        city.trim().isNotEmpty ||
+        pincode.trim().isNotEmpty;
+
+    if (!hasAddress) return const SizedBox.shrink();
+
+    return _SectionCard(
+      title: 'ADDRESS',
+      children: [
+        if (addressLine.trim().isNotEmpty)
+          _InfoRow(
+            label: 'Address',
+            value: addressLine,
+            icon: Icons.home_outlined,
+          ),
+        if (countryCode.trim().isNotEmpty)
+          _InfoRow(
+            label: 'Country',
+            value: country,
+            icon: Icons.public_outlined,
+          ),
+        if (stateCode.trim().isNotEmpty)
+          _InfoRow(
+            label: 'State',
+            value: state,
+            icon: Icons.map_outlined,
+          ),
+        _InfoRow(
+          label: 'City',
+          value: city.trim().isNotEmpty ? city : '—',
+          icon: Icons.location_city_outlined,
+        ),
+        if (pincode.trim().isNotEmpty)
+          _InfoRow(
+            label: 'Pincode',
+            value: pincode,
+            icon: Icons.local_post_office_outlined,
+          ),
+      ],
+    );
+  }
+}
+
+// =====================================================================
+// Company card
+// =====================================================================
+
+class _CompanyCard extends StatelessWidget {
+  const _CompanyCard({
+    required this.company,
+    required this.onEditCompany,
+  });
+
+  final AdminCompanySettings? company;
+  final VoidCallback onEditCompany;
+
+  @override
+  Widget build(BuildContext context) {
+    final companyName = company?.name?.trim() ?? '';
+    final website = company?.websiteUrl ?? '';
+    final domain = company?.customDomain ?? '';
+
+    return _SectionCard(
+      title: 'COMPANY',
+      trailing: SizedBox(
+        width: 32,
+        height: 32,
+        child: IconButton(
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+          icon: Icon(
+            Icons.edit_outlined,
+            size: 16,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+          tooltip: 'Edit company',
+          onPressed: onEditCompany,
+        ),
+      ),
+      children: [
+        if (companyName.isNotEmpty)
+          _InfoRow(
+            label: 'Company',
+            value: companyName,
+            icon: Icons.business_outlined,
+          ),
+        if (website.isNotEmpty)
+          _InfoRow(
+            label: 'Website',
+            value: website,
+            icon: Icons.language_outlined,
+          ),
+        if (domain.isNotEmpty)
+          _InfoRow(
+            label: 'Domain',
+            value: domain,
+            icon: Icons.dns_outlined,
+          ),
+      ],
+    );
+  }
+}
+
+// =====================================================================
+// Actions card
+// =====================================================================
+
+class _ActionsCard extends StatelessWidget {
+  const _ActionsCard({
+    required this.onEditProfile,
+    required this.onChangePassword,
+  });
+
+  final VoidCallback onEditProfile;
+  final VoidCallback onChangePassword;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: OpenVtsButton(
+            label: 'Edit Profile',
+            variant: OpenVtsButtonVariant.secondary,
+            onPressed: onEditProfile,
+          ),
+        ),
+        const SizedBox(width: OpenVtsSpacing.sm),
+        Expanded(
+          child: OpenVtsButton(
+            label: 'Change Password',
+            variant: OpenVtsButtonVariant.secondary,
+            onPressed: onChangePassword,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// =====================================================================
+// Section card
+// =====================================================================
+
+class _SectionCard extends StatelessWidget {
+  const _SectionCard({
+    required this.title,
+    required this.children,
+    this.trailing,
+  });
+
   final String title;
-  final String subtitle;
-  final VoidCallback onTap;
+  final List<Widget> children;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
     return OpenVtsCard(
-      padding: const EdgeInsets.symmetric(
-        horizontal: OpenVtsSpacing.md,
-        vertical: OpenVtsSpacing.sm,
+      padding: const EdgeInsets.fromLTRB(
+        OpenVtsSpacing.md,
+        OpenVtsSpacing.sm,
+        OpenVtsSpacing.md,
+        OpenVtsSpacing.md,
       ),
-      onTap: onTap,
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 30,
-            height: 30,
-            decoration: BoxDecoration(
-              color: OpenVtsColors.surface,
-              border: Border.all(color: OpenVtsColors.border),
-              borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-            ),
-            child: Icon(icon, size: 16, color: OpenVtsColors.textPrimary),
-          ),
-          const SizedBox(width: OpenVtsSpacing.sm),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
+          Row(
+            children: [
+              Expanded(
+                child: Text(
                   title,
-                  style: const TextStyle(
-                    fontFamily: OpenVtsTypography.primaryFontFamily,
-                    fontSize: 13.5,
-                    fontWeight: FontWeight.w600,
-                    color: OpenVtsColors.textPrimary,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    letterSpacing: 0.4,
                   ),
                 ),
-                const SizedBox(height: 1),
-                Text(
-                  subtitle,
-                  style: const TextStyle(
-                    fontFamily: OpenVtsTypography.primaryFontFamily,
-                    fontSize: 11.5,
-                    color: OpenVtsColors.textSecondary,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
+              ),
+              if (trailing != null) trailing!,
+            ],
+          ),
+          const SizedBox(height: OpenVtsSpacing.xs),
+          Divider(
+              height: 1, color: Theme.of(context).colorScheme.outlineVariant),
+          const SizedBox(height: OpenVtsSpacing.xs),
+          ...children,
+        ],
+      ),
+    );
+  }
+}
+
+// =====================================================================
+// Info row
+// =====================================================================
+
+class _InfoRow extends StatelessWidget {
+  const _InfoRow({
+    required this.label,
+    required this.value,
+    required this.icon,
+  });
+
+  final String label;
+  final String value;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: OpenVtsSpacing.xs),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon,
+              size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
+          const SizedBox(width: 8),
+          SizedBox(
+            width: 100,
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
           ),
-          const Icon(
-            Icons.chevron_right_rounded,
-            size: 18,
-            color: OpenVtsColors.textTertiary,
+          const SizedBox(width: OpenVtsSpacing.xs),
+          Expanded(
+            child: Text(
+              value.trim().isEmpty ? '—' : value.trim(),
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
         ],
       ),
@@ -841,14 +1237,15 @@ class _EmailSubscriptionCard extends StatelessWidget {
             width: 30,
             height: 30,
             decoration: BoxDecoration(
-              color: OpenVtsColors.surface,
-              border: Border.all(color: OpenVtsColors.border),
+              color: Theme.of(context).colorScheme.surface,
+              border: Border.all(
+                  color: Theme.of(context).colorScheme.outlineVariant),
               borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.notifications_none_rounded,
               size: 16,
-              color: OpenVtsColors.textPrimary,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
           const SizedBox(width: OpenVtsSpacing.sm),
@@ -856,13 +1253,13 @@ class _EmailSubscriptionCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Email Subscription',
                   style: TextStyle(
                     fontFamily: OpenVtsTypography.primaryFontFamily,
                     fontSize: 13.5,
                     fontWeight: FontWeight.w600,
-                    color: OpenVtsColors.textPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 const SizedBox(height: 1),
@@ -874,10 +1271,10 @@ class _EmailSubscriptionCard extends StatelessWidget {
                           : isSubscribed
                               ? 'Subscribed'
                               : 'Not subscribed',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: OpenVtsTypography.primaryFontFamily,
                     fontSize: 11.5,
-                    color: OpenVtsColors.textSecondary,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
               ],
@@ -928,18 +1325,19 @@ class _LogoutCard extends StatelessWidget {
                 width: 28,
                 height: 28,
                 decoration: BoxDecoration(
-                  color: OpenVtsColors.surface,
-                  border: Border.all(color: OpenVtsColors.border),
+                  color: Theme.of(context).colorScheme.surface,
+                  border: Border.all(
+                      color: Theme.of(context).colorScheme.outlineVariant),
                   borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.logout_rounded,
                   size: 16,
-                  color: OpenVtsColors.textPrimary,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
               const SizedBox(width: OpenVtsSpacing.xs),
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -949,16 +1347,16 @@ class _LogoutCard extends StatelessWidget {
                         fontFamily: OpenVtsTypography.primaryFontFamily,
                         fontSize: 13.5,
                         fontWeight: FontWeight.w600,
-                        color: OpenVtsColors.textPrimary,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
-                    SizedBox(height: 1),
+                    const SizedBox(height: 1),
                     Text(
                       'End this session on this device.',
                       style: TextStyle(
                         fontFamily: OpenVtsTypography.primaryFontFamily,
                         fontSize: 11,
-                        color: OpenVtsColors.textSecondary,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ],
@@ -997,9 +1395,10 @@ class _BottomSheetShell extends StatelessWidget {
         child: Container(
           margin: const EdgeInsets.all(OpenVtsSpacing.sm),
           decoration: BoxDecoration(
-            color: OpenVtsColors.surfaceElevated,
+            color: Theme.of(context).colorScheme.surfaceContainer,
             borderRadius: BorderRadius.circular(OpenVtsRadius.lg),
-            border: Border.all(color: OpenVtsColors.border),
+            border:
+                Border.all(color: Theme.of(context).colorScheme.outlineVariant),
           ),
           child: ConstrainedBox(
             constraints: BoxConstraints(
@@ -1036,21 +1435,21 @@ class _SheetHeader extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: OpenVtsTypography.primaryFontFamily,
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
-                    color: OpenVtsColors.textPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 if (subtitle != null) ...[
                   const SizedBox(height: 2),
                   Text(
                     subtitle!,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: OpenVtsTypography.primaryFontFamily,
                       fontSize: 12,
-                      color: OpenVtsColors.textSecondary,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ],
@@ -1091,7 +1490,7 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
   String? _mobilePrefix;
   String? _countryCode;
   String? _stateCode;
-  String? _cityName;
+  String? _cityValue;
 
   List<AdminUserMobilePrefixOption> _prefixes = [];
   List<AdminUserCountryOption> _countries = [];
@@ -1102,6 +1501,10 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
   bool _loadingStates = false;
   bool _loadingCities = false;
   bool _submitting = false;
+  bool _isInitializingProfileLocation = true;
+
+  String? _initialCityValue;
+  String? _initialCityDisplayName;
 
   @override
   void initState() {
@@ -1118,7 +1521,12 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
     _countryCode =
         a?.countryCode?.trim().isNotEmpty == true ? a!.countryCode : null;
     _stateCode = a?.stateCode?.trim().isNotEmpty == true ? a!.stateCode : null;
-    _cityName = a?.cityName?.trim().isNotEmpty == true ? a!.cityName : null;
+
+    _initialCityValue = a?.cityValue;
+    _initialCityDisplayName = a?.cityDisplayName;
+
+    _cityValue = _initialCityValue;
+
     unawaited(_loadCatalogs());
   }
 
@@ -1163,8 +1571,9 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
       _states = [];
     });
     try {
-      final states =
-          await ref.read(adminUsersControllerProvider.notifier).getStates(countryCode);
+      final states = await ref
+          .read(adminUsersControllerProvider.notifier)
+          .getStates(countryCode);
       if (!mounted) return;
       setState(() {
         _states = states;
@@ -1190,9 +1599,67 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
         _cities = cities;
         _loadingCities = false;
       });
+
+      // Try to match initial city using multiple strategies
+      AdminUserCityOption? matchedOption;
+
+      if (_initialCityValue != null && _initialCityValue!.isNotEmpty) {
+        // Try exact match on value (id or code)
+        try {
+          matchedOption =
+              _cities.firstWhere((c) => c.value == _initialCityValue);
+        } catch (_) {
+          matchedOption = null;
+        }
+      }
+
+      if (matchedOption == null &&
+          _initialCityDisplayName != null &&
+          _initialCityDisplayName!.isNotEmpty) {
+        // Try case-insensitive match on label/name
+        try {
+          matchedOption = _cities.firstWhere(
+            (c) =>
+                c.label.toLowerCase() == _initialCityDisplayName!.toLowerCase(),
+          );
+        } catch (_) {
+          matchedOption = null;
+        }
+      }
+
+      if (!mounted) return;
+      if (matchedOption != null) {
+        // Found exact match in list - sync state to matched option
+        setState(() {
+          _cityValue = matchedOption!.value;
+        });
+      } else if (matchedOption == null &&
+          (_initialCityValue != null || _initialCityDisplayName != null)) {
+        // Not found, inject synthetic option for backward compatibility
+        final displayLabel = _initialCityDisplayName ?? _initialCityValue ?? '';
+        final syntheticValue =
+            _initialCityValue ?? _initialCityDisplayName ?? '';
+        setState(() {
+          _cities = [
+            AdminUserCityOption(
+              label: displayLabel,
+              value: syntheticValue,
+            ),
+            ..._cities,
+          ];
+          _cityValue = syntheticValue;
+        });
+      }
+
+      // Mark initialization as complete
+      if (!mounted) return;
+      setState(() => _isInitializingProfileLocation = false);
     } catch (_) {
       if (!mounted) return;
-      setState(() => _loadingCities = false);
+      setState(() {
+        _loadingCities = false;
+        _isInitializingProfileLocation = false;
+      });
     }
   }
 
@@ -1200,6 +1667,7 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _submitting = true);
     final controller = ref.read(adminSettingsControllerProvider.notifier);
+
     final ok = await controller.updateProfile(
       AdminUpdateProfileRequest(
         name: _name.text.trim(),
@@ -1210,7 +1678,7 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
             _addressLine.text.trim().isEmpty ? null : _addressLine.text.trim(),
         countryCode: _countryCode,
         stateCode: _stateCode,
-        cityName: _cityName,
+        cityName: _cityValue,
         pincode: _pincode.text.trim().isEmpty ? null : _pincode.text.trim(),
       ),
     );
@@ -1258,41 +1726,24 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
                   OpenVtsTextField(
                     label: 'Name',
                     controller: _name,
-                    validator: (v) =>
-                        (v ?? '').trim().isEmpty ? 'Name is required' : null,
+                    validator: Validators.adminName,
                   ),
                   const SizedBox(height: OpenVtsSpacing.sm),
                   OpenVtsTextField(
-                    label: 'Email',
+                    label: 'Email (optional)',
                     controller: _email,
                     keyboardType: TextInputType.emailAddress,
-                    validator: (v) {
-                      final t = (v ?? '').trim();
-                      if (t.isEmpty) return 'Email is required';
-                      if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(t)) {
-                        return 'Enter a valid email';
-                      }
-                      return null;
-                    },
+                    validator: Validators.adminEmailOptional,
                   ),
                   const SizedBox(height: OpenVtsSpacing.sm),
                   Row(
                     children: [
                       Expanded(
                         flex: 4,
-                        child: _DropdownField<String>(
-                          label: 'Prefix',
+                        child: AdminProfileMobilePrefixDropdown(
                           value: _mobilePrefix,
-                          items: _prefixes
-                              .map(
-                                (p) => DropdownMenuItem(
-                                  value: p.value,
-                                  child: Text(
-                                    '${p.value} (${p.countryCode})',
-                                  ),
-                                ),
-                              )
-                              .toList(),
+                          prefixes: _prefixes,
+                          isLoading: _loadingCatalogs,
                           onChanged: (v) => setState(() => _mobilePrefix = v),
                         ),
                       ),
@@ -1303,6 +1754,12 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
                           label: 'Mobile',
                           controller: _mobile,
                           keyboardType: TextInputType.phone,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                            LengthLimitingTextInputFormatter(
+                                Validators.maxMobileNumberLength),
+                          ],
+                          validator: Validators.mobileNumberOptional,
                         ),
                       ),
                     ],
@@ -1313,14 +1770,15 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
                     controller: _addressLine,
                   ),
                   const SizedBox(height: OpenVtsSpacing.sm),
-                  _DropdownField<String>(
+                  OpenVtsSearchableDropdown<String>(
                     label: 'Country',
                     value: _countryCode,
-                    items: _countries
+                    options: _countries
                         .map(
-                          (c) => DropdownMenuItem(
+                          (c) => OpenVtsDropdownOption(
                             value: c.value,
-                            child: Text(c.label),
+                            label: c.label,
+                            searchText: c.value,
                           ),
                         )
                         .toList(),
@@ -1328,7 +1786,9 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
                       setState(() {
                         _countryCode = v;
                         _stateCode = null;
-                        _cityName = null;
+                        if (!_isInitializingProfileLocation) {
+                          _cityValue = null;
+                        }
                         _states = [];
                         _cities = [];
                       });
@@ -1336,23 +1796,26 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
                     },
                   ),
                   const SizedBox(height: OpenVtsSpacing.sm),
-                  _DropdownField<String>(
+                  OpenVtsSearchableDropdown<String>(
                     label: 'State',
                     value: _stateCode,
-                    enabled: !_loadingStates && _states.isNotEmpty,
-                    busy: _loadingStates,
-                    items: _states
+                    enabled: !_loadingStates,
+                    isLoading: _loadingStates,
+                    options: _states
                         .map(
-                          (s) => DropdownMenuItem(
+                          (s) => OpenVtsDropdownOption(
                             value: s.value,
-                            child: Text(s.label),
+                            label: s.label,
+                            searchText: s.value,
                           ),
                         )
                         .toList(),
                     onChanged: (v) {
                       setState(() {
                         _stateCode = v;
-                        _cityName = null;
+                        if (!_isInitializingProfileLocation) {
+                          _cityValue = null;
+                        }
                         _cities = [];
                       });
                       if (v != null && _countryCode != null) {
@@ -1361,25 +1824,38 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
                     },
                   ),
                   const SizedBox(height: OpenVtsSpacing.sm),
-                  _DropdownField<String>(
+                  OpenVtsSearchableDropdown<String>(
                     label: 'City',
-                    value: _cityName,
-                    enabled: !_loadingCities && _cities.isNotEmpty,
-                    busy: _loadingCities,
-                    items: _cities
+                    value: _cityValue,
+                    enabled: !_loadingCities &&
+                        (_cities.isNotEmpty || _cityValue != null),
+                    isLoading: _loadingCities,
+                    options: _cities
                         .map(
-                          (c) => DropdownMenuItem(
-                            value: c.label,
-                            child: Text(c.label),
+                          (c) => OpenVtsDropdownOption(
+                            value: c.value,
+                            label: c.label,
                           ),
                         )
                         .toList(),
-                    onChanged: (v) => setState(() => _cityName = v),
+                    onChanged: (v) {
+                      setState(() {
+                        _cityValue = v;
+                        _isInitializingProfileLocation = false;
+                      });
+                    },
                   ),
                   const SizedBox(height: OpenVtsSpacing.sm),
                   OpenVtsTextField(
                     label: 'Pincode',
                     controller: _pincode,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(
+                          Validators.maxPincodeLength),
+                    ],
+                    validator: Validators.pincodeOptional,
                   ),
                   const SizedBox(height: OpenVtsSpacing.md),
                   OpenVtsButton(
@@ -1393,6 +1869,42 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
           ),
         ),
       ],
+    );
+  }
+}
+
+class AdminProfileMobilePrefixDropdown extends StatelessWidget {
+  const AdminProfileMobilePrefixDropdown({
+    required this.value,
+    required this.prefixes,
+    required this.onChanged,
+    this.isLoading = false,
+    super.key,
+  });
+
+  final String? value;
+  final List<AdminUserMobilePrefixOption> prefixes;
+  final ValueChanged<String?> onChanged;
+  final bool isLoading;
+
+  @override
+  Widget build(BuildContext context) {
+    return OpenVtsSearchableDropdown<String>(
+      label: 'Prefix',
+      value: value,
+      options: prefixes
+          .map(
+            (prefix) => OpenVtsDropdownOption<String>(
+              value: prefix.value,
+              label: '${prefix.value} (${prefix.countryCode})',
+              searchText: '${prefix.value} ${prefix.countryCode}',
+            ),
+          )
+          .toList(growable: false),
+      searchHintText: 'Search dial or country code',
+      leadingIcon: Icons.phone_android_rounded,
+      isLoading: isLoading,
+      onChanged: onChanged,
     );
   }
 }
@@ -1421,11 +1933,11 @@ class _DropdownField<T> extends StatelessWidget {
       children: [
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontFamily: OpenVtsTypography.primaryFontFamily,
             fontSize: 11,
             fontWeight: FontWeight.w600,
-            color: OpenVtsColors.textSecondary,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
             letterSpacing: 0.3,
           ),
         ),
@@ -1438,14 +1950,16 @@ class _DropdownField<T> extends StatelessWidget {
               vertical: 10,
             ),
             filled: true,
-            fillColor: OpenVtsColors.surface,
+            fillColor: Theme.of(context).colorScheme.surface,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-              borderSide: const BorderSide(color: OpenVtsColors.border),
+              borderSide: BorderSide(
+                  color: Theme.of(context).colorScheme.outlineVariant),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-              borderSide: const BorderSide(color: OpenVtsColors.border),
+              borderSide: BorderSide(
+                  color: Theme.of(context).colorScheme.outlineVariant),
             ),
             suffixIcon: busy
                 ? const Padding(
@@ -1471,10 +1985,12 @@ class _DropdownField<T> extends StatelessWidget {
                             value: value,
                             child: Text(
                               value.toString(),
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontFamily: OpenVtsTypography.primaryFontFamily,
                                 fontSize: 12.5,
-                                color: OpenVtsColors.textTertiary,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
                               ),
                             ),
                           ),
@@ -1486,18 +2002,18 @@ class _DropdownField<T> extends StatelessWidget {
                   isDense: true,
                   onChanged: enabled ? onChanged : null,
                   items: safeItems,
-                  hint: const Text(
+                  hint: Text(
                     'Select',
                     style: TextStyle(
                       fontFamily: OpenVtsTypography.primaryFontFamily,
                       fontSize: 12.5,
-                      color: OpenVtsColors.textTertiary,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: OpenVtsTypography.primaryFontFamily,
                     fontSize: 12.5,
-                    color: OpenVtsColors.textPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 );
               },
@@ -1513,21 +2029,23 @@ class _DropdownField<T> extends StatelessWidget {
 // Change Password sheet
 // =====================================================================
 
-class _ChangePasswordSheet extends ConsumerStatefulWidget {
-  const _ChangePasswordSheet();
+class AdminChangePasswordSheet extends ConsumerStatefulWidget {
+  const AdminChangePasswordSheet({super.key});
 
   @override
-  ConsumerState<_ChangePasswordSheet> createState() =>
+  ConsumerState<AdminChangePasswordSheet> createState() =>
       _ChangePasswordSheetState();
 }
 
-class _ChangePasswordSheetState extends ConsumerState<_ChangePasswordSheet> {
+class _ChangePasswordSheetState
+    extends ConsumerState<AdminChangePasswordSheet> {
   final _formKey = GlobalKey<FormState>();
   final _current = TextEditingController();
   final _next = TextEditingController();
   final _confirm = TextEditingController();
   bool _obscureCurrent = true;
   bool _obscureNext = true;
+  bool _obscureConfirm = true;
   bool _submitting = false;
 
   @override
@@ -1587,11 +2105,16 @@ class _ChangePasswordSheetState extends ConsumerState<_ChangePasswordSheet> {
                     controller: _current,
                     obscureText: _obscureCurrent,
                     suffixIcon: IconButton(
+                      key: const ValueKey('current-password-visibility'),
+                      tooltip: _obscureCurrent
+                          ? 'Show current password'
+                          : 'Hide current password',
                       icon: Icon(
                         _obscureCurrent
                             ? Icons.visibility_off_outlined
                             : Icons.visibility_outlined,
                         size: 18,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                       onPressed: () => setState(
                         () => _obscureCurrent = !_obscureCurrent,
@@ -1606,11 +2129,16 @@ class _ChangePasswordSheetState extends ConsumerState<_ChangePasswordSheet> {
                     controller: _next,
                     obscureText: _obscureNext,
                     suffixIcon: IconButton(
+                      key: const ValueKey('new-password-visibility'),
+                      tooltip: _obscureNext
+                          ? 'Show new password'
+                          : 'Hide new password',
                       icon: Icon(
                         _obscureNext
                             ? Icons.visibility_off_outlined
                             : Icons.visibility_outlined,
                         size: 18,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                       onPressed: () =>
                           setState(() => _obscureNext = !_obscureNext),
@@ -1627,7 +2155,23 @@ class _ChangePasswordSheetState extends ConsumerState<_ChangePasswordSheet> {
                   OpenVtsTextField(
                     label: 'Confirm new password',
                     controller: _confirm,
-                    obscureText: _obscureNext,
+                    obscureText: _obscureConfirm,
+                    suffixIcon: IconButton(
+                      key: const ValueKey('confirm-password-visibility'),
+                      tooltip: _obscureConfirm
+                          ? 'Show confirm new password'
+                          : 'Hide confirm new password',
+                      icon: Icon(
+                        _obscureConfirm
+                            ? Icons.visibility_off_outlined
+                            : Icons.visibility_outlined,
+                        size: 18,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                      onPressed: () => setState(
+                        () => _obscureConfirm = !_obscureConfirm,
+                      ),
+                    ),
                     validator: (v) {
                       if ((v ?? '') != _next.text) {
                         return 'Passwords do not match';
@@ -1677,6 +2221,15 @@ class _EditCompanySheetState extends ConsumerState<_EditCompanySheet> {
   late final TextEditingController _github;
   bool _submitting = false;
 
+  static const List<Map<String, String>> _colorOptions = [
+    {'name': 'Black', 'hex': '#111827'},
+    {'name': 'Blue', 'hex': '#2563EB'},
+    {'name': 'Green', 'hex': '#16A34A'},
+    {'name': 'Red', 'hex': '#DC2626'},
+    {'name': 'Orange', 'hex': '#EA580C'},
+    {'name': 'Purple', 'hex': '#7C3AED'},
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -1685,7 +2238,18 @@ class _EditCompanySheetState extends ConsumerState<_EditCompanySheet> {
     _name = TextEditingController(text: c.name ?? '');
     _website = TextEditingController(text: c.websiteUrl ?? '');
     _domain = TextEditingController(text: c.customDomain ?? '');
-    _primaryColor = TextEditingController(text: c.primaryColor ?? '');
+
+    // Map existing color to dropdown option
+    String? selectedColor;
+    if (c.primaryColor != null) {
+      final normalized = _normalizeHexColor(c.primaryColor!);
+      selectedColor = _colorOptions.cast<Map<String, String>?>().firstWhere(
+            (opt) => opt?['hex']?.toUpperCase() == normalized.toUpperCase(),
+            orElse: () => null,
+          )?['name'];
+    }
+    _primaryColor = TextEditingController(text: selectedColor ?? '');
+
     _facebook = TextEditingController(text: s.facebook ?? '');
     _twitter = TextEditingController(text: s.twitter ?? '');
     _linkedin = TextEditingController(text: s.linkedin ?? '');
@@ -1712,13 +2276,21 @@ class _EditCompanySheetState extends ConsumerState<_EditCompanySheet> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _submitting = true);
+    final colorName = _primaryColor.text.trim();
+    String? normalizedColor;
+    if (colorName.isNotEmpty) {
+      normalizedColor = _colorOptions.cast<Map<String, String>?>().firstWhere(
+            (opt) => opt?['name'] == colorName,
+            orElse: () => null,
+          )?['hex'];
+    }
     final ok =
         await ref.read(adminSettingsControllerProvider.notifier).updateCompany(
               AdminUpdateCompanyRequest(
                 name: _name.text.trim(),
                 websiteUrl: _website.text.trim(),
                 customDomain: _domain.text.trim(),
-                primaryColor: _primaryColor.text.trim(),
+                primaryColor: normalizedColor,
                 socialLinks: AdminSocialLinks(
                   facebook: _facebook.text.trim(),
                   twitter: _twitter.text.trim(),
@@ -1766,8 +2338,7 @@ class _EditCompanySheetState extends ConsumerState<_EditCompanySheet> {
                   OpenVtsTextField(
                     label: 'Company name',
                     controller: _name,
-                    validator: (v) =>
-                        (v ?? '').trim().isEmpty ? 'Name is required' : null,
+                    validator: Validators.companyName,
                   ),
                   const SizedBox(height: OpenVtsSpacing.sm),
                   OpenVtsTextField(
@@ -1795,17 +2366,40 @@ class _EditCompanySheetState extends ConsumerState<_EditCompanySheet> {
                     keyboardType: TextInputType.url,
                   ),
                   const SizedBox(height: OpenVtsSpacing.sm),
-                  OpenVtsTextField(
-                    label: 'Primary color (hex)',
-                    controller: _primaryColor,
-                    validator: (v) {
-                      final t = (v ?? '').trim();
-                      if (t.isEmpty) return null;
-                      if (!RegExp(r'^#?[0-9a-fA-F]{6}$').hasMatch(t)) {
-                        return 'Enter a valid hex color';
-                      }
-                      return null;
-                    },
+                  _DropdownField<String>(
+                    label: 'Primary color',
+                    value:
+                        _primaryColor.text.isEmpty ? null : _primaryColor.text,
+                    items: _colorOptions
+                        .map(
+                          (opt) => DropdownMenuItem(
+                            value: opt['name'],
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 16,
+                                  height: 16,
+                                  decoration: BoxDecoration(
+                                    color: Color(int.parse(
+                                          opt['hex']!.substring(1),
+                                          radix: 16,
+                                        ) +
+                                        0xFF000000),
+                                    borderRadius: BorderRadius.circular(3),
+                                    border: Border.all(
+                                      color: OpenVtsColors.border,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(opt['name']!),
+                              ],
+                            ),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (v) =>
+                        setState(() => _primaryColor.text = v ?? ''),
                   ),
                   const SizedBox(height: OpenVtsSpacing.md),
                   const _SubSectionLabel('Social Links'),
@@ -1868,12 +2462,12 @@ class _SubSectionLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       label.toUpperCase(),
-      style: const TextStyle(
+      style: TextStyle(
         fontFamily: OpenVtsTypography.primaryFontFamily,
         fontSize: 10,
         letterSpacing: 0.8,
         fontWeight: FontWeight.w600,
-        color: OpenVtsColors.textTertiary,
+        color: Theme.of(context).colorScheme.outline,
       ),
     );
   }
@@ -1899,6 +2493,7 @@ class _OtpVerificationSheetState extends ConsumerState<_OtpVerificationSheet> {
   bool _requested = false;
   bool _submitting = false;
   bool _resending = false;
+  bool _requestInFlight = false;
 
   @override
   void initState() {
@@ -1913,7 +2508,9 @@ class _OtpVerificationSheetState extends ConsumerState<_OtpVerificationSheet> {
   }
 
   Future<void> _requestOtp({bool isResend = false}) async {
+    if (_requestInFlight) return;
     setState(() {
+      _requestInFlight = true;
       if (isResend) _resending = true;
     });
     final controller = ref.read(adminSettingsControllerProvider.notifier);
@@ -1923,6 +2520,7 @@ class _OtpVerificationSheetState extends ConsumerState<_OtpVerificationSheet> {
     if (!mounted) return;
     setState(() {
       _resending = false;
+      _requestInFlight = false;
       _requested = _requested || ok;
     });
     if (ok) {
@@ -1990,28 +2588,30 @@ class _OtpVerificationSheetState extends ConsumerState<_OtpVerificationSheet> {
                 inputFormatters: [
                   FilteringTextInputFormatter.digitsOnly,
                 ],
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: OpenVtsTypography.primaryFontFamily,
                   fontSize: 22,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 8,
-                  color: OpenVtsColors.textPrimary,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
                 decoration: InputDecoration(
                   counterText: '',
                   filled: true,
-                  fillColor: OpenVtsColors.surface,
+                  fillColor: Theme.of(context).colorScheme.surface,
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 12,
                     vertical: 14,
                   ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-                    borderSide: const BorderSide(color: OpenVtsColors.border),
+                    borderSide: BorderSide(
+                        color: Theme.of(context).colorScheme.outlineVariant),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-                    borderSide: const BorderSide(color: OpenVtsColors.border),
+                    borderSide: BorderSide(
+                        color: Theme.of(context).colorScheme.outlineVariant),
                   ),
                 ),
               ),
@@ -2019,20 +2619,22 @@ class _OtpVerificationSheetState extends ConsumerState<_OtpVerificationSheet> {
               Align(
                 alignment: Alignment.center,
                 child: TextButton(
-                  onPressed:
-                      _resending ? null : () => _requestOtp(isResend: true),
+                  onPressed: _requestInFlight
+                      ? null
+                      : () => _requestOtp(isResend: true),
                   child: _resending
                       ? const SizedBox(
                           width: 14,
                           height: 14,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Text(
+                      : Text(
                           'Resend code',
                           style: TextStyle(
                             fontFamily: OpenVtsTypography.primaryFontFamily,
                             fontSize: 12.5,
                             fontWeight: FontWeight.w600,
+                            color: Theme.of(context).colorScheme.primary,
                           ),
                         ),
                 ),

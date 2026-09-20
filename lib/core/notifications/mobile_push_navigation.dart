@@ -28,17 +28,18 @@ class MobilePushNavigation {
 
   Future<void> handleNotificationTap(MobilePushMessage message) async {
     final authState = _ref.read(authControllerProvider);
-    if (!authState.isAuthenticated || authState.activeRole == null) {
+    if (!authState.isRealSession || authState.activeRole == null) {
       await storePendingTap(message);
       return;
     }
 
+    await _markNotificationReadIfPossible(message, authState.activeRole!);
     await _navigateForMessage(message, authState.activeRole!);
   }
 
   Future<void> consumePendingNotificationTapIfPossible() async {
     final authState = _ref.read(authControllerProvider);
-    if (!authState.isAuthenticated || authState.activeRole == null) {
+    if (!authState.isRealSession || authState.activeRole == null) {
       return;
     }
 
@@ -77,6 +78,43 @@ class MobilePushNavigation {
     }
   }
 
+  Future<void> _markNotificationReadIfPossible(
+    MobilePushMessage message,
+    UserRole activeRole,
+  ) async {
+    final notificationIdStr = message.notificationId;
+    if (notificationIdStr == null || notificationIdStr.isEmpty) {
+      return;
+    }
+
+    final notificationId = int.tryParse(notificationIdStr.trim());
+    if (notificationId == null || notificationId <= 0) {
+      return;
+    }
+
+    try {
+      switch (activeRole) {
+        case UserRole.superadmin:
+          await _ref
+              .read(superadminNotificationServiceProvider)
+              .markAsRead(notificationId);
+        case UserRole.admin:
+          await _ref
+              .read(adminNotificationServiceProvider)
+              .markAsRead(notificationId);
+        case UserRole.user:
+          await _ref
+              .read(userNotificationServiceProvider)
+              .markAsRead(notificationId);
+      }
+
+      // Refresh notification center and badge after marking as read
+      refreshActiveNotificationCenter();
+    } catch (_) {
+      // Non-blocking: do not interrupt navigation on mark-read failure
+    }
+  }
+
   Future<void> _navigateForMessage(
     MobilePushMessage message,
     UserRole activeRole,
@@ -100,7 +138,7 @@ class MobilePushNavigation {
       }
 
       final latestAuthState = _ref.read(authControllerProvider);
-      if (!latestAuthState.isAuthenticated ||
+      if (!latestAuthState.isRealSession ||
           latestAuthState.activeRole != activeRole) {
         await storePendingTap(message);
         return;
@@ -146,6 +184,11 @@ class MobilePushNavigation {
   }
 
   String _resolveTargetRoute(MobilePushMessage message, UserRole activeRole) {
+    // MANUAL_NOTIFY always routes to the active role's notification center
+    if (message.type == 'MANUAL_NOTIFY') {
+      return _notificationCenterRouteForRole(activeRole);
+    }
+
     final explicitRoute = _normalizeRoute(message.route);
     if (explicitRoute != null && _isSafeKnownRoute(explicitRoute, activeRole)) {
       return explicitRoute;
@@ -263,7 +306,6 @@ const _adminStaticRoutes = <String>{
   RoutePaths.adminDrivers,
   RoutePaths.adminTeam,
   RoutePaths.adminInventory,
-  RoutePaths.adminTransactions,
   RoutePaths.adminPayments,
   RoutePaths.adminSupport,
   RoutePaths.adminNotifications,
@@ -281,6 +323,7 @@ const _userStaticRoutes = <String>{
   RoutePaths.userMap,
   RoutePaths.userVehicles,
   RoutePaths.userHistory,
+  RoutePaths.userReports,
   RoutePaths.userLandmarksStudio,
   RoutePaths.userLandmarkGeofences,
   RoutePaths.userLandmarkPois,
@@ -289,7 +332,6 @@ const _userStaticRoutes = <String>{
   RoutePaths.userPoiEditor,
   RoutePaths.userRouteEditor,
   RoutePaths.userTrackLinks,
-  RoutePaths.userRouteOptimisation,
   RoutePaths.userSupport,
   RoutePaths.userTransactions,
   RoutePaths.userAccounts,

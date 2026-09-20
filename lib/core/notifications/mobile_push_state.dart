@@ -115,8 +115,8 @@ class MobilePushState {
           : registeredTokenCount as int?,
       currentTokenVerifiedByBackend:
           identical(currentTokenVerifiedByBackend, _unset)
-            ? this.currentTokenVerifiedByBackend
-            : currentTokenVerifiedByBackend as bool?,
+              ? this.currentTokenVerifiedByBackend
+              : currentTokenVerifiedByBackend as bool?,
       tokenDiagnosticsUpdatedAt: identical(tokenDiagnosticsUpdatedAt, _unset)
           ? this.tokenDiagnosticsUpdatedAt
           : tokenDiagnosticsUpdatedAt as DateTime?,
@@ -124,9 +124,9 @@ class MobilePushState {
       configVersion: identical(configVersion, _unset)
           ? this.configVersion
           : configVersion as String?,
-        lastError:
+      lastError:
           identical(lastError, _unset) ? this.lastError : lastError as String?,
-        pendingReinitializeOnNextLaunch: pendingReinitializeOnNextLaunch ??
+      pendingReinitializeOnNextLaunch: pendingReinitializeOnNextLaunch ??
           this.pendingReinitializeOnNextLaunch,
     );
   }

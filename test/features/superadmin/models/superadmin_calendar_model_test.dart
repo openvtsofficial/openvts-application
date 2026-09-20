@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:open_vts/features/admin/models/admin_calendar_model.dart';
 import 'package:open_vts/features/superadmin/models/superadmin_calendar_model.dart';
 
 void main() {
@@ -183,5 +184,89 @@ void main() {
     final expiryDetail = details.firstWhere((item) => item.type == 'expiry');
     expect(expiryDetail.count, 3);
     expect(expiryDetail.subtitle, '3 events');
+  });
+
+  group('vehicle calendar display', () {
+    test('uses nested vehicle type name when plate number is absent', () {
+      final detail = CalendarLinkedDetail.fromVehiclePayload(
+        <String, dynamic>{
+          'name': 'Test Vehicle',
+          'vehicleType': <String, dynamic>{
+            'id': 1,
+            'name': 'Car',
+            'slug': 'car',
+          },
+        },
+      );
+
+      expect(detail.title, 'Test Vehicle');
+      expect(detail.subtitle, 'Car');
+      expect(detail.subtitle, isNot(contains('{')));
+      expect(detail.subtitle, isNot(contains('id:')));
+      expect(detail.subtitle, isNot(contains('slug:')));
+    });
+
+    test('keeps plate number ahead of the vehicle type fallback', () {
+      final detail = CalendarLinkedDetail.fromVehiclePayload(
+        <String, dynamic>{
+          'name': 'Vehicle 2',
+          'plateNumber': 'ABC123',
+          'vehicleType': <String, dynamic>{'name': 'Car'},
+        },
+      );
+
+      expect(detail.subtitle, 'ABC123');
+    });
+
+    test('returns an empty subtitle without a plate or readable type', () {
+      final detail = CalendarLinkedDetail.fromVehiclePayload(
+        <String, dynamic>{'name': 'Vehicle 3'},
+      );
+
+      expect(detail.subtitle, isEmpty);
+    });
+
+    test('does not stringify map or list display values', () {
+      final mapDetail = CalendarLinkedDetail.fromVehiclePayload(
+        <String, dynamic>{
+          'name': 'Map Vehicle',
+          'typeName': <String, dynamic>{'name': 'Car'},
+        },
+      );
+      final listDetail = CalendarLinkedDetail.fromVehiclePayload(
+        <String, dynamic>{
+          'name': 'List Vehicle',
+          'vehicleType': <String>['Car'],
+        },
+      );
+
+      expect(mapDetail.subtitle, isEmpty);
+      expect(listDetail.subtitle, isEmpty);
+    });
+
+    test('retains day-detail plate values for created and expiry events', () {
+      for (final type in const ['VEHICLE_CREATED', 'VEHICLE_EXPIRY']) {
+        final detail = CalendarDayDetail.fromJson(<String, dynamic>{
+          'id': 12,
+          'name': 'Calendar Vehicle',
+          'plateNumber': 'UP80AB1234',
+          'eventType': type,
+        });
+
+        expect(detail.subtitle, contains('UP80AB1234'));
+        expect(detail.subtitle, isNot(contains('{')));
+      }
+    });
+
+    test('admin alias uses the corrected shared linked-detail parser', () {
+      final AdminCalendarLinkedDetail detail =
+          AdminCalendarLinkedDetail.fromVehiclePayload(<String, dynamic>{
+        'vehicleName': 'Aliased Vehicle',
+        'vehicle_type': <String, dynamic>{'name': 'Truck'},
+      });
+
+      expect(detail.title, 'Aliased Vehicle');
+      expect(detail.subtitle, 'Truck');
+    });
   });
 }

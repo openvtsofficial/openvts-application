@@ -41,7 +41,7 @@ class UserVerificationCard extends StatelessWidget {
           Text(
             'Verification',
             style: OpenVtsTypography.label.copyWith(
-              color: OpenVtsColors.textPrimary,
+              color: Theme.of(context).colorScheme.onSurface,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -69,7 +69,7 @@ class UserVerificationCard extends StatelessWidget {
           Text(
             'Request and confirm OTP to verify email and WhatsApp number.',
             style: OpenVtsTypography.meta.copyWith(
-              color: OpenVtsColors.textSecondary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
           const SizedBox(height: OpenVtsSpacing.xs),

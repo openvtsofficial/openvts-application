@@ -1,3 +1,72 @@
+enum UserTransactionDirection {
+  credit,
+  debit,
+}
+
+extension UserTransactionDirectionX on UserTransactionDirection {
+  String get label {
+    switch (this) {
+      case UserTransactionDirection.credit:
+        return 'Credit';
+      case UserTransactionDirection.debit:
+        return 'Debit';
+    }
+  }
+}
+
+/// Derives whether [transaction] is incoming (credit) or outgoing (debit)
+/// relative to the authenticated user identified by [currentUserId].
+///
+/// Returns null when neither [fromUserId] nor [toUserId] can be matched,
+/// so the transaction is excluded from direction-filtered results without
+/// being misclassified.
+UserTransactionDirection? transactionDirectionFor(
+  UserTransaction transaction,
+  String? currentUserId,
+) {
+  final userId = currentUserId?.trim() ?? '';
+  if (userId.isEmpty) {
+    return null;
+  }
+
+  final isFromUser = _matchesParty(
+    userId,
+    transaction.fromUserId,
+    transaction.fromUser,
+  );
+  if (isFromUser) {
+    return UserTransactionDirection.debit;
+  }
+
+  final isToUser = _matchesParty(
+    userId,
+    transaction.toUserId,
+    transaction.toUser,
+  );
+  if (isToUser) {
+    return UserTransactionDirection.credit;
+  }
+
+  return null;
+}
+
+bool _matchesParty(
+  String currentUserId,
+  int? partyId,
+  UserTransactionParty? party,
+) {
+  if (partyId != null && currentUserId == partyId.toString()) {
+    return true;
+  }
+  if (party?.uid != null && currentUserId == party!.uid.toString()) {
+    return true;
+  }
+  if (party?.id != null && currentUserId == party!.id.toString()) {
+    return true;
+  }
+  return false;
+}
+
 enum UserTransactionStatus {
   success,
   pending,
@@ -355,7 +424,13 @@ class UserTransaction {
       currency: _firstString(source, const ['currency', 'currencyCode']) ?? '',
       paymentType: _firstString(
             source,
-            const ['paymentType', 'payment_type', 'type'],
+            const [
+              'paymentType',
+              'payment_type',
+              'transactionType',
+              'transaction_type',
+              'type',
+            ],
           ) ??
           '',
       paymentMode: _parsePaymentMode(

@@ -354,10 +354,9 @@ class AdminDriversService {
 
   Future<MultipartFile> _multipartFromPlatformFile(PlatformFile file) async {
     final bytes = file.bytes;
-    final path = file.path;
     final filename = file.name.trim().isEmpty ? 'upload.bin' : file.name.trim();
-
     final type = _mediaTypeFor(filename);
+
     if (bytes != null) {
       return MultipartFile.fromBytes(
         bytes,
@@ -366,6 +365,9 @@ class AdminDriversService {
       );
     }
 
+    // `PlatformFile.path` throws on web — only access it when bytes are absent
+    // (i.e., on native platforms where a file path is available).
+    final path = file.path;
     if (path == null || path.trim().isEmpty) {
       throw ArgumentError('Selected file is not accessible.');
     }

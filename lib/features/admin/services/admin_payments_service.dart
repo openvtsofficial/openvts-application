@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/api/api_endpoints.dart';
 import '../../../core/api/api_options.dart';
+import '../models/admin_subscription_policy.dart';
 import '../models/admin_payments_model.dart';
 import '../models/admin_users_model.dart';
 
@@ -22,6 +23,7 @@ class AdminPaymentsService {
     AdminPaymentStatus? status,
     DateTime? from,
     DateTime? to,
+    String? q,
     String? refreshKey,
   }) async {
     final query = <String, dynamic>{
@@ -31,6 +33,7 @@ class AdminPaymentsService {
       if (status != null) 'status': status.apiValue,
       if (from != null) 'from': from.toUtc().toIso8601String(),
       if (to != null) 'to': to.toUtc().toIso8601String(),
+      if ((q ?? '').trim().isNotEmpty) 'q': q!.trim(),
       if ((refreshKey ?? '').trim().isNotEmpty) 'rk': refreshKey!.trim(),
     };
 
@@ -95,13 +98,16 @@ class AdminPaymentsService {
         .toList(growable: false);
   }
 
-  Future<void> renewVehicles(AdminRenewPaymentRequest request) async {
-    await _apiClient.post<void>(
+  Future<AdminPaymentTransaction?> renewVehicles(
+      AdminRenewPaymentRequest request) async {
+    AdminSubscriptionPolicy.requireRenewalsAllowed();
+    final response = await _apiClient.post<dynamic>(
       ApiEndpoints.admin.renewVehiclesPayment,
       data: request.toJson(),
       options: _mutationOptions,
-      parser: (_) {},
+      parser: (json) => json,
     );
+    return parseRenewalTransaction(response.data);
   }
 
   List<dynamic> _extractList(dynamic json) {

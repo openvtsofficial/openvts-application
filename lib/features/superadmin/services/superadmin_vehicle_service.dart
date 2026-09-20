@@ -12,8 +12,6 @@ import '../models/superadmin_vehicle_model.dart';
 class SuperadminVehicleService {
   SuperadminVehicleService(this._apiClient);
 
-  static bool _mapVehiclesEndpointUnavailable = false;
-
   static final Options _readOptions = normalReadOptions();
 
   final ApiClient _apiClient;
@@ -44,33 +42,8 @@ class SuperadminVehicleService {
       return _mockMapVehicles;
     }
 
-    final requestKey =
-        refreshKey ?? DateTime.now().millisecondsSinceEpoch.toString();
-
-    if (_mapVehiclesEndpointUnavailable) {
-      return _loadVehicleLocationFallback(refreshKey: requestKey);
-    }
-
-    try {
-      final response = await _apiClient.get<List<VehicleSummary>>(
-        ApiEndpoints.superadmin.mapVehicles,
-        queryParameters: <String, dynamic>{
-          'rk': requestKey,
-        },
-        options: _readOptions,
-        parser: _parseVehicleList,
-      );
-
-      return response.data;
-    } on DioException catch (error) {
-      if (!_shouldFallbackToVehicleList(error)) {
-        rethrow;
-      }
-
-      _mapVehiclesEndpointUnavailable = true;
-
-      return _loadVehicleLocationFallback(refreshKey: requestKey);
-    }
+    final telemetry = await getMapTelemetry(refreshKey: refreshKey);
+    return telemetry.vehicles;
   }
 
   Future<SuperadminMapTelemetry> getMapTelemetry({
@@ -80,19 +53,70 @@ class SuperadminVehicleService {
       return _buildTelemetryFromVehicles(_mockMapVehicles);
     }
 
+    return loadMapTelemetryEndpoint(
+      ApiEndpoints.superadmin.mapTelemetry,
+      refreshKey: refreshKey,
+    );
+  }
+
+  /// Read every cursor page before deriving the fleet and socket IMEI scope.
+  /// The backend defaults to 100 records, even when the account has more.
+  Future<SuperadminMapTelemetry> loadMapTelemetryEndpoint(
+    String endpoint, {
+    String? refreshKey,
+  }) async {
     final requestKey =
         refreshKey ?? DateTime.now().millisecondsSinceEpoch.toString();
+    final now = DateTime.now();
+    final localDayStart = DateTime(now.year, now.month, now.day);
+    final dayKey = '${now.year.toString().padLeft(4, '0')}-'
+        '${now.month.toString().padLeft(2, '0')}-'
+        '${now.day.toString().padLeft(2, '0')}';
+    final vehicles = <VehicleSummary>[];
+    final seenCursors = <String>{};
+    String? cursor;
 
-    final response = await _apiClient.get<SuperadminMapTelemetry>(
-      ApiEndpoints.superadmin.mapTelemetry,
-      queryParameters: <String, dynamic>{
-        'rk': requestKey,
-      },
-      options: _readOptions,
-      parser: _parseMapTelemetry,
-    );
+    do {
+      final response = await _apiClient.get<dynamic>(
+        endpoint,
+        queryParameters: <String, dynamic>{
+          'rk': requestKey,
+          'dayStart': localDayStart.toUtc().toIso8601String(),
+          'dayKey': dayKey,
+          'limit': 500,
+          if (cursor != null) 'cursor': cursor,
+        },
+        options: _readOptions,
+        parser: (json) => json,
+      );
+      final payload = response.data;
+      vehicles.addAll(_parseMapTelemetry(payload).vehicles.map((vehicle) {
+        if (vehicle.browserDayKey != null) return vehicle;
+        // When analytics cannot supply a local-day baseline, the fallback
+        // counter is for the account owner's day. Keep Today unknown instead
+        // of labelling that counter as the phone's local day.
+        return vehicle.copyWith(
+          distanceKm: null,
+          browserDayKey: dayKey,
+          browserDayStart: localDayStart,
+          browserDayBaseOdometer: null,
+        );
+      }));
+      final page = payload is Map ? payload : const <String, dynamic>{};
+      final next = (page['nextCursor'] ?? page['cursor'])?.toString().trim();
+      if (page['hasMore'] == false || next == null || next.isEmpty) {
+        if (page['hasMore'] == true) {
+          throw StateError('The map response is missing its next-page cursor.');
+        }
+        break;
+      }
+      if (!seenCursors.add(next)) {
+        throw StateError('The map response repeated its next-page cursor.');
+      }
+      cursor = next;
+    } while (true);
 
-    return response.data;
+    return _buildTelemetryFromVehicles(vehicles);
   }
 
   Future<SuperadminVehicleDetails> getVehicleDetailsByImei(String imei) async {
@@ -2278,30 +2302,6 @@ class SuperadminVehicleService {
     );
   }
 
-  bool _shouldFallbackToVehicleList(DioException error) {
-    final statusCode = error.response?.statusCode;
-    return statusCode == 404 || statusCode == 405;
-  }
-
-  Future<List<VehicleSummary>> _loadVehicleLocationFallback({
-    required String refreshKey,
-  }) async {
-    try {
-      final response = await _apiClient.get<dynamic>(
-        ApiEndpoints.superadmin.vehicles,
-        queryParameters: <String, dynamic>{
-          'rk': refreshKey,
-        },
-        options: _readOptions,
-        parser: (json) => json,
-      );
-
-      return _parseVehicleList(response.data);
-    } catch (_) {
-      return const <VehicleSummary>[];
-    }
-  }
-
   VehicleSummary? _vehicleSummaryFromJson(
     dynamic raw, {
     bool requireCoordinates = true,
@@ -2448,18 +2448,12 @@ class SuperadminVehicleService {
         'km_today',
         'dailyDistance',
         'daily_distance',
-        'travelDistance',
-        'travel_distance',
-        'coveredDistance',
-        'covered_distance',
-        'tripDistance',
-        'trip_distance',
-        'coveredKm',
-        'covered_km',
-        'distance',
-        'distanceKm',
-        'distance_km',
       ]),
+      browserDayKey: _firstStringInMaps(candidateMaps, const ['browserDayKey']),
+      browserDayStart: _firstDateInMaps(candidateMaps, const ['browserDayStart']),
+      browserDayBaseOdometer: _firstDoubleByKeyPriority(
+        candidateMaps, const ['browserDayBaseOdometer'],
+      ),
       odometerKm: _firstOdometerKmByKeyPriority(candidateMaps, const [
         'odometer',
         'odometerKm',
@@ -2830,17 +2824,6 @@ class SuperadminVehicleService {
         'km_today',
         'dailyDistance',
         'daily_distance',
-        'travelDistance',
-        'travel_distance',
-        'coveredDistance',
-        'covered_distance',
-        'tripDistance',
-        'trip_distance',
-        'coveredKm',
-        'covered_km',
-        'distance',
-        'distanceKm',
-        'distance_km',
       ]),
       updatedAt: _firstDateInMaps(candidateMaps, const [
         'updatedAt',
@@ -2876,6 +2859,30 @@ class SuperadminVehicleService {
       latitude: coordinates?.latitude,
       longitude: coordinates?.longitude,
       sections: _buildVehicleDetailsSections(source),
+      deviceTypeId: _firstIntByKeyPriority(candidateMaps, const [
+            'deviceTypeId',
+            'device_type_id',
+            'trackerDeviceTypeId',
+            'tracker_device_type_id',
+          ]) ??
+          _firstInt(_asMap(source['deviceType']), const ['id']) ??
+          _firstInt(_asMap(source['device_type']), const ['id']) ??
+          // Flat shape: source.device.type.id
+          _firstInt(_asMap(_asMap(source['device'])['type']), const ['id']) ??
+          _firstInt(
+              _asMap(_asMap(source['device'])['deviceType']), const ['id']) ??
+          _firstInt(
+              _asMap(_asMap(source['device'])['device_type']), const ['id']) ??
+          // Nested backend shape: source.vehicle.device.type.id
+          _firstInt(_asMap(_asMap(_asMap(source['vehicle'])['device'])['type']),
+              const ['id']) ??
+          _firstInt(
+              _asMap(_asMap(_asMap(source['vehicle'])['device'])['deviceType']),
+              const ['id']) ??
+          _firstInt(
+              _asMap(
+                  _asMap(_asMap(source['vehicle'])['device'])['device_type']),
+              const ['id']),
     );
   }
 
@@ -3224,7 +3231,7 @@ class SuperadminVehicleService {
         }
 
         final normalizedValue = _normalizeOdometerKm(key, value);
-        if (normalizedValue.isFinite && normalizedValue > 0) {
+        if (normalizedValue.isFinite && normalizedValue >= 0) {
           return normalizedValue;
         }
       }
@@ -3526,6 +3533,7 @@ class SuperadminVehicleDetails {
     required this.latitude,
     required this.longitude,
     required this.sections,
+    this.deviceTypeId,
   });
 
   const SuperadminVehicleDetails.empty({this.imei = ''})
@@ -3537,7 +3545,8 @@ class SuperadminVehicleDetails {
         updatedAt = null,
         latitude = null,
         longitude = null,
-        sections = const <SuperadminVehicleDetailsSection>[];
+        sections = const <SuperadminVehicleDetailsSection>[],
+        deviceTypeId = null;
 
   final String imei;
   final String name;
@@ -3549,6 +3558,7 @@ class SuperadminVehicleDetails {
   final double? latitude;
   final double? longitude;
   final List<SuperadminVehicleDetailsSection> sections;
+  final int? deviceTypeId;
 
   bool get hasCoordinates => latitude != null && longitude != null;
 }
@@ -3603,6 +3613,8 @@ const _mockVehiclesPayload = <String, dynamic>{
       'sim': '5754123841461',
       'primaryUser': <String, dynamic>{'name': 'the user'},
       'addedBy': <String, dynamic>{'name': 'mukesh Kumar'},
+      'primaryExpiry': '2026-10-15T00:00:00Z',
+      'secondaryExpiry': '2026-09-15T00:00:00Z',
       'createdAt': '2026-04-24T19:54:00Z',
     },
     <String, dynamic>{
@@ -3615,6 +3627,8 @@ const _mockVehiclesPayload = <String, dynamic>{
       'sim': '9876543211',
       'primaryUser': <String, dynamic>{'name': 'wwwwwwwwwww...'},
       'addedBy': <String, dynamic>{'name': 'mukesh Kumar'},
+      'primaryExpiry': '2026-11-04T00:00:00Z',
+      'secondaryExpiry': '2026-10-04T00:00:00Z',
       'createdAt': '2026-05-04T15:20:00Z',
     },
     <String, dynamic>{
@@ -3627,6 +3641,8 @@ const _mockVehiclesPayload = <String, dynamic>{
       'sim': '9876543211',
       'primaryUser': <String, dynamic>{'name': 'wwwwwwwwwww...'},
       'addedBy': <String, dynamic>{'name': 'mukesh Kumar'},
+      'primaryExpiry': '2026-12-04T00:00:00Z',
+      'secondaryExpiry': '2026-11-04T00:00:00Z',
       'createdAt': '2026-05-04T15:14:00Z',
     },
     <String, dynamic>{
@@ -3651,6 +3667,8 @@ const _mockVehiclesPayload = <String, dynamic>{
       'sim': '6767656766566',
       'primaryUser': <String, dynamic>{'name': 'the user'},
       'addedBy': <String, dynamic>{'name': 'mukesh Kumar'},
+      'primaryExpiry': '2026-10-21T00:00:00Z',
+      'secondaryExpiry': '2026-09-21T00:00:00Z',
       'createdAt': '2026-04-21T12:03:00Z',
     },
   ],

@@ -105,6 +105,18 @@ class SuperadminDashboardController
     return applyFilters();
   }
 
+  void toggleMetricVisibility(String metric) {
+    final updated = {...state.visibleMetrics};
+    if (updated.contains(metric)) {
+      if (updated.length > 1) {
+        updated.remove(metric);
+      }
+    } else {
+      updated.add(metric);
+    }
+    state = state.copyWith(visibleMetrics: updated);
+  }
+
   Future<void> loadMoreActivityLogs() async {
     final current = state.dashboard;
     final nextCursorId = current?.activityLogs.nextCursorId;

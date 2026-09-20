@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/theme/open_vts_colors.dart';
 import '../../../../core/theme/open_vts_radius.dart';
 import '../../../../core/theme/open_vts_spacing.dart';
 import '../../../../core/theme/open_vts_typography.dart';
+import '../../../../core/utils/date_time_formatter.dart';
 import '../../../../shared/widgets/open_vts_empty_state.dart';
 import '../../../../shared/widgets/open_vts_error_view.dart';
 import '../../../../shared/widgets/open_vts_loader.dart';
@@ -25,8 +25,47 @@ class UserDashboardScreen extends ConsumerStatefulWidget {
       _UserDashboardScreenState();
 }
 
-class _UserDashboardScreenState extends ConsumerState<UserDashboardScreen> {
+class _UserDashboardScreenState extends ConsumerState<UserDashboardScreen>
+    with WidgetsBindingObserver {
   int _refreshTick = 0;
+  bool _resumeRefreshPending = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _triggerResumeRefresh();
+    }
+  }
+
+  void _triggerResumeRefresh() {
+    final controller = ref.read(userDashboardControllerProvider.notifier);
+    // Skip if a refresh is already running (manual or a prior resume).
+    if (ref.read(userDashboardControllerProvider).isRefreshing) return;
+    if (_resumeRefreshPending) return;
+    _resumeRefreshPending = true;
+    controller.refresh().then((_) {
+      if (!mounted) return;
+      setState(() {
+        _resumeRefreshPending = false;
+        _refreshTick++;
+      });
+    }).catchError((_) {
+      if (!mounted) return;
+      setState(() => _resumeRefreshPending = false);
+    });
+  }
 
   Future<void> _refresh() async {
     await ref.read(userDashboardControllerProvider.notifier).refresh();
@@ -238,7 +277,7 @@ class _DashboardHeader extends StatelessWidget {
             Text(
               'Dashboard',
               style: OpenVtsTypography.titleSmall.copyWith(
-                color: OpenVtsColors.textPrimary,
+                color: Theme.of(context).colorScheme.onSurface,
                 fontSize: 20,
                 fontWeight: FontWeight.w800,
               ),
@@ -249,7 +288,7 @@ class _DashboardHeader extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: OpenVtsTypography.meta.copyWith(
-                color: OpenVtsColors.textSecondary,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -289,7 +328,7 @@ class _DashboardHeader extends StatelessWidget {
   }
 }
 
-class _UpdatedTimePill extends StatelessWidget {
+class _UpdatedTimePill extends ConsumerWidget {
   const _UpdatedTimePill({
     required this.updatedAt,
     required this.isRefreshing,
@@ -299,14 +338,15 @@ class _UpdatedTimePill extends StatelessWidget {
   final bool isRefreshing;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final formatter = ref.watch(appDateFormatterProvider);
     return Container(
       height: 34,
       padding: const EdgeInsets.symmetric(horizontal: OpenVtsSpacing.sm),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
-        border: Border.all(color: OpenVtsColors.border),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -323,21 +363,21 @@ class _UpdatedTimePill extends StatelessWidget {
             Text(
               'Refreshing',
               style: OpenVtsTypography.meta.copyWith(
-                color: OpenVtsColors.textSecondary,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
                 fontWeight: FontWeight.w700,
               ),
             ),
           ] else ...[
-            const Icon(
+            Icon(
               Icons.schedule_rounded,
               size: 14,
-              color: OpenVtsColors.textTertiary,
+              color: Theme.of(context).colorScheme.outline,
             ),
             const SizedBox(width: OpenVtsSpacing.xxs),
             Text(
-              userDashboardFormatDateTime(updatedAt),
+              userDashboardFormatDateTime(updatedAt, formatter: formatter),
               style: OpenVtsTypography.meta.copyWith(
-                color: OpenVtsColors.textSecondary,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -373,8 +413,8 @@ class _DashboardSelectorButton extends StatelessWidget {
           horizontal: OpenVtsSpacing.sm,
           vertical: 0,
         ),
-        foregroundColor: OpenVtsColors.textPrimary,
-        side: const BorderSide(color: OpenVtsColors.border),
+        foregroundColor: Theme.of(context).colorScheme.onSurface,
+        side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
         ),
@@ -396,52 +436,59 @@ class _DashboardSelectorButton extends StatelessWidget {
     final selectedId = await showModalBottomSheet<String>(
       context: context,
       showDragHandle: true,
-      builder: (context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-            OpenVtsSpacing.md,
-            0,
-            OpenVtsSpacing.md,
-            OpenVtsSpacing.md,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                'Select dashboard',
-                style: OpenVtsTypography.titleSmall.copyWith(
-                  color: OpenVtsColors.textPrimary,
-                  fontWeight: FontWeight.w800,
-                ),
+      builder: (context) => Consumer(
+        builder: (context, ref, _) {
+          final formatter = ref.watch(appDateFormatterProvider);
+          return SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                OpenVtsSpacing.md,
+                0,
+                OpenVtsSpacing.md,
+                OpenVtsSpacing.md,
               ),
-              const SizedBox(height: OpenVtsSpacing.sm),
-              for (final dashboard in dashboards)
-                ListTile(
-                  dense: true,
-                  contentPadding: EdgeInsets.zero,
-                  leading: Icon(
-                    dashboard.id == selectedDashboardId
-                        ? Icons.radio_button_checked_rounded
-                        : Icons.radio_button_unchecked_rounded,
-                    size: 18,
-                    color: dashboard.id == selectedDashboardId
-                        ? OpenVtsColors.brandInk
-                        : OpenVtsColors.textTertiary,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'Select dashboard',
+                    style: OpenVtsTypography.titleSmall.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
-                  title: Text(
-                    dashboard.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  subtitle: dashboard.updatedAt == null
-                      ? null
-                      : Text(userDashboardFormatDateTime(dashboard.updatedAt)),
-                  onTap: () => Navigator.of(context).pop(dashboard.id),
-                ),
-            ],
-          ),
-        ),
+                  const SizedBox(height: OpenVtsSpacing.sm),
+                  for (final dashboard in dashboards)
+                    ListTile(
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      leading: Icon(
+                        dashboard.id == selectedDashboardId
+                            ? Icons.radio_button_checked_rounded
+                            : Icons.radio_button_unchecked_rounded,
+                        size: 18,
+                        color: dashboard.id == selectedDashboardId
+                            ? Theme.of(context).colorScheme.primary
+                            : Theme.of(context).colorScheme.outline,
+                      ),
+                      title: Text(
+                        dashboard.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      subtitle: dashboard.updatedAt == null
+                          ? null
+                          : Text(userDashboardFormatDateTime(
+                              dashboard.updatedAt,
+                              formatter: formatter)),
+                      onTap: () => Navigator.of(context).pop(dashboard.id),
+                    ),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
 
@@ -471,9 +518,9 @@ class _RefreshIconButton extends StatelessWidget {
         padding: EdgeInsets.zero,
         backgroundColor: Theme.of(context).colorScheme.surface,
         disabledBackgroundColor: Theme.of(context).colorScheme.surface,
-        foregroundColor: OpenVtsColors.textPrimary,
-        disabledForegroundColor: OpenVtsColors.textTertiary,
-        side: const BorderSide(color: OpenVtsColors.border),
+        foregroundColor: Theme.of(context).colorScheme.onSurface,
+        disabledForegroundColor: Theme.of(context).colorScheme.outline,
+        side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
         ),
@@ -497,9 +544,12 @@ class _DashboardWidgetList extends StatelessWidget {
     return Column(
       children: [
         for (var index = 0; index < widgets.length; index++) ...[
-          buildUserDashboardWidget(
-            config: widgets[index],
-            refreshTick: refreshTick,
+          KeyedSubtree(
+            key: ValueKey(widgets[index].id),
+            child: buildUserDashboardWidget(
+              config: widgets[index],
+              refreshTick: refreshTick,
+            ),
           ),
           if (index != widgets.length - 1)
             const SizedBox(height: OpenVtsSpacing.sm),
@@ -523,23 +573,25 @@ class _DashboardInlineError extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(OpenVtsSpacing.sm),
       decoration: BoxDecoration(
-        color: OpenVtsColors.error.withValues(alpha: 0.08),
+        color:
+            Theme.of(context).colorScheme.errorContainer.withValues(alpha: 0.4),
         borderRadius: BorderRadius.circular(OpenVtsRadius.md),
-        border: Border.all(color: OpenVtsColors.error.withValues(alpha: 0.16)),
+        border: Border.all(
+            color: Theme.of(context).colorScheme.error.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
-          const Icon(
+          Icon(
             Icons.error_outline_rounded,
             size: 17,
-            color: OpenVtsColors.error,
+            color: Theme.of(context).colorScheme.error,
           ),
           const SizedBox(width: OpenVtsSpacing.xs),
           Expanded(
             child: Text(
               message,
               style: OpenVtsTypography.meta.copyWith(
-                color: OpenVtsColors.error,
+                color: Theme.of(context).colorScheme.onErrorContainer,
                 fontWeight: FontWeight.w600,
               ),
             ),

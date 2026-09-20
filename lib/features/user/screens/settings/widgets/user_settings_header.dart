@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../core/utils/date_time_formatter.dart';
+import '../../../../../l10n/app_localizations.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../../../shared/widgets/open_vts_status_chip.dart';
 import '../../../models/user_settings_model.dart';
 
-const DateTimeFormatter _settingsDateFormatter = DateTimeFormatter();
-
-class UserSettingsHeader extends StatelessWidget {
+class UserSettingsHeader extends ConsumerWidget {
   const UserSettingsHeader({
     required this.selectedTab,
     required this.isCurrentTabDirty,
@@ -26,17 +25,20 @@ class UserSettingsHeader extends StatelessWidget {
   final DateTime? lastUpdatedAt;
 
   @override
-  Widget build(BuildContext context) {
-    final tabLabel =
-        selectedTab == UserSettingsTab.profile ? 'Profile' : 'Localization';
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final settingsDateFormatter = ref.watch(appDateFormatterProvider);
+    final tabLabel = selectedTab == UserSettingsTab.profile
+        ? l10n.profile
+        : l10n.localization;
 
     final statusChip = isCurrentTabSaving
-        ? const OpenVtsStatusChip(
-            label: 'Saving',
+        ? OpenVtsStatusChip(
+            label: l10n.loading,
             type: OpenVtsStatusType.info,
           )
         : OpenVtsStatusChip(
-            label: isCurrentTabDirty ? 'Unsaved' : 'Saved',
+            label: isCurrentTabDirty ? l10n.unsavedChanges : l10n.success,
             type: isCurrentTabDirty
                 ? OpenVtsStatusType.warning
                 : OpenVtsStatusType.neutral,
@@ -54,39 +56,42 @@ class UserSettingsHeader extends StatelessWidget {
                 width: 30,
                 height: 30,
                 decoration: BoxDecoration(
-                  color: OpenVtsColors.surface,
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-                  border: Border.all(color: OpenVtsColors.border),
+                  border: Border.all(
+                      color: Theme.of(context).colorScheme.outlineVariant),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.settings_outlined,
                   size: 16,
-                  color: OpenVtsColors.textSecondary,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
               const SizedBox(width: OpenVtsSpacing.xs),
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Settings',
+                      l10n.settings,
                       style: TextStyle(
                         fontFamily: OpenVtsTypography.primaryFontFamily,
                         fontSize: 14,
                         height: 1.25,
                         fontWeight: FontWeight.w600,
-                        color: OpenVtsColors.textPrimary,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
-                    SizedBox(height: 2),
+                    const SizedBox(height: 2),
                     Text(
-                      'Manage profile, security, and localization preferences.',
+                      selectedTab == UserSettingsTab.localization
+                          ? l10n.localizationDescription
+                          : l10n.settingsDescription,
                       style: TextStyle(
                         fontFamily: OpenVtsTypography.primaryFontFamily,
                         fontSize: 11.5,
                         height: 1.35,
-                        color: OpenVtsColors.textSecondary,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ],
@@ -100,7 +105,7 @@ class UserSettingsHeader extends StatelessWidget {
             runSpacing: OpenVtsSpacing.xs,
             children: [
               OpenVtsStatusChip(
-                label: '$tabLabel tab',
+                label: tabLabel,
                 type: OpenVtsStatusType.neutral,
               ),
               statusChip,
@@ -109,9 +114,9 @@ class UserSettingsHeader extends StatelessWidget {
           if (lastUpdatedAt != null) ...[
             const SizedBox(height: OpenVtsSpacing.xs),
             Text(
-              'Profile updated ${_settingsDateFormatter.formatDateTime(lastUpdatedAt!.toLocal())}',
+              'Profile updated ${settingsDateFormatter.formatDateTime(lastUpdatedAt!.toLocal())}',
               style: OpenVtsTypography.meta.copyWith(
-                color: OpenVtsColors.textTertiary,
+                color: Theme.of(context).colorScheme.outline,
               ),
             ),
           ],

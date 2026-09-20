@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../../core/theme/open_vts_colors.dart';
 import '../../core/theme/open_vts_radius.dart';
 import '../../core/theme/open_vts_spacing.dart';
 import '../../core/theme/open_vts_typography.dart';
@@ -75,6 +74,7 @@ class OpenVtsBottomSheet {
                         child: child!,
                       );
 
+                final scheme = Theme.of(context).colorScheme;
                 return _OpenVtsBottomSheetDragScope(
                   controller: draggableController,
                   minChildSize: resolvedMinChildSize,
@@ -82,9 +82,9 @@ class OpenVtsBottomSheet {
                   snap: snap,
                   snapSizes: resolvedSnapSizes,
                   child: DecoratedBox(
-                    decoration: const BoxDecoration(
-                      color: OpenVtsColors.surfaceElevated,
-                      borderRadius: BorderRadius.vertical(
+                    decoration: BoxDecoration(
+                      color: scheme.surface,
+                      borderRadius: const BorderRadius.vertical(
                         top: Radius.circular(OpenVtsRadius.lg),
                       ),
                     ),
@@ -107,7 +107,7 @@ class OpenVtsBottomSheet {
                                   width: 40,
                                   height: 4,
                                   decoration: BoxDecoration(
-                                    color: OpenVtsColors.border,
+                                    color: scheme.outlineVariant,
                                     borderRadius: BorderRadius.circular(
                                       OpenVtsRadius.sm,
                                     ),
@@ -124,14 +124,14 @@ class OpenVtsBottomSheet {
                                     title,
                                     style:
                                         OpenVtsTypography.titleSmall.copyWith(
-                                      color: OpenVtsColors.textPrimary,
+                                      color: scheme.onSurface,
                                     ),
                                   ),
                                 ),
                                 const SizedBox(height: OpenVtsSpacing.sm),
-                                const Divider(
+                                Divider(
                                   height: 1,
-                                  color: OpenVtsColors.divider,
+                                  color: scheme.outlineVariant,
                                 ),
                               ],
                             ],

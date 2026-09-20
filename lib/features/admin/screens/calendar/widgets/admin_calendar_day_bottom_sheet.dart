@@ -8,17 +8,28 @@ import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../../../shared/widgets/open_vts_empty_state.dart';
 import '../../../../../shared/widgets/open_vts_error_view.dart';
 import '../../../../../shared/widgets/open_vts_loader.dart';
+import '../../../../../shared/widgets/open_vts_search_field.dart';
 import '../../../controllers/admin_calendar_controller.dart';
 import '../../../models/admin_calendar_model.dart';
 
-class AdminCalendarDayBottomSheet extends ConsumerWidget {
+class AdminCalendarDayBottomSheet extends ConsumerStatefulWidget {
   const AdminCalendarDayBottomSheet({super.key, required this.date});
 
   final DateTime date;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final detailsAsync = ref.watch(adminCalendarDayDetailsProvider(date));
+  ConsumerState<AdminCalendarDayBottomSheet> createState() =>
+      _AdminCalendarDayBottomSheetState();
+}
+
+class _AdminCalendarDayBottomSheetState
+    extends ConsumerState<AdminCalendarDayBottomSheet> {
+  String _searchQuery = '';
+
+  @override
+  Widget build(BuildContext context) {
+    final detailsAsync =
+        ref.watch(adminCalendarDayDetailsProvider(widget.date));
 
     return detailsAsync.when(
       loading: () => const Center(child: OpenVtsLoader()),
@@ -26,7 +37,8 @@ class AdminCalendarDayBottomSheet extends ConsumerWidget {
         padding: const EdgeInsets.all(OpenVtsSpacing.md),
         child: OpenVtsErrorView(
           message: 'Failed to load details',
-          onRetry: () => ref.refresh(adminCalendarDayDetailsProvider(date)),
+          onRetry: () =>
+              ref.refresh(adminCalendarDayDetailsProvider(widget.date)),
         ),
       ),
       data: (details) {
@@ -37,22 +49,88 @@ class AdminCalendarDayBottomSheet extends ConsumerWidget {
           );
         }
 
-        return ListView.separated(
+        final linkedDetails = <String, AdminCalendarLinkedDetail?>{};
+        if (_searchQuery.isNotEmpty) {
+          for (final detail in details) {
+            final linked = detail.isUser
+                ? ref
+                    .watch(adminCalendarUserDetailsProvider(detail.userId!))
+                    .asData
+                    ?.value
+                : detail.isVehicle
+                    ? ref
+                        .watch(adminCalendarVehicleDetailsProvider(
+                            detail.vehicleId!))
+                        .asData
+                        ?.value
+                    : null;
+            linkedDetails[detail.id] = linked;
+          }
+        }
+        final filtered = filterAdminCalendarDayDetails(
+          details,
+          linkedDetails,
+          _searchQuery,
+        );
+
+        return Padding(
           padding: const EdgeInsets.fromLTRB(
             OpenVtsSpacing.md,
             OpenVtsSpacing.md,
             OpenVtsSpacing.md,
-            OpenVtsSpacing.lg,
+            0,
           ),
-          itemCount: details.length,
-          separatorBuilder: (context, index) =>
+          child: Column(
+            children: [
+              OpenVtsSearchField(
+                hintText: 'Search daily records...',
+                onChanged: (value) => setState(
+                  () => _searchQuery = value.trim().toLowerCase(),
+                ),
+              ),
               const SizedBox(height: OpenVtsSpacing.sm),
-          itemBuilder: (context, index) =>
-              _CalendarDayEventTile(detail: details[index]),
+              Expanded(
+                child: filtered.isEmpty
+                    ? const OpenVtsEmptyState(
+                        title: 'No matching records',
+                        message: 'Try a different search term.',
+                      )
+                    : ListView.separated(
+                        padding: const EdgeInsets.only(
+                          bottom: OpenVtsSpacing.lg,
+                        ),
+                        itemCount: filtered.length,
+                        separatorBuilder: (context, index) =>
+                            const SizedBox(height: OpenVtsSpacing.sm),
+                        itemBuilder: (context, index) =>
+                            _CalendarDayEventTile(detail: filtered[index]),
+                      ),
+              ),
+            ],
+          ),
         );
       },
     );
   }
+}
+
+List<AdminCalendarDayDetail> filterAdminCalendarDayDetails(
+  List<AdminCalendarDayDetail> details,
+  Map<String, AdminCalendarLinkedDetail?> linkedDetails,
+  String query,
+) {
+  final normalized = query.trim().toLowerCase();
+  if (normalized.isEmpty) {
+    return details;
+  }
+  return details
+      .where(
+        (detail) => detail.matchesQuery(
+          normalized,
+          linkedDetails[detail.id],
+        ),
+      )
+      .toList(growable: false);
 }
 
 class _CalendarDayEventTile extends ConsumerWidget {
@@ -62,6 +140,7 @@ class _CalendarDayEventTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final linkedDetailAsync = detail.isUser
         ? ref.watch(adminCalendarUserDetailsProvider(detail.userId!))
         : detail.isVehicle
@@ -90,7 +169,9 @@ class _CalendarDayEventTile extends ConsumerWidget {
                       child: Text(
                         title,
                         style: OpenVtsTypography.label.copyWith(
-                          color: OpenVtsColors.textPrimary,
+                          color: isDark
+                              ? OpenVtsColors.darkTextPrimary
+                              : OpenVtsColors.textPrimary,
                         ),
                       ),
                     ),
@@ -102,7 +183,9 @@ class _CalendarDayEventTile extends ConsumerWidget {
                   Text(
                     subtitle,
                     style: OpenVtsTypography.meta.copyWith(
-                      color: OpenVtsColors.textSecondary,
+                      color: isDark
+                          ? OpenVtsColors.darkTextSecondary
+                          : OpenVtsColors.textSecondary,
                     ),
                   ),
                 ],
@@ -114,7 +197,10 @@ class _CalendarDayEventTile extends ConsumerWidget {
                       child: Text(
                         item,
                         style: OpenVtsTypography.meta.copyWith(
-                          color: OpenVtsColors.textTertiary,
+                          color: isDark
+                              ? OpenVtsColors.darkTextSecondary
+                                  .withValues(alpha: 0.7)
+                              : OpenVtsColors.textTertiary,
                         ),
                       ),
                     ),
@@ -169,6 +255,7 @@ class _EventTypeIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     late final IconData icon;
     late final Color color;
 
@@ -182,14 +269,14 @@ class _EventTypeIcon extends StatelessWidget {
       case 'users':
       default:
         icon = Icons.person_outline_rounded;
-        color = OpenVtsColors.brandInk;
+        color = isDark ? OpenVtsColors.darkTextPrimary : OpenVtsColors.brandInk;
     }
 
     return Container(
       width: 40,
       height: 40,
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
+        color: color.withValues(alpha: isDark ? 0.15 : 0.08),
         borderRadius: BorderRadius.circular(14),
       ),
       child: Icon(icon, size: 18, color: color),
@@ -204,19 +291,24 @@ class _CountBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: OpenVtsSpacing.sm,
         vertical: 4,
       ),
       decoration: BoxDecoration(
-        color: OpenVtsColors.brandInk.withValues(alpha: 0.08),
+        color: isDark
+            ? OpenVtsColors.white.withValues(alpha: 0.18)
+            : OpenVtsColors.brandInk.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
         '$count',
         style: OpenVtsTypography.meta.copyWith(
-          color: OpenVtsColors.textPrimary,
+          color: isDark
+              ? OpenVtsColors.darkTextPrimary
+              : OpenVtsColors.textPrimary,
           fontWeight: FontWeight.w600,
         ),
       ),

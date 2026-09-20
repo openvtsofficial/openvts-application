@@ -3,10 +3,14 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/providers/app_preferences_provider.dart';
+import '../../../../core/widgets/app_legal_links.dart';
+import '../../../auth/widgets/account_closure_card.dart';
 import '../../../../core/theme/open_vts_colors.dart';
 import '../../../../core/theme/open_vts_radius.dart';
 import '../../../../core/theme/open_vts_spacing.dart';
 import '../../../../core/theme/open_vts_typography.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../../shared/helpers/toast_helper.dart';
 import '../../../../shared/widgets/open_vts_button.dart';
 import '../../../../shared/widgets/open_vts_error_view.dart';
@@ -33,6 +37,7 @@ class UserSettingsScreen extends ConsumerStatefulWidget {
 class _UserSettingsScreenState extends ConsumerState<UserSettingsScreen> {
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     ref.listen<UserSettingsState>(
       userSettingsControllerProvider,
       _handleStateTransition,
@@ -44,10 +49,14 @@ class _UserSettingsScreenState extends ConsumerState<UserSettingsScreen> {
     final isProfileFirstLoad =
         !state.hasProfile && (state.isLoadingInitial || state.isLoadingProfile);
     if (isProfileFirstLoad) {
-      return const OpenVtsPageScaffold(
-        title: 'Settings',
+      return OpenVtsPageScaffold(
+        title: l10n.settings,
         headerMode: OpenVtsPageHeaderMode.closeable,
-        body: OpenVtsLoader(),
+        body: ListView(children: const [
+          SizedBox(height: 100, child: OpenVtsLoader()),
+          AccountClosureCard(),
+          AppLegalLinks(),
+        ]),
       );
     }
 
@@ -57,12 +66,14 @@ class _UserSettingsScreenState extends ConsumerState<UserSettingsScreen> {
         !state.hasProfile && profileFailureMessage != null;
     if (didProfileLoadFail) {
       return OpenVtsPageScaffold(
-        title: 'Settings',
+        title: l10n.settings,
         headerMode: OpenVtsPageHeaderMode.closeable,
-        body: OpenVtsErrorView(
-          message: profileFailureMessage,
-          onRetry: controller.loadProfile,
-        ),
+        body: ListView(children: [
+          SizedBox(height: 260, child: OpenVtsErrorView(
+            message: profileFailureMessage, onRetry: controller.loadProfile)),
+          const AccountClosureCard(),
+          const AppLegalLinks(),
+        ]),
       );
     }
 
@@ -76,12 +87,14 @@ class _UserSettingsScreenState extends ConsumerState<UserSettingsScreen> {
     final canSaveCurrentTab =
         isProfileTab ? state.canSaveProfile : state.canSaveLocalization;
 
-    final listBottomPadding = currentTabDirty || currentTabSaving
-        ? 116.0 + MediaQuery.paddingOf(context).bottom
-        : OpenVtsSpacing.md;
+    // Toolbar refresh indicator reflects only the current tab's busy state, not
+    // every background Settings operation.
+    final currentTabRefreshBusy = isProfileTab
+        ? state.isProfileRefreshBusy
+        : state.isLocalizationRefreshBusy;
 
     Future<void> onRefreshCurrentTab() async {
-      if (state.hasAnyBusyState) {
+      if (currentTabRefreshBusy) {
         return;
       }
 
@@ -89,7 +102,7 @@ class _UserSettingsScreenState extends ConsumerState<UserSettingsScreen> {
       if (shouldDiscardUnsaved) {
         final confirmed = await _confirmDiscardAndRefresh(
           context,
-          tabLabel: isProfileTab ? 'Profile' : 'Localization',
+          tabLabel: isProfileTab ? l10n.profile : l10n.localization,
         );
         if (!confirmed) {
           return;
@@ -109,10 +122,26 @@ class _UserSettingsScreenState extends ConsumerState<UserSettingsScreen> {
         return;
       }
 
+      if (!isProfileTab) {
+        final loc = ref.read(userSettingsControllerProvider).localization;
+        if (loc != null) {
+          await ref
+              .read(appLocalizationPreferencesProvider.notifier)
+              .applyFromUserSettings(
+                languageCode: loc.language,
+                dateFormat: loc.dateFormat,
+                timeFormat: loc.use24Hour ? '24H' : '12H',
+                theme: loc.theme.apiValue,
+                timezone: loc.timezoneOffset,
+                layoutDirection: loc.layoutDirection.apiValue,
+                units: loc.units.apiValue,
+              );
+        }
+        if (!mounted) return;
+      }
+
       ToastHelper.showSuccess(
-        isProfileTab
-            ? 'Profile settings updated.'
-            : 'Localization settings updated.',
+        isProfileTab ? l10n.profileUpdated : l10n.localizationUpdated,
       );
     }
 
@@ -125,7 +154,7 @@ class _UserSettingsScreenState extends ConsumerState<UserSettingsScreen> {
     }
 
     return OpenVtsPageScaffold(
-      title: 'Settings',
+      title: l10n.settings,
       headerMode: OpenVtsPageHeaderMode.closeable,
       padding: const EdgeInsets.fromLTRB(
         OpenVtsSpacing.sm,
@@ -135,14 +164,14 @@ class _UserSettingsScreenState extends ConsumerState<UserSettingsScreen> {
       ),
       actions: [
         IconButton(
-          tooltip: 'Refresh current tab',
+          tooltip: l10n.refresh,
           constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
-          onPressed: state.hasAnyBusyState
+          onPressed: currentTabRefreshBusy
               ? null
               : () {
                   unawaited(onRefreshCurrentTab());
                 },
-          icon: state.hasAnyBusyState
+          icon: currentTabRefreshBusy
               ? const SizedBox.square(
                   dimension: 16,
                   child: CircularProgressIndicator(strokeWidth: 2),
@@ -156,90 +185,90 @@ class _UserSettingsScreenState extends ConsumerState<UserSettingsScreen> {
             alignment: Alignment.topCenter,
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: _settingsMaxWidth),
-              child: Stack(
+              child: Column(
                 children: [
-                  RefreshIndicator(
-                    onRefresh: onRefreshCurrentTab,
-                    child: ListView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      padding: EdgeInsets.only(bottom: listBottomPadding),
-                      children: [
-                        UserSettingsHeader(
-                          selectedTab: selectedTab,
-                          isCurrentTabDirty: currentTabDirty,
-                          isCurrentTabSaving: currentTabSaving,
-                          lastUpdatedAt: state.profile?.updatedAt,
-                        ),
-                        const SizedBox(height: OpenVtsSpacing.sm),
-                        UserSettingsTabSelector(
-                          selectedTab: selectedTab,
-                          onChanged: controller.selectTab,
-                        ),
-                        const SizedBox(height: OpenVtsSpacing.sm),
-                        if (state.errorMessage != null &&
-                            state.errorMessage!.trim().isNotEmpty)
-                          Padding(
-                            padding: const EdgeInsets.only(
-                                bottom: OpenVtsSpacing.sm),
-                            child: _InlineNoticeBanner(
-                              message: state.errorMessage!,
-                              tone: _NoticeTone.error,
-                              onDismiss: controller.clearErrorMessage,
+                  Expanded(
+                    child: RefreshIndicator(
+                      onRefresh: onRefreshCurrentTab,
+                      child: ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding:
+                            const EdgeInsets.only(bottom: OpenVtsSpacing.md),
+                        children: [
+                          UserSettingsHeader(
+                            selectedTab: selectedTab,
+                            isCurrentTabDirty: currentTabDirty,
+                            isCurrentTabSaving: currentTabSaving,
+                            lastUpdatedAt: state.profile?.updatedAt,
+                          ),
+                          const SizedBox(height: OpenVtsSpacing.sm),
+                          UserSettingsTabSelector(
+                            selectedTab: selectedTab,
+                            onChanged: controller.selectTab,
+                          ),
+                          const SizedBox(height: OpenVtsSpacing.sm),
+                          if (state.errorMessage != null &&
+                              state.errorMessage!.trim().isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                  bottom: OpenVtsSpacing.sm),
+                              child: _InlineNoticeBanner(
+                                message: state.errorMessage!,
+                                tone: _NoticeTone.error,
+                                onDismiss: controller.clearErrorMessage,
+                              ),
                             ),
-                          ),
-                        if (!isProfileTab &&
-                            state.localizationErrorMessage != null &&
-                            state.localizationErrorMessage!.trim().isNotEmpty)
-                          Padding(
-                            padding: const EdgeInsets.only(
-                                bottom: OpenVtsSpacing.sm),
-                            child: _InlineNoticeBanner(
-                              message:
-                                  'Using safe defaults. ${state.localizationErrorMessage!}',
-                              tone: _NoticeTone.warning,
-                              onDismiss:
-                                  controller.clearLocalizationErrorMessage,
+                          if (!isProfileTab &&
+                              state.localizationErrorMessage != null &&
+                              state.localizationErrorMessage!.trim().isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                  bottom: OpenVtsSpacing.sm),
+                              child: _InlineNoticeBanner(
+                                message:
+                                    'Using safe defaults. ${state.localizationErrorMessage!}',
+                                tone: _NoticeTone.warning,
+                                onDismiss:
+                                    controller.clearLocalizationErrorMessage,
+                              ),
                             ),
-                          ),
-                        if (isProfileTab &&
-                            state.profileErrorMessage != null &&
-                            state.profileErrorMessage!.trim().isNotEmpty)
-                          Padding(
-                            padding: const EdgeInsets.only(
-                                bottom: OpenVtsSpacing.sm),
-                            child: _InlineNoticeBanner(
-                              message: state.profileErrorMessage!,
-                              tone: _NoticeTone.error,
-                              onDismiss: controller.clearProfileErrorMessage,
+                          if (isProfileTab &&
+                              state.profileErrorMessage != null &&
+                              state.profileErrorMessage!.trim().isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                  bottom: OpenVtsSpacing.sm),
+                              child: _InlineNoticeBanner(
+                                message: state.profileErrorMessage!,
+                                tone: _NoticeTone.error,
+                                onDismiss: controller.clearProfileErrorMessage,
+                              ),
                             ),
-                          ),
-                        if (isProfileTab)
-                          UserProfileSettingsTab(
-                            state: state,
-                            controller: controller,
-                          )
-                        else
-                          UserLocalizationSettingsTab(
-                            state: state,
-                            controller: controller,
-                          ),
-                        const SizedBox(height: OpenVtsSpacing.sm),
-                      ],
+                          if (isProfileTab)
+                            UserProfileSettingsTab(
+                              state: state,
+                              controller: controller,
+                            )
+                          else
+                            UserLocalizationSettingsTab(
+                              state: state,
+                              controller: controller,
+                            ),
+                          const SizedBox(height: OpenVtsSpacing.sm),
+                        ],
+                      ),
                     ),
                   ),
                   if (currentTabDirty || currentTabSaving)
-                    Align(
-                      alignment: Alignment.bottomCenter,
-                      child: UserSettingsSaveBar(
-                        selectedTab: selectedTab,
-                        isSaving: currentTabSaving,
-                        canSave: canSaveCurrentTab,
-                        canReset: canResetCurrentTab,
-                        onSave: () {
-                          unawaited(onSaveCurrentTab());
-                        },
-                        onReset: onResetCurrentTab,
-                      ),
+                    UserSettingsSaveBar(
+                      selectedTab: selectedTab,
+                      isSaving: currentTabSaving,
+                      canSave: canSaveCurrentTab,
+                      canReset: canResetCurrentTab,
+                      onSave: () {
+                        unawaited(onSaveCurrentTab());
+                      },
+                      onReset: onResetCurrentTab,
                     ),
                 ],
               ),
@@ -296,6 +325,7 @@ class _UserSettingsScreenState extends ConsumerState<UserSettingsScreen> {
     BuildContext context, {
     required String tabLabel,
   }) async {
+    final l10n = AppLocalizations.of(context);
     final result = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
@@ -304,9 +334,9 @@ class _UserSettingsScreenState extends ConsumerState<UserSettingsScreen> {
         final insets = MediaQuery.viewInsetsOf(sheetContext).bottom;
 
         return DecoratedBox(
-          decoration: const BoxDecoration(
-            color: OpenVtsColors.surface,
-            borderRadius: BorderRadius.vertical(
+          decoration: BoxDecoration(
+            color: Theme.of(sheetContext).colorScheme.surfaceContainer,
+            borderRadius: const BorderRadius.vertical(
               top: Radius.circular(OpenVtsRadius.lg),
             ),
           ),
@@ -324,17 +354,18 @@ class _UserSettingsScreenState extends ConsumerState<UserSettingsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Discard unsaved changes?',
+                    l10n.confirmDiscard,
                     style: OpenVtsTypography.label.copyWith(
-                      color: OpenVtsColors.textPrimary,
+                      color: Theme.of(sheetContext).colorScheme.onSurface,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
                   const SizedBox(height: OpenVtsSpacing.xs),
                   Text(
-                    '$tabLabel has unsaved edits. Refreshing now will discard them.',
+                    l10n.confirmDiscardMessage(tabLabel),
                     style: OpenVtsTypography.body.copyWith(
-                      color: OpenVtsColors.textSecondary,
+                      color:
+                          Theme.of(sheetContext).colorScheme.onSurfaceVariant,
                     ),
                   ),
                   const SizedBox(height: OpenVtsSpacing.sm),
@@ -342,7 +373,7 @@ class _UserSettingsScreenState extends ConsumerState<UserSettingsScreen> {
                     children: [
                       Expanded(
                         child: OpenVtsButton(
-                          label: 'Keep Editing',
+                          label: l10n.keepEditing,
                           height: 44,
                           variant: OpenVtsButtonVariant.secondary,
                           onPressed: () {
@@ -353,7 +384,7 @@ class _UserSettingsScreenState extends ConsumerState<UserSettingsScreen> {
                       const SizedBox(width: OpenVtsSpacing.xs),
                       Expanded(
                         child: OpenVtsButton(
-                          label: 'Discard & Refresh',
+                          label: l10n.discardChanges,
                           height: 44,
                           onPressed: () {
                             Navigator.of(sheetContext).pop(true);

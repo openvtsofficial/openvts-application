@@ -42,8 +42,7 @@ class AdminInventoryDeviceCard extends StatelessWidget {
           ),
           const SizedBox(height: OpenVtsSpacing.md),
           AdminInventoryCardFooter(
-            createdValue:
-                AdminInventoryCardFooter.formatCreatedAt(device.createdAt),
+            createdAt: device.createdAt,
             statusLabel: formatInventoryStatusLabel(device.statusLabel),
           ),
         ],

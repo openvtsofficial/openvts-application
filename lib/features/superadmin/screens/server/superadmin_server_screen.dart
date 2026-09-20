@@ -247,6 +247,11 @@ class _ServerHeroCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textPrimary =
+        isDark ? OpenVtsColors.darkTextPrimary : OpenVtsColors.textPrimary;
+    final textSecondary =
+        isDark ? OpenVtsColors.darkTextSecondary : OpenVtsColors.textSecondary;
     final refreshedAt = overview?.checkedAt;
 
     return OpenVtsCard(
@@ -257,7 +262,7 @@ class _ServerHeroCard extends StatelessWidget {
           Text(
             'Server Health Monitoring',
             style: OpenVtsTypography.titleSmall.copyWith(
-              color: OpenVtsColors.textPrimary,
+              color: textPrimary,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -265,7 +270,7 @@ class _ServerHeroCard extends StatelessWidget {
           Text(
             'Monitor uptime, dependencies, and safe service actions',
             style: OpenVtsTypography.body.copyWith(
-              color: OpenVtsColors.textSecondary,
+              color: textSecondary,
             ),
           ),
           const SizedBox(height: OpenVtsSpacing.md),
@@ -284,9 +289,8 @@ class _ServerHeroCard extends StatelessWidget {
               _CompactOutlineButton(
                 label: isRefreshing ? 'Refreshing' : 'Refresh',
                 icon: Icons.refresh_rounded,
-                onPressed: (isRefreshing || isLoading)
-                    ? null
-                    : () => onRefresh(),
+                onPressed:
+                    (isRefreshing || isLoading) ? null : () => onRefresh(),
                 isLoading: isRefreshing,
               ),
             ],
@@ -300,7 +304,7 @@ class _ServerHeroCard extends StatelessWidget {
                   ? 'Last check: —'
                   : 'Last check: ${_serverDateFormatter.formatDateTime(refreshedAt)}',
               style: OpenVtsTypography.meta.copyWith(
-                color: OpenVtsColors.textSecondary,
+                color: textSecondary,
               ),
             ),
         ],
@@ -314,22 +318,29 @@ class _ImportantBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final scheme = Theme.of(context).colorScheme;
+    final bannerBg = isDark ? scheme.errorContainer : OpenVtsColors.white;
+    final bannerBorder = isDark
+        ? scheme.error.withValues(alpha: 0.3)
+        : OpenVtsColors.textPrimary;
+    final bannerText = isDark ? OpenVtsColors.darkTextPrimary : scheme.error;
     return Container(
       padding: const EdgeInsets.all(OpenVtsSpacing.md),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF9E8),
+        color: bannerBg,
         borderRadius: BorderRadius.circular(OpenVtsRadius.lg),
-        border: Border.all(color: const Color(0xFFE2C24F)),
+        border: Border.all(color: bannerBorder),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Padding(
-            padding: EdgeInsets.only(top: 2),
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
             child: Icon(
               Icons.warning_amber_rounded,
               size: 18,
-              color: Color(0xFFB58817),
+              color: bannerText,
             ),
           ),
           const SizedBox(width: OpenVtsSpacing.sm),
@@ -340,7 +351,7 @@ class _ImportantBanner extends StatelessWidget {
                 Text(
                   'Important',
                   style: OpenVtsTypography.label.copyWith(
-                    color: OpenVtsColors.textPrimary,
+                    color: bannerText,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -348,7 +359,7 @@ class _ImportantBanner extends StatelessWidget {
                 Text(
                   'Stopping Frontend/Backend/Listener can lock you out of the application. This page allows Start and Restart for those services, but Stop is disabled.',
                   style: OpenVtsTypography.body.copyWith(
-                    color: OpenVtsColors.textPrimary,
+                    color: bannerText,
                   ),
                 ),
               ],
@@ -367,7 +378,12 @@ class _ServerJobCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final statusStyle = _statusVisualsForJob(job.status);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textPrimary =
+        isDark ? OpenVtsColors.darkTextPrimary : OpenVtsColors.textPrimary;
+    final textSecondary =
+        isDark ? OpenVtsColors.darkTextSecondary : OpenVtsColors.textSecondary;
+    final statusStyle = _statusVisualsForJob(job.status, isDark: isDark);
 
     return OpenVtsCard(
       padding: const EdgeInsets.all(OpenVtsSpacing.md),
@@ -383,14 +399,14 @@ class _ServerJobCard extends StatelessWidget {
                     Text(
                       'Latest Server Action',
                       style: OpenVtsTypography.label.copyWith(
-                        color: OpenVtsColors.textSecondary,
+                        color: textSecondary,
                       ),
                     ),
                     const SizedBox(height: OpenVtsSpacing.xxs),
                     Text(
                       '${job.componentName} • ${serverActionLabel(job.action)}',
                       style: OpenVtsTypography.titleSmall.copyWith(
-                        color: OpenVtsColors.textPrimary,
+                        color: textPrimary,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -408,7 +424,7 @@ class _ServerJobCard extends StatelessWidget {
           Text(
             job.displayMessage,
             style: OpenVtsTypography.body.copyWith(
-              color: OpenVtsColors.textPrimary,
+              color: textPrimary,
             ),
           ),
           if (job.updatedAt != null) ...[
@@ -416,7 +432,7 @@ class _ServerJobCard extends StatelessWidget {
             Text(
               'Updated ${_serverDateFormatter.formatDateTime(job.updatedAt!)}',
               style: OpenVtsTypography.meta.copyWith(
-                color: OpenVtsColors.textSecondary,
+                color: textSecondary,
               ),
             ),
           ],
@@ -432,7 +448,7 @@ class _ServerJobCard extends StatelessWidget {
                     child: Text(
                       line,
                       style: OpenVtsTypography.meta.copyWith(
-                        color: OpenVtsColors.textSecondary,
+                        color: textSecondary,
                       ),
                     ),
                   ),
@@ -465,6 +481,12 @@ class _MetricCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textPrimary =
+        isDark ? OpenVtsColors.darkTextPrimary : OpenVtsColors.textPrimary;
+    final textSecondary =
+        isDark ? OpenVtsColors.darkTextSecondary : OpenVtsColors.textSecondary;
+
     return OpenVtsCard(
       padding: const EdgeInsets.all(OpenVtsSpacing.md),
       child: Column(
@@ -480,7 +502,7 @@ class _MetricCard extends StatelessWidget {
                     Text(
                       title,
                       style: OpenVtsTypography.label.copyWith(
-                        color: OpenVtsColors.textSecondary,
+                        color: textSecondary,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -491,7 +513,7 @@ class _MetricCard extends StatelessWidget {
                       Text(
                         value ?? '—',
                         style: OpenVtsTypography.titleSmall.copyWith(
-                          color: OpenVtsColors.textPrimary,
+                          color: textPrimary,
                           fontWeight: FontWeight.w700,
                         ),
                         maxLines: 1,
@@ -506,7 +528,7 @@ class _MetricCard extends StatelessWidget {
                       Text(
                         caption!,
                         style: OpenVtsTypography.meta.copyWith(
-                          color: OpenVtsColors.textSecondary,
+                          color: textSecondary,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -518,7 +540,7 @@ class _MetricCard extends StatelessWidget {
               Icon(
                 icon,
                 size: 18,
-                color: OpenVtsColors.textSecondary,
+                color: textSecondary,
               ),
             ],
           ),
@@ -542,6 +564,8 @@ class _MetricProgressBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final trackColor = isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border;
     final clamped = progress.clamp(0.0, 1.0);
     final color = _progressColor(clamped);
 
@@ -549,7 +573,7 @@ class _MetricProgressBar extends StatelessWidget {
       borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
       child: Container(
         height: 5,
-        color: OpenVtsColors.border,
+        color: trackColor,
         alignment: AlignmentDirectional.centerStart,
         child: AnimatedFractionallySizedBox(
           duration: const Duration(milliseconds: 600),
@@ -587,6 +611,12 @@ class _ServicesSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textPrimary =
+        isDark ? OpenVtsColors.darkTextPrimary : OpenVtsColors.textPrimary;
+    final textSecondary =
+        isDark ? OpenVtsColors.darkTextSecondary : OpenVtsColors.textSecondary;
+
     return OpenVtsCard(
       padding: const EdgeInsets.all(OpenVtsSpacing.md),
       child: Column(
@@ -602,7 +632,7 @@ class _ServicesSection extends StatelessWidget {
                     Text(
                       'Services',
                       style: OpenVtsTypography.titleSmall.copyWith(
-                        color: OpenVtsColors.textPrimary,
+                        color: textPrimary,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -610,7 +640,7 @@ class _ServicesSection extends StatelessWidget {
                     Text(
                       components.map((component) => component.name).join(', '),
                       style: OpenVtsTypography.meta.copyWith(
-                        color: OpenVtsColors.textSecondary,
+                        color: textSecondary,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -618,33 +648,49 @@ class _ServicesSection extends StatelessWidget {
                   ],
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: OpenVtsSpacing.sm,
-                  vertical: OpenVtsSpacing.xs,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF5F7FB),
-                  borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.bubble_chart_rounded,
-                      size: 12,
-                      color: OpenVtsColors.info,
+              Builder(
+                builder: (context) {
+                  final chipIsDark =
+                      Theme.of(context).brightness == Brightness.dark;
+                  final chipBg = chipIsDark
+                      ? OpenVtsColors.darkSurfaceElevated
+                      : OpenVtsColors.white;
+                  final chipFg = chipIsDark
+                      ? OpenVtsColors.darkTextPrimary
+                      : OpenVtsColors.textPrimary;
+                  final chipBorder = chipIsDark
+                      ? OpenVtsColors.darkBorder
+                      : OpenVtsColors.textPrimary;
+                  return Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: OpenVtsSpacing.sm,
+                      vertical: OpenVtsSpacing.xs,
                     ),
-                    const SizedBox(width: 6),
-                    Text(
-                      'System Metrics',
-                      style: OpenVtsTypography.meta.copyWith(
-                        color: OpenVtsColors.info,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    decoration: BoxDecoration(
+                      color: chipBg,
+                      borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
+                      border: Border.all(color: chipBorder),
                     ),
-                  ],
-                ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.bubble_chart_rounded,
+                          size: 12,
+                          color: chipFg,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          'System Metrics',
+                          style: OpenVtsTypography.meta.copyWith(
+                            color: chipFg,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
               ),
             ],
           ),
@@ -679,8 +725,7 @@ class _ServicesSection extends StatelessWidget {
                 final hasRight = i + 1 < components.length;
                 rows.add(
                   Padding(
-                    padding:
-                        const EdgeInsets.only(bottom: OpenVtsSpacing.sm),
+                    padding: const EdgeInsets.only(bottom: OpenVtsSpacing.sm),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -698,8 +743,8 @@ class _ServicesSection extends StatelessWidget {
                           Expanded(
                             child: _ServiceCard(
                               component: components[i + 1],
-                              isBusy: state
-                                  .isBusyComponent(components[i + 1].id),
+                              isBusy:
+                                  state.isBusyComponent(components[i + 1].id),
                               isSubmitting: (action) => state.isSubmitting(
                                   components[i + 1].id, action),
                               onAction: onAction,
@@ -737,14 +782,23 @@ class _ServiceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final statusVisuals = _statusVisualsForComponent(component.status);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textPrimary =
+        isDark ? OpenVtsColors.darkTextPrimary : OpenVtsColors.textPrimary;
+    final textSecondary =
+        isDark ? OpenVtsColors.darkTextSecondary : OpenVtsColors.textSecondary;
+    final cardBg = isDark ? OpenVtsColors.darkSurface : OpenVtsColors.white;
+    final borderColor =
+        isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border;
+    final statusVisuals =
+        _statusVisualsForComponent(component.status, isDark: isDark);
 
     return Container(
       padding: const EdgeInsets.all(OpenVtsSpacing.md),
       decoration: BoxDecoration(
-        color: OpenVtsColors.white,
+        color: cardBg,
         borderRadius: BorderRadius.circular(OpenVtsRadius.lg),
-        border: Border.all(color: OpenVtsColors.border),
+        border: Border.all(color: borderColor),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -757,7 +811,7 @@ class _ServiceCard extends StatelessWidget {
               Text(
                 component.name,
                 style: OpenVtsTypography.titleSmall.copyWith(
-                  color: OpenVtsColors.textPrimary,
+                  color: textPrimary,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -772,7 +826,7 @@ class _ServiceCard extends StatelessWidget {
           Text(
             component.description,
             style: OpenVtsTypography.body.copyWith(
-              color: OpenVtsColors.textSecondary,
+              color: textSecondary,
             ),
           ),
           const SizedBox(height: OpenVtsSpacing.md),
@@ -803,7 +857,7 @@ class _ServiceCard extends StatelessWidget {
           Text(
             component.statusMessage,
             style: OpenVtsTypography.body.copyWith(
-              color: OpenVtsColors.textSecondary,
+              color: textSecondary,
             ),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
@@ -846,20 +900,26 @@ class _ServiceMetaColumn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textPrimary =
+        isDark ? OpenVtsColors.darkTextPrimary : OpenVtsColors.textPrimary;
+    final textSecondary =
+        isDark ? OpenVtsColors.darkTextSecondary : OpenVtsColors.textSecondary;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           '$label:',
           style: OpenVtsTypography.meta.copyWith(
-            color: OpenVtsColors.textSecondary,
+            color: textSecondary,
           ),
         ),
         const SizedBox(height: 2),
         Text(
           value,
           style: OpenVtsTypography.body.copyWith(
-            color: OpenVtsColors.textPrimary,
+            color: textPrimary,
           ),
         ),
       ],
@@ -882,6 +942,13 @@ class _CompactOutlineButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textPrimary =
+        isDark ? OpenVtsColors.darkTextPrimary : OpenVtsColors.textPrimary;
+    final bgColor = isDark ? OpenVtsColors.darkSurface : OpenVtsColors.white;
+    final borderColor =
+        isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border;
+
     return OutlinedButton.icon(
       onPressed: isLoading ? null : onPressed,
       icon: isLoading
@@ -894,7 +961,7 @@ class _CompactOutlineButton extends StatelessWidget {
       label: Text(
         label,
         style: OpenVtsTypography.label.copyWith(
-          color: OpenVtsColors.textPrimary,
+          color: textPrimary,
         ),
       ),
       style: OutlinedButton.styleFrom(
@@ -903,9 +970,9 @@ class _CompactOutlineButton extends StatelessWidget {
           horizontal: OpenVtsSpacing.sm,
           vertical: OpenVtsSpacing.xs,
         ),
-        backgroundColor: OpenVtsColors.white,
-        foregroundColor: OpenVtsColors.textPrimary,
-        side: const BorderSide(color: OpenVtsColors.border),
+        backgroundColor: bgColor,
+        foregroundColor: textPrimary,
+        side: BorderSide(color: borderColor),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(OpenVtsRadius.md),
         ),
@@ -925,12 +992,13 @@ class _HeaderStatusPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return _ServiceStatusPill(
       label: label,
-      dotColor: isOnline ? OpenVtsColors.success : const Color(0xFFD7A82D),
+      dotColor: isOnline ? OpenVtsColors.success : scheme.error,
       backgroundColor: isOnline
           ? OpenVtsColors.success.withValues(alpha: 0.10)
-          : const Color(0xFFFFF4D6),
+          : scheme.error.withValues(alpha: 0.10),
     );
   }
 }
@@ -948,14 +1016,21 @@ class _ServiceStatusPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textPrimary =
+        isDark ? OpenVtsColors.darkTextPrimary : OpenVtsColors.textPrimary;
+
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: OpenVtsSpacing.sm,
         vertical: 6,
       ),
       decoration: BoxDecoration(
-        color: backgroundColor,
+        color: isDark ? OpenVtsColors.darkSurfaceElevated : OpenVtsColors.white,
         borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
+        border: Border.all(
+          color: isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border,
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -972,7 +1047,7 @@ class _ServiceStatusPill extends StatelessWidget {
           Text(
             label,
             style: OpenVtsTypography.meta.copyWith(
-              color: OpenVtsColors.textPrimary,
+              color: textPrimary,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -993,6 +1068,10 @@ class _InlineErrorBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textPrimary =
+        isDark ? OpenVtsColors.darkTextPrimary : OpenVtsColors.textPrimary;
+
     return OpenVtsCard(
       padding: const EdgeInsets.all(OpenVtsSpacing.md),
       child: Row(
@@ -1011,7 +1090,7 @@ class _InlineErrorBanner extends StatelessWidget {
             child: Text(
               message,
               style: OpenVtsTypography.body.copyWith(
-                color: OpenVtsColors.textPrimary,
+                color: textPrimary,
               ),
             ),
           ),
@@ -1021,7 +1100,7 @@ class _InlineErrorBanner extends StatelessWidget {
             child: Text(
               'Retry',
               style: OpenVtsTypography.label.copyWith(
-                color: OpenVtsColors.brandInk,
+                color: Theme.of(context).colorScheme.primary,
               ),
             ),
           ),
@@ -1043,12 +1122,16 @@ class _SkeletonBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final shimmerColor =
+        isDark ? OpenVtsColors.darkBorder : OpenVtsColors.surface;
+
     return _ShimmerWrap(
       child: Container(
         width: width,
         height: height,
         decoration: BoxDecoration(
-          color: OpenVtsColors.surface,
+          color: shimmerColor,
           borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
         ),
       ),
@@ -1064,6 +1147,10 @@ class _SkeletonLine extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final shimmerColor =
+        isDark ? OpenVtsColors.darkBorder : OpenVtsColors.surface;
+
     return FractionallySizedBox(
       alignment: AlignmentDirectional.centerStart,
       widthFactor: widthFactor,
@@ -1071,7 +1158,7 @@ class _SkeletonLine extends StatelessWidget {
         child: Container(
           height: height,
           decoration: BoxDecoration(
-            color: OpenVtsColors.surface,
+            color: shimmerColor,
             borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
           ),
         ),
@@ -1113,15 +1200,16 @@ class _ShimmerWrapState extends State<_ShimmerWrap>
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, child) {
+        final scheme = Theme.of(context).colorScheme;
         return ShaderMask(
           shaderCallback: (bounds) {
             return LinearGradient(
               begin: Alignment.centerLeft,
               end: Alignment.centerRight,
-              colors: const [
-                Color(0xFFE7E3EA),
-                Color(0xFFF4F3F6),
-                Color(0xFFE7E3EA),
+              colors: [
+                scheme.outlineVariant.withValues(alpha: 0.3),
+                scheme.outlineVariant.withValues(alpha: 0.5),
+                scheme.outlineVariant.withValues(alpha: 0.3),
               ],
               stops: [
                 (_controller.value - 0.3).clamp(0.0, 1.0),
@@ -1144,6 +1232,10 @@ class _ServicesSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final borderColor =
+        isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border;
+
     return OpenVtsCard(
       padding: const EdgeInsets.all(OpenVtsSpacing.md),
       child: Column(
@@ -1158,7 +1250,7 @@ class _ServicesSkeleton extends StatelessWidget {
               padding: const EdgeInsets.all(OpenVtsSpacing.md),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(OpenVtsRadius.lg),
-                border: Border.all(color: OpenVtsColors.border),
+                border: Border.all(color: borderColor),
               ),
               child: const Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1214,8 +1306,9 @@ class _StatusVisuals {
 }
 
 _StatusVisuals _statusVisualsForComponent(
-  SuperadminServerComponentStatus status,
-) {
+  SuperadminServerComponentStatus status, {
+  required bool isDark,
+}) {
   switch (status) {
     case SuperadminServerComponentStatus.running:
       return _StatusVisuals(
@@ -1234,14 +1327,19 @@ _StatusVisuals _statusVisualsForComponent(
         background: OpenVtsColors.warning.withValues(alpha: 0.10),
       );
     case SuperadminServerComponentStatus.unknown:
-      return const _StatusVisuals(
-        color: OpenVtsColors.textSecondary,
-        background: OpenVtsColors.surface,
+      return _StatusVisuals(
+        color: isDark
+            ? OpenVtsColors.darkTextSecondary
+            : OpenVtsColors.textSecondary,
+        background: isDark ? OpenVtsColors.darkSurface : OpenVtsColors.surface,
       );
   }
 }
 
-_StatusVisuals _statusVisualsForJob(SuperadminServerJobStatus status) {
+_StatusVisuals _statusVisualsForJob(
+  SuperadminServerJobStatus status, {
+  required bool isDark,
+}) {
   switch (status) {
     case SuperadminServerJobStatus.queued:
       return _StatusVisuals(
@@ -1264,9 +1362,11 @@ _StatusVisuals _statusVisualsForJob(SuperadminServerJobStatus status) {
         background: OpenVtsColors.error.withValues(alpha: 0.10),
       );
     case SuperadminServerJobStatus.unknown:
-      return const _StatusVisuals(
-        color: OpenVtsColors.textSecondary,
-        background: OpenVtsColors.surface,
+      return _StatusVisuals(
+        color: isDark
+            ? OpenVtsColors.darkTextSecondary
+            : OpenVtsColors.textSecondary,
+        background: isDark ? OpenVtsColors.darkSurface : OpenVtsColors.surface,
       );
   }
 }

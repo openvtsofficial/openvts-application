@@ -18,6 +18,7 @@ import '../../controllers/admin_providers.dart';
 import '../../controllers/admin_users_controller.dart';
 import '../../models/admin_users_model.dart';
 import '../../models/admin_users_state.dart';
+import '../../utils/location_label_resolver.dart';
 import 'widgets/admin_edit_user_sheet.dart';
 import 'widgets/admin_user_card.dart';
 import 'widgets/admin_user_delete_sheet.dart';
@@ -81,8 +82,7 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
           ? const OpenVtsLoader()
           : state.errorMessage != null && !state.hasUsers
               ? OpenVtsErrorView(
-                  message:
-                      state.errorMessage ?? 'Users could not be loaded.',
+                  message: state.errorMessage ?? 'Users could not be loaded.',
                   onRetry: controller.refresh,
                 )
               : _UsersBody(
@@ -105,7 +105,13 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
     var selectedStatus = state.statusFilter;
     var selectedVerified = state.verifiedFilter;
     var selectedCountry = state.countryFilter;
-    final countryCodes = _countryCodes(state.users);
+
+    // Build resolved options from the full user list, using the cached API
+    // options so we never rely solely on the current page.
+    final countryOptions = LocationLabelResolver.resolvedCountryOptions(
+      state.users.map((u) => u.countryCode),
+      apiOptions: state.countryOptions,
+    );
 
     await showModalBottomSheet<void>(
       context: context,
@@ -169,12 +175,14 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
                         onSelected: () =>
                             setSheetState(() => selectedCountry = null),
                       ),
-                      for (final country in countryCodes)
+                      // Display readable label; keep canonical code as value.
+                      for (final option in countryOptions)
                         _ChoiceChip(
-                          label: country,
-                          selected: selectedCountry == country,
-                          onSelected: () =>
-                              setSheetState(() => selectedCountry = country),
+                          label: option.label,
+                          selected: selectedCountry == option.value,
+                          onSelected: () => setSheetState(
+                            () => selectedCountry = option.value,
+                          ),
                         ),
                     ],
                   ),
@@ -184,6 +192,7 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
               onPrimaryAction: () {
                 controller.setStatusFilter(selectedStatus);
                 controller.setVerifiedFilter(selectedVerified);
+                // selectedCountry is already a canonical code (or null).
                 controller.setCountryFilter(selectedCountry);
                 Navigator.of(sheetContext).pop();
               },
@@ -377,7 +386,7 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
         'Signed in as $name.',
         context: context,
       );
-      context.go(RoutePaths.userDashboard);
+      context.go(RoutePaths.userHome);
     } catch (_) {
       if (!mounted) {
         return;
@@ -403,16 +412,6 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
       case AdminUserCardAction.delete:
         _showDeleteUserSheet(user);
     }
-  }
-
-  List<String> _countryCodes(List<AdminUserListItem> users) {
-    final codes = <String>{
-      for (final user in users)
-        if (user.countryCode.trim().isNotEmpty)
-          user.countryCode.trim().toUpperCase(),
-    }.toList()
-      ..sort();
-    return codes;
   }
 }
 
@@ -500,6 +499,7 @@ class _UsersBody extends StatelessWidget {
                         isUpdating: state.isUpdating(user.id),
                         isDeleting: state.isDeleting(user.id),
                         isLoggingIn: state.isLoggingIn(user.id),
+                        countryOptions: state.countryOptions,
                         onTap: () => onOpenDetails(user),
                         onStatusChanged: (value) =>
                             onStatusChanged(user, value),
@@ -578,19 +578,15 @@ class _PrimaryCreateButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final background =
-        isDark ? OpenVtsColors.surfaceElevated : OpenVtsColors.brandInk;
-    final foreground = isDark ? OpenVtsColors.brandInk : OpenVtsColors.white;
-
     return ElevatedButton.icon(
       onPressed: onPressed,
       icon: const Icon(Icons.add_rounded, size: 18),
       label: const Text('Create User'),
       style: ElevatedButton.styleFrom(
-        backgroundColor: background,
-        foregroundColor: foreground,
+        backgroundColor: OpenVtsColors.brandInk,
+        foregroundColor: OpenVtsColors.white,
         elevation: 0,
+        side: const BorderSide(color: OpenVtsColors.white, width: 1),
         padding: const EdgeInsets.symmetric(
           horizontal: OpenVtsSpacing.md,
           vertical: OpenVtsSpacing.sm,
@@ -743,7 +739,8 @@ class _SearchInput extends StatelessWidget {
             textAlignVertical: TextAlignVertical.center,
             cursorColor: _primaryInkColor(context),
             cursorWidth: 1.4,
-            style: _baseStyle.copyWith(color: OpenVtsColors.textPrimary),
+            style: _baseStyle.copyWith(
+                color: Theme.of(context).colorScheme.onSurface),
             strutStyle: const StrutStyle(
               fontFamily: OpenVtsTypography.primaryFontFamily,
               fontFamilyFallback: OpenVtsTypography.fontFallback,
@@ -759,18 +756,18 @@ class _SearchInput extends StatelessWidget {
               isCollapsed: false,
               hintText: 'Search by name, email\u2026',
               hintStyle: _baseStyle.copyWith(
-                color: OpenVtsColors.textTertiary,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
                 fontWeight: FontWeight.w400,
               ),
-              prefixIcon: const Padding(
-                padding: EdgeInsetsDirectional.only(
+              prefixIcon: Padding(
+                padding: const EdgeInsetsDirectional.only(
                   start: OpenVtsSpacing.sm,
                   end: OpenVtsSpacing.xs,
                 ),
                 child: Icon(
                   Icons.search_rounded,
                   size: 18,
-                  color: OpenVtsColors.textSecondary,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
               prefixIconConstraints: const BoxConstraints(
@@ -795,10 +792,10 @@ class _SearchInput extends StatelessWidget {
                           minHeight: 28,
                         ),
                         splashRadius: 16,
-                        icon: const Icon(
+                        icon: Icon(
                           Icons.close_rounded,
                           size: 16,
-                          color: OpenVtsColors.textSecondary,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ),
@@ -1026,10 +1023,14 @@ class _PageButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final enabled = onPressed != null;
+    final baseColor = _softSurfaceColor(context);
     return Material(
       color: enabled
-          ? _softSurfaceColor(context)
-          : _softSurfaceColor(context).withValues(alpha: 0.6),
+          ? baseColor
+          : Color.alphaBlend(
+              Theme.of(context).colorScheme.surface.withValues(alpha: 0.4),
+              baseColor,
+            ),
       borderRadius: BorderRadius.circular(OpenVtsRadius.md),
       child: InkWell(
         onTap: onPressed,
@@ -1131,8 +1132,7 @@ class _OptionsSheet extends StatelessWidget {
               section.child,
               const SizedBox(height: OpenVtsSpacing.md),
             ],
-            if (primaryActionLabel != null ||
-                secondaryActionLabel != null) ...[
+            if (primaryActionLabel != null || secondaryActionLabel != null) ...[
               const SizedBox(height: OpenVtsSpacing.xs),
               Row(
                 children: [

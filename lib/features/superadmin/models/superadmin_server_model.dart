@@ -906,14 +906,14 @@ _StorageMetricSnapshot _extractDiskMetric(
 
   final freeGb = usedGb == null || totalGb == null
       ? _extractSizeInGbFromSource(
-            disk,
-            kind: _StorageMetricKind.disk,
-            byteKeys: const ['freeBytes', 'free_bytes', 'availableBytes'],
-            gbKeys: const ['freeGb', 'freeGB', 'availableGb'],
-            mbKeys: const ['freeMb', 'freeMB', 'availableMb'],
-            genericKeys: const ['free', 'available', 'avail'],
-            unitKeys: const ['unit', 'diskUnit'],
-          )
+          disk,
+          kind: _StorageMetricKind.disk,
+          byteKeys: const ['freeBytes', 'free_bytes', 'availableBytes'],
+          gbKeys: const ['freeGb', 'freeGB', 'availableGb'],
+          mbKeys: const ['freeMb', 'freeMB', 'availableMb'],
+          genericKeys: const ['free', 'available', 'avail'],
+          unitKeys: const ['unit', 'diskUnit'],
+        )
       : null;
 
   final resolvedTotalGb = totalGb;

@@ -3,7 +3,6 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
@@ -33,14 +32,14 @@ class PaymentsModeBreakdown extends StatelessWidget {
           Text(
             'Payment Mode Breakdown',
             style: OpenVtsTypography.titleSmall.copyWith(
-              color: OpenVtsColors.textPrimary,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: OpenVtsSpacing.xxs),
           Text(
             'Ranked by transaction count',
             style: OpenVtsTypography.meta.copyWith(
-              color: OpenVtsColors.textSecondary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
           const SizedBox(height: OpenVtsSpacing.sm),
@@ -95,7 +94,7 @@ class _ModeRow extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: OpenVtsTypography.body.copyWith(
-              color: OpenVtsColors.textPrimary,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
         ),
@@ -108,15 +107,18 @@ class _ModeRow extends StatelessWidget {
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  const DecoratedBox(
-                    decoration: BoxDecoration(color: OpenVtsColors.surface),
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surfaceContainer,
+                    ),
                   ),
                   FractionallySizedBox(
                     alignment: Alignment.centerLeft,
                     widthFactor: ratio.clamp(0, 1).toDouble(),
-                    child: const DecoratedBox(
-                      decoration:
-                          BoxDecoration(color: OpenVtsColors.textSecondary),
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   ),
                 ],
@@ -131,7 +133,7 @@ class _ModeRow extends StatelessWidget {
             NumberFormat.compact().format(count),
             textAlign: TextAlign.right,
             style: OpenVtsTypography.meta.copyWith(
-              color: OpenVtsColors.textSecondary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               fontWeight: FontWeight.w600,
             ),
           ),

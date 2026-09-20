@@ -26,6 +26,12 @@ class AdminUserDetailsController extends StateNotifier<AdminUserDetailsState> {
   final AdminUserDetailsService _service;
   final Set<AdminUserDetailsTab> _loadedTabs = <AdminUserDetailsTab>{};
 
+  /// Seed initial data from list item to preserve values that detail API may omit.
+  void seedInitialData({DateTime? lastLogin}) {
+    // Resolvers automatically use state.initialUser for fallback values
+    // This method is a placeholder for future initialization logic
+  }
+
   Future<void> loadInitial() async {
     await loadProfile();
   }
@@ -118,10 +124,40 @@ class AdminUserDetailsController extends StateNotifier<AdminUserDetailsState> {
       sectionErrorMessage: null,
     );
     try {
-      final user = await _service.getUserDetails(_userId);
+      var user = await _service.getUserDetails(_userId);
+
+      // Preserve known status from initialUser if detail API returned default true
+      // and we have explicit false from the list
+      if (user.isActive == true &&
+          state.initialUser != null &&
+          state.initialUser!.isActive == false) {
+        user = user.copyWith(isActive: false);
+      }
+
+      // Determine the authoritative vehicle count from known sources
+      // Priority: explicitly set > detail if > 0 > initialUser if > 0 > loaded vehicles > fresh detail
+      int? knownCount;
+      if (state.vehicleCount != null) {
+        knownCount = state.vehicleCount;
+      } else if (state.user != null && state.user!.vehicleCount > 0) {
+        knownCount = state.user!.vehicleCount;
+      } else if (state.initialUser != null &&
+          state.initialUser!.vehicleCount > 0) {
+        knownCount = state.initialUser!.vehicleCount;
+      } else if (state.hasLoadedVehicles) {
+        knownCount = state.linkedVehicles.length;
+      }
+
+      // Preserve known vehicle count if detail API returned 0
+      if (user.vehicleCount == 0 && knownCount != null && knownCount > 0) {
+        user = user.copyWith(vehicleCount: knownCount);
+      }
+
       _loadedTabs.add(AdminUserDetailsTab.profile);
       state = state.copyWith(
         user: user,
+        vehicleCount:
+            knownCount ?? (user.vehicleCount > 0 ? user.vehicleCount : null),
         isLoadingProfile: false,
       );
     } catch (error) {
@@ -130,6 +166,36 @@ class AdminUserDetailsController extends StateNotifier<AdminUserDetailsState> {
         errorMessage: state.user == null ? _errorMessage(error) : null,
         sectionErrorMessage: state.user == null ? null : _errorMessage(error),
       );
+    }
+  }
+
+  /// Ensure vehicle count is loaded for display in summary card.
+  /// Called early (on screen open) to populate the count before user navigates to Vehicle tab.
+  /// If count already known, returns immediately.
+  /// If vehicles already loaded, uses loaded count.
+  /// Otherwise, fetches linked vehicles only (not unlinked, to avoid unnecessary API calls for summary).
+  Future<void> ensureVehicleCountLoaded() async {
+    // If count already set explicitly, nothing to do
+    if (state.vehicleCount != null) return;
+
+    // If vehicles already loaded, use that count
+    if (state.hasLoadedVehicles) {
+      state = state.copyWith(vehicleCount: state.linkedVehicles.length);
+      return;
+    }
+
+    // Otherwise, fetch linked vehicles only for count
+    try {
+      final linked = await _service.getLinkedVehicles(_userId);
+      state = state.copyWith(
+        linkedVehicles: linked,
+        vehicleCount: linked.length,
+        // Mark as partially loaded (only linked, not unlinked)
+        // Full load happens when user opens Vehicle tab
+      );
+    } catch (error) {
+      // Silently fail for summary count - don't show error, just leave count as unknown
+      // Vehicle tab will load properly when user navigates to it
     }
   }
 
@@ -202,7 +268,54 @@ class AdminUserDetailsController extends StateNotifier<AdminUserDetailsState> {
       sectionErrorMessage: null,
     );
     try {
-      final user = await _service.updateCompanyDetails(_userId, request);
+      var user = await _service.updateCompanyDetails(_userId, request);
+
+      // Preserve submitted values in case backend response omits them
+      // Website is independent - ensure domain and color are preserved
+      if (user.companies.isNotEmpty) {
+        final updatedCompany = user.companies.first;
+        var preservedCompany = updatedCompany;
+
+        // If we submitted customDomain but backend response doesn't have it, preserve it
+        if (request.customDomain.trim().isNotEmpty &&
+            updatedCompany.customDomain.isEmpty) {
+          preservedCompany = AdminUserCompany(
+            id: preservedCompany.id,
+            name: preservedCompany.name,
+            websiteUrl: preservedCompany.websiteUrl,
+            customDomain: request.customDomain,
+            socialLinks: preservedCompany.socialLinks,
+            logoLightUrl: preservedCompany.logoLightUrl,
+            logoDarkUrl: preservedCompany.logoDarkUrl,
+            faviconUrl: preservedCompany.faviconUrl,
+            primaryColor: preservedCompany.primaryColor,
+          );
+        }
+
+        // If we submitted primaryColor but backend response doesn't have it, preserve it
+        if (request.primaryColor.trim().isNotEmpty &&
+            preservedCompany.primaryColor.isEmpty) {
+          preservedCompany = AdminUserCompany(
+            id: preservedCompany.id,
+            name: preservedCompany.name,
+            websiteUrl: preservedCompany.websiteUrl,
+            customDomain: preservedCompany.customDomain,
+            socialLinks: preservedCompany.socialLinks,
+            logoLightUrl: preservedCompany.logoLightUrl,
+            logoDarkUrl: preservedCompany.logoDarkUrl,
+            faviconUrl: preservedCompany.faviconUrl,
+            primaryColor: request.primaryColor,
+          );
+        }
+
+        // Update user with preserved company if anything changed
+        if (preservedCompany != updatedCompany) {
+          user = user.copyWith(
+            companies: [preservedCompany, ...user.companies.skip(1)],
+          );
+        }
+      }
+
       state = state.copyWith(
         user: user,
         isSavingCompany: false,
@@ -240,6 +353,7 @@ class AdminUserDetailsController extends StateNotifier<AdminUserDetailsState> {
       state = state.copyWith(
         linkedVehicles: results[0],
         availableVehicles: results[1],
+        vehicleCount: results[0].length,
         isLoadingVehicles: false,
       );
     } catch (error) {
@@ -634,10 +748,9 @@ class AdminUserDetailsController extends StateNotifier<AdminUserDetailsState> {
       final page = await _service.getActivityLogs(
         userId: _userId,
         limit: limit,
-        q: state.logSearch,
-        actionPrefix: state.logActionPrefix,
-        from: _formatDateForApi(state.logFrom),
-        to: _formatDateForApi(state.logTo),
+        q: _effectiveLogQuery(state),
+        from: _formatDateTimeForApi(state.logFrom),
+        to: _formatDateTimeForApi(state.logTo),
       );
       _loadedTabs.add(AdminUserDetailsTab.logs);
       state = state.copyWith(
@@ -664,10 +777,9 @@ class AdminUserDetailsController extends StateNotifier<AdminUserDetailsState> {
         userId: _userId,
         limit: limit,
         cursorId: state.logsNextCursorId,
-        q: state.logSearch,
-        actionPrefix: state.logActionPrefix,
-        from: _formatDateForApi(state.logFrom),
-        to: _formatDateForApi(state.logTo),
+        q: _effectiveLogQuery(state),
+        from: _formatDateTimeForApi(state.logFrom),
+        to: _formatDateTimeForApi(state.logTo),
       );
       state = state.copyWith(
         logs: <AdminUserActivityLog>[
@@ -696,6 +808,8 @@ class AdminUserDetailsController extends StateNotifier<AdminUserDetailsState> {
   }) {
     state = state.copyWith(
       logSearch: q ?? state.logSearch,
+      // logActionPrefix stores the selected quick-chip keyword; reused field name
+      // so state shape stays unchanged.
       logActionPrefix: actionPrefix ?? state.logActionPrefix,
       logFrom: clearFrom ? null : from ?? state.logFrom,
       logTo: clearTo ? null : to ?? state.logTo,
@@ -705,6 +819,17 @@ class AdminUserDetailsController extends StateNotifier<AdminUserDetailsState> {
       sectionErrorMessage: null,
     );
     _loadedTabs.remove(AdminUserDetailsTab.logs);
+  }
+
+  /// Merges manual search text and the selected quick-chip keyword into a single
+  /// `q` value that the backend treats as a contains search against action and
+  /// entity.  Manual text takes priority over the chip keyword.
+  static String? _effectiveLogQuery(AdminUserDetailsState s) {
+    final manual = s.logSearch.trim();
+    if (manual.isNotEmpty) return manual;
+    final keyword = s.logActionPrefix.trim();
+    if (keyword.isNotEmpty) return keyword;
+    return null;
   }
 
   List<AdminUserTicket> _replaceTicket(
@@ -737,6 +862,14 @@ class AdminUserDetailsController extends StateNotifier<AdminUserDetailsState> {
     final month = value.month.toString().padLeft(2, '0');
     final day = value.day.toString().padLeft(2, '0');
     return '$year-$month-$day';
+  }
+
+  /// Serializes a date-time value to a full ISO 8601 string, preserving the
+  /// selected time and converting to UTC so the backend receives an unambiguous
+  /// boundary.  Used for the logs date-time range filter.
+  static String? _formatDateTimeForApi(DateTime? value) {
+    if (value == null) return null;
+    return value.toUtc().toIso8601String();
   }
 
   String _errorMessage(Object error) {

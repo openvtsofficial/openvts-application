@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/utils/date_time_formatter.dart';
@@ -81,16 +80,17 @@ class _AdminDetailsCreditHistoryTabState
 
     final isRefreshing = isLoading && hasLoaded;
 
+    final scheme = Theme.of(context).colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (isRefreshing)
-          const ClipRRect(
-            borderRadius: BorderRadius.all(Radius.circular(2)),
+          ClipRRect(
+            borderRadius: const BorderRadius.all(Radius.circular(2)),
             child: LinearProgressIndicator(
               minHeight: 2,
-              color: OpenVtsColors.brandInk,
-              backgroundColor: OpenVtsColors.surface,
+              color: scheme.primary,
+              backgroundColor: scheme.surfaceContainerHighest,
             ),
           ),
         _SummaryGrid(
@@ -127,9 +127,9 @@ class _AdminDetailsCreditHistoryTabState
             padding: const EdgeInsets.only(bottom: OpenVtsSpacing.xs),
             child: Text(
               errorMessage,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 11,
-                color: OpenVtsColors.error,
+                color: scheme.error,
               ),
             ),
           ),
@@ -159,10 +159,11 @@ class _AdminDetailsCreditHistoryTabState
     required SuperadminCreditActivity activity,
     required int currentCredits,
   }) async {
+    final scheme = Theme.of(context).colorScheme;
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: OpenVtsColors.surfaceElevated,
+      backgroundColor: scheme.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -305,6 +306,7 @@ class _SummaryTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return OpenVtsCard(
       padding: const EdgeInsets.symmetric(
         horizontal: OpenVtsSpacing.xs,
@@ -313,22 +315,22 @@ class _SummaryTile extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 14, color: OpenVtsColors.textSecondary),
+          Icon(icon, size: 14, color: scheme.onSurfaceVariant),
           const SizedBox(height: 6),
           Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w700,
-              color: OpenVtsColors.textPrimary,
+              color: scheme.onSurface,
             ),
           ),
           const SizedBox(height: 2),
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 10,
-              color: OpenVtsColors.textSecondary,
+              color: scheme.onSurfaceVariant,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -392,39 +394,40 @@ class _SearchField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return TextField(
       controller: controller,
       onChanged: onChanged,
-      style: const TextStyle(fontSize: 13, color: OpenVtsColors.textPrimary),
+      style: TextStyle(fontSize: 13, color: scheme.onSurface),
       decoration: InputDecoration(
         isDense: true,
         hintText: 'Search by date, activity, credits, vehicle…',
-        hintStyle: const TextStyle(
+        hintStyle: TextStyle(
           fontSize: 12,
-          color: OpenVtsColors.textTertiary,
+          color: scheme.onSurfaceVariant,
         ),
-        prefixIcon: const Icon(
+        prefixIcon: Icon(
           Icons.search,
           size: 18,
-          color: OpenVtsColors.textSecondary,
+          color: scheme.onSurfaceVariant,
         ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: OpenVtsSpacing.sm,
           vertical: OpenVtsSpacing.sm,
         ),
         filled: true,
-        fillColor: OpenVtsColors.surface,
+        fillColor: scheme.surfaceContainer,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-          borderSide: const BorderSide(color: OpenVtsColors.border),
+          borderSide: BorderSide(color: scheme.outlineVariant),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-          borderSide: const BorderSide(color: OpenVtsColors.border),
+          borderSide: BorderSide(color: scheme.outlineVariant),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-          borderSide: const BorderSide(color: OpenVtsColors.brandInk),
+          borderSide: BorderSide(color: scheme.primary),
         ),
       ),
     );
@@ -451,6 +454,7 @@ class _CreditLogCard extends StatelessWidget {
     const fmt = DateTimeFormatter();
     final dateLabel =
         log.createdAt != null ? fmt.formatDateTime(log.createdAt!) : '—';
+    final scheme = Theme.of(context).colorScheme;
 
     return OpenVtsCard(
       padding: const EdgeInsets.fromLTRB(
@@ -466,12 +470,12 @@ class _CreditLogCard extends StatelessWidget {
             width: 30,
             height: 30,
             decoration: BoxDecoration(
-              color: OpenVtsColors.surface,
+              color: scheme.surfaceContainer,
               borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-              border: Border.all(color: OpenVtsColors.border),
+              border: Border.all(color: scheme.outlineVariant),
             ),
             alignment: Alignment.center,
-            child: Icon(icon, size: 16, color: OpenVtsColors.textPrimary),
+            child: Icon(icon, size: 16, color: scheme.onSurface),
           ),
           const SizedBox(width: OpenVtsSpacing.sm),
           Expanded(
@@ -483,19 +487,19 @@ class _CreditLogCard extends StatelessWidget {
                     Expanded(
                       child: Text(
                         activityLabel,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
-                          color: OpenVtsColors.textPrimary,
+                          color: scheme.onSurface,
                         ),
                       ),
                     ),
                     Text(
                       '$sign${log.credits}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
-                        color: OpenVtsColors.textPrimary,
+                        color: scheme.onSurface,
                       ),
                     ),
                   ],
@@ -506,17 +510,17 @@ class _CreditLogCard extends StatelessWidget {
                     Expanded(
                       child: Text(
                         dateLabel,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11,
-                          color: OpenVtsColors.textSecondary,
+                          color: scheme.onSurfaceVariant,
                         ),
                       ),
                     ),
                     Text(
                       'Balance ${entry.balanceAfter}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11,
-                        color: OpenVtsColors.textSecondary,
+                        color: scheme.onSurfaceVariant,
                       ),
                     ),
                   ],
@@ -529,15 +533,15 @@ class _CreditLogCard extends StatelessWidget {
                       vertical: 2,
                     ),
                     decoration: BoxDecoration(
-                      color: OpenVtsColors.surface,
+                      color: scheme.surfaceContainer,
                       borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-                      border: Border.all(color: OpenVtsColors.border),
+                      border: Border.all(color: scheme.outlineVariant),
                     ),
                     child: Text(
                       'Vehicle ${log.vehicleId}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 10,
-                        color: OpenVtsColors.textSecondary,
+                        color: scheme.onSurfaceVariant,
                       ),
                     ),
                   ),
@@ -562,14 +566,15 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return OpenVtsCard(
       padding: const EdgeInsets.symmetric(vertical: OpenVtsSpacing.lg),
       child: Center(
         child: Text(
           message,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 12,
-            color: OpenVtsColors.textSecondary,
+            color: scheme.onSurfaceVariant,
           ),
         ),
       ),
@@ -720,33 +725,34 @@ class _InfoTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: OpenVtsSpacing.sm,
         vertical: OpenVtsSpacing.sm,
       ),
       decoration: BoxDecoration(
-        color: OpenVtsColors.surface,
+        color: scheme.surfaceContainer,
         borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-        border: Border.all(color: OpenVtsColors.border),
+        border: Border.all(color: scheme.outlineVariant),
       ),
       child: Row(
         children: [
           Expanded(
             child: Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 11,
-                color: OpenVtsColors.textSecondary,
+                color: scheme.onSurfaceVariant,
               ),
             ),
           ),
           Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w700,
-              color: OpenVtsColors.textPrimary,
+              color: scheme.onSurface,
             ),
           ),
         ],
@@ -765,6 +771,7 @@ class _CreditSheetHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         OpenVtsSpacing.md,
@@ -779,7 +786,7 @@ class _CreditSheetHeader extends StatelessWidget {
             height: 4,
             margin: const EdgeInsets.only(top: 6, bottom: OpenVtsSpacing.sm),
             decoration: BoxDecoration(
-              color: OpenVtsColors.border,
+              color: scheme.outlineVariant,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -788,21 +795,22 @@ class _CreditSheetHeader extends StatelessWidget {
               Expanded(
                 child: Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
-                    color: OpenVtsColors.textPrimary,
+                    color: scheme.onSurface,
                   ),
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.close_rounded, size: 20),
+                icon: Icon(Icons.close_rounded,
+                    size: 20, color: scheme.onSurface),
                 onPressed: () => Navigator.of(context).maybePop(),
                 tooltip: 'Close',
               ),
             ],
           ),
-          const Divider(height: 1, color: OpenVtsColors.border),
+          Divider(height: 1, color: scheme.outlineVariant),
         ],
       ),
     );
@@ -824,10 +832,11 @@ class _CreditSheetFooter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Container(
-      decoration: const BoxDecoration(
-        border: Border(top: BorderSide(color: OpenVtsColors.border)),
-        color: OpenVtsColors.surfaceElevated,
+      decoration: BoxDecoration(
+        border: Border(top: BorderSide(color: scheme.outlineVariant)),
+        color: scheme.surface,
       ),
       padding: const EdgeInsets.fromLTRB(
         OpenVtsSpacing.md,

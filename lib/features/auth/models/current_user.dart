@@ -7,6 +7,7 @@ class CurrentUser {
     required this.email,
     required this.role,
     this.username = '',
+    this.backendRole,
     this.profileUrl,
     this.phoneNumber,
     this.accountStatus,
@@ -26,6 +27,12 @@ class CurrentUser {
   final String name;
   final String email;
   final UserRole role;
+  // Preserve the server identity when SUBUSER shares the existing user shell.
+  final String? backendRole;
+  String get effectiveBackendRole => (backendRole ?? role.apiValue).toUpperCase();
+  bool get isSubuser => effectiveBackendRole == 'SUBUSER';
+  bool get canCloseAccount =>
+      effectiveBackendRole == 'USER' || effectiveBackendRole == 'SUBUSER';
   final String username;
   final String? profileUrl;
   final String? phoneNumber;
@@ -42,6 +49,7 @@ class CurrentUser {
   factory CurrentUser.fromJson(Map<String, dynamic> json) {
     final mobilePrefix = _firstNonEmptyString([
       json['mobilePrefix'],
+      json['mobileCode'],
       json['mobile_prefix'],
       json['phonePrefix'],
       json['phone_prefix'],
@@ -102,6 +110,10 @@ class CurrentUser {
           json['user_role'],
         ]),
       ),
+      backendRole: _firstNonEmptyString([
+        json['backendRole'], json['role'], json['userRole'], json['user_role'],
+        json['loginType'],
+      ])?.toUpperCase(),
       username: _firstNonEmptyString([
             json['username'],
             json['userName'],
@@ -199,6 +211,7 @@ class CurrentUser {
     String? name,
     String? email,
     UserRole? role,
+    String? backendRole,
     String? username,
     Object? profileUrl = _unset,
     Object? phoneNumber = _unset,
@@ -217,6 +230,7 @@ class CurrentUser {
       name: name ?? this.name,
       email: email ?? this.email,
       role: role ?? this.role,
+      backendRole: backendRole ?? this.backendRole,
       username: username ?? this.username,
       profileUrl: identical(profileUrl, _unset)
           ? this.profileUrl
@@ -259,6 +273,7 @@ class CurrentUser {
       'name': name,
       'email': email,
       'role': role.apiValue,
+      'backendRole': effectiveBackendRole,
       'username': username,
       'profileUrl': profileUrl,
       'phoneNumber': phoneNumber,

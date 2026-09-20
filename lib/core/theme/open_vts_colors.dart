@@ -22,9 +22,12 @@ class OpenVtsColors {
   static const error = Color(0xFF8A3333);
   static const info = Color(0xFF435A6B);
 
-  static const darkBackground = Color(0xFF0F0D12);
-  static const darkSurface = Color(0xFF18141D);
-  static const darkBorder = Color(0xFF2A2430);
+  static const darkBackground = Color(0xFF000000);
+  static const darkSurface = Color(0xFF0B0B0B);
+  static const darkSurfaceElevated = Color(0xFF111111);
+  static const darkBorder = Color(0x1FFFFFFF);
+  static const darkBorderStrong = Color(0x3DFFFFFF);
   static const darkTextPrimary = Color(0xFFFFFFFF);
-  static const darkTextSecondary = Color(0xFFC8C2CD);
+  static const darkTextSecondary = Color(0xB3FFFFFF);
+  static const darkTextTertiary = Color(0x99FFFFFF);
 }

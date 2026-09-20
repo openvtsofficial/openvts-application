@@ -129,4 +129,3 @@ _HistoryMapMarkerVisuals _historyMapMarkerVisuals(
       ),
   };
 }
-

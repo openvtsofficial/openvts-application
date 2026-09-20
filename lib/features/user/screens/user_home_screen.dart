@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/providers/app_preferences_provider.dart';
 import '../../../core/providers/core_providers.dart';
 import '../../../core/router/route_paths.dart';
 import '../../../shared/widgets/open_vts_role_home.dart';
@@ -28,6 +29,11 @@ class UserHomeScreen extends ConsumerWidget {
       route: RoutePaths.userMap,
     ),
     OpenVtsRoleHomeItem(
+      label: 'Reports',
+      icon: Icons.analytics_outlined,
+      route: RoutePaths.userReports,
+    ),
+    OpenVtsRoleHomeItem(
       label: 'Landmarks Studio',
       icon: Icons.place_outlined,
       route: RoutePaths.userLandmarksStudio,
@@ -36,11 +42,6 @@ class UserHomeScreen extends ConsumerWidget {
       label: 'Track Links',
       icon: Icons.share_outlined,
       route: RoutePaths.userTrackLinks,
-    ),
-    OpenVtsRoleHomeItem(
-      label: 'Route Optimisation',
-      icon: Icons.alt_route_outlined,
-      route: RoutePaths.userRouteOptimisation,
     ),
     OpenVtsRoleHomeItem(
       label: 'Support',
@@ -79,10 +80,17 @@ class UserHomeScreen extends ConsumerWidget {
 
     return OpenVtsRoleHome(
       displayName: user?.name.isNotEmpty == true ? user!.name : 'User',
-      roleLabel: 'User',
+      roleLabel: authState.isDemo
+          ? 'Demo • Read-only'
+          : user?.isSubuser == true
+              ? 'Sub User'
+              : 'User',
       profileImageUrl: resolveProfileImageUrl(baseUrl, user?.profileUrl),
       items: _items,
-      onToggleTheme: () => ref.read(themeModeProvider.notifier).toggle(),
+      onToggleTheme: () async {
+        await ref.read(themeModeProvider.notifier).toggle();
+        ref.invalidate(appLocalizationPreferencesProvider);
+      },
       notificationBadgeCount: unreadCount,
       onNotificationsPressed: () {
         ref.invalidate(userNotificationUnreadBadgeProvider);

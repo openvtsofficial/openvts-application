@@ -9,6 +9,7 @@ import '../../../shared/models/user_role.dart';
 import '../models/current_user.dart';
 import '../models/login_request.dart';
 import '../models/login_response.dart';
+import '../models/mfa_login_challenge.dart';
 
 class AuthService {
   AuthService(this._apiClient);
@@ -53,24 +54,142 @@ class AuthService {
       );
     }
 
-    final response = await _apiClient.post<LoginResponse>(
+    final response = await _apiClient.post<Map<String, dynamic>>(
       ApiEndpoints.auth.login,
       data: request.toJson(),
-      parser: (json) => LoginResponse.fromJson(json as Map<String, dynamic>),
+      parser: _mapPayload,
     );
+    if (response.data['mfaRequired'] == true) {
+      throw MfaLoginChallenge.fromJson(response.data);
+    }
+    return _validatedLogin(response.data);
+  }
 
-    if (response.data.accessToken.isEmpty ||
-        response.data.refreshToken.isEmpty) {
-      throw const ApiException(message: 'Login response is missing tokens');
+  Future<LoginResponse> verifyMfaLogin({
+    required String challengeToken,
+    required String code,
+  }) async {
+    final response = await _apiClient.post<Map<String, dynamic>>(
+      ApiEndpoints.auth.verifyMfaLogin,
+      data: {'challengeToken': challengeToken, 'code': code.trim()},
+      parser: _mapPayload,
+    );
+    return _validatedLogin(response.data);
+  }
+
+  static LoginResponse _validatedLogin(Map<String, dynamic> data) {
+    final result = LoginResponse.fromJson(data);
+    if (result.accessToken.isEmpty || result.refreshToken.isEmpty ||
+        result.user.id.isEmpty) {
+      throw const ApiException(message: 'Login response is incomplete.');
+    }
+    return result;
+  }
+
+  /// The supplied backend closes accounts recoverably; it does not erase data.
+  Future<void> closeAccount({
+    required String currentPassword,
+    String? code,
+  }) async {
+    final response = await _apiClient.delete<Map<String, dynamic>>(
+      ApiEndpoints.auth.account,
+      options: Options(receiveTimeout: const Duration(seconds: 30)),
+      data: {
+        'currentPassword': currentPassword,
+        if (code != null && code.trim().isNotEmpty) 'code': code.trim(),
+      },
+      parser: _mapPayload,
+    );
+    if (response.data['deleted'] != true) {
+      throw const ApiException(message: 'The server did not confirm account closure.');
+    }
+  }
+
+  Future<String> requestPasswordReset(String identifier) async {
+    final normalized = identifier.trim();
+    if (normalized.isEmpty) {
+      throw const ApiException(
+        message: 'Enter your email address or username.',
+      );
+    }
+    if (AppConfig.useMockData) {
+      return 'If an account with that identifier exists, a password reset link has been sent.';
     }
 
-    return response.data;
+    final response = await _apiClient.post<Map<String, dynamic>>(
+      ApiEndpoints.auth.forgotPassword,
+      data: <String, dynamic>{'identifier': normalized},
+      parser: _mapPayload,
+    );
+    return response.message?.trim().isNotEmpty == true
+        ? response.message!.trim()
+        : 'If an account with that identifier exists, a password reset link has been sent.';
+  }
+
+  Future<String> resetPassword({
+    required String token,
+    required String newPassword,
+  }) async {
+    final normalizedToken = _extractResetToken(token);
+    if (normalizedToken.isEmpty) {
+      throw const ApiException(message: 'Enter a valid password reset token.');
+    }
+    if (newPassword.length < 6 || newPassword.length > 35) {
+      throw const ApiException(
+        message: 'Password must contain between 6 and 35 characters.',
+      );
+    }
+    if (AppConfig.useMockData) {
+      return 'Password has been reset successfully.';
+    }
+
+    final response = await _apiClient.post<Map<String, dynamic>>(
+      ApiEndpoints.auth.resetPassword,
+      data: <String, dynamic>{
+        'token': normalizedToken,
+        'newPassword': newPassword,
+      },
+      parser: _mapPayload,
+    );
+    return response.message?.trim().isNotEmpty == true
+        ? response.message!.trim()
+        : 'Password has been reset successfully.';
   }
 
   Future<void> logout() async {
     // Role logout is handled by local session removal.
     // Keep this method as a no-op to mirror web behavior.
     return;
+  }
+
+  static Map<String, dynamic> _mapPayload(dynamic json) {
+    if (json is Map<String, dynamic>) {
+      return json;
+    }
+    if (json is Map) {
+      return json.map(
+        (key, value) => MapEntry(key.toString(), value),
+      );
+    }
+    return const <String, dynamic>{};
+  }
+
+  static String _extractResetToken(String raw) {
+    final trimmed = raw.trim();
+    if (trimmed.isEmpty) {
+      return '';
+    }
+
+    final uri = Uri.tryParse(trimmed);
+    if (uri != null) {
+      for (final key in const ['reset-password', 'token']) {
+        final value = uri.queryParameters[key]?.trim();
+        if (value != null && value.isNotEmpty) {
+          return value;
+        }
+      }
+    }
+    return trimmed;
   }
 
   Future<CurrentUser> getProfile(CurrentUser currentUser) async {

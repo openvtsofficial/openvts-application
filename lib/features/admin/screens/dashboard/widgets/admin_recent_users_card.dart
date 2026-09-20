@@ -1,19 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/router/route_paths.dart';
-import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../core/utils/date_time_formatter.dart';
 import '../../../models/admin_dashboard_model.dart';
 import 'admin_dashboard_list_card.dart';
 
-class AdminRecentUsersCard extends StatelessWidget {
+class AdminRecentUsersCard extends ConsumerWidget {
   const AdminRecentUsersCard({required this.users, super.key});
 
   final List<AdminRecentUser> users;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final formatter = ref.watch(appDateFormatterProvider);
+
     return AdminDashboardListCard(
       title: 'Recent Users',
       icon: Icons.people_outline_rounded,
@@ -22,16 +25,17 @@ class AdminRecentUsersCard extends StatelessWidget {
       emptyMessage: 'New users will appear here.',
       itemCount: users.length,
       itemBuilder: (context, index) {
-        return _RecentUserRow(user: users[index]);
+        return _RecentUserRow(user: users[index], formatter: formatter);
       },
     );
   }
 }
 
 class _RecentUserRow extends StatelessWidget {
-  const _RecentUserRow({required this.user});
+  const _RecentUserRow({required this.user, required this.formatter});
 
   final AdminRecentUser user;
+  final AppDateFormatter formatter;
 
   @override
   Widget build(BuildContext context) {
@@ -54,7 +58,7 @@ class _RecentUserRow extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: OpenVtsTypography.label.copyWith(
-                    color: OpenVtsColors.textPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -67,7 +71,7 @@ class _RecentUserRow extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: OpenVtsTypography.meta.copyWith(
-                    color: OpenVtsColors.textSecondary,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontSize: 10.5,
                   ),
                 ),
@@ -81,24 +85,26 @@ class _RecentUserRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  '0 vehicles',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.end,
-                  style: OpenVtsTypography.meta.copyWith(
-                    color: OpenVtsColors.textPrimary,
-                    fontWeight: FontWeight.w800,
+                if (user.vehicleCount != null)
+                  Text(
+                    '${user.vehicleCount} ${user.vehicleCount == 1 ? 'vehicle' : 'vehicles'}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.end,
+                    style: OpenVtsTypography.meta.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
-                ),
                 const SizedBox(height: 2),
                 Text(
-                  adminDashboardRelativeDate(user.createdAt),
+                  adminDashboardRelativeDate(user.createdAt,
+                      formatter: formatter),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.end,
                   style: OpenVtsTypography.meta.copyWith(
-                    color: OpenVtsColors.textSecondary,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontSize: 10,
                   ),
                 ),

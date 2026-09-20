@@ -15,6 +15,8 @@ class UserSettingsState {
     required this.mobilePrefixes,
     required this.states,
     required this.cities,
+    required this.statesForCountryCode,
+    required this.citiesForCountryAndStateCode,
     required this.isLoadingInitial,
     required this.isLoadingProfile,
     required this.isSavingProfile,
@@ -30,6 +32,9 @@ class UserSettingsState {
     required this.isLoadingLocalization,
     required this.isSavingLocalization,
     required this.isLoadingReferences,
+    required this.isLoadingStates,
+    required this.isLoadingCities,
+    required this.localizationHydrationEpoch,
     required this.errorMessage,
     required this.profileErrorMessage,
     required this.localizationErrorMessage,
@@ -49,6 +54,8 @@ class UserSettingsState {
         mobilePrefixes = const <UserMobilePrefixOption>[],
         states = const <UserStateOption>[],
         cities = const <UserCityOption>[],
+        statesForCountryCode = null,
+        citiesForCountryAndStateCode = null,
         isLoadingInitial = false,
         isLoadingProfile = false,
         isSavingProfile = false,
@@ -64,6 +71,9 @@ class UserSettingsState {
         isLoadingLocalization = false,
         isSavingLocalization = false,
         isLoadingReferences = false,
+        isLoadingStates = false,
+        isLoadingCities = false,
+        localizationHydrationEpoch = 0,
         errorMessage = null,
         profileErrorMessage = null,
         localizationErrorMessage = null;
@@ -85,6 +95,11 @@ class UserSettingsState {
   final List<UserStateOption> states;
   final List<UserCityOption> cities;
 
+  // Which country code the current [states] list belongs to.
+  final String? statesForCountryCode;
+  // Compound key "<countryCode>/<stateCode>" that [cities] belongs to.
+  final String? citiesForCountryAndStateCode;
+
   final bool isLoadingInitial;
   final bool isLoadingProfile;
   final bool isSavingProfile;
@@ -100,6 +115,14 @@ class UserSettingsState {
   final bool isLoadingLocalization;
   final bool isSavingLocalization;
   final bool isLoadingReferences;
+  // Separate flags so field-level spinners can show without full-screen busy.
+  final bool isLoadingStates;
+  final bool isLoadingCities;
+
+  // Incremented only on deliberate hydration events (initial load, refresh,
+  // reset, preset, successful save). The localization tab uses this to decide
+  // whether to overwrite the user's in-progress text input.
+  final int localizationHydrationEpoch;
 
   final String? errorMessage;
   final String? profileErrorMessage;
@@ -139,6 +162,37 @@ class UserSettingsState {
     return saved != draft;
   }
 
+  // Operations that would conflict with saving the Profile draft.
+  bool get isProfileTabBusy {
+    return isLoadingInitial ||
+        isLoadingProfile ||
+        isSavingProfile ||
+        isSavingCompany ||
+        isChangingPassword ||
+        isUploadingProfilePhoto ||
+        isRequestingEmailOtp ||
+        isConfirmingEmailOtp ||
+        isRequestingWhatsAppOtp ||
+        isConfirmingWhatsAppOtp;
+  }
+
+  // Operations that would conflict with saving the Localization draft.
+  bool get isLocalizationTabBusy {
+    return isLoadingInitial || isLoadingLocalization || isSavingLocalization;
+  }
+
+  // True when the current tab's refresh should be blocked or indicated.
+  bool get isProfileRefreshBusy {
+    return isLoadingInitial || isLoadingProfile || isLoadingReferences;
+  }
+
+  bool get isLocalizationRefreshBusy {
+    return isLoadingInitial || isLoadingLocalization || isLoadingReferences;
+  }
+
+  // Convenience: any background work across ALL tabs (used only for very
+  // coarse guards that need to span both tabs, e.g. the initial full-screen
+  // loader check).
   bool get hasAnyBusyState {
     return isLoadingInitial ||
         isLoadingProfile ||
@@ -157,9 +211,11 @@ class UserSettingsState {
         isLoadingReferences;
   }
 
-  bool get canSaveProfile => isProfileDirty && !hasAnyBusyState;
+  // Save can proceed only when the draft differs from saved AND the
+  // specific tab's conflicting operations are idle.
+  bool get canSaveProfile => isProfileDirty && !isProfileTabBusy;
 
-  bool get canSaveLocalization => isLocalizationDirty && !hasAnyBusyState;
+  bool get canSaveLocalization => isLocalizationDirty && !isLocalizationTabBusy;
 
   UserSettingsState copyWith({
     UserSettingsTab? selectedTab,
@@ -175,6 +231,8 @@ class UserSettingsState {
     List<UserMobilePrefixOption>? mobilePrefixes,
     List<UserStateOption>? states,
     List<UserCityOption>? cities,
+    Object? statesForCountryCode = _unset,
+    Object? citiesForCountryAndStateCode = _unset,
     bool? isLoadingInitial,
     bool? isLoadingProfile,
     bool? isSavingProfile,
@@ -190,6 +248,9 @@ class UserSettingsState {
     bool? isLoadingLocalization,
     bool? isSavingLocalization,
     bool? isLoadingReferences,
+    bool? isLoadingStates,
+    bool? isLoadingCities,
+    int? localizationHydrationEpoch,
     Object? errorMessage = _unset,
     Object? profileErrorMessage = _unset,
     Object? localizationErrorMessage = _unset,
@@ -218,6 +279,13 @@ class UserSettingsState {
       mobilePrefixes: mobilePrefixes ?? this.mobilePrefixes,
       states: states ?? this.states,
       cities: cities ?? this.cities,
+      statesForCountryCode: identical(statesForCountryCode, _unset)
+          ? this.statesForCountryCode
+          : statesForCountryCode as String?,
+      citiesForCountryAndStateCode:
+          identical(citiesForCountryAndStateCode, _unset)
+              ? this.citiesForCountryAndStateCode
+              : citiesForCountryAndStateCode as String?,
       isLoadingInitial: isLoadingInitial ?? this.isLoadingInitial,
       isLoadingProfile: isLoadingProfile ?? this.isLoadingProfile,
       isSavingProfile: isSavingProfile ?? this.isSavingProfile,
@@ -238,6 +306,10 @@ class UserSettingsState {
           isLoadingLocalization ?? this.isLoadingLocalization,
       isSavingLocalization: isSavingLocalization ?? this.isSavingLocalization,
       isLoadingReferences: isLoadingReferences ?? this.isLoadingReferences,
+      isLoadingStates: isLoadingStates ?? this.isLoadingStates,
+      isLoadingCities: isLoadingCities ?? this.isLoadingCities,
+      localizationHydrationEpoch:
+          localizationHydrationEpoch ?? this.localizationHydrationEpoch,
       errorMessage: identical(errorMessage, _unset)
           ? this.errorMessage
           : errorMessage as String?,

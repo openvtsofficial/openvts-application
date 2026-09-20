@@ -37,9 +37,8 @@ class AdminInventoryScreen extends ConsumerWidget {
         isDevices ? state.devices.isNotEmpty : state.simCards.isNotEmpty;
     final errorMessage =
         isDevices ? state.devicesErrorMessage : state.simCardsErrorMessage;
-    final isRefreshing = isDevices
-        ? state.isRefreshingDevices
-        : state.isRefreshingSimCards;
+    final isRefreshing =
+        isDevices ? state.isRefreshingDevices : state.isRefreshingSimCards;
 
     return OpenVtsPageScaffold(
       title: 'Inventory',
@@ -77,7 +76,8 @@ class AdminInventoryScreen extends ConsumerWidget {
                   onAdd: () => _showAddSheet(context),
                   onOpenFilters: () => _showFilterSheet(context, ref),
                   onOpenSort: () => _showSortSheet(context, ref),
-                  onEditDevice: (device) => _showEditDeviceSheet(context, device),
+                  onEditDevice: (device) =>
+                      _showEditDeviceSheet(context, device),
                   onEditSim: (sim) => _showEditSimSheet(context, sim),
                 ),
     );

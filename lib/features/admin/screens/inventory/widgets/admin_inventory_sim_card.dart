@@ -36,6 +36,7 @@ class AdminInventorySimCardWidget extends StatelessWidget {
             isActive: simCard.isActive,
             onEdit: onEdit,
             isEditing: isEditing,
+            showActiveBadge: false,
           ),
           const SizedBox(height: OpenVtsSpacing.md),
           AdminInventoryInfoGrid(
@@ -61,9 +62,8 @@ class AdminInventorySimCardWidget extends StatelessWidget {
             ),
           ),
           const SizedBox(height: OpenVtsSpacing.md),
-          AdminInventoryCardFooter(
-            createdValue:
-                AdminInventoryCardFooter.formatCreatedAt(simCard.createdAt),
+          AdminInventorySimCardFooter(
+            isActive: simCard.isActive,
             statusLabel: formatInventoryStatusLabel(simCard.statusLabel),
           ),
         ],

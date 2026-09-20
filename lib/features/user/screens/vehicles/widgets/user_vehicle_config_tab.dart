@@ -255,6 +255,7 @@ class _DeviceSummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return OpenVtsCard(
       padding: const EdgeInsets.all(OpenVtsSpacing.sm),
       child: Row(
@@ -263,14 +264,14 @@ class _DeviceSummaryCard extends StatelessWidget {
             width: 34,
             height: 34,
             decoration: BoxDecoration(
-              color: OpenVtsColors.textPrimary.withValues(alpha: 0.04),
+              color: cs.onSurface.withValues(alpha: 0.04),
               borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-              border: Border.all(color: OpenVtsColors.border),
+              border: Border.all(color: cs.outlineVariant),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.memory_outlined,
               size: 18,
-              color: OpenVtsColors.textSecondary,
+              color: cs.onSurfaceVariant,
             ),
           ),
           const SizedBox(width: OpenVtsSpacing.sm),
@@ -281,7 +282,7 @@ class _DeviceSummaryCard extends StatelessWidget {
                 Text(
                   'Device Config',
                   style: OpenVtsTypography.label.copyWith(
-                    color: OpenVtsColors.textPrimary,
+                    color: cs.onSurface,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -294,7 +295,7 @@ class _DeviceSummaryCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: OpenVtsTypography.meta.copyWith(
-                    color: OpenVtsColors.textSecondary,
+                    color: cs.onSurfaceVariant,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -324,12 +325,13 @@ class _NumberConfigCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return OpenVtsCard(
       padding: const EdgeInsets.all(OpenVtsSpacing.sm),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 18, color: OpenVtsColors.textSecondary),
+          Icon(icon, size: 18, color: cs.onSurfaceVariant),
           const SizedBox(width: OpenVtsSpacing.sm),
           Expanded(
             child: Column(
@@ -338,7 +340,7 @@ class _NumberConfigCard extends StatelessWidget {
                 Text(
                   title,
                   style: OpenVtsTypography.label.copyWith(
-                    color: OpenVtsColors.textPrimary,
+                    color: cs.onSurface,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -346,7 +348,7 @@ class _NumberConfigCard extends StatelessWidget {
                 Text(
                   helper,
                   style: OpenVtsTypography.meta.copyWith(
-                    color: OpenVtsColors.textSecondary,
+                    color: cs.onSurfaceVariant,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -377,6 +379,7 @@ class _IgnitionSourceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return OpenVtsCard(
       padding: const EdgeInsets.all(OpenVtsSpacing.sm),
       child: Column(
@@ -384,16 +387,16 @@ class _IgnitionSourceCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.key_rounded,
                 size: 18,
-                color: OpenVtsColors.textSecondary,
+                color: cs.onSurfaceVariant,
               ),
               const SizedBox(width: OpenVtsSpacing.sm),
               Text(
                 'Ignition Source',
                 style: OpenVtsTypography.label.copyWith(
-                  color: OpenVtsColors.textPrimary,
+                  color: cs.onSurface,
                   fontWeight: FontWeight.w800,
                 ),
               ),
@@ -403,7 +406,7 @@ class _IgnitionSourceCard extends StatelessWidget {
           Text(
             'ACC means wire/ACC. MOTION means motion fallback.',
             style: OpenVtsTypography.meta.copyWith(
-              color: OpenVtsColors.textSecondary,
+              color: cs.onSurfaceVariant,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -421,6 +424,21 @@ class _IgnitionSourceCard extends StatelessWidget {
                 visualDensity: VisualDensity.compact,
                 textStyle: WidgetStatePropertyAll(
                   OpenVtsTypography.meta.copyWith(fontWeight: FontWeight.w800),
+                ),
+                foregroundColor: WidgetStateProperty.resolveWith((states) {
+                  if (states.contains(WidgetState.selected)) {
+                    return cs.onSecondaryContainer;
+                  }
+                  return cs.onSurfaceVariant;
+                }),
+                backgroundColor: WidgetStateProperty.resolveWith((states) {
+                  if (states.contains(WidgetState.selected)) {
+                    return cs.secondaryContainer;
+                  }
+                  return Colors.transparent;
+                }),
+                side: WidgetStatePropertyAll(
+                  BorderSide(color: cs.outline),
                 ),
               ),
               onSelectionChanged: onChanged,
@@ -483,21 +501,22 @@ class _NoDeviceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return OpenVtsCard(
       padding: const EdgeInsets.all(OpenVtsSpacing.md),
       child: Row(
         children: [
-          const Icon(
+          Icon(
             Icons.memory_outlined,
             size: 18,
-            color: OpenVtsColors.textSecondary,
+            color: cs.onSurfaceVariant,
           ),
           const SizedBox(width: OpenVtsSpacing.sm),
           Expanded(
             child: Text(
               'No device assigned to this vehicle.',
               style: OpenVtsTypography.meta.copyWith(
-                color: OpenVtsColors.textSecondary,
+                color: cs.onSurfaceVariant,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -535,7 +554,7 @@ class _StatusCard extends StatelessWidget {
                 Text(
                   message,
                   style: OpenVtsTypography.meta.copyWith(
-                    color: OpenVtsColors.textSecondary,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontWeight: FontWeight.w700,
                   ),
                 ),

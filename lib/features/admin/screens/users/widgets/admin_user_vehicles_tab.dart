@@ -293,22 +293,26 @@ class _SummaryTile extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 14, color: OpenVtsColors.textSecondary),
+          Icon(
+            icon,
+            size: 14,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
           const SizedBox(height: 6),
           Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w700,
-              color: OpenVtsColors.textPrimary,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 2),
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 10,
-              color: OpenVtsColors.textSecondary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -346,16 +350,16 @@ class _SummaryCard extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.directions_car_filled_outlined,
                       size: 17,
-                      color: OpenVtsColors.textSecondary,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                     const SizedBox(width: OpenVtsSpacing.xs),
                     Text(
                       'Vehicles',
                       style: OpenVtsTypography.label.copyWith(
-                        color: OpenVtsColors.textPrimary,
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
@@ -373,7 +377,7 @@ class _SummaryCard extends StatelessWidget {
                 Text(
                   '$assignedCount assigned - $availableCount available',
                   style: OpenVtsTypography.meta.copyWith(
-                    color: OpenVtsColors.textSecondary,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -409,29 +413,39 @@ class _SearchField extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: OpenVtsColors.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-        border: Border.all(color: OpenVtsColors.border),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outlineVariant,
+        ),
       ),
       padding: const EdgeInsets.symmetric(horizontal: OpenVtsSpacing.sm),
       child: Row(
         children: [
-          const Icon(Icons.search,
-              size: 16, color: OpenVtsColors.textSecondary),
+          Icon(
+            Icons.search,
+            size: 16,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
           const SizedBox(width: OpenVtsSpacing.xs),
           Expanded(
             child: TextField(
               controller: controller,
               onChanged: onChanged,
-              style: const TextStyle(
-                  fontSize: 13, color: OpenVtsColors.textPrimary),
-              decoration: const InputDecoration(
+              cursorColor: Theme.of(context).colorScheme.primary,
+              style: TextStyle(
+                fontSize: 13,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+              decoration: InputDecoration(
                 isDense: true,
                 hintText: 'Search assigned vehicles',
-                hintStyle:
-                    TextStyle(fontSize: 12, color: OpenVtsColors.textTertiary),
+                hintStyle: TextStyle(
+                  fontSize: 12,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
                 border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(vertical: 12),
+                contentPadding: const EdgeInsets.symmetric(vertical: 12),
               ),
             ),
           ),
@@ -441,8 +455,11 @@ class _SearchField extends StatelessWidget {
                 controller.clear();
                 onChanged('');
               },
-              child: const Icon(Icons.close,
-                  size: 16, color: OpenVtsColors.textSecondary),
+              child: Icon(
+                Icons.close,
+                size: 16,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
         ],
       ),
@@ -495,24 +512,36 @@ class _FilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final backgroundColor = selected
+        ? OpenVtsColors.brandInk
+        : Theme.of(context).colorScheme.surfaceContainerHigh;
+    final foregroundColor = selected
+        ? (isDark ? OpenVtsColors.darkTextPrimary : Colors.white)
+        : Theme.of(context).colorScheme.onSurface;
+    final borderColor = selected
+        ? OpenVtsColors.brandInk
+        : Theme.of(context).colorScheme.outline;
+
+    return Material(
+      color: backgroundColor,
       borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: selected ? OpenVtsColors.brandInk : OpenVtsColors.surface,
-          borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
-          border: Border.all(
-            color: selected ? OpenVtsColors.brandInk : OpenVtsColors.border,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
+            border: Border.all(color: borderColor, width: 1),
           ),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w700,
-            color: selected ? OpenVtsColors.white : OpenVtsColors.textSecondary,
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: foregroundColor,
+            ),
           ),
         ),
       ),
@@ -565,18 +594,18 @@ class _VehicleCard extends StatelessWidget {
                       _vehicleTitle(vehicle),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
-                        color: OpenVtsColors.textPrimary,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       _vehicleSubtitle(vehicle),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11,
-                        color: OpenVtsColors.textSecondary,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -668,9 +697,20 @@ class _AssignVehicleSheetState extends State<_AssignVehicleSheet> {
           child: TextField(
             controller: _searchController,
             onChanged: (value) => setState(() => _query = value),
-            decoration: const InputDecoration(
+            cursorColor: Theme.of(context).colorScheme.primary,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+            decoration: InputDecoration(
               hintText: 'Search available vehicles',
-              prefixIcon: Icon(Icons.search_rounded, size: 18),
+              hintStyle: TextStyle(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+              prefixIcon: Icon(
+                Icons.search_rounded,
+                size: 18,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
           ),
         ),
@@ -793,11 +833,13 @@ class _SelectableVehicleTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: OpenVtsColors.white,
+      color: Theme.of(context).colorScheme.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
         side: BorderSide(
-          color: isSelected ? OpenVtsColors.brandInk : OpenVtsColors.border,
+          color: isSelected
+              ? OpenVtsColors.brandInk
+              : Theme.of(context).colorScheme.outlineVariant,
         ),
       ),
       child: InkWell(
@@ -814,7 +856,7 @@ class _SelectableVehicleTile extends StatelessWidget {
                 size: 18,
                 color: isSelected
                     ? OpenVtsColors.brandInk
-                    : OpenVtsColors.textTertiary,
+                    : Theme.of(context).colorScheme.outline,
               ),
               const SizedBox(width: OpenVtsSpacing.sm),
               Expanded(
@@ -826,7 +868,7 @@ class _SelectableVehicleTile extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: OpenVtsTypography.label.copyWith(
-                        color: OpenVtsColors.textPrimary,
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontSize: 13,
                         fontWeight: FontWeight.w800,
                       ),
@@ -837,7 +879,7 @@ class _SelectableVehicleTile extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: OpenVtsTypography.meta.copyWith(
-                        color: OpenVtsColors.textSecondary,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ],
@@ -866,13 +908,14 @@ class _TinyTextButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textColor = Theme.of(context).colorScheme.onSurface;
     return TextButton.icon(
       onPressed: isLoading ? null : onPressed,
       style: TextButton.styleFrom(
         minimumSize: const Size(0, 30),
         padding: const EdgeInsets.symmetric(horizontal: 8),
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-        foregroundColor: OpenVtsColors.textPrimary,
+        foregroundColor: textColor,
       ),
       icon: isLoading
           ? const SizedBox(
@@ -884,6 +927,7 @@ class _TinyTextButton extends StatelessWidget {
       label: Text(
         label,
         style: OpenVtsTypography.meta.copyWith(
+          color: textColor,
           fontSize: 11,
           fontWeight: FontWeight.w800,
         ),
@@ -896,31 +940,32 @@ class _MetaPill extends StatelessWidget {
   const _MetaPill({
     required this.icon,
     required this.label,
-    this.color = OpenVtsColors.textSecondary,
+    this.color,
   });
 
   final IconData icon;
   final String label;
-  final Color color;
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
+    final pillColor = color ?? Theme.of(context).colorScheme.onSurfaceVariant;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.06),
+        color: pillColor.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
-        border: Border.all(color: color.withValues(alpha: 0.18)),
+        border: Border.all(color: pillColor.withValues(alpha: 0.18)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12, color: color),
+          Icon(icon, size: 12, color: pillColor),
           const SizedBox(width: 4),
           Text(
             label,
             style: OpenVtsTypography.meta.copyWith(
-              color: color,
+              color: pillColor,
               fontSize: 11,
               fontWeight: FontWeight.w700,
             ),
@@ -941,9 +986,10 @@ class _InlineError extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(OpenVtsSpacing.sm),
       decoration: BoxDecoration(
-        color: OpenVtsColors.error.withValues(alpha: 0.05),
+        color: Theme.of(context).colorScheme.error.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-        border: Border.all(color: OpenVtsColors.error.withValues(alpha: 0.2)),
+        border: Border.all(
+            color: Theme.of(context).colorScheme.error.withValues(alpha: 0.2)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -989,7 +1035,7 @@ class _SectionLoader extends StatelessWidget {
           Text(
             'Loading $title',
             style: OpenVtsTypography.label.copyWith(
-              color: OpenVtsColors.textSecondary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -1030,7 +1076,7 @@ class _EmptyCard extends StatelessWidget {
         child: Text(
           label,
           style: OpenVtsTypography.meta.copyWith(
-            color: OpenVtsColors.textSecondary,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
             fontWeight: FontWeight.w700,
           ),
         ),

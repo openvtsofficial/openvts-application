@@ -9,6 +9,7 @@ import '../../../../core/theme/open_vts_spacing.dart';
 import '../../../../core/theme/open_vts_typography.dart';
 import '../../../../shared/helpers/toast_helper.dart';
 import '../../../../shared/widgets/open_vts_card.dart';
+import '../../../../shared/widgets/open_vts_detail_tab_strip.dart';
 import '../../../../shared/widgets/open_vts_error_view.dart';
 import '../../../../shared/widgets/open_vts_loader.dart';
 import '../../../../shared/widgets/open_vts_page_scaffold.dart';
@@ -17,8 +18,6 @@ import '../../controllers/admin_providers.dart';
 import '../../models/admin_driver_details_state.dart';
 import '../../models/admin_drivers_model.dart';
 import 'widgets/admin_driver_documents_tab.dart';
-import 'widgets/admin_driver_edit_sheet.dart';
-import 'widgets/admin_driver_password_sheet.dart';
 import 'widgets/admin_driver_profile_tab.dart';
 import 'widgets/admin_driver_users_tab.dart';
 
@@ -61,18 +60,15 @@ class AdminDriverDetailsScreen extends ConsumerWidget {
         const SizedBox(width: 4),
         PopupMenuButton<_DriverMenuAction>(
           tooltip: 'Driver actions',
-          icon: const Icon(
+          icon: Icon(
             Icons.more_vert_rounded,
             size: 20,
-            color: OpenVtsColors.textSecondary,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
           onSelected: (value) async {
             switch (value) {
               case _DriverMenuAction.refresh:
                 await controller.refreshCurrentTab();
-                break;
-              case _DriverMenuAction.edit:
-                await showDriverEditSheet(context: context, provider: provider);
                 break;
               case _DriverMenuAction.toggleStatus:
                 final current =
@@ -92,12 +88,6 @@ class AdminDriverDetailsScreen extends ConsumerWidget {
                     );
                   }
                 }
-                break;
-              case _DriverMenuAction.password:
-                await showDriverPasswordSheet(
-                  context: context,
-                  provider: provider,
-                );
                 break;
               case _DriverMenuAction.delete:
                 final confirmed = await showDialog<bool>(
@@ -152,11 +142,6 @@ class AdminDriverDetailsScreen extends ConsumerWidget {
               height: 40,
               child: _MenuRow(icon: Icons.refresh_rounded, label: 'Refresh'),
             ),
-            const PopupMenuItem(
-              value: _DriverMenuAction.edit,
-              height: 40,
-              child: _MenuRow(icon: Icons.edit_rounded, label: 'Edit Profile'),
-            ),
             PopupMenuItem(
               value: _DriverMenuAction.toggleStatus,
               height: 40,
@@ -167,14 +152,6 @@ class AdminDriverDetailsScreen extends ConsumerWidget {
                 label: (driver?.isActive ?? initialDriver?.isActive ?? false)
                     ? 'Set Inactive'
                     : 'Set Active',
-              ),
-            ),
-            const PopupMenuItem(
-              value: _DriverMenuAction.password,
-              height: 40,
-              child: _MenuRow(
-                icon: Icons.key_rounded,
-                label: 'Update Password',
               ),
             ),
             const PopupMenuDivider(height: 1),
@@ -224,7 +201,7 @@ class AdminDriverDetailsScreen extends ConsumerWidget {
   }
 }
 
-enum _DriverMenuAction { refresh, edit, toggleStatus, password, delete }
+enum _DriverMenuAction { refresh, toggleStatus, delete }
 
 class _HeaderStatusChip extends StatelessWidget {
   const _HeaderStatusChip({required this.isActive});
@@ -233,22 +210,29 @@ class _HeaderStatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color =
-        isActive ? OpenVtsColors.brandInk : OpenVtsColors.textTertiary;
+    final backgroundColor = isActive
+        ? Theme.of(context).colorScheme.primaryContainer
+        : Theme.of(context).colorScheme.surfaceContainerHighest;
+    final foregroundColor = isActive
+        ? Theme.of(context).colorScheme.onPrimaryContainer
+        : Theme.of(context).colorScheme.outline;
+    final borderColor = isActive
+        ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.25)
+        : Theme.of(context).colorScheme.outlineVariant;
     return Center(
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.08),
+          color: backgroundColor,
           borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
-          border: Border.all(color: color.withValues(alpha: 0.25)),
+          border: Border.all(color: borderColor),
         ),
         child: Text(
           isActive ? 'Active' : 'Inactive',
           style: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w600,
-            color: color,
+            color: foregroundColor,
           ),
         ),
       ),
@@ -269,7 +253,9 @@ class _MenuRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = destructive ? OpenVtsColors.error : OpenVtsColors.textPrimary;
+    final color = destructive
+        ? OpenVtsColors.error
+        : Theme.of(context).colorScheme.onSurface;
     return Row(
       children: [
         Icon(icon, size: 16, color: color),
@@ -308,14 +294,21 @@ class _SummaryCard extends StatelessWidget {
                 height: 56,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: OpenVtsColors.background,
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? OpenVtsColors.darkSurface
+                      : OpenVtsColors.background,
                   borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
-                  border: Border.all(color: OpenVtsColors.border),
+                  border: Border.all(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? OpenVtsColors.darkBorder
+                        : OpenVtsColors.border,
+                  ),
                 ),
                 child: Text(
                   _initials(name),
                   style: OpenVtsTypography.label.copyWith(
                     fontWeight: FontWeight.w700,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
               ),
@@ -324,13 +317,22 @@ class _SummaryCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: OpenVtsTypography.body.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: OpenVtsTypography.body.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: OpenVtsSpacing.xs),
+                        _StatusBadge(isActive: isActive),
+                      ],
                     ),
                     const SizedBox(height: OpenVtsSpacing.xxs),
                     Text(
@@ -341,40 +343,34 @@ class _SummaryCard extends StatelessWidget {
                         color: OpenVtsColors.textSecondary,
                       ),
                     ),
-                    const SizedBox(height: OpenVtsSpacing.xs),
-                    Wrap(
-                      spacing: OpenVtsSpacing.xs,
-                      runSpacing: OpenVtsSpacing.xs,
-                      children: [
-                        _MiniChip(
-                          label: isActive ? 'Active' : 'Inactive',
-                          active: isActive,
-                        ),
-                        _MiniChip(
-                          label: isVerified ? 'Verified' : 'Unverified',
-                          active: isVerified,
-                        ),
-                        const _MiniChip(label: 'Driver', active: false),
-                      ],
-                    ),
                   ],
                 ),
               ),
             ],
           ),
           const SizedBox(height: OpenVtsSpacing.sm),
-          const Divider(height: 1, color: OpenVtsColors.border),
+          Divider(
+            height: 1,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? OpenVtsColors.darkBorder
+                : OpenVtsColors.border,
+          ),
           const SizedBox(height: OpenVtsSpacing.sm),
-          _SummaryRow(
-            icon: Icons.mail_outline_rounded,
-            label: 'Email',
-            value: email,
+          _SummaryEmailRow(
+            email: email,
+            isVerified: isVerified,
           ),
           const SizedBox(height: OpenVtsSpacing.xs),
           _SummaryRow(
             icon: Icons.phone_outlined,
             label: 'Phone',
             value: phone,
+          ),
+          const SizedBox(height: OpenVtsSpacing.xs),
+          const _SummaryRow(
+            icon: Icons.badge_outlined,
+            label: 'Role',
+            value: 'Driver',
           ),
         ],
       ),
@@ -388,6 +384,106 @@ class _SummaryCard extends StatelessWidget {
     if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
     return (parts.first.substring(0, 1) + parts.last.substring(0, 1))
         .toUpperCase();
+  }
+}
+
+class _StatusBadge extends StatelessWidget {
+  const _StatusBadge({required this.isActive});
+
+  final bool isActive;
+
+  @override
+  Widget build(BuildContext context) {
+    final backgroundColor = isActive
+        ? Theme.of(context).colorScheme.primaryContainer
+        : Theme.of(context).colorScheme.surfaceContainerHighest;
+    final foregroundColor = isActive
+        ? Theme.of(context).colorScheme.onPrimaryContainer
+        : Theme.of(context).colorScheme.outline;
+    final borderColor = isActive
+        ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.25)
+        : Theme.of(context).colorScheme.outlineVariant;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
+        border: Border.all(color: borderColor),
+      ),
+      child: Text(
+        isActive ? 'Active' : 'Inactive',
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: foregroundColor,
+        ),
+      ),
+    );
+  }
+}
+
+class _SummaryEmailRow extends StatelessWidget {
+  const _SummaryEmailRow({
+    required this.email,
+    required this.isVerified,
+  });
+
+  final String email;
+  final bool isVerified;
+
+  @override
+  Widget build(BuildContext context) {
+    final displayEmail = email.trim().isEmpty ? '—' : email;
+    final verifiedColor =
+        isVerified ? OpenVtsColors.success : OpenVtsColors.textTertiary;
+    final verifiedIcon =
+        isVerified ? Icons.verified_rounded : Icons.error_outline_rounded;
+    final tooltip = isVerified ? 'Email verified' : 'Email unverified';
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Icon(Icons.mail_outline_rounded,
+            size: 14, color: OpenVtsColors.textTertiary),
+        const SizedBox(width: 8),
+        SizedBox(
+          width: 56,
+          child: Text(
+            'Email',
+            style: OpenVtsTypography.meta.copyWith(
+              color: OpenVtsColors.textTertiary,
+              fontSize: 11,
+            ),
+          ),
+        ),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(
+              child: Text(
+                displayEmail,
+                style: OpenVtsTypography.meta.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                  fontWeight: FontWeight.w500,
+                  height: 1.3,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(width: 6),
+            Tooltip(
+              message: tooltip,
+              child: Icon(
+                verifiedIcon,
+                size: 14,
+                color: verifiedColor,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
   }
 }
 
@@ -423,40 +519,13 @@ class _SummaryRow extends StatelessWidget {
           child: Text(
             value.trim().isEmpty ? '—' : value,
             style: OpenVtsTypography.meta.copyWith(
-              color: OpenVtsColors.textPrimary,
+              color: Theme.of(context).colorScheme.onSurface,
               fontWeight: FontWeight.w500,
               height: 1.3,
             ),
           ),
         ),
       ],
-    );
-  }
-}
-
-class _MiniChip extends StatelessWidget {
-  const _MiniChip({required this.label, required this.active});
-
-  final String label;
-  final bool active;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = active ? OpenVtsColors.success : OpenVtsColors.textSecondary;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
-        border: Border.all(color: color.withValues(alpha: 0.35)),
-      ),
-      child: Text(
-        label,
-        style: OpenVtsTypography.meta.copyWith(
-          color: color,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
     );
   }
 }
@@ -469,69 +538,26 @@ class _TabChips extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 34,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        children: [
-          _Chip(
-            label: 'Profile',
-            selected: selected == AdminDriverDetailsTab.profile,
-            onTap: () => onSelect(AdminDriverDetailsTab.profile),
-          ),
-          const SizedBox(width: OpenVtsSpacing.xs),
-          _Chip(
-            label: 'Documents',
-            selected: selected == AdminDriverDetailsTab.documents,
-            onTap: () => onSelect(AdminDriverDetailsTab.documents),
-          ),
-          const SizedBox(width: OpenVtsSpacing.xs),
-          _Chip(
-            label: 'Users',
-            selected: selected == AdminDriverDetailsTab.users,
-            onTap: () => onSelect(AdminDriverDetailsTab.users),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Chip extends StatelessWidget {
-  const _Chip({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: selected ? OpenVtsColors.brandInk : OpenVtsColors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
-        side: BorderSide(
-          color: selected ? OpenVtsColors.brandInk : OpenVtsColors.border,
+    return OpenVtsDetailTabStrip<AdminDriverDetailsTab>(
+      selected: selected,
+      onChanged: onSelect,
+      tabs: const [
+        OpenVtsDetailTabOption(
+          value: AdminDriverDetailsTab.profile,
+          label: 'Profile',
+          icon: Icons.person_outline_rounded,
         ),
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-          child: Text(
-            label,
-            style: OpenVtsTypography.meta.copyWith(
-              color: selected ? OpenVtsColors.white : OpenVtsColors.textPrimary,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
+        OpenVtsDetailTabOption(
+          value: AdminDriverDetailsTab.documents,
+          label: 'Documents',
+          icon: Icons.description_outlined,
         ),
-      ),
+        OpenVtsDetailTabOption(
+          value: AdminDriverDetailsTab.users,
+          label: 'Users',
+          icon: Icons.group_outlined,
+        ),
+      ],
     );
   }
 }
