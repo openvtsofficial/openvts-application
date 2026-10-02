@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:open_vts/shared/widgets/support/open_vts_support_filter_chip.dart';
 
 import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
@@ -10,7 +11,6 @@ import '../../../../../shared/widgets/open_vts_error_view.dart';
 import '../../../../../shared/widgets/open_vts_search_field.dart';
 import '../../../models/admin_support_model.dart';
 import '../../../models/admin_support_state.dart';
-import 'package:open_vts/shared/widgets/support/open_vts_support_filter_chip.dart';
 import 'admin_support_ticket_card.dart';
 
 class AdminSupportTicketListView extends StatelessWidget {
@@ -194,6 +194,7 @@ class _SupportHeader extends StatelessWidget {
     );
 
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Expanded(
           child: Text(
@@ -201,7 +202,7 @@ class _SupportHeader extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: OpenVtsTypography.meta.copyWith(
-              color: OpenVtsColors.textSecondary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -210,12 +211,19 @@ class _SupportHeader extends StatelessWidget {
         FilledButton.icon(
           onPressed: isCreating ? null : onCreatePressed,
           style: FilledButton.styleFrom(
-            minimumSize: const Size(0, 34),
+            minimumSize: const Size(0, 42),
             backgroundColor: OpenVtsColors.brandInk,
             foregroundColor: OpenVtsColors.white,
             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            visualDensity: VisualDensity.compact,
-            padding: const EdgeInsets.symmetric(horizontal: OpenVtsSpacing.sm),
+            padding: const EdgeInsets.symmetric(
+              horizontal: OpenVtsSpacing.md,
+              vertical: OpenVtsSpacing.sm,
+            ),
+            textStyle: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.1,
+            ),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
             ),
@@ -225,7 +233,7 @@ class _SupportHeader extends StatelessWidget {
                   dimension: 15,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : const Icon(Icons.add_rounded, size: 17),
+              : const Icon(Icons.add_rounded, size: 18),
           label: const Text('Create'),
         ),
       ],
@@ -308,29 +316,27 @@ class _StatusTabs extends StatelessWidget {
       scrollDirection: Axis.horizontal,
       child: Row(
         children: [
+          OpenVtsSupportFilterChip(
+            label: 'All',
+            count: tickets.length,
+            selected: selected == null,
+            onSelected: () => onChanged(null),
+          ),
+          const SizedBox(width: OpenVtsSpacing.xs),
+          for (final status in AdminSupportTicketStatus.values) ...[
             OpenVtsSupportFilterChip(
-              label: 'All',
-              count: tickets.length,
-              selected: selected == null,
-              onSelected: () => onChanged(null),
+              label: status.label,
+              count: counts[status] ?? 0,
+              selected: selected == status,
+              onSelected: () => onChanged(status),
             ),
             const SizedBox(width: OpenVtsSpacing.xs),
-            for (final status in AdminSupportTicketStatus.values) ...[
-              OpenVtsSupportFilterChip(
-                label: status.label,
-                count: counts[status] ?? 0,
-                selected: selected == status,
-                onSelected: () => onChanged(status),
-              ),
-              const SizedBox(width: OpenVtsSpacing.xs),
-            ],
+          ],
         ],
       ),
     );
   }
 }
-
-
 
 class _SupportEmptyState extends StatelessWidget {
   const _SupportEmptyState({
@@ -343,6 +349,7 @@ class _SupportEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(OpenVtsSpacing.lg),
@@ -353,14 +360,14 @@ class _SupportEmptyState extends StatelessWidget {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: OpenVtsColors.surface,
-                border: Border.all(color: OpenVtsColors.border),
+                color: colorScheme.surface,
+                border: Border.all(color: colorScheme.outline),
                 borderRadius: BorderRadius.circular(OpenVtsRadius.md),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.support_agent_rounded,
                 size: 20,
-                color: OpenVtsColors.textSecondary,
+                color: colorScheme.onSurfaceVariant,
               ),
             ),
             const SizedBox(height: OpenVtsSpacing.sm),
@@ -376,7 +383,7 @@ class _SupportEmptyState extends StatelessWidget {
                   : 'Create a ticket to start a support conversation.',
               textAlign: TextAlign.center,
               style: OpenVtsTypography.body.copyWith(
-                color: OpenVtsColors.textSecondary,
+                color: colorScheme.onSurfaceVariant,
               ),
             ),
             if (!hasActiveFilters) ...[
@@ -451,7 +458,7 @@ class _SkeletonLine extends StatelessWidget {
       child: Container(
         height: height,
         decoration: BoxDecoration(
-          color: OpenVtsColors.surface,
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
         ),
       ),
@@ -466,6 +473,7 @@ class _InlineErrorBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(
@@ -474,12 +482,12 @@ class _InlineErrorBanner extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(OpenVtsRadius.md),
-        border: Border.all(color: OpenVtsColors.error.withValues(alpha: 0.28)),
-        color: OpenVtsColors.error.withValues(alpha: 0.07),
+        border: Border.all(color: colorScheme.error.withValues(alpha: 0.35)),
+        color: colorScheme.error.withValues(alpha: 0.15),
       ),
       child: Text(
         message,
-        style: OpenVtsTypography.body.copyWith(color: OpenVtsColors.error),
+        style: OpenVtsTypography.body.copyWith(color: colorScheme.error),
       ),
     );
   }

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../core/utils/date_time_formatter.dart';
@@ -27,26 +26,28 @@ class SuperadminTransactionCard extends StatelessWidget {
     final amountText = _formatAmount(transaction.amount);
     final currency = transaction.currency.trim();
     final modeLabel = transaction.paymentMode.label;
-    final paymentType = transaction.paymentType.trim();
-    final recordedBy = transaction.recordedBy?.displayName ?? '';
     final dateText = _formatDateTime(transaction);
     final referenceLine = _referenceLine(transaction);
 
     return OpenVtsCard(
       onTap: onTap,
+      padding: const EdgeInsets.symmetric(
+        horizontal: OpenVtsSpacing.md,
+        vertical: OpenVtsSpacing.sm,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
                 child: Text(
                   adminName,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: OpenVtsTypography.titleSmall.copyWith(
-                    color: OpenVtsColors.textPrimary,
+                  style: OpenVtsTypography.body.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
@@ -57,65 +58,53 @@ class SuperadminTransactionCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: OpenVtsSpacing.xs),
+          const SizedBox(height: 6),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Expanded(
+                child: Text(
+                  '${currency.isEmpty ? '' : '$currency '}$amountText'.trim(),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: OpenVtsTypography.numeric.copyWith(
+                    fontSize: 18,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+              ),
+              const SizedBox(width: OpenVtsSpacing.xs),
+              _SmallLabel(value: modeLabel),
+            ],
+          ),
+          const SizedBox(height: 6),
           Row(
             children: [
               Expanded(
                 child: Text(
-                  '${currency.isEmpty ? '' : '$currency '} $amountText'
-                      .replaceAll('  ', ' ')
-                      .trim(),
+                  dateText,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: OpenVtsTypography.numeric.copyWith(
-                    fontSize: 24,
-                    color: OpenVtsColors.textPrimary,
+                  style: OpenVtsTypography.meta.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
               ),
-              const SizedBox(width: OpenVtsSpacing.sm),
-              Text(
-                modeLabel,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: OpenVtsTypography.body.copyWith(
-                  color: OpenVtsColors.textSecondary,
-                  fontWeight: FontWeight.w600,
+              if (referenceLine.isNotEmpty)
+                Flexible(
+                  child: Text(
+                    referenceLine,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.end,
+                    style: OpenVtsTypography.meta.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
                 ),
-              ),
             ],
           ),
-          const SizedBox(height: OpenVtsSpacing.xs),
-          Wrap(
-            spacing: OpenVtsSpacing.xs,
-            runSpacing: OpenVtsSpacing.xxs,
-            children: [
-              if (paymentType.isNotEmpty)
-                _SmallLabel(value: paymentType.toUpperCase()),
-              if (recordedBy.trim().isNotEmpty)
-                _SmallLabel(value: 'Recorded by $recordedBy'),
-            ],
-          ),
-          const SizedBox(height: OpenVtsSpacing.xs),
-          Text(
-            dateText,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: OpenVtsTypography.meta.copyWith(
-              color: OpenVtsColors.textSecondary,
-            ),
-          ),
-          if (referenceLine.isNotEmpty) ...[
-            const SizedBox(height: OpenVtsSpacing.xxs),
-            Text(
-              referenceLine,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: OpenVtsTypography.meta.copyWith(
-                color: OpenVtsColors.textTertiary,
-              ),
-            ),
-          ],
         ],
       ),
     );
@@ -213,14 +202,14 @@ class _SmallLabel extends StatelessWidget {
         vertical: 3,
       ),
       decoration: BoxDecoration(
-        color: OpenVtsColors.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: OpenVtsColors.border),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
       child: Text(
         value,
         style: OpenVtsTypography.meta.copyWith(
-          color: OpenVtsColors.textSecondary,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
           fontWeight: FontWeight.w600,
         ),
       ),

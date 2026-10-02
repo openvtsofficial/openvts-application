@@ -18,6 +18,10 @@ class SuperadminAdministratorsState {
     required this.isInitialLoading,
     required this.isRefreshing,
     required this.isCatalogLoading,
+    required this.isLoadingStates,
+    required this.isLoadingCities,
+    required this.statesLoadedForCountry,
+    required this.citiesLoadedForState,
     required this.isCreating,
     required this.togglingAdministratorId,
     required this.deletingAdministratorId,
@@ -40,6 +44,10 @@ class SuperadminAdministratorsState {
         isInitialLoading = true,
         isRefreshing = false,
         isCatalogLoading = false,
+        isLoadingStates = false,
+        isLoadingCities = false,
+        statesLoadedForCountry = null,
+        citiesLoadedForState = null,
         isCreating = false,
         togglingAdministratorId = null,
         deletingAdministratorId = null,
@@ -62,11 +70,33 @@ class SuperadminAdministratorsState {
   final bool isInitialLoading;
   final bool isRefreshing;
   final bool isCatalogLoading;
+
+  /// True while the states API call is in-flight for the currently selected country.
+  final bool isLoadingStates;
+
+  /// True while the cities API call is in-flight for the currently selected state.
+  final bool isLoadingCities;
+
+  /// The country code for which [stateOptions] was last successfully loaded.
+  /// Null means states have never been fetched yet (or were cleared).
+  final String? statesLoadedForCountry;
+
+  /// The state code for which [cityOptions] was last successfully loaded.
+  /// Null means cities have never been fetched yet (or were cleared).
+  final String? citiesLoadedForState;
+
   final bool isCreating;
   final String? togglingAdministratorId;
   final String? deletingAdministratorId;
   final String? loggingInAdministratorId;
   final String? errorMessage;
+
+  /// True only when states were successfully loaded and the list is non-empty.
+  bool get hasStates =>
+      statesLoadedForCountry != null && stateOptions.isNotEmpty;
+
+  /// True only when cities were successfully loaded and the list is non-empty.
+  bool get hasCities => citiesLoadedForState != null && cityOptions.isNotEmpty;
 
   bool get hasItems => administrators.isNotEmpty;
 
@@ -91,8 +121,10 @@ class SuperadminAdministratorsState {
     filtered.sort((left, right) {
       switch (sortOption) {
         case SuperadminAdministratorSortOption.recentLogin:
-          final leftValue = left.lastLoginAt ?? DateTime.fromMillisecondsSinceEpoch(0);
-          final rightValue = right.lastLoginAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+          final leftValue =
+              left.lastLoginAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+          final rightValue =
+              right.lastLoginAt ?? DateTime.fromMillisecondsSinceEpoch(0);
           return rightValue.compareTo(leftValue);
         case SuperadminAdministratorSortOption.nameAscending:
           return left.name.toLowerCase().compareTo(right.name.toLowerCase());
@@ -110,7 +142,8 @@ class SuperadminAdministratorsState {
 
   int get filteredCount => filteredAdministrators.length;
 
-  int get pageCount => math.max<int>(1, (filteredCount / recordsPerPage).ceil());
+  int get pageCount =>
+      math.max<int>(1, (filteredCount / recordsPerPage).ceil());
 
   int get safeCurrentPage {
     return currentPage.clamp(1, pageCount);
@@ -121,16 +154,22 @@ class SuperadminAdministratorsState {
     if (start >= filteredCount) {
       return const <SuperadminAdministrator>[];
     }
-    return filteredAdministrators.skip(start).take(recordsPerPage).toList(growable: false);
+    return filteredAdministrators
+        .skip(start)
+        .take(recordsPerPage)
+        .toList(growable: false);
   }
 
   int get showingCount => visibleAdministrators.length;
 
-  bool isToggling(String administratorId) => togglingAdministratorId == administratorId;
+  bool isToggling(String administratorId) =>
+      togglingAdministratorId == administratorId;
 
-  bool isDeleting(String administratorId) => deletingAdministratorId == administratorId;
+  bool isDeleting(String administratorId) =>
+      deletingAdministratorId == administratorId;
 
-  bool isLoggingIn(String administratorId) => loggingInAdministratorId == administratorId;
+  bool isLoggingIn(String administratorId) =>
+      loggingInAdministratorId == administratorId;
 
   SuperadminAdministratorsState copyWith({
     List<SuperadminAdministrator>? administrators,
@@ -147,6 +186,10 @@ class SuperadminAdministratorsState {
     bool? isInitialLoading,
     bool? isRefreshing,
     bool? isCatalogLoading,
+    bool? isLoadingStates,
+    bool? isLoadingCities,
+    Object? statesLoadedForCountry = _unset,
+    Object? citiesLoadedForState = _unset,
     bool? isCreating,
     Object? togglingAdministratorId = _unset,
     Object? deletingAdministratorId = _unset,
@@ -168,6 +211,14 @@ class SuperadminAdministratorsState {
       isInitialLoading: isInitialLoading ?? this.isInitialLoading,
       isRefreshing: isRefreshing ?? this.isRefreshing,
       isCatalogLoading: isCatalogLoading ?? this.isCatalogLoading,
+      isLoadingStates: isLoadingStates ?? this.isLoadingStates,
+      isLoadingCities: isLoadingCities ?? this.isLoadingCities,
+      statesLoadedForCountry: identical(statesLoadedForCountry, _unset)
+          ? this.statesLoadedForCountry
+          : statesLoadedForCountry as String?,
+      citiesLoadedForState: identical(citiesLoadedForState, _unset)
+          ? this.citiesLoadedForState
+          : citiesLoadedForState as String?,
       isCreating: isCreating ?? this.isCreating,
       togglingAdministratorId: identical(togglingAdministratorId, _unset)
           ? this.togglingAdministratorId

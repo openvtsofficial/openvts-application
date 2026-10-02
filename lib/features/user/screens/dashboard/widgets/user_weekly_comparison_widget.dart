@@ -3,12 +3,13 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../core/utils/unit_formatter.dart';
 import '../../../controllers/user_providers.dart';
 import '../../../models/user_dashboard_model.dart';
+import 'user_dashboard_vehicle_selector.dart';
 import 'user_dashboard_widget_card.dart';
 
 class UserWeeklyComparisonWidget extends ConsumerStatefulWidget {
@@ -68,13 +69,13 @@ class _UserWeeklyComparisonWidgetState
 
   @override
   Widget build(BuildContext context) {
+    final unitFormatter = ref.watch(unitFormatterProvider);
     final state = ref.watch(
       userDashboardWeeklyProvider(
         UserDashboardVehicleScopedArgs(
           widgetId: widget.config.id,
           refreshKey: _refreshKey,
-          vehicleId:
-              _selectedVehicleId == 'all' ? null : _selectedVehicleId,
+          vehicleId: _selectedVehicleId == 'all' ? null : _selectedVehicleId,
         ),
       ),
     );
@@ -83,7 +84,7 @@ class _UserWeeklyComparisonWidgetState
       icon: Icons.compare_arrows_rounded,
       isLoading: state.isLoading,
       onRefresh: _reload,
-      child: _buildBody(state),
+      child: _buildBody(state, unitFormatter),
     );
   }
 
@@ -94,6 +95,7 @@ class _UserWeeklyComparisonWidgetState
               UserDashboardWeeklyComparison comparison,
             })>
         state,
+    UnitFormatter unitFormatter,
   ) {
     if (state.hasError) {
       return UserDashboardWidgetError(
@@ -115,32 +117,16 @@ class _UserWeeklyComparisonWidgetState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _VehicleSelector(
+        UserDashboardVehicleSelector(
           vehicles: data.vehicles,
           value: selectedVehicleId,
           onChanged: _changeVehicle,
         ),
         const SizedBox(height: OpenVtsSpacing.sm),
-        SegmentedButton<_WeeklyMetric>(
-          segments: const [
-            ButtonSegment(
-              value: _WeeklyMetric.drivenKm,
-              label: Text('Driven KM'),
-            ),
-            ButtonSegment(
-              value: _WeeklyMetric.engineHours,
-              label: Text('Engine Hours'),
-            ),
-          ],
-          selected: {_metric},
-          showSelectedIcon: false,
-          style: ButtonStyle(
-            visualDensity: VisualDensity.compact,
-            textStyle: WidgetStatePropertyAll(
-              OpenVtsTypography.meta.copyWith(fontWeight: FontWeight.w800),
-            ),
-          ),
-          onSelectionChanged: _changeMetric,
+        _MetricToggle(
+          metric: _metric,
+          distanceLabel: unitFormatter.distanceLabel.toUpperCase(),
+          onChanged: _changeMetric,
         ),
         const SizedBox(height: OpenVtsSpacing.sm),
         Row(
@@ -199,63 +185,6 @@ class _UserWeeklyComparisonWidgetState
   }
 }
 
-class _VehicleSelector extends StatelessWidget {
-  const _VehicleSelector({
-    required this.vehicles,
-    required this.value,
-    required this.onChanged,
-  });
-
-  final List<UserDashboardVehicleOption> vehicles;
-  final String value;
-  final ValueChanged<String?> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return DropdownButtonFormField<String>(
-      key: ValueKey(value),
-      initialValue: value,
-      isExpanded: true,
-      decoration: InputDecoration(
-        labelText: 'Vehicle',
-        isDense: true,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: OpenVtsSpacing.sm,
-          vertical: OpenVtsSpacing.xs,
-        ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(OpenVtsRadius.md),
-          borderSide: const BorderSide(color: OpenVtsColors.border),
-        ),
-      ),
-      items: [
-        const DropdownMenuItem<String>(
-          value: 'all',
-          child: Text('All Vehicles'),
-        ),
-        for (final vehicle in vehicles)
-          DropdownMenuItem<String>(
-            value: vehicle.id,
-            child: Text(
-              _label(vehicle),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-      ],
-      onChanged: onChanged,
-    );
-  }
-
-  static String _label(UserDashboardVehicleOption vehicle) {
-    final plate = vehicle.plateNumber?.trim();
-    if (plate != null && plate.isNotEmpty) {
-      return '${vehicle.name} · $plate';
-    }
-    return vehicle.name;
-  }
-}
-
 class _WeeklyComparisonChart extends StatelessWidget {
   const _WeeklyComparisonChart({required this.points, required this.metric});
 
@@ -264,10 +193,35 @@ class _WeeklyComparisonChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // This Week: dominant series — onSurface at full opacity in dark mode so
+    // bars contrast against the card surface; primary in light mode.
+    final thisWeekColor = isDark ? cs.onSurface : cs.primary;
+
+    // Last Week: clearly distinct but subordinate — muted outline-level tone.
+    final lastWeekColor = cs.outlineVariant;
+
+    // Grid: very low emphasis — should support the chart, not compete.
+    final gridColor = cs.outlineVariant.withValues(alpha: 0.5);
+
+    // Pattern stripes drawn over Last Week bars use the card surface so the
+    // stripe gaps reveal the bar color underneath.
+    final patternColor = cs.surface;
+
     return SizedBox(
       height: 172,
       child: CustomPaint(
-        painter: _WeeklyComparisonChartPainter(points, metric),
+        painter: _WeeklyComparisonChartPainter(
+          points,
+          metric,
+          thisWeekColor: thisWeekColor,
+          lastWeekColor: lastWeekColor,
+          gridColor: gridColor,
+          patternColor: patternColor,
+          textColor: cs.onSurfaceVariant,
+        ),
         size: Size.infinite,
       ),
     );
@@ -275,10 +229,23 @@ class _WeeklyComparisonChart extends StatelessWidget {
 }
 
 class _WeeklyComparisonChartPainter extends CustomPainter {
-  _WeeklyComparisonChartPainter(this.points, this.metric);
+  _WeeklyComparisonChartPainter(
+    this.points,
+    this.metric, {
+    required this.thisWeekColor,
+    required this.lastWeekColor,
+    required this.gridColor,
+    required this.patternColor,
+    required this.textColor,
+  });
 
   final List<UserDashboardWeeklyPoint> points;
   final _WeeklyMetric metric;
+  final Color thisWeekColor;
+  final Color lastWeekColor;
+  final Color gridColor;
+  final Color patternColor;
+  final Color textColor;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -301,7 +268,7 @@ class _WeeklyComparisonChartPainter extends CustomPainter {
     final scale = math.max(maxValue, 1);
 
     final gridPaint = Paint()
-      ..color = OpenVtsColors.border
+      ..color = gridColor
       ..strokeWidth = 1;
     for (var line = 0; line < 4; line++) {
       final y = top + chartHeight * line / 3;
@@ -312,13 +279,13 @@ class _WeeklyComparisonChartPainter extends CustomPainter {
     final slot = chartWidth / points.length;
     final barWidth = math.min(14.0, slot * 0.25);
     final thisPaint = Paint()
-      ..color = OpenVtsColors.brandInk
+      ..color = thisWeekColor
       ..style = PaintingStyle.fill;
     final lastPaint = Paint()
-      ..color = OpenVtsColors.textTertiary
+      ..color = lastWeekColor
       ..style = PaintingStyle.fill;
     final dashPaint = Paint()
-      ..color = OpenVtsColors.surfaceElevated.withValues(alpha: 0.85)
+      ..color = patternColor.withValues(alpha: 0.85)
       ..strokeWidth = 1;
 
     for (var index = 0; index < points.length; index++) {
@@ -326,8 +293,14 @@ class _WeeklyComparisonChartPainter extends CustomPainter {
       final centerX = left + slot * index + slot / 2;
       final thisValue = metric.valueOf(point.thisWeek);
       final lastValue = metric.valueOf(point.lastWeek);
-      final thisHeight = chartHeight * (thisValue / scale).clamp(0.0, 1.0);
-      final lastHeight = chartHeight * (lastValue / scale).clamp(0.0, 1.0);
+      // Apply a 2 px minimum visible height for positive values so sub-pixel
+      // bars are not lost; zero values stay zero-height.
+      final thisHeight = thisValue > 0
+          ? math.max(2.0, chartHeight * (thisValue / scale).clamp(0.0, 1.0))
+          : 0.0;
+      final lastHeight = lastValue > 0
+          ? math.max(2.0, chartHeight * (lastValue / scale).clamp(0.0, 1.0))
+          : 0.0;
       final thisRect = RRect.fromRectAndRadius(
         Rect.fromLTWH(
           centerX - barWidth - 2,
@@ -370,7 +343,7 @@ class _WeeklyComparisonChartPainter extends CustomPainter {
         text: TextSpan(
           text: label.length > 3 ? label.substring(0, 3) : label,
           style: OpenVtsTypography.meta.copyWith(
-            color: OpenVtsColors.textTertiary,
+            color: textColor,
             fontSize: 9.5,
             fontWeight: FontWeight.w700,
           ),
@@ -384,9 +357,9 @@ class _WeeklyComparisonChartPainter extends CustomPainter {
   }
 
   void _drawLegend(Canvas canvas) {
-    _legendPainter('This week', OpenVtsColors.brandInk)
+    _legendPainter('This week', thisWeekColor)
         .paint(canvas, const Offset(4, 0));
-    _legendPainter('Last week', OpenVtsColors.textTertiary)
+    _legendPainter('Last week', lastWeekColor)
         .paint(canvas, const Offset(92, 0));
   }
 
@@ -406,7 +379,13 @@ class _WeeklyComparisonChartPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _WeeklyComparisonChartPainter oldDelegate) {
-    return oldDelegate.points != points || oldDelegate.metric != metric;
+    return oldDelegate.points != points ||
+        oldDelegate.metric != metric ||
+        oldDelegate.thisWeekColor != thisWeekColor ||
+        oldDelegate.lastWeekColor != lastWeekColor ||
+        oldDelegate.gridColor != gridColor ||
+        oldDelegate.patternColor != patternColor ||
+        oldDelegate.textColor != textColor;
   }
 }
 
@@ -446,10 +425,74 @@ class _SkeletonBlock extends StatelessWidget {
     return Container(
       height: height,
       decoration: BoxDecoration(
-        color: OpenVtsColors.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(OpenVtsRadius.md),
-        border: Border.all(color: OpenVtsColors.border),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
+    );
+  }
+}
+
+// Renders the Driven / Engine Hours segmented toggle with explicit per-state
+// colors drawn from the active ColorScheme so both light and dark themes
+// produce readable labels with adequate contrast.
+class _MetricToggle extends StatelessWidget {
+  const _MetricToggle({
+    required this.metric,
+    required this.distanceLabel,
+    required this.onChanged,
+  });
+
+  final _WeeklyMetric metric;
+  final String distanceLabel;
+  final void Function(Set<_WeeklyMetric>) onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final labelStyle =
+        OpenVtsTypography.meta.copyWith(fontWeight: FontWeight.w800);
+
+    return Row(
+      children: [
+        Expanded(
+          child: SegmentedButton<_WeeklyMetric>(
+            segments: [
+              ButtonSegment(
+                value: _WeeklyMetric.drivenKm,
+                label: Text('Driven $distanceLabel'),
+              ),
+              const ButtonSegment(
+                value: _WeeklyMetric.engineHours,
+                label: Text('Engine Hours'),
+              ),
+            ],
+            selected: {metric},
+            showSelectedIcon: false,
+            style: ButtonStyle(
+              visualDensity: VisualDensity.compact,
+              textStyle: WidgetStatePropertyAll(labelStyle),
+              // Selected segment: primary container background + matching foreground.
+              backgroundColor: WidgetStateProperty.resolveWith((states) {
+                if (states.contains(WidgetState.selected)) {
+                  return cs.primary;
+                }
+                return cs.surface;
+              }),
+              foregroundColor: WidgetStateProperty.resolveWith((states) {
+                if (states.contains(WidgetState.selected)) {
+                  return cs.onPrimary;
+                }
+                return cs.onSurfaceVariant;
+              }),
+              side: WidgetStatePropertyAll(
+                BorderSide(color: cs.outlineVariant),
+              ),
+            ),
+            onSelectionChanged: onChanged,
+          ),
+        ),
+      ],
     );
   }
 }

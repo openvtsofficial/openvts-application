@@ -32,7 +32,12 @@ class SuperadminDashboardService {
             {'label': 'Feb\'26', 'vehicles': 0, 'users': 0, 'licenses': 0},
             {'label': 'Mar\'26', 'vehicles': 0, 'users': 0, 'licenses': 0},
             {'label': 'Apr\'26', 'vehicles': 0, 'users': 0, 'licenses': 350000},
-            {'label': 'May\'26', 'vehicles': 10, 'users': 9, 'licenses': 2914018},
+            {
+              'label': 'May\'26',
+              'vehicles': 10,
+              'users': 9,
+              'licenses': 2914018
+            },
           ],
           'vehicleStatus': <String, dynamic>{
             'totalDevices': 10,
@@ -265,24 +270,14 @@ class SuperadminDashboardService {
     String? refreshKey,
   }) async {
     final queryParameters = <String, dynamic>{
-      'limit': limit,
+      'limit': limit.clamp(5, 50).toInt(),
+      if (cursorId != null) 'cursorId': cursorId,
+      if (actorId != null) 'actorId': actorId,
+      if (from != null) 'from': from.toUtc().toIso8601String(),
+      if (to != null) 'to': to.toUtc().toIso8601String(),
+      if (cursorId == null)
+        'rk': refreshKey ?? DateTime.now().millisecondsSinceEpoch.toString(),
     };
-
-    if (cursorId != null) {
-      queryParameters['cursorId'] = cursorId;
-    } else {
-      if (actorId != null) {
-        queryParameters['actorId'] = actorId;
-      }
-      if (from != null) {
-        queryParameters['from'] = from.toUtc().toIso8601String();
-      }
-      if (to != null) {
-        queryParameters['to'] = to.toUtc().toIso8601String();
-      }
-      queryParameters['rk'] =
-          refreshKey ?? DateTime.now().millisecondsSinceEpoch.toString();
-    }
 
     final response = await _apiClient.get<dynamic>(
       ApiEndpoints.superadmin.dashboardActivityLogs,

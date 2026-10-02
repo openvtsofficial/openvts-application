@@ -155,9 +155,8 @@ class SuperadminSettingsState {
       whiteLabel: identical(whiteLabel, _unset)
           ? this.whiteLabel
           : whiteLabel as SuperadminWhiteLabelSettings?,
-      smtp: identical(smtp, _unset)
-          ? this.smtp
-          : smtp as SuperadminSmtpSettings?,
+      smtp:
+          identical(smtp, _unset) ? this.smtp : smtp as SuperadminSmtpSettings?,
       localization: identical(localization, _unset)
           ? this.localization
           : localization as SuperadminLocalizationSettings?,
@@ -199,8 +198,7 @@ class SuperadminSettingsState {
       isLoadingEmailSubscription:
           isLoadingEmailSubscription ?? this.isLoadingEmailSubscription,
       isSubscribingEmail: isSubscribingEmail ?? this.isSubscribingEmail,
-      isRequestingEmailOtp:
-          isRequestingEmailOtp ?? this.isRequestingEmailOtp,
+      isRequestingEmailOtp: isRequestingEmailOtp ?? this.isRequestingEmailOtp,
       isRequestingWhatsAppOtp:
           isRequestingWhatsAppOtp ?? this.isRequestingWhatsAppOtp,
       errorMessage: identical(errorMessage, _unset)

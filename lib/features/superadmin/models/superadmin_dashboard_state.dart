@@ -10,11 +10,13 @@ class SuperadminDashboardState {
     this.isInitialLoading = false,
     this.isRefreshing = false,
     this.isLoadingMore = false,
+    this.visibleMetrics = const {'vehicles', 'users', 'licenses'},
   });
 
   const SuperadminDashboardState.initial()
       : this(
           isInitialLoading: true,
+          visibleMetrics: const {'vehicles', 'users', 'licenses'},
         );
 
   final SuperadminDashboardModel? dashboard;
@@ -25,6 +27,7 @@ class SuperadminDashboardState {
   final bool isInitialLoading;
   final bool isRefreshing;
   final bool isLoadingMore;
+  final Set<String> visibleMetrics;
 
   bool get hasData => dashboard != null;
   bool get hasActiveFilters =>
@@ -39,6 +42,7 @@ class SuperadminDashboardState {
     bool? isInitialLoading,
     bool? isRefreshing,
     bool? isLoadingMore,
+    Set<String>? visibleMetrics,
   }) {
     return SuperadminDashboardState(
       dashboard: identical(dashboard, _unsetDashboardStateValue)
@@ -59,6 +63,7 @@ class SuperadminDashboardState {
       isInitialLoading: isInitialLoading ?? this.isInitialLoading,
       isRefreshing: isRefreshing ?? this.isRefreshing,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      visibleMetrics: visibleMetrics ?? this.visibleMetrics,
     );
   }
 }

@@ -5,7 +5,8 @@ import 'package:open_vts/core/theme/open_vts_spacing.dart';
 import 'package:open_vts/core/theme/open_vts_typography.dart';
 
 class OpenVtsSupportSoftChip extends StatelessWidget {
-  const OpenVtsSupportSoftChip({required this.label, required this.color, super.key});
+  const OpenVtsSupportSoftChip(
+      {required this.label, required this.color, super.key});
 
   final String label;
   final Color color;
@@ -40,13 +41,16 @@ class OpenVtsSupportPlainChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: OpenVtsSpacing.xs,
         vertical: OpenVtsSpacing.xxs,
       ),
       decoration: BoxDecoration(
-        border: Border.all(color: OpenVtsColors.border),
+        border: Border.all(
+          color: isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border,
+        ),
         borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
       ),
       child: Text(
@@ -54,7 +58,9 @@ class OpenVtsSupportPlainChip extends StatelessWidget {
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: OpenVtsTypography.meta.copyWith(
-          color: OpenVtsColors.textSecondary,
+          color: isDark
+              ? OpenVtsColors.darkTextSecondary
+              : OpenVtsColors.textSecondary,
           fontWeight: FontWeight.w600,
         ),
       ),

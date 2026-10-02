@@ -128,11 +128,14 @@ class AdminDashboardService {
       ],
       'recent': <String, dynamic>{
         'users': <Map<String, dynamic>>[
-          _mockUser(now, 7, 'Daniel', 'daniel', 'daniel125@gmail.com', 8, true),
+          _mockUser(now, 7, 'Daniel', 'daniel', 'daniel125@gmail.com', 8, true,
+              vehicleCount: 18),
           _mockUser(now, 8, 'Robert Hook', 'roberthook', 'robert@example.com',
-              24, true),
+              24, true,
+              vehicleCount: 12),
           _mockUser(now, 9, 'Prerna Verma', 'prerna', 'prerna@example.com', 144,
-              false),
+              false,
+              vehicleCount: 9),
         ],
         'vehicles': <Map<String, dynamic>>[
           _mockRecentVehicle(
@@ -297,8 +300,9 @@ class AdminDashboardService {
     String username,
     String email,
     int ageHours,
-    bool isActive,
-  ) {
+    bool isActive, {
+    int? vehicleCount,
+  }) {
     return <String, dynamic>{
       'uid': uid,
       'name': name,
@@ -306,6 +310,7 @@ class AdminDashboardService {
       'email': email,
       'createdAt': now.subtract(Duration(hours: ageHours)).toIso8601String(),
       'isActive': isActive,
+      if (vehicleCount != null) 'vehicleCount': vehicleCount,
     };
   }
 

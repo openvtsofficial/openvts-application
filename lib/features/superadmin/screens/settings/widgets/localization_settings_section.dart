@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../../core/theme/open_vts_colors.dart';
+import '../../../../../core/providers/app_preferences_provider.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../l10n/app_localizations.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
@@ -50,6 +51,9 @@ class _LocalizationSettingsSectionState
   void initState() {
     super.initState();
     _hydrate(widget.state.localization);
+    if (widget.state.localization != null) {
+      _syncToGlobalPreferences(widget.state.localization!);
+    }
   }
 
   @override
@@ -57,6 +61,7 @@ class _LocalizationSettingsSectionState
     super.didUpdateWidget(oldWidget);
     if (!_hydrated && widget.state.localization != null) {
       _hydrate(widget.state.localization);
+      _syncToGlobalPreferences(widget.state.localization!);
     }
   }
 
@@ -73,6 +78,19 @@ class _LocalizationSettingsSectionState
     _lonCtrl.text = loc.defaultLon == 0 ? '' : loc.defaultLon.toString();
     _zoomCtrl.text = loc.mapZoom.toString();
     _hydrated = true;
+  }
+
+  void _syncToGlobalPreferences(SuperadminLocalizationSettings loc) {
+    final prefNotifier = ref.read(appLocalizationPreferencesProvider.notifier);
+    prefNotifier.applyFromSuperadminSettings(
+      language: loc.language,
+      dateFormat: loc.dateFormat,
+      use24Hour: loc.use24Hour,
+      theme: loc.theme.apiValue,
+      timezoneOffset: loc.timezoneOffset,
+      layoutDirection: loc.layoutDirection.apiValue,
+      units: loc.units.apiValue,
+    );
   }
 
   @override
@@ -113,16 +131,49 @@ class _LocalizationSettingsSectionState
 
     final ok = await _controller.updateLocalization(request);
     if (!mounted) return;
+    final l10n = AppLocalizations.of(context);
     if (ok) {
-      ToastHelper.showSuccess('Localization saved');
-      await _controller.loadLocalization();
+      ToastHelper.showSuccess(l10n.localizationSaved);
+
+      // Apply preferences immediately with saved request values (confirmed by successful API save).
+      // This updates appLocalizationPreferencesProvider, which cascades to appDateFormatterProvider,
+      // triggering UI rebuilds across all date/time displays.
+      await ref
+          .read(appLocalizationPreferencesProvider.notifier)
+          .applyFromSuperadminSettings(
+            language: request.language,
+            dateFormat: request.dateFormat,
+            use24Hour: request.use24Hour,
+            theme: request.theme.apiValue,
+            timezoneOffset: request.timezoneOffset,
+            layoutDirection: request.layoutDirection.apiValue,
+            units: request.units.apiValue,
+          );
+      if (!mounted) return;
+
+      // Rehydrate form from request (what we just saved), ensuring it reflects saved values.
+      // Do NOT reload from backend because response may differ or have parsing issues.
       if (mounted) {
-        setState(() => _hydrated = false);
-        _hydrate(ref.read(superadminSettingsControllerProvider).localization);
+        setState(() {
+          _hydrated = true;
+          _language = request.language;
+          _direction = request.layoutDirection;
+          _dateFormat = request.dateFormat;
+          _use24Hour = request.use24Hour;
+          _theme = request.theme;
+          _timezone = request.timezoneOffset;
+          _units = request.units;
+          _latCtrl.text =
+              request.defaultLat == 0 ? '' : request.defaultLat.toString();
+          _lonCtrl.text =
+              request.defaultLon == 0 ? '' : request.defaultLon.toString();
+          _zoomCtrl.text = request.mapZoom.toString();
+        });
       }
     } else {
       ToastHelper.showError(
-        ref.read(superadminSettingsControllerProvider).sectionErrorMessage ?? 'Failed to save localization',
+        ref.read(superadminSettingsControllerProvider).sectionErrorMessage ??
+            l10n.failedToUpdate,
       );
     }
   }
@@ -146,6 +197,7 @@ class _LocalizationSettingsSectionState
   @override
   Widget build(BuildContext context) {
     final state = widget.state;
+    final l10n = AppLocalizations.of(context);
 
     if (state.isLoadingLocalization && state.localization == null) {
       return const OpenVtsCard(
@@ -160,16 +212,16 @@ class _LocalizationSettingsSectionState
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              state.sectionErrorMessage ?? 'Could not load localization.',
-              style: const TextStyle(
+              state.sectionErrorMessage ?? l10n.couldNotLoadLocalization,
+              style: TextStyle(
                 fontFamily: OpenVtsTypography.primaryFontFamily,
                 fontSize: 12.5,
-                color: OpenVtsColors.textSecondary,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
             const SizedBox(height: OpenVtsSpacing.sm),
             OpenVtsButton(
-              label: 'Retry',
+              label: l10n.retry,
               variant: OpenVtsButtonVariant.secondary,
               height: 40,
               onPressed: _controller.loadLocalization,
@@ -190,11 +242,11 @@ class _LocalizationSettingsSectionState
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _SectionHeader(
-            title: 'Localization',
-            subtitle: 'Language, date/time, units, and default map focus.',
+            title: l10n.localization,
+            subtitle: l10n.localizationDescription,
             icon: Icons.public_rounded,
             trailing: IconButton(
-              tooltip: 'Refresh',
+              tooltip: l10n.refresh,
               onPressed: state.isLoadingLocalization
                   ? null
                   : _controller.loadLocalization,
@@ -215,8 +267,8 @@ class _LocalizationSettingsSectionState
           const SizedBox(height: OpenVtsSpacing.sm),
           _GroupedCard(
             icon: Icons.translate_rounded,
-            title: 'Language & Direction',
-            subtitle: 'Interface language and text direction.',
+            title: l10n.languageAndDirection,
+            subtitle: l10n.languageAndDirectionSubtitle,
             children: [
               _LanguageDropdown(
                 value: _language,
@@ -228,7 +280,7 @@ class _LocalizationSettingsSectionState
               ),
               const SizedBox(height: OpenVtsSpacing.sm),
               _LabeledRow(
-                label: 'Text direction',
+                label: l10n.textDirection,
                 child: _SegmentedControl<SuperadminLayoutDirection>(
                   value: _direction,
                   segments: const [
@@ -243,8 +295,8 @@ class _LocalizationSettingsSectionState
           const SizedBox(height: OpenVtsSpacing.sm),
           _GroupedCard(
             icon: Icons.event_note_rounded,
-            title: 'Date & Time',
-            subtitle: 'Date format, time style, and timezone.',
+            title: l10n.dateAndTime,
+            subtitle: l10n.dateAndTimeSubtitle,
             children: [
               _DateFormatDropdown(
                 value: _dateFormat,
@@ -256,7 +308,7 @@ class _LocalizationSettingsSectionState
               ),
               const SizedBox(height: OpenVtsSpacing.sm),
               _LabeledRow(
-                label: '24-hour time',
+                label: l10n.use24Hour,
                 trailing: Switch.adaptive(
                   value: _use24Hour,
                   onChanged: (v) => setState(() => _use24Hour = v),
@@ -276,11 +328,11 @@ class _LocalizationSettingsSectionState
           const SizedBox(height: OpenVtsSpacing.sm),
           _GroupedCard(
             icon: Icons.tune_rounded,
-            title: 'Units & Theme',
-            subtitle: 'Distance units and app appearance.',
+            title: l10n.unitsAndTheme,
+            subtitle: l10n.unitsAndThemeSubtitle,
             children: [
               _LabeledRow(
-                label: 'Units',
+                label: l10n.units,
                 child: _SegmentedControl<SuperadminUnits>(
                   value: _units,
                   segments: const [
@@ -292,13 +344,13 @@ class _LocalizationSettingsSectionState
               ),
               const SizedBox(height: OpenVtsSpacing.sm),
               _LabeledRow(
-                label: 'Theme',
+                label: l10n.theme,
                 child: _SegmentedControl<SuperadminTheme>(
                   value: _theme,
-                  segments: const [
-                    _Seg(value: SuperadminTheme.light, label: 'Light'),
-                    _Seg(value: SuperadminTheme.dark, label: 'Dark'),
-                    _Seg(value: SuperadminTheme.system, label: 'System'),
+                  segments: [
+                    _Seg(value: SuperadminTheme.light, label: l10n.light),
+                    _Seg(value: SuperadminTheme.dark, label: l10n.dark),
+                    _Seg(value: SuperadminTheme.system, label: l10n.system),
                   ],
                   onChanged: (v) => setState(() => _theme = v),
                 ),
@@ -308,15 +360,15 @@ class _LocalizationSettingsSectionState
           const SizedBox(height: OpenVtsSpacing.sm),
           _GroupedCard(
             icon: Icons.location_on_outlined,
-            title: 'Default Map Focus',
-            subtitle: 'Initial map center and zoom level.',
+            title: l10n.defaultMapFocus,
+            subtitle: l10n.defaultMapFocusSubtitle,
             children: [
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
                     child: OpenVtsTextField(
-                      label: 'Latitude',
+                      label: l10n.latitude,
                       controller: _latCtrl,
                       keyboardType: const TextInputType.numberWithOptions(
                         decimal: true,
@@ -336,7 +388,7 @@ class _LocalizationSettingsSectionState
                   const SizedBox(width: OpenVtsSpacing.sm),
                   Expanded(
                     child: OpenVtsTextField(
-                      label: 'Longitude',
+                      label: l10n.longitude,
                       controller: _lonCtrl,
                       keyboardType: const TextInputType.numberWithOptions(
                         decimal: true,
@@ -371,12 +423,15 @@ class _LocalizationSettingsSectionState
                 },
               ),
               const SizedBox(height: OpenVtsSpacing.sm),
-              _PresetsRow(onPick: _applyPreset),
+              _PresetsRow(
+                label: l10n.quickPresets,
+                onPick: _applyPreset,
+              ),
             ],
           ),
           const SizedBox(height: OpenVtsSpacing.md),
           OpenVtsButton(
-            label: 'Save changes',
+            label: l10n.saveChanges,
             isLoading: state.isSavingLocalization,
             height: 44,
             onPressed: state.isSavingLocalization ? null : _save,
@@ -428,19 +483,20 @@ class _PreviewCard extends StatelessWidget {
 
     final distanceLabel = units == SuperadminUnits.miles ? 'mi' : 'km';
 
+    final l10n = AppLocalizations.of(context);
     return OpenVtsCard(
       padding: const EdgeInsets.all(OpenVtsSpacing.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
               Icon(
                 Icons.visibility_outlined,
                 size: 14,
-                color: OpenVtsColors.textTertiary,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
-              SizedBox(width: 6),
+              const SizedBox(width: 6),
               Text(
                 'PREVIEW',
                 style: TextStyle(
@@ -448,7 +504,7 @@ class _PreviewCard extends StatelessWidget {
                   fontSize: 10.5,
                   fontWeight: FontWeight.w600,
                   letterSpacing: 0.6,
-                  color: OpenVtsColors.textTertiary,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
             ],
@@ -458,14 +514,14 @@ class _PreviewCard extends StatelessWidget {
             children: [
               Expanded(
                 child: _PreviewTile(
-                  label: 'Date',
+                  label: l10n.date,
                   value: dateString,
                 ),
               ),
               const SizedBox(width: OpenVtsSpacing.xs),
               Expanded(
                 child: _PreviewTile(
-                  label: 'Time',
+                  label: l10n.time,
                   value: timeString,
                 ),
               ),
@@ -476,7 +532,7 @@ class _PreviewCard extends StatelessWidget {
             children: [
               Expanded(
                 child: _PreviewTile(
-                  label: 'Timezone',
+                  label: l10n.timezone,
                   value: timezone,
                 ),
               ),
@@ -494,14 +550,14 @@ class _PreviewCard extends StatelessWidget {
             children: [
               Expanded(
                 child: _PreviewTile(
-                  label: 'Language',
+                  label: l10n.language,
                   value: language.toUpperCase(),
                 ),
               ),
               const SizedBox(width: OpenVtsSpacing.xs),
               Expanded(
                 child: _PreviewTile(
-                  label: 'Direction',
+                  label: l10n.direction,
                   value: direction.apiValue,
                 ),
               ),
@@ -526,9 +582,9 @@ class _PreviewTile extends StatelessWidget {
         vertical: 8,
       ),
       decoration: BoxDecoration(
-        color: OpenVtsColors.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-        border: Border.all(color: OpenVtsColors.border),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -536,11 +592,11 @@ class _PreviewTile extends StatelessWidget {
         children: [
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: OpenVtsTypography.primaryFontFamily,
               fontSize: 10,
               fontWeight: FontWeight.w500,
-              color: OpenVtsColors.textTertiary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
           const SizedBox(height: 2),
@@ -548,11 +604,11 @@ class _PreviewTile extends StatelessWidget {
             value,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: OpenVtsTypography.primaryFontFamily,
               fontSize: 12.5,
               fontWeight: FontWeight.w600,
-              color: OpenVtsColors.textPrimary,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
         ],
@@ -564,6 +620,10 @@ class _PreviewTile extends StatelessWidget {
 // =====================================================================
 // Dropdowns
 // =====================================================================
+
+/// Strips regional sub-tags (pt-BR → pt, en-US → en) for deduplication.
+String _normalizeLangCode(String code) =>
+    code.split('-').first.split('_').first.toLowerCase();
 
 class _LanguageDropdown extends StatelessWidget {
   const _LanguageDropdown({
@@ -578,24 +638,48 @@ class _LanguageDropdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasValue = options.any((o) => o.code == value);
+    final l10n = AppLocalizations.of(context);
+
+    // Build a deduplicated list of all options from the backend.
+    final seen = <String>{};
+    final filtered = <SuperadminLanguageOption>[];
+    for (final o in options) {
+      final normalized = _normalizeLangCode(o.code);
+      if (seen.add(normalized)) {
+        filtered
+            .add(SuperadminLanguageOption(code: normalized, label: o.label));
+      }
+    }
+
+    // Ensure the current value is representable; fall back to a placeholder entry.
+    final normalizedValue = _normalizeLangCode(value);
+    final hasValue = filtered.any((o) => o.code == normalizedValue);
+    final effectiveValue =
+        hasValue ? normalizedValue : (value.isEmpty ? null : value);
+
     final items = <DropdownMenuItem<String>>[
       if (!hasValue && value.isNotEmpty)
         DropdownMenuItem(value: value, child: Text(value.toUpperCase())),
-      for (final o in options)
+      for (final o in filtered)
         DropdownMenuItem(value: o.code, child: Text(o.label)),
     ];
+
     return _DropdownShell(
-      label: 'Language',
+      label: l10n.language,
       child: DropdownButton<String>(
-        value: value.isEmpty ? null : value,
+        value: effectiveValue,
         isExpanded: true,
-        icon: const Icon(
+        icon: Icon(
           Icons.expand_more_rounded,
           size: 18,
-          color: OpenVtsColors.textTertiary,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),
-        style: _dropdownTextStyle,
+        style: TextStyle(
+          fontFamily: OpenVtsTypography.primaryFontFamily,
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+          color: Theme.of(context).colorScheme.onSurface,
+        ),
         items: items,
         onChanged: onChanged,
       ),
@@ -623,17 +707,23 @@ class _DateFormatDropdown extends StatelessWidget {
       for (final o in options)
         DropdownMenuItem(value: o.value, child: Text(o.label)),
     ];
+    final l10n = AppLocalizations.of(context);
     return _DropdownShell(
-      label: 'Date format',
+      label: l10n.dateFormat,
       child: DropdownButton<String>(
         value: value.isEmpty ? null : value,
         isExpanded: true,
-        icon: const Icon(
+        icon: Icon(
           Icons.expand_more_rounded,
           size: 18,
-          color: OpenVtsColors.textTertiary,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),
-        style: _dropdownTextStyle,
+        style: TextStyle(
+          fontFamily: OpenVtsTypography.primaryFontFamily,
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+          color: Theme.of(context).colorScheme.onSurface,
+        ),
         items: items,
         onChanged: onChanged,
       ),
@@ -658,20 +748,25 @@ class _TimezoneDropdown extends StatelessWidget {
     final items = <DropdownMenuItem<String>>[
       if (!hasValue && value.isNotEmpty)
         DropdownMenuItem(value: value, child: Text(value)),
-      for (final o in options)
-        DropdownMenuItem(value: o, child: Text(o)),
+      for (final o in options) DropdownMenuItem(value: o, child: Text(o)),
     ];
+    final l10n = AppLocalizations.of(context);
     return _DropdownShell(
-      label: 'Timezone',
+      label: l10n.timezone,
       child: DropdownButton<String>(
         value: value.isEmpty ? null : value,
         isExpanded: true,
-        icon: const Icon(
+        icon: Icon(
           Icons.expand_more_rounded,
           size: 18,
-          color: OpenVtsColors.textTertiary,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),
-        style: _dropdownTextStyle,
+        style: TextStyle(
+          fontFamily: OpenVtsTypography.primaryFontFamily,
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+          color: Theme.of(context).colorScheme.onSurface,
+        ),
         items: items,
         onChanged: onChanged,
       ),
@@ -700,13 +795,6 @@ class _DropdownShell extends StatelessWidget {
   }
 }
 
-const TextStyle _dropdownTextStyle = TextStyle(
-  fontFamily: OpenVtsTypography.primaryFontFamily,
-  fontSize: 13,
-  fontWeight: FontWeight.w500,
-  color: OpenVtsColors.textPrimary,
-);
-
 // =====================================================================
 // Segmented control
 // =====================================================================
@@ -733,9 +821,9 @@ class _SegmentedControl<T> extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
-        color: OpenVtsColors.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-        border: Border.all(color: OpenVtsColors.border),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -772,7 +860,9 @@ class _SegBtn extends StatelessWidget {
         duration: const Duration(milliseconds: 150),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: selected ? OpenVtsColors.brandInk : Colors.transparent,
+          color: selected
+              ? Theme.of(context).colorScheme.primary
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(OpenVtsRadius.sm - 2),
         ),
         child: Text(
@@ -781,7 +871,9 @@ class _SegBtn extends StatelessWidget {
             fontFamily: OpenVtsTypography.primaryFontFamily,
             fontSize: 11.5,
             fontWeight: FontWeight.w600,
-            color: selected ? OpenVtsColors.white : OpenVtsColors.textPrimary,
+            color: selected
+                ? Theme.of(context).colorScheme.onPrimary
+                : Theme.of(context).colorScheme.onSurface,
           ),
         ),
       ),
@@ -808,11 +900,11 @@ class _LabeledRow extends StatelessWidget {
         Expanded(
           child: Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: OpenVtsTypography.primaryFontFamily,
               fontSize: 12.5,
               fontWeight: FontWeight.w500,
-              color: OpenVtsColors.textPrimary,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
         ),
@@ -843,7 +935,8 @@ const List<_MapPreset> _kMapPresets = [
 ];
 
 class _PresetsRow extends StatelessWidget {
-  const _PresetsRow({required this.onPick});
+  const _PresetsRow({required this.label, required this.onPick});
+  final String label;
   final ValueChanged<_MapPreset> onPick;
 
   @override
@@ -851,8 +944,8 @@ class _PresetsRow extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Quick presets',
+        Text(
+          label,
           style: OpenVtsTypography.label,
         ),
         const SizedBox(height: OpenVtsSpacing.xs),
@@ -882,26 +975,27 @@ class _PresetChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: OpenVtsColors.surface,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
-          border: Border.all(color: OpenVtsColors.border),
+          border:
+              Border.all(color: Theme.of(context).colorScheme.outlineVariant),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
+            Icon(
               Icons.place_outlined,
               size: 12,
-              color: OpenVtsColors.textSecondary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
             const SizedBox(width: 4),
             Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: OpenVtsTypography.primaryFontFamily,
                 fontSize: 11.5,
                 fontWeight: FontWeight.w500,
-                color: OpenVtsColors.textPrimary,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
           ],
@@ -938,11 +1032,13 @@ class _SectionHeader extends StatelessWidget {
             width: 28,
             height: 28,
             decoration: BoxDecoration(
-              color: OpenVtsColors.surface,
+              color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-              border: Border.all(color: OpenVtsColors.border),
+              border: Border.all(
+                  color: Theme.of(context).colorScheme.outlineVariant),
             ),
-            child: Icon(icon, size: 16, color: OpenVtsColors.textPrimary),
+            child: Icon(icon,
+                size: 16, color: Theme.of(context).colorScheme.onSurface),
           ),
           const SizedBox(width: OpenVtsSpacing.xs),
           Expanded(
@@ -952,21 +1048,21 @@ class _SectionHeader extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: OpenVtsTypography.primaryFontFamily,
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: OpenVtsColors.textPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 const SizedBox(height: 1),
                 Text(
                   subtitle,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: OpenVtsTypography.primaryFontFamily,
                     fontSize: 11,
                     height: 1.3,
-                    color: OpenVtsColors.textSecondary,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
               ],
@@ -1008,7 +1104,9 @@ class _GroupedCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(icon, size: 16, color: OpenVtsColors.textSecondary),
+              Icon(icon,
+                  size: 16,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant),
               const SizedBox(width: 8),
               Expanded(
                 child: Column(
@@ -1017,21 +1115,21 @@ class _GroupedCard extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: OpenVtsTypography.primaryFontFamily,
                         fontSize: 13.5,
                         fontWeight: FontWeight.w600,
-                        color: OpenVtsColors.textPrimary,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     const SizedBox(height: 1),
                     Text(
                       subtitle,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: OpenVtsTypography.primaryFontFamily,
                         fontSize: 11,
                         height: 1.3,
-                        color: OpenVtsColors.textSecondary,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ],

@@ -1,8 +1,10 @@
 import 'package:flutter/foundation.dart';
 
-enum UserNotificationGroup { basic, overspeed, geofence }
+enum UserNotificationGroup { basic, overspeed, duration, geofence, route }
 
 enum UserNotificationChannel { webPush, mobilePush, whatsapp, email }
+
+enum UserDurationNotificationKind { running, stop, idle }
 
 class UserNotificationChannelFlags {
   const UserNotificationChannelFlags({
@@ -112,12 +114,16 @@ class UserNotificationChannels {
   const UserNotificationChannels({
     this.basic = const UserNotificationChannelFlags(),
     this.overspeed = const UserNotificationChannelFlags(),
+    this.duration = const UserNotificationChannelFlags(),
     this.geofence = const UserNotificationChannelFlags(),
+    this.route = const UserNotificationChannelFlags(),
   });
 
   final UserNotificationChannelFlags basic;
   final UserNotificationChannelFlags overspeed;
+  final UserNotificationChannelFlags duration;
   final UserNotificationChannelFlags geofence;
+  final UserNotificationChannelFlags route;
 
   factory UserNotificationChannels.fromJson(dynamic json) {
     final map = _asMap(json);
@@ -128,14 +134,24 @@ class UserNotificationChannels {
       overspeed: UserNotificationChannelFlags.fromJson(
         _firstByKeys(map, const ['OVERSPEED', 'overspeed']),
       ),
+      duration: UserNotificationChannelFlags.fromJson(
+        _firstByKeys(map, const ['DURATION', 'duration']),
+      ),
       geofence: UserNotificationChannelFlags.fromJson(
         _firstByKeys(map, const ['GEOFENCE', 'geofence']),
+      ),
+      route: UserNotificationChannelFlags.fromJson(
+        _firstByKeys(map, const ['ROUTE', 'route']),
       ),
     );
   }
 
   int get activeCount {
-    return basic.activeCount + overspeed.activeCount + geofence.activeCount;
+    return basic.activeCount +
+        overspeed.activeCount +
+        duration.activeCount +
+        geofence.activeCount +
+        route.activeCount;
   }
 
   UserNotificationChannelFlags flagsFor(UserNotificationGroup group) {
@@ -144,8 +160,12 @@ class UserNotificationChannels {
         return basic;
       case UserNotificationGroup.overspeed:
         return overspeed;
+      case UserNotificationGroup.duration:
+        return duration;
       case UserNotificationGroup.geofence:
         return geofence;
+      case UserNotificationGroup.route:
+        return route;
     }
   }
 
@@ -158,8 +178,12 @@ class UserNotificationChannels {
         return copyWith(basic: flags);
       case UserNotificationGroup.overspeed:
         return copyWith(overspeed: flags);
+      case UserNotificationGroup.duration:
+        return copyWith(duration: flags);
       case UserNotificationGroup.geofence:
         return copyWith(geofence: flags);
+      case UserNotificationGroup.route:
+        return copyWith(route: flags);
     }
   }
 
@@ -175,12 +199,16 @@ class UserNotificationChannels {
   UserNotificationChannels copyWith({
     UserNotificationChannelFlags? basic,
     UserNotificationChannelFlags? overspeed,
+    UserNotificationChannelFlags? duration,
     UserNotificationChannelFlags? geofence,
+    UserNotificationChannelFlags? route,
   }) {
     return UserNotificationChannels(
       basic: basic ?? this.basic,
       overspeed: overspeed ?? this.overspeed,
+      duration: duration ?? this.duration,
       geofence: geofence ?? this.geofence,
+      route: route ?? this.route,
     );
   }
 
@@ -188,7 +216,9 @@ class UserNotificationChannels {
     return <String, dynamic>{
       'BASIC': basic.toJson(),
       'OVERSPEED': overspeed.toJson(),
+      'DURATION': duration.toJson(),
       'GEOFENCE': geofence.toJson(),
+      'ROUTE': route.toJson(),
     };
   }
 
@@ -197,11 +227,13 @@ class UserNotificationChannels {
     return other is UserNotificationChannels &&
         other.basic == basic &&
         other.overspeed == overspeed &&
-        other.geofence == geofence;
+        other.duration == duration &&
+        other.geofence == geofence &&
+        other.route == route;
   }
 
   @override
-  int get hashCode => Object.hash(basic, overspeed, geofence);
+  int get hashCode => Object.hash(basic, overspeed, duration, geofence, route);
 }
 
 class UserNotificationVehicle {
@@ -342,6 +374,95 @@ class UserOverspeedNotificationRow {
   int get hashCode => Object.hash(vehicleId, enabled, speedLimitKph);
 }
 
+class UserDurationNotificationRow {
+  const UserDurationNotificationRow({
+    required this.vehicleId,
+    this.runningEnabled = false,
+    this.runningLimitMinutes,
+    this.stopEnabled = false,
+    this.stopLimitMinutes,
+    this.idleEnabled = false,
+    this.idleLimitMinutes,
+  });
+
+  final int vehicleId;
+  final bool runningEnabled;
+  final int? runningLimitMinutes;
+  final bool stopEnabled;
+  final int? stopLimitMinutes;
+  final bool idleEnabled;
+  final int? idleLimitMinutes;
+
+  factory UserDurationNotificationRow.fromJson(dynamic json) {
+    final map = _asMap(json);
+    return UserDurationNotificationRow(
+      vehicleId: _asInt(map['vehicleId']),
+      runningEnabled: _asBool(map['runningEnabled']),
+      runningLimitMinutes: _asNullableInt(map['runningLimitMinutes']),
+      stopEnabled: _asBool(map['stopEnabled']),
+      stopLimitMinutes: _asNullableInt(map['stopLimitMinutes']),
+      idleEnabled: _asBool(map['idleEnabled']),
+      idleLimitMinutes: _asNullableInt(map['idleLimitMinutes']),
+    );
+  }
+
+  UserDurationNotificationRow copyWith({
+    bool? runningEnabled,
+    Object? runningLimitMinutes = _unset,
+    bool? stopEnabled,
+    Object? stopLimitMinutes = _unset,
+    bool? idleEnabled,
+    Object? idleLimitMinutes = _unset,
+  }) {
+    return UserDurationNotificationRow(
+      vehicleId: vehicleId,
+      runningEnabled: runningEnabled ?? this.runningEnabled,
+      runningLimitMinutes: identical(runningLimitMinutes, _unset)
+          ? this.runningLimitMinutes
+          : runningLimitMinutes as int?,
+      stopEnabled: stopEnabled ?? this.stopEnabled,
+      stopLimitMinutes: identical(stopLimitMinutes, _unset)
+          ? this.stopLimitMinutes
+          : stopLimitMinutes as int?,
+      idleEnabled: idleEnabled ?? this.idleEnabled,
+      idleLimitMinutes: identical(idleLimitMinutes, _unset)
+          ? this.idleLimitMinutes
+          : idleLimitMinutes as int?,
+    );
+  }
+
+  Map<String, dynamic> toSaveJson() => <String, dynamic>{
+        'vehicleId': vehicleId,
+        'runningEnabled': runningEnabled,
+        'runningLimitMinutes': runningLimitMinutes,
+        'stopEnabled': stopEnabled,
+        'stopLimitMinutes': stopLimitMinutes,
+        'idleEnabled': idleEnabled,
+        'idleLimitMinutes': idleLimitMinutes,
+      };
+
+  @override
+  bool operator ==(Object other) =>
+      other is UserDurationNotificationRow &&
+      other.vehicleId == vehicleId &&
+      other.runningEnabled == runningEnabled &&
+      other.runningLimitMinutes == runningLimitMinutes &&
+      other.stopEnabled == stopEnabled &&
+      other.stopLimitMinutes == stopLimitMinutes &&
+      other.idleEnabled == idleEnabled &&
+      other.idleLimitMinutes == idleLimitMinutes;
+
+  @override
+  int get hashCode => Object.hash(
+      vehicleId,
+      runningEnabled,
+      runningLimitMinutes,
+      stopEnabled,
+      stopLimitMinutes,
+      idleEnabled,
+      idleLimitMinutes);
+}
+
 class UserNotificationGeofence {
   const UserNotificationGeofence({
     required this.id,
@@ -430,22 +551,106 @@ class UserGeofenceMatrixEntry {
   int get hashCode => Object.hash(vehicleId, geofenceId, enabled);
 }
 
+class UserNotificationRoute {
+  const UserNotificationRoute({
+    required this.id,
+    required this.name,
+    this.isActive = false,
+    this.toleranceMeters,
+  });
+
+  final int id;
+  final String name;
+  final bool isActive;
+  final double? toleranceMeters;
+
+  factory UserNotificationRoute.fromJson(dynamic json) {
+    final map = _asMap(json);
+    return UserNotificationRoute(
+      id: _asInt(map['id']),
+      name: _asString(map['name']),
+      isActive: _asBool(map['isActive']),
+      toleranceMeters: _asNullableDouble(map['toleranceMeters']),
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      other is UserNotificationRoute &&
+      other.id == id &&
+      other.name == name &&
+      other.isActive == isActive &&
+      other.toleranceMeters == toleranceMeters;
+
+  @override
+  int get hashCode => Object.hash(id, name, isActive, toleranceMeters);
+}
+
+class UserRouteMatrixEntry {
+  const UserRouteMatrixEntry({
+    required this.vehicleId,
+    required this.routeId,
+    this.enabled = false,
+  });
+
+  final int vehicleId;
+  final int routeId;
+  final bool enabled;
+
+  factory UserRouteMatrixEntry.fromJson(dynamic json) {
+    final map = _asMap(json);
+    return UserRouteMatrixEntry(
+      vehicleId: _asInt(map['vehicleId']),
+      routeId: _asInt(map['routeId']),
+      enabled: _asBool(map['enabled']),
+    );
+  }
+
+  UserRouteMatrixEntry copyWith({bool? enabled}) => UserRouteMatrixEntry(
+        vehicleId: vehicleId,
+        routeId: routeId,
+        enabled: enabled ?? this.enabled,
+      );
+
+  Map<String, dynamic> toSaveJson() => <String, dynamic>{
+        'vehicleId': vehicleId,
+        'routeId': routeId,
+        'enabled': enabled,
+      };
+
+  @override
+  bool operator ==(Object other) =>
+      other is UserRouteMatrixEntry &&
+      other.vehicleId == vehicleId &&
+      other.routeId == routeId &&
+      other.enabled == enabled;
+
+  @override
+  int get hashCode => Object.hash(vehicleId, routeId, enabled);
+}
+
 class UserNotificationPreferences {
   const UserNotificationPreferences({
     this.channels = const UserNotificationChannels(),
     this.vehicles = const <UserNotificationVehicle>[],
     this.basic = const <UserBasicNotificationRow>[],
     this.overspeed = const <UserOverspeedNotificationRow>[],
+    this.duration = const <UserDurationNotificationRow>[],
     this.geofences = const <UserNotificationGeofence>[],
     this.geofenceMatrix = const <UserGeofenceMatrixEntry>[],
+    this.routes = const <UserNotificationRoute>[],
+    this.routeMatrix = const <UserRouteMatrixEntry>[],
   });
 
   final UserNotificationChannels channels;
   final List<UserNotificationVehicle> vehicles;
   final List<UserBasicNotificationRow> basic;
   final List<UserOverspeedNotificationRow> overspeed;
+  final List<UserDurationNotificationRow> duration;
   final List<UserNotificationGeofence> geofences;
   final List<UserGeofenceMatrixEntry> geofenceMatrix;
+  final List<UserNotificationRoute> routes;
+  final List<UserRouteMatrixEntry> routeMatrix;
 
   factory UserNotificationPreferences.fromDynamic(dynamic json) {
     final payload = _extractPreferencesPayload(json);
@@ -464,6 +669,10 @@ class UserNotificationPreferences {
           .map(UserOverspeedNotificationRow.fromJson)
           .where((item) => item.vehicleId > 0)
           .toList(growable: false),
+      duration: _asList(payload['duration'])
+          .map(UserDurationNotificationRow.fromJson)
+          .where((item) => item.vehicleId > 0)
+          .toList(growable: false),
       geofences: _asList(payload['geofences'])
           .map(UserNotificationGeofence.fromJson)
           .where((item) => item.id > 0)
@@ -471,6 +680,14 @@ class UserNotificationPreferences {
       geofenceMatrix: _asList(payload['geofenceMatrix'])
           .map(UserGeofenceMatrixEntry.fromJson)
           .where((item) => item.vehicleId > 0 && item.geofenceId > 0)
+          .toList(growable: false),
+      routes: _asList(payload['routes'])
+          .map(UserNotificationRoute.fromJson)
+          .where((item) => item.id > 0)
+          .toList(growable: false),
+      routeMatrix: _asList(payload['routeMatrix'])
+          .map(UserRouteMatrixEntry.fromJson)
+          .where((item) => item.vehicleId > 0 && item.routeId > 0)
           .toList(growable: false),
     );
   }
@@ -480,16 +697,22 @@ class UserNotificationPreferences {
     List<UserNotificationVehicle>? vehicles,
     List<UserBasicNotificationRow>? basic,
     List<UserOverspeedNotificationRow>? overspeed,
+    List<UserDurationNotificationRow>? duration,
     List<UserNotificationGeofence>? geofences,
     List<UserGeofenceMatrixEntry>? geofenceMatrix,
+    List<UserNotificationRoute>? routes,
+    List<UserRouteMatrixEntry>? routeMatrix,
   }) {
     return UserNotificationPreferences(
       channels: channels ?? this.channels,
       vehicles: vehicles ?? this.vehicles,
       basic: basic ?? this.basic,
       overspeed: overspeed ?? this.overspeed,
+      duration: duration ?? this.duration,
       geofences: geofences ?? this.geofences,
       geofenceMatrix: geofenceMatrix ?? this.geofenceMatrix,
+      routes: routes ?? this.routes,
+      routeMatrix: routeMatrix ?? this.routeMatrix,
     );
   }
 
@@ -499,10 +722,14 @@ class UserNotificationPreferences {
       'basic': basic.map((item) => item.toSaveJson()).toList(growable: false),
       'overspeed':
           overspeed.map((item) => item.toSaveJson()).toList(growable: false),
+      'duration':
+          duration.map((item) => item.toSaveJson()).toList(growable: false),
       // Backend expects this key to be `geofences` for matrix updates.
       'geofences': geofenceMatrix
           .map((item) => item.toSaveJson())
           .toList(growable: false),
+      'routes':
+          routeMatrix.map((item) => item.toSaveJson()).toList(growable: false),
     };
   }
 
@@ -513,8 +740,11 @@ class UserNotificationPreferences {
         listEquals(other.vehicles, vehicles) &&
         listEquals(other.basic, basic) &&
         listEquals(other.overspeed, overspeed) &&
+        listEquals(other.duration, duration) &&
         listEquals(other.geofences, geofences) &&
-        listEquals(other.geofenceMatrix, geofenceMatrix);
+        listEquals(other.geofenceMatrix, geofenceMatrix) &&
+        listEquals(other.routes, routes) &&
+        listEquals(other.routeMatrix, routeMatrix);
   }
 
   @override
@@ -524,8 +754,11 @@ class UserNotificationPreferences {
       Object.hashAll(vehicles),
       Object.hashAll(basic),
       Object.hashAll(overspeed),
+      Object.hashAll(duration),
       Object.hashAll(geofences),
       Object.hashAll(geofenceMatrix),
+      Object.hashAll(routes),
+      Object.hashAll(routeMatrix),
     );
   }
 }
@@ -562,8 +795,11 @@ bool _looksLikePreferencesPayload(Map<String, dynamic> map) {
       map.containsKey('vehicles') ||
       map.containsKey('basic') ||
       map.containsKey('overspeed') ||
+      map.containsKey('duration') ||
       map.containsKey('geofences') ||
-      map.containsKey('geofenceMatrix');
+      map.containsKey('geofenceMatrix') ||
+      map.containsKey('routes') ||
+      map.containsKey('routeMatrix');
 }
 
 dynamic _firstByKeys(Map<String, dynamic> map, List<String> keys) {
@@ -627,6 +863,12 @@ int? _asNullableInt(dynamic value) {
     return null;
   }
   return parsed;
+}
+
+double? _asNullableDouble(dynamic value) {
+  if (value == null) return null;
+  if (value is num) return value.toDouble();
+  return double.tryParse(value.toString().trim());
 }
 
 bool _asBool(dynamic value) {

@@ -3,7 +3,6 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
@@ -29,14 +28,14 @@ class PaymentsRevenueTrendChart extends StatelessWidget {
           Text(
             'Revenue Trend',
             style: OpenVtsTypography.titleSmall.copyWith(
-              color: OpenVtsColors.textPrimary,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: OpenVtsSpacing.xxs),
           Text(
             'Daily totals for selected range',
             style: OpenVtsTypography.meta.copyWith(
-              color: OpenVtsColors.textSecondary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
           const SizedBox(height: OpenVtsSpacing.sm),
@@ -110,6 +109,7 @@ class _TrendChartBody extends StatelessWidget {
                   painter: _RevenueTrendPainter(
                     points: points,
                     maxValue: yAxisValues.last,
+                    colorScheme: Theme.of(context).colorScheme,
                   ),
                   child: const SizedBox.expand(),
                 ),
@@ -166,10 +166,12 @@ class _RevenueTrendPainter extends CustomPainter {
   const _RevenueTrendPainter({
     required this.points,
     required this.maxValue,
+    required this.colorScheme,
   });
 
   final List<_TrendPoint> points;
   final double maxValue;
+  final ColorScheme colorScheme;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -200,8 +202,8 @@ class _RevenueTrendPainter extends CustomPainter {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            OpenVtsColors.textSecondary.withValues(alpha: 0.16),
-            OpenVtsColors.textSecondary.withValues(alpha: 0.02),
+            colorScheme.onSurfaceVariant.withValues(alpha: 0.12),
+            colorScheme.onSurfaceVariant.withValues(alpha: 0.04),
           ],
         ).createShader(plotRect),
     );
@@ -209,7 +211,7 @@ class _RevenueTrendPainter extends CustomPainter {
     canvas.drawPath(
       linePath,
       Paint()
-        ..color = OpenVtsColors.textPrimary
+        ..color = colorScheme.primary
         ..style = PaintingStyle.stroke
         ..strokeWidth = 2
         ..strokeCap = StrokeCap.round
@@ -220,23 +222,25 @@ class _RevenueTrendPainter extends CustomPainter {
     canvas.drawCircle(
       lastPoint,
       5,
-      Paint()..color = OpenVtsColors.white,
+      Paint()..color = colorScheme.surface,
     );
     canvas.drawCircle(
       lastPoint,
       3,
-      Paint()..color = OpenVtsColors.textPrimary,
+      Paint()..color = colorScheme.primary,
     );
   }
 
   @override
   bool shouldRepaint(covariant _RevenueTrendPainter oldDelegate) {
-    return oldDelegate.points != points || oldDelegate.maxValue != maxValue;
+    return oldDelegate.points != points ||
+        oldDelegate.maxValue != maxValue ||
+        oldDelegate.colorScheme != colorScheme;
   }
 
   void _drawGrid(Canvas canvas, Rect rect) {
     final paint = Paint()
-      ..color = OpenVtsColors.border.withValues(alpha: 0.85)
+      ..color = colorScheme.outlineVariant.withValues(alpha: 0.5)
       ..strokeWidth = 1;
 
     const horizontalLines = 4;
@@ -258,7 +262,7 @@ class _RevenueTrendPainter extends CustomPainter {
     canvas.drawCircle(
       offset,
       3,
-      Paint()..color = OpenVtsColors.textPrimary,
+      Paint()..color = colorScheme.primary,
     );
   }
 
@@ -365,7 +369,7 @@ class _YAxisLabels extends StatelessWidget {
               _formatCompactNumber(value),
               textAlign: TextAlign.end,
               style: OpenVtsTypography.meta.copyWith(
-                color: OpenVtsColors.textTertiary,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
                 fontSize: 10,
               ),
             ),
@@ -418,7 +422,7 @@ class _XAxisLabels extends StatelessWidget {
                         ? TextAlign.right
                         : TextAlign.center,
                 style: OpenVtsTypography.meta.copyWith(
-                  color: OpenVtsColors.textSecondary,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                   fontSize: 11,
                 ),
               ),

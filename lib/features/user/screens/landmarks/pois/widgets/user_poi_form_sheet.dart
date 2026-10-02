@@ -9,6 +9,8 @@ import '../../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../../shared/widgets/open_vts_bottom_sheet.dart';
 import '../../../../../../shared/widgets/open_vts_button.dart';
+import '../../../../controllers/user_landmark_studio_controller.dart'
+    show userLandmarkErrorMessage;
 import '../../../../controllers/user_providers.dart';
 import '../../../../models/user_landmark_model.dart';
 import '../../widgets/user_landmark_color_picker.dart';
@@ -23,6 +25,7 @@ class UserPoiFormSheet {
   static Future<UserPoi?> show({
     required BuildContext context,
     UserPoi? poi,
+    UserGeoPoint? initialCoordinates,
   }) {
     return OpenVtsBottomSheet.show<UserPoi>(
       context: context,
@@ -33,6 +36,7 @@ class UserPoiFormSheet {
       draggableChildBuilder: (context, scrollController) {
         return _UserPoiFormBody(
           existing: poi,
+          initialCoordinates: initialCoordinates,
           scrollController: scrollController,
         );
       },
@@ -44,9 +48,11 @@ class _UserPoiFormBody extends ConsumerStatefulWidget {
   const _UserPoiFormBody({
     required this.existing,
     required this.scrollController,
+    this.initialCoordinates,
   });
 
   final UserPoi? existing;
+  final UserGeoPoint? initialCoordinates;
   final ScrollController scrollController;
 
   @override
@@ -83,7 +89,7 @@ class _UserPoiFormBodyState extends ConsumerState<_UserPoiFormBody> {
         ? existing!.color
         : kUserLandmarkPalette.first;
     _isActive = existing?.isActive ?? true;
-    _coordinates = existing?.coordinates;
+    _coordinates = existing?.coordinates ?? widget.initialCoordinates;
     _toleranceMeters = existing?.toleranceMeters;
     _tolerance = TextEditingController(
       text: _toleranceMeters == null || _toleranceMeters == 0
@@ -210,7 +216,11 @@ class _UserPoiFormBodyState extends ConsumerState<_UserPoiFormBody> {
       if (!mounted) return;
       setState(() {
         _submitting = false;
-        _error = error.toString();
+        _error = userLandmarkErrorMessage(
+          error,
+          fallback:
+              'Could not save POI. Please check the details and try again.',
+        );
       });
     }
   }
@@ -317,12 +327,12 @@ class _UserPoiFormBodyState extends ConsumerState<_UserPoiFormBody> {
           TextButton(
             onPressed: _submitting ? null : () => Navigator.of(context).pop(),
             style: TextButton.styleFrom(
-              foregroundColor: OpenVtsColors.textSecondary,
+              foregroundColor: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
             child: Text(
               'Cancel',
               style: OpenVtsTypography.label.copyWith(
-                color: OpenVtsColors.textSecondary,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
           ),
@@ -337,7 +347,7 @@ class _UserPoiFormBodyState extends ConsumerState<_UserPoiFormBody> {
       hintText: hint,
       suffixText: suffix,
       hintStyle: OpenVtsTypography.body.copyWith(
-        color: OpenVtsColors.textTertiary,
+        color: Theme.of(context).colorScheme.outline,
       ),
       contentPadding: const EdgeInsets.symmetric(
         horizontal: OpenVtsSpacing.sm,
@@ -394,7 +404,7 @@ class _Field extends StatelessWidget {
             Text(
               label,
               style: OpenVtsTypography.label.copyWith(
-                color: OpenVtsColors.textPrimary,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
             if (required) ...[
@@ -428,12 +438,17 @@ class _LocationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? OpenVtsColors.brandInk : OpenVtsColors.surface;
+    final textColor = isDark ? OpenVtsColors.white : OpenVtsColors.textPrimary;
+    final borderColor = isDark ? OpenVtsColors.white : OpenVtsColors.border;
+
     return Container(
       padding: const EdgeInsets.all(OpenVtsSpacing.sm),
       decoration: BoxDecoration(
-        color: OpenVtsColors.surface,
+        color: bgColor,
         borderRadius: BorderRadius.circular(OpenVtsRadius.md),
-        border: Border.all(color: OpenVtsColors.border),
+        border: Border.all(color: borderColor),
       ),
       child: Row(
         children: [
@@ -441,14 +456,15 @@ class _LocationCard extends StatelessWidget {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: OpenVtsColors.brandInk.withValues(alpha: 0.08),
+              color: bgColor,
               borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
+              border: Border.all(color: borderColor),
             ),
             alignment: Alignment.center,
-            child: const Icon(
+            child: Icon(
               Icons.place_outlined,
               size: 18,
-              color: OpenVtsColors.brandInk,
+              color: textColor,
             ),
           ),
           const SizedBox(width: OpenVtsSpacing.sm),
@@ -459,7 +475,7 @@ class _LocationCard extends StatelessWidget {
                 Text(
                   'Location',
                   style: OpenVtsTypography.label.copyWith(
-                    color: OpenVtsColors.textPrimary,
+                    color: textColor,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -470,9 +486,7 @@ class _LocationCard extends StatelessWidget {
                           '${coordinates!.lon.toStringAsFixed(6)}'
                           '${tolerance != null && tolerance! > 0 ? ' • ±${tolerance!.toStringAsFixed(0)} m' : ''}',
                   style: OpenVtsTypography.meta.copyWith(
-                    color: coordinates == null
-                        ? OpenVtsColors.textTertiary
-                        : OpenVtsColors.textSecondary,
+                    color: textColor,
                   ),
                 ),
               ],
@@ -481,7 +495,7 @@ class _LocationCard extends StatelessWidget {
           TextButton(
             onPressed: onPick,
             style: TextButton.styleFrom(
-              foregroundColor: OpenVtsColors.brandInk,
+              foregroundColor: textColor,
               padding: const EdgeInsets.symmetric(
                 horizontal: OpenVtsSpacing.sm,
               ),
@@ -489,7 +503,7 @@ class _LocationCard extends StatelessWidget {
             child: Text(
               coordinates == null ? 'Pick on map' : 'Edit on map',
               style: OpenVtsTypography.label.copyWith(
-                color: OpenVtsColors.brandInk,
+                color: textColor,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -508,15 +522,17 @@ class _ActiveToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: OpenVtsSpacing.sm,
         vertical: 6,
       ),
       decoration: BoxDecoration(
-        color: OpenVtsColors.surface,
+        color: scheme.surfaceContainer,
         borderRadius: BorderRadius.circular(OpenVtsRadius.md),
-        border: Border.all(color: OpenVtsColors.border),
+        border: Border.all(color: scheme.outlineVariant),
       ),
       child: Row(
         children: [
@@ -527,7 +543,7 @@ class _ActiveToggle extends StatelessWidget {
                 Text(
                   'Active',
                   style: OpenVtsTypography.label.copyWith(
-                    color: OpenVtsColors.textPrimary,
+                    color: scheme.onSurface,
                   ),
                 ),
                 Text(
@@ -535,7 +551,7 @@ class _ActiveToggle extends StatelessWidget {
                       ? 'Visible on live map and proximity alerts.'
                       : 'Hidden from alerts; stays in the list.',
                   style: OpenVtsTypography.meta.copyWith(
-                    color: OpenVtsColors.textSecondary,
+                    color: scheme.onSurfaceVariant,
                   ),
                 ),
               ],
@@ -544,7 +560,6 @@ class _ActiveToggle extends StatelessWidget {
           Switch.adaptive(
             value: value,
             onChanged: onChanged,
-            activeThumbColor: OpenVtsColors.brandInk,
           ),
         ],
       ),

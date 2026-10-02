@@ -7,7 +7,11 @@ class _ReplayEndpointMarker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fill = isStart ? const Color(0xFF111827) : const Color(0xFF27272A);
+    final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final fill = isDark
+        ? (isStart ? scheme.surface : scheme.surfaceContainerHighest)
+        : (isStart ? const Color(0xFF111827) : const Color(0xFF27272A));
 
     return Center(
       child: Container(
@@ -16,7 +20,10 @@ class _ReplayEndpointMarker extends StatelessWidget {
         decoration: BoxDecoration(
           color: fill,
           shape: BoxShape.circle,
-          border: Border.all(color: Colors.white, width: 2),
+          border: Border.all(
+            color: isDark ? scheme.onSurface : Colors.white,
+            width: 2,
+          ),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.16),
@@ -28,7 +35,7 @@ class _ReplayEndpointMarker extends StatelessWidget {
         child: Icon(
           isStart ? Icons.trip_origin_rounded : Icons.flag_rounded,
           size: 13,
-          color: Colors.white,
+          color: isDark ? scheme.onSurface : Colors.white,
         ),
       ),
     );
@@ -46,10 +53,11 @@ class _ReplayStopMarkerWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final foreground = isSelected ? Colors.white : const Color(0xFF4B5563);
-    final innerFill = isSelected ? const Color(0xFF111827) : Colors.white;
-    final borderColor =
-        isSelected ? const Color(0xFF111827) : const Color(0xFFC0CBD3);
+    final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final foreground = isSelected ? scheme.surface : scheme.onSurfaceVariant;
+    final innerFill = isSelected ? scheme.onSurface : Colors.white;
+    final borderColor = isSelected ? scheme.onSurface : const Color(0xFFC0CBD3);
 
     return Semantics(
       button: true,
@@ -64,10 +72,14 @@ class _ReplayStopMarkerWidget extends StatelessWidget {
               width: 32,
               height: 32,
               decoration: BoxDecoration(
-                color: const Color(0xFFF7F7F8),
+                color: isDark ? scheme.surface : const Color(0xFFF7F7F8),
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: isSelected ? const Color(0xFF111827) : Colors.white,
+                  color: isSelected
+                      ? scheme.onSurface
+                      : isDark
+                          ? scheme.outlineVariant
+                          : Colors.white,
                   width: 2,
                 ),
                 boxShadow: [
@@ -112,6 +124,8 @@ class _ReplayStopPopup extends StatelessWidget {
   Widget build(BuildContext context) {
     final latLngText =
         '${stop.latitude.toStringAsFixed(4)}, ${stop.longitude.toStringAsFixed(4)}';
+    final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return SizedBox(
       width: 220,
@@ -119,9 +133,11 @@ class _ReplayStopPopup extends StatelessWidget {
         children: [
           DecoratedBox(
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: isDark ? scheme.surface : Colors.white,
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: const Color(0xFFE5E7EB)),
+              border: Border.all(
+                color: isDark ? scheme.outlineVariant : const Color(0xFFE5E7EB),
+              ),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.14),
@@ -136,14 +152,14 @@ class _ReplayStopPopup extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Stoppage',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w800,
-                      color: Color(0xFF111827),
+                      color: scheme.onSurface,
                       height: 1.1,
                     ),
                   ),
@@ -181,10 +197,10 @@ class _ReplayStopPopup extends StatelessWidget {
                   width: 24,
                   height: 24,
                 ),
-                icon: const Icon(
+                icon: Icon(
                   Icons.close_rounded,
                   size: 15,
-                  color: Color(0xFF374151),
+                  color: scheme.onSurfaceVariant,
                 ),
                 tooltip: 'Close',
               ),
@@ -204,6 +220,8 @@ class _ReplayStopPopupRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -213,10 +231,10 @@ class _ReplayStopPopupRow extends StatelessWidget {
             label,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF6B7280),
+              color: scheme.onSurfaceVariant,
               height: 1.15,
             ),
           ),
@@ -227,10 +245,10 @@ class _ReplayStopPopupRow extends StatelessWidget {
             value,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.w800,
-              color: Color(0xFF111827),
+              color: scheme.onSurface,
               height: 1.15,
             ),
           ),
@@ -248,6 +266,8 @@ class _ReplayMovingMarker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final angle = ((courseDegrees ?? 0) % 360) * math.pi / 180;
+    final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Center(
       child: Stack(
@@ -257,7 +277,9 @@ class _ReplayMovingMarker extends StatelessWidget {
             width: 42,
             height: 42,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.92),
+              color: isDark
+                  ? scheme.surface.withValues(alpha: 0.92)
+                  : Colors.white.withValues(alpha: 0.92),
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
@@ -273,14 +295,14 @@ class _ReplayMovingMarker extends StatelessWidget {
             child: Container(
               width: 30,
               height: 30,
-              decoration: const BoxDecoration(
-                color: Color(0xFF111827),
+              decoration: BoxDecoration(
+                color: scheme.onSurface,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.navigation_rounded,
                 size: 17,
-                color: Colors.white,
+                color: scheme.surface,
               ),
             ),
           ),
@@ -307,17 +329,23 @@ class _ReplayInfoHud extends StatelessWidget {
   Widget build(BuildContext context) {
     final displayName =
         vehicleName?.trim().isNotEmpty == true ? vehicleName!.trim() : 'Replay';
+    final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 236),
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: const Color(0xFFFFFFFF).withValues(alpha: 0.98),
+          color: isDark
+              ? scheme.surface.withValues(alpha: 0.98)
+              : const Color(0xFFFFFFFF).withValues(alpha: 0.98),
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: const Color(0xFFE6E8EC)),
+          border: Border.all(
+            color: isDark ? scheme.outlineVariant : const Color(0xFFE6E8EC),
+          ),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF111827).withValues(alpha: 0.10),
+              color: Colors.black.withValues(alpha: 0.10),
               blurRadius: 14,
               offset: const Offset(0, 6),
             ),
@@ -342,10 +370,10 @@ class _ReplayInfoHud extends StatelessWidget {
                           displayName,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w800,
-                            color: Color(0xFF141118),
+                            color: scheme.onSurface,
                             height: 1.08,
                           ),
                         ),
@@ -354,10 +382,10 @@ class _ReplayInfoHud extends StatelessWidget {
                           _formatReplayControlTime(point.effectiveTime),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w600,
-                            color: Color(0xFF6B7280),
+                            color: scheme.onSurfaceVariant,
                             height: 1.1,
                           ),
                         ),
@@ -365,15 +393,15 @@ class _ReplayInfoHud extends StatelessWidget {
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
-                            const Padding(
-                              padding: EdgeInsets.only(bottom: 1),
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 1),
                               child: Text(
                                 'Trip',
                                 maxLines: 1,
                                 style: TextStyle(
                                   fontSize: 8,
                                   fontWeight: FontWeight.w800,
-                                  color: Color(0xFF8B919C),
+                                  color: scheme.onSurfaceVariant,
                                   height: 1,
                                 ),
                               ),
@@ -384,10 +412,10 @@ class _ReplayInfoHud extends StatelessWidget {
                                 _formatReplayDistanceKm(tripDistanceKm),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w900,
-                                  color: Color(0xFF111827),
+                                  color: scheme.onSurface,
                                   height: 1,
                                 ),
                               ),
@@ -400,7 +428,10 @@ class _ReplayInfoHud extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 7),
-              Container(height: 1, color: const Color(0xFFEDEFF3)),
+              Container(
+                height: 1,
+                color: isDark ? scheme.outlineVariant : const Color(0xFFEDEFF3),
+              ),
               const SizedBox(height: 6),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -416,7 +447,9 @@ class _ReplayInfoHud extends StatelessWidget {
                     width: 1,
                     height: 12,
                     margin: const EdgeInsets.symmetric(horizontal: 8),
-                    color: const Color(0xFFE5E7EB),
+                    color: isDark
+                        ? scheme.outlineVariant
+                        : const Color(0xFFE5E7EB),
                   ),
                   Expanded(
                     flex: 5,
@@ -443,6 +476,8 @@ class _ReplayHudStat extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -451,10 +486,10 @@ class _ReplayHudStat extends StatelessWidget {
           label,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 8,
             fontWeight: FontWeight.w800,
-            color: Color(0xFF8B919C),
+            color: scheme.onSurfaceVariant,
             height: 1,
           ),
         ),
@@ -467,10 +502,10 @@ class _ReplayHudStat extends StatelessWidget {
             child: Text(
               value,
               maxLines: 1,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w900,
-                color: Color(0xFF111827),
+                color: scheme.onSurface,
                 height: 1,
               ),
             ),
@@ -481,14 +516,16 @@ class _ReplayHudStat extends StatelessWidget {
   }
 }
 
-class _ReplayMiniSpeedometer extends StatelessWidget {
+class _ReplayMiniSpeedometer extends ConsumerWidget {
   const _ReplayMiniSpeedometer({required this.speedKph});
 
   final double? speedKph;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final speed = (speedKph ?? 0).clamp(0, 120).toDouble();
+    final uf = ref.watch(unitFormatterProvider);
+    final scheme = Theme.of(context).colorScheme;
 
     return SizedBox(
       width: 64,
@@ -502,7 +539,10 @@ class _ReplayMiniSpeedometer extends StatelessWidget {
             right: 3,
             height: 38,
             child: CustomPaint(
-              painter: _ReplayMiniSpeedometerPainter(speedKph: speed),
+              painter: _ReplayMiniSpeedometerPainter(
+                speedKph: speed,
+                colorScheme: scheme,
+              ),
             ),
           ),
           Positioned(
@@ -513,26 +553,26 @@ class _ReplayMiniSpeedometer extends StatelessWidget {
               _formatReplayNumber(speed, speed >= 10 ? 0 : 1),
               textAlign: TextAlign.center,
               maxLines: 1,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13.5,
                 fontWeight: FontWeight.w900,
-                color: Color(0xFF111827),
+                color: scheme.onSurface,
                 height: 1,
               ),
             ),
           ),
-          const Positioned(
+          Positioned(
             top: 30,
             left: 0,
             right: 0,
             child: Text(
-              'km/h',
+              uf.speedLabel,
               textAlign: TextAlign.center,
               maxLines: 1,
               style: TextStyle(
                 fontSize: 8,
                 fontWeight: FontWeight.w700,
-                color: Color(0xFF6B7280),
+                color: scheme.onSurfaceVariant,
                 height: 1,
               ),
             ),
@@ -544,9 +584,13 @@ class _ReplayMiniSpeedometer extends StatelessWidget {
 }
 
 class _ReplayMiniSpeedometerPainter extends CustomPainter {
-  const _ReplayMiniSpeedometerPainter({required this.speedKph});
+  const _ReplayMiniSpeedometerPainter({
+    required this.speedKph,
+    required this.colorScheme,
+  });
 
   final double speedKph;
+  final ColorScheme colorScheme;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -556,17 +600,17 @@ class _ReplayMiniSpeedometerPainter extends CustomPainter {
     const sweepAngle = math.pi;
     final center = arcRect.center;
     final backgroundPaint = Paint()
-      ..color = const Color(0xFFE5E7EB)
+      ..color = colorScheme.outlineVariant
       ..strokeWidth = 5
       ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.stroke;
     final activePaint = Paint()
-      ..color = const Color(0xFF111827)
+      ..color = colorScheme.onSurface
       ..strokeWidth = 5
       ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.stroke;
     final tickPaint = Paint()
-      ..color = const Color(0xFFD1D5DB)
+      ..color = colorScheme.outlineVariant
       ..strokeWidth = 1.2
       ..strokeCap = StrokeCap.round;
     final radius = arcRect.width / 2;
@@ -601,18 +645,19 @@ class _ReplayMiniSpeedometerPainter extends CustomPainter {
     canvas.drawCircle(
       indicatorCenter,
       3.5,
-      Paint()..color = const Color(0xFFFFFFFF),
+      Paint()..color = colorScheme.surface,
     );
     canvas.drawCircle(
       indicatorCenter,
       2.2,
-      Paint()..color = const Color(0xFF111827),
+      Paint()..color = colorScheme.onSurface,
     );
   }
 
   @override
   bool shouldRepaint(covariant _ReplayMiniSpeedometerPainter oldDelegate) {
-    return oldDelegate.speedKph != speedKph;
+    return oldDelegate.speedKph != speedKph ||
+        oldDelegate.colorScheme != colorScheme;
   }
 }
 
@@ -651,6 +696,8 @@ class _ReplayControlDrawer extends StatelessWidget {
             : index;
     final sliderMax = math.max(1, maxIndex).toDouble();
     final canPlay = points.length > 1;
+    final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return IgnorePointer(
       ignoring: points.isEmpty,
@@ -660,12 +707,16 @@ class _ReplayControlDrawer extends StatelessWidget {
           alignment: Alignment.bottomCenter,
           child: DecoratedBox(
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: isDark ? scheme.surface : Colors.white,
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(20),
               ),
               border: Border(
-                top: BorderSide(color: Colors.black.withValues(alpha: 0.08)),
+                top: BorderSide(
+                  color: isDark
+                      ? scheme.outlineVariant
+                      : Colors.black.withValues(alpha: 0.08),
+                ),
               ),
               boxShadow: [
                 BoxShadow(
@@ -684,18 +735,19 @@ class _ReplayControlDrawer extends StatelessWidget {
                     width: 38,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.08),
+                      color: isDark
+                          ? scheme.outlineVariant
+                          : Colors.black.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(999),
                     ),
                   ),
                   const SizedBox(height: 4),
                   SliderTheme(
                     data: SliderTheme.of(context).copyWith(
-                      activeTrackColor: const Color(0xFF111827),
-                      inactiveTrackColor: const Color(0xFFD6DEE5),
-                      thumbColor: const Color(0xFF111827),
-                      overlayColor:
-                          const Color(0xFF111827).withValues(alpha: 0.12),
+                      activeTrackColor: scheme.onSurface,
+                      inactiveTrackColor: scheme.outlineVariant,
+                      thumbColor: scheme.onSurface,
+                      overlayColor: scheme.onSurface.withValues(alpha: 0.12),
                       trackHeight: 3,
                     ),
                     child: Slider(
@@ -720,7 +772,7 @@ class _ReplayControlDrawer extends StatelessWidget {
                                   ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: _replayControlMetaStyle(),
+                            style: _replayControlMetaStyle(scheme: scheme),
                           ),
                         ),
                         Text(
@@ -728,8 +780,9 @@ class _ReplayControlDrawer extends StatelessWidget {
                               ? '0 / 0'
                               : '${clampedIndex + 1} / ${points.length}',
                           style: _replayControlMetaStyle(
+                            scheme: scheme,
                             weight: FontWeight.w800,
-                            color: const Color(0xFF111827),
+                            color: scheme.onSurface,
                           ),
                         ),
                         Expanded(
@@ -742,7 +795,7 @@ class _ReplayControlDrawer extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             textAlign: TextAlign.right,
-                            style: _replayControlMetaStyle(),
+                            style: _replayControlMetaStyle(scheme: scheme),
                           ),
                         ),
                       ],
@@ -815,6 +868,8 @@ class _ReplayControlIconButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isEnabled = onTap != null;
+    final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Tooltip(
       message: tooltip,
@@ -827,12 +882,18 @@ class _ReplayControlIconButton extends StatelessWidget {
             width: 42,
             height: 42,
             decoration: BoxDecoration(
-              color: filled ? _mapActionInkColor : const Color(0xFFFFFFFF),
+              color: filled
+                  ? scheme.onSurface
+                  : isDark
+                      ? scheme.surface
+                      : const Color(0xFFFFFFFF),
               shape: BoxShape.circle,
               border: Border.all(
                 color: filled
-                    ? Colors.white.withValues(alpha: 0.12)
-                    : const Color(0xFFE5E7EB),
+                    ? scheme.onSurface.withValues(alpha: 0.12)
+                    : isDark
+                        ? scheme.outlineVariant
+                        : const Color(0xFFE5E7EB),
               ),
               boxShadow: isEnabled
                   ? [
@@ -848,10 +909,10 @@ class _ReplayControlIconButton extends StatelessWidget {
               icon,
               size: 22,
               color: filled
-                  ? Colors.white
+                  ? scheme.surface
                   : isEnabled
-                      ? _mapActionInkColor
-                      : const Color(0xFF9EA7B0),
+                      ? scheme.onSurface
+                      : scheme.outlineVariant,
             ),
           ),
         ),
@@ -868,10 +929,13 @@ class _ReplaySpeedSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return PopupMenuButton<double>(
       tooltip: 'Replay speed',
       onSelected: onChanged,
-      color: Colors.white,
+      color: isDark ? scheme.surface : Colors.white,
       itemBuilder: (context) => _replaySpeedOptions
           .map(
             (option) => PopupMenuItem<double>(
@@ -881,20 +945,20 @@ class _ReplaySpeedSelector extends StatelessWidget {
                   SizedBox(
                     width: 18,
                     child: option.value == speed
-                        ? const Icon(
+                        ? Icon(
                             Icons.check_rounded,
                             size: 16,
-                            color: Color(0xFF111827),
+                            color: scheme.onSurface,
                           )
                         : null,
                   ),
                   const SizedBox(width: 8),
                   Text(
                     '${option.label} ${option.value.toInt()}x',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF111827),
+                      color: scheme.onSurface,
                     ),
                   ),
                 ],
@@ -906,32 +970,34 @@ class _ReplaySpeedSelector extends StatelessWidget {
         height: 38,
         padding: const EdgeInsets.symmetric(horizontal: 11),
         decoration: BoxDecoration(
-          color: const Color(0xFFF7F7F8),
+          color: isDark ? scheme.surfaceContainer : const Color(0xFFF7F7F8),
           borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: const Color(0xFFE5E7EB)),
+          border: Border.all(
+            color: isDark ? scheme.outlineVariant : const Color(0xFFE5E7EB),
+          ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
+            Icon(
               Icons.speed_rounded,
               size: 15,
-              color: Color(0xFF4B5563),
+              color: scheme.onSurfaceVariant,
             ),
             const SizedBox(width: 6),
             Text(
               _replaySpeedLabel(speed),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w800,
-                color: Color(0xFF111827),
+                color: scheme.onSurface,
               ),
             ),
             const SizedBox(width: 4),
-            const Icon(
+            Icon(
               Icons.keyboard_arrow_up_rounded,
               size: 16,
-              color: Color(0xFF4B5563),
+              color: scheme.onSurfaceVariant,
             ),
           ],
         ),
@@ -939,4 +1005,3 @@ class _ReplaySpeedSelector extends StatelessWidget {
     );
   }
 }
-

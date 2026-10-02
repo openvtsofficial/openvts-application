@@ -1,10 +1,13 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/admin_vehicle_model.dart';
 import '../models/admin_vehicle_state.dart';
 import '../services/admin_vehicle_service.dart';
+import '../services/admin_vehicle_timestamp_storage.dart';
+import '../utils/admin_command_template_utils.dart';
 
 class AdminVehicleDetailsController
     extends StateNotifier<AdminVehicleDetailsState> {
@@ -62,8 +65,26 @@ class AdminVehicleDetailsController
     state = state.copyWith(
         isLoadingVehicle: true, errorMessage: null, sectionErrorMessage: null);
     try {
-      final vehicle = await _service.getVehicleById(state.vehicleId);
+      var vehicle = await _service.getVehicleById(state.vehicleId);
       _loadedTabs.add(AdminVehicleDetailsTab.details);
+
+      if (vehicle.updatedAt == null) {
+        final persistedUpdatedAt =
+            await AdminVehicleTimestampStorage.readUpdatedAt(state.vehicleId);
+        if (persistedUpdatedAt != null) {
+          vehicle = vehicle.copyWith(updatedAt: persistedUpdatedAt);
+          state = state.copyWith(localUpdatedAt: persistedUpdatedAt);
+        }
+      } else {
+        unawaited(
+          AdminVehicleTimestampStorage.persistUpdatedAt(
+            state.vehicleId,
+            vehicle.updatedAt!,
+          ),
+        );
+        state = state.copyWith(localUpdatedAt: vehicle.updatedAt);
+      }
+
       state = state.copyWith(vehicle: vehicle, isLoadingVehicle: false);
       unawaited(_loadReferenceDataOnce());
     } catch (error) {
@@ -79,9 +100,35 @@ class AdminVehicleDetailsController
   Future<void> updateVehicle(AdminUpdateVehicleRequest request) async {
     state = state.copyWith(isUpdatingVehicle: true, sectionErrorMessage: null);
     try {
+      final localUpdateTime = DateTime.now().toUtc();
       final updated =
           await _service.updateVehicle(id: state.vehicleId, request: request);
-      state = state.copyWith(vehicle: updated, isUpdatingVehicle: false);
+
+      var vehicleToSet = updated;
+      DateTime? timestampToStore;
+
+      if (updated.updatedAt == null) {
+        vehicleToSet = updated.copyWith(updatedAt: localUpdateTime);
+        timestampToStore = localUpdateTime;
+      } else {
+        timestampToStore = updated.updatedAt;
+      }
+
+      if (timestampToStore != null) {
+        unawaited(
+          AdminVehicleTimestampStorage.persistUpdatedAt(
+            state.vehicleId,
+            timestampToStore,
+          ),
+        );
+      }
+
+      state = state.copyWith(
+        vehicle: vehicleToSet,
+        localUpdatedAt: timestampToStore,
+        isUpdatingVehicle: false,
+      );
+      unawaited(_loadReferenceDataOnce());
     } catch (error) {
       state = state.copyWith(
           isUpdatingVehicle: false, sectionErrorMessage: _errorMessage(error));
@@ -132,8 +179,17 @@ class AdminVehicleDetailsController
         _service.getUnlinkedUsers(state.vehicleId),
       ]);
       _loadedTabs.add(AdminVehicleDetailsTab.users);
+      final linkedUsers = results[0];
+
+      var updatedVehicle = state.vehicle;
+      if (updatedVehicle?.primaryUser == null && linkedUsers.length == 1) {
+        updatedVehicle =
+            updatedVehicle?.copyWith(primaryUser: linkedUsers.first);
+      }
+
       state = state.copyWith(
-        linkedUsers: results[0],
+        vehicle: updatedVehicle,
+        linkedUsers: linkedUsers,
         availableUsers: results[1],
         isLoadingUsers: false,
       );
@@ -205,22 +261,27 @@ class AdminVehicleDetailsController
     }
   }
 
+  void setLogSearchQuery(String value) {
+    if (value == state.logSearchQuery) return;
+    state = state.copyWith(logSearchQuery: value);
+  }
+
   Future<void> setLogRange({DateTime? from, DateTime? to}) async {
     await loadLogs(from: from, to: to);
   }
 
-  Future<void> loadEvents(
-      {DateTime? from, DateTime? to, String? source, String? severity}) async {
+  Future<void> loadEvents() async {
     final imei = state.vehicle?.imei.trim() ?? '';
     if (imei.isEmpty) return;
+    final filters = state.eventFilters;
     state = state.copyWith(isLoadingEvents: true, sectionErrorMessage: null);
     try {
       final page = await _service.getVehicleEventsByImei(
         imei: imei,
-        from: from,
-        to: to,
-        source: source,
-        severity: severity,
+        from: filters.from,
+        to: filters.to,
+        source: filters.source,
+        severity: filters.severity,
       );
       _loadedTabs.add(AdminVehicleDetailsTab.events);
       state = state.copyWith(
@@ -230,7 +291,11 @@ class AdminVehicleDetailsController
       );
     } catch (error) {
       state = state.copyWith(
-          isLoadingEvents: false, sectionErrorMessage: _errorMessage(error));
+        isLoadingEvents: false,
+        events: const <AdminVehicleEventItem>[],
+        eventNextCursor: null,
+        sectionErrorMessage: _errorMessage(error),
+      );
     }
   }
 
@@ -238,11 +303,18 @@ class AdminVehicleDetailsController
     final imei = state.vehicle?.imei.trim() ?? '';
     final cursor = state.eventNextCursor?.trim() ?? '';
     if (imei.isEmpty || cursor.isEmpty || state.isLoadingMoreEvents) return;
+    final filters = state.eventFilters;
     state =
         state.copyWith(isLoadingMoreEvents: true, sectionErrorMessage: null);
     try {
-      final page =
-          await _service.getVehicleEventsByImei(imei: imei, beforeId: cursor);
+      final page = await _service.getVehicleEventsByImei(
+        imei: imei,
+        beforeId: cursor,
+        from: filters.from,
+        to: filters.to,
+        source: filters.source,
+        severity: filters.severity,
+      );
       state = state.copyWith(
         events: <AdminVehicleEventItem>[...state.events, ...page.items],
         eventNextCursor: page.nextCursor,
@@ -255,9 +327,39 @@ class AdminVehicleDetailsController
     }
   }
 
+  Future<void> applyEventFilters({
+    DateTime? from,
+    DateTime? to,
+    String? source,
+    String? severity,
+  }) async {
+    if (state.isLoadingEvents) return;
+    state = state.copyWith(
+      eventFilters: AdminVehicleEventFilters(
+        from: from,
+        to: to,
+        source: source?.trim().isEmpty == true ? null : source?.trim(),
+        severity: severity?.trim().isEmpty == true ? null : severity?.trim(),
+      ),
+      events: const <AdminVehicleEventItem>[],
+      eventNextCursor: null,
+    );
+    await loadEvents();
+  }
+
+  Future<void> clearEventFilters() async {
+    state = state.copyWith(
+      eventFilters: const AdminVehicleEventFilters.empty(),
+      events: const <AdminVehicleEventItem>[],
+      eventNextCursor: null,
+    );
+    await loadEvents();
+  }
+
   Future<void> setEventFilters(
       {DateTime? from, DateTime? to, String? source, String? severity}) async {
-    await loadEvents(from: from, to: to, source: source, severity: severity);
+    await applyEventFilters(
+        from: from, to: to, source: source, severity: severity);
   }
 
   Future<void> loadCommands() async {
@@ -265,16 +367,44 @@ class AdminVehicleDetailsController
     if (imei.isEmpty) return;
     state = state.copyWith(isLoadingCommands: true, sectionErrorMessage: null);
     try {
+      final deviceTypeId = state.vehicle?.device?.deviceTypeId;
       final results = await Future.wait<dynamic>([
         _service.getCommandHistoryByImei(imei: imei),
-        _service.getCustomCommands(activeOnly: true),
+        _service.getCustomCommands(
+          activeOnly: true,
+          deviceTypeId: deviceTypeId,
+        ),
         _service.getSystemVariables(),
       ]);
       final page = results[0] as AdminVehicleCommandHistoryPage;
       _loadedTabs.add(AdminVehicleDetailsTab.commands);
+      final rawCommands = results[1] as List<AdminCustomCommand>;
+      final dedupedCommands = deduplicateAndSortCommands(rawCommands);
+      if (kDebugMode) {
+        debugPrint(
+          '[AdminCommands] loaded ${dedupedCommands.length} templates '
+          '(raw=${rawCommands.length} deviceTypeId=$deviceTypeId)',
+        );
+        for (var i = 0; i < dedupedCommands.length; i++) {
+          final c = dedupedCommands[i];
+          debugPrint(
+            '  [$i] id="${c.id}" stableKey="${c.stableKey}" '
+            'title="${c.displayTitle}" label="${c.displaySelectedLabel}" '
+            'cmd="${c.command}" deviceTypeId=${c.deviceTypeId}',
+          );
+        }
+        final values = dedupedCommands.map((c) => c.id).toList();
+        final uniqueValues = values.toSet();
+        if (uniqueValues.length != values.length) {
+          debugPrint(
+            '[AdminCommands] WARNING: duplicate dropdown values detected! '
+            'values=$values',
+          );
+        }
+      }
       state = state.copyWith(
         commandHistory: page.items,
-        customCommands: results[1] as List<AdminCustomCommand>,
+        customCommands: dedupedCommands,
         systemVariables: results[2] as List<AdminSystemVariable>,
         isLoadingCommands: false,
       );

@@ -66,7 +66,7 @@ class AdminLogsScreen extends ConsumerWidget {
                             const SizedBox(width: OpenVtsSpacing.xs),
                             Expanded(
                               child: _TabChip(
-                                label: 'Vehicle Logs',
+                                label: 'Vehicle Events',
                                 selected:
                                     state.selectedTab == AdminLogsTab.vehicle,
                                 onTap: () =>

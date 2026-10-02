@@ -35,7 +35,8 @@ class SuperadminSupportTicketListView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasActiveFilters = state.statusFilter != null || state.searchQuery.trim().isNotEmpty;
+    final hasActiveFilters =
+        state.statusFilter != null || state.searchQuery.trim().isNotEmpty;
 
     return RefreshIndicator(
       onRefresh: onRefresh,
@@ -55,7 +56,8 @@ class SuperadminSupportTicketListView extends StatelessWidget {
           SliverToBoxAdapter(
             child: _StatusTabs(
               selected: state.statusFilter,
-              tickets: state.tickets,
+              allTicketCount: state.allTicketCount,
+              statusCounts: state.statusCounts,
               onChanged: onStatusChanged,
             ),
           ),
@@ -148,12 +150,19 @@ class _SupportHeader extends StatelessWidget {
         final createButton = FilledButton.icon(
           onPressed: isCreating ? null : onCreatePressed,
           style: FilledButton.styleFrom(
-            minimumSize: const Size(0, 34),
+            minimumSize: const Size(0, 42),
             backgroundColor: OpenVtsColors.brandInk,
             foregroundColor: OpenVtsColors.white,
             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            visualDensity: VisualDensity.compact,
-            padding: const EdgeInsets.symmetric(horizontal: OpenVtsSpacing.sm),
+            padding: const EdgeInsets.symmetric(
+              horizontal: OpenVtsSpacing.md,
+              vertical: OpenVtsSpacing.sm,
+            ),
+            textStyle: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.1,
+            ),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
             ),
@@ -163,7 +172,7 @@ class _SupportHeader extends StatelessWidget {
                   dimension: 15,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : const Icon(Icons.add_rounded, size: 17),
+              : const Icon(Icons.add_rounded, size: 18),
           label: const Text('Create'),
         );
 
@@ -176,7 +185,7 @@ class _SupportHeader extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: OpenVtsTypography.meta.copyWith(
-                  color: OpenVtsColors.textSecondary,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -208,28 +217,25 @@ class _SupportHeader extends StatelessWidget {
 class _StatusTabs extends StatelessWidget {
   const _StatusTabs({
     required this.selected,
-    required this.tickets,
+    required this.allTicketCount,
+    required this.statusCounts,
     required this.onChanged,
   });
 
   final SuperadminSupportTicketStatus? selected;
-  final List<SuperadminSupportTicketListItem> tickets;
+  final int allTicketCount;
+  final Map<SuperadminSupportTicketStatus, int> statusCounts;
   final ValueChanged<SuperadminSupportTicketStatus?> onChanged;
 
   @override
   Widget build(BuildContext context) {
-    final counts = <SuperadminSupportTicketStatus, int>{
-      for (final status in SuperadminSupportTicketStatus.values)
-        status: tickets.where((ticket) => ticket.status == status).length,
-    };
-
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
         children: [
           OpenVtsSupportFilterChip(
             label: 'All',
-            count: tickets.length,
+            count: allTicketCount,
             selected: selected == null,
             onSelected: () => onChanged(null),
           ),
@@ -237,7 +243,7 @@ class _StatusTabs extends StatelessWidget {
           for (final status in SuperadminSupportTicketStatus.values) ...[
             OpenVtsSupportFilterChip(
               label: status.label,
-              count: counts[status] ?? 0,
+              count: statusCounts[status] ?? 0,
               selected: selected == status,
               onSelected: () => onChanged(status),
             ),
@@ -270,14 +276,15 @@ class _SupportEmptyState extends StatelessWidget {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: OpenVtsColors.surface,
-                border: Border.all(color: OpenVtsColors.border),
+                color: Theme.of(context).colorScheme.surface,
+                border:
+                    Border.all(color: Theme.of(context).colorScheme.outline),
                 borderRadius: BorderRadius.circular(OpenVtsRadius.md),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.support_agent_rounded,
                 size: 20,
-                color: OpenVtsColors.textSecondary,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
             const SizedBox(height: OpenVtsSpacing.sm),
@@ -293,7 +300,7 @@ class _SupportEmptyState extends StatelessWidget {
                   : 'Create a ticket and the team will follow up here.',
               textAlign: TextAlign.center,
               style: OpenVtsTypography.body.copyWith(
-                color: OpenVtsColors.textSecondary,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
             if (!hasActiveFilters) ...[
@@ -368,7 +375,7 @@ class _SkeletonLine extends StatelessWidget {
       child: Container(
         height: height,
         decoration: BoxDecoration(
-          color: OpenVtsColors.surface,
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
         ),
       ),

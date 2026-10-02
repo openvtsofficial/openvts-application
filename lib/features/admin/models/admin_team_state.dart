@@ -16,6 +16,8 @@ class AdminTeamState {
     required this.isLoading,
     required this.isRefreshing,
     required this.isCreating,
+    required this.isUpdating,
+    required this.isChangingPassword,
     required this.errorMessage,
     required this.createErrorMessage,
     required this.refreshKey,
@@ -32,6 +34,8 @@ class AdminTeamState {
         isLoading = true,
         isRefreshing = false,
         isCreating = false,
+        isUpdating = false,
+        isChangingPassword = false,
         errorMessage = null,
         createErrorMessage = null,
         refreshKey = 0;
@@ -48,6 +52,8 @@ class AdminTeamState {
   final bool isLoading;
   final bool isRefreshing;
   final bool isCreating;
+  final bool isUpdating;
+  final bool isChangingPassword;
   final String? errorMessage;
   final String? createErrorMessage;
   final int refreshKey;
@@ -89,6 +95,8 @@ class AdminTeamState {
     bool? isLoading,
     bool? isRefreshing,
     bool? isCreating,
+    bool? isUpdating,
+    bool? isChangingPassword,
     Object? errorMessage = _unset,
     Object? createErrorMessage = _unset,
     int? refreshKey,
@@ -104,6 +112,8 @@ class AdminTeamState {
       isLoading: isLoading ?? this.isLoading,
       isRefreshing: isRefreshing ?? this.isRefreshing,
       isCreating: isCreating ?? this.isCreating,
+      isUpdating: isUpdating ?? this.isUpdating,
+      isChangingPassword: isChangingPassword ?? this.isChangingPassword,
       errorMessage: identical(errorMessage, _unset)
           ? this.errorMessage
           : errorMessage as String?,

@@ -578,14 +578,14 @@ class AdminUserCityOption {
           }
 
           final value = _firstString(itemMap, const [
-                'name',
-                'cityName',
-                'city_name',
-                'city',
                 'value',
                 'cityId',
                 'city_id',
                 'id',
+                'name',
+                'cityName',
+                'city_name',
+                'city',
               ]) ??
               '';
           final label = _firstString(itemMap, const [
@@ -638,7 +638,7 @@ class AdminCreateUserRequest {
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
       'name': name.trim(),
-      'email': email.trim(),
+      if (email.trim().isNotEmpty) 'email': email.trim(),
       'mobilePrefix': mobilePrefix.trim(),
       'mobileNumber': mobileNumber.trim(),
       'username': username.trim(),
@@ -646,8 +646,8 @@ class AdminCreateUserRequest {
       'companyName': companyName.trim(),
       'address': address.trim(),
       'countryCode': countryCode.trim().toUpperCase(),
-      'stateCode': stateCode.trim(),
-      'city': city.trim(),
+      if (stateCode.trim().isNotEmpty) 'stateCode': stateCode.trim(),
+      if (city.trim().isNotEmpty) 'city': city.trim(),
       'pincode': pincode.trim(),
     };
   }

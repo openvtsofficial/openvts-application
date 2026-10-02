@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../core/utils/validators.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
+import '../../../../../shared/widgets/open_vts_searchable_dropdown.dart';
 import '../../../../../shared/widgets/open_vts_text_field.dart';
 import '../../../controllers/user_vehicle_details_controller.dart';
 import '../../../models/user_vehicle_model.dart';
@@ -96,28 +97,28 @@ class _UserVehicleEditSheetState extends ConsumerState<UserVehicleEditSheet> {
                     hintText: 'Vehicle name',
                     prefixIcon: Icons.directions_car_filled_outlined,
                     textInputAction: TextInputAction.next,
-                    validator: (value) {
-                      if ((value?.trim() ?? '').isEmpty) {
-                        return 'Name is required.';
-                      }
-                      return null;
-                    },
+                    maxLength: Validators.maxVehicleNameLength,
+                    validator: Validators.vehicleName,
                   ),
                   const SizedBox(height: OpenVtsSpacing.sm),
                   OpenVtsTextField(
-                    label: 'Plate Number',
+                    label: 'Plate Number (optional)',
                     controller: _plateController,
                     hintText: 'Plate number',
                     prefixIcon: Icons.confirmation_number_outlined,
                     textInputAction: TextInputAction.next,
+                    maxLength: Validators.maxPlateNumberLength,
+                    validator: Validators.plateNumberOptional,
                   ),
                   const SizedBox(height: OpenVtsSpacing.sm),
                   OpenVtsTextField(
-                    label: 'VIN',
+                    label: 'VIN (optional)',
                     controller: _vinController,
                     hintText: 'VIN',
                     prefixIcon: Icons.tag_outlined,
                     textInputAction: TextInputAction.next,
+                    maxLength: Validators.maxVinLength,
+                    validator: Validators.vinOptional,
                   ),
                   const SizedBox(height: OpenVtsSpacing.sm),
                   _VehicleTypeField(
@@ -268,24 +269,42 @@ class _VehicleTypeField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final items = _vehicleTypeItems(value, types);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('Vehicle Type', style: OpenVtsTypography.label),
-        const SizedBox(height: OpenVtsSpacing.xs),
-        DropdownButtonFormField<String>(
-          initialValue: value,
-          isExpanded: true,
-          hint: Text(isLoading ? 'Loading types' : 'Select type'),
-          decoration: const InputDecoration(
-            prefixIcon: Icon(Icons.category_outlined),
-          ),
-          items: items,
-          onChanged: isLoading ? null : onChanged,
-        ),
-      ],
+    return OpenVtsSearchableDropdown<String>(
+      label: 'Vehicle Type',
+      value: value,
+      options: _buildOptions(),
+      searchHintText: 'Search by name or ID',
+      hintText: isLoading ? 'Loading types…' : 'Select type',
+      enabled: !isLoading,
+      onChanged: onChanged,
     );
+  }
+
+  List<OpenVtsDropdownOption<String>> _buildOptions() {
+    final seen = <String>{};
+    final options = <OpenVtsDropdownOption<String>>[];
+    for (final type in types) {
+      final id = type.id.trim();
+      if (id.isEmpty || !seen.add(id)) continue;
+      final name = type.name.trim().isEmpty ? id : type.name.trim();
+      options.add(OpenVtsDropdownOption<String>(
+        value: id,
+        label: name,
+        searchText: '$name $id',
+      ));
+    }
+    final normalizedCurrent = _blankToNull(value);
+    if (normalizedCurrent != null && seen.add(normalizedCurrent)) {
+      options.insert(
+        0,
+        OpenVtsDropdownOption<String>(
+          value: normalizedCurrent,
+          label: normalizedCurrent,
+          searchText: normalizedCurrent,
+        ),
+      );
+    }
+    return options;
   }
 }
 
@@ -304,31 +323,36 @@ class _TimezoneField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final items = _timezoneItems(value, timezones);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('GMT Offset', style: OpenVtsTypography.label),
-        const SizedBox(height: OpenVtsSpacing.xs),
-        DropdownButtonFormField<String>(
-          initialValue: value,
-          isExpanded: true,
-          hint: Text(isLoading ? 'Loading timezones' : 'Select timezone'),
-          decoration:
-              const InputDecoration(prefixIcon: Icon(Icons.schedule_rounded)),
-          items: items,
-          validator: (value) {
-            final normalized = _blankToNull(value);
-            if (normalized == null) return null;
-            if (!_gmtOffsetPattern.hasMatch(normalized)) {
-              return 'Use +05:30 format.';
-            }
-            return null;
-          },
-          onChanged: isLoading ? null : onChanged,
-        ),
-      ],
+    return OpenVtsSearchableDropdown<String>(
+      label: 'GMT Offset',
+      value: value,
+      options: _buildOptions(),
+      searchHintText: 'Search timezone',
+      hintText: isLoading ? 'Loading timezones…' : 'Select timezone',
+      enabled: !isLoading,
+      onChanged: onChanged,
     );
+  }
+
+  List<OpenVtsDropdownOption<String>> _buildOptions() {
+    final seen = <String>{};
+    final options = <OpenVtsDropdownOption<String>>[];
+    for (final tz in timezones) {
+      final val = tz.trim();
+      if (val.isEmpty || !seen.add(val)) continue;
+      options.add(OpenVtsDropdownOption<String>(value: val, label: val));
+    }
+    final normalizedCurrent = _blankToNull(value);
+    if (normalizedCurrent != null && seen.add(normalizedCurrent)) {
+      options.insert(
+        0,
+        OpenVtsDropdownOption<String>(
+          value: normalizedCurrent,
+          label: normalizedCurrent,
+        ),
+      );
+    }
+    return options;
   }
 }
 
@@ -360,7 +384,7 @@ class _MetaRowsEditor extends StatelessWidget {
                 child: Text(
                   'Vehicle Meta',
                   style: OpenVtsTypography.label.copyWith(
-                    color: OpenVtsColors.textPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -459,65 +483,6 @@ class _MetaRowController {
     keyController.dispose();
     valueController.dispose();
   }
-}
-
-List<DropdownMenuItem<String>> _vehicleTypeItems(
-  String? currentValue,
-  List<UserVehicleTypeOption> types,
-) {
-  final seen = <String>{};
-  final items = <DropdownMenuItem<String>>[];
-  for (final type in types) {
-    final value = type.id.trim();
-    if (value.isEmpty || !seen.add(value)) continue;
-    items.add(
-      DropdownMenuItem<String>(
-        value: value,
-        child: Text(
-          type.name.trim().isEmpty ? value : type.name.trim(),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-      ),
-    );
-  }
-  final normalizedCurrent = _blankToNull(currentValue);
-  if (normalizedCurrent != null && seen.add(normalizedCurrent)) {
-    items.insert(
-      0,
-      DropdownMenuItem<String>(
-        value: normalizedCurrent,
-        child: Text(
-          normalizedCurrent,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-      ),
-    );
-  }
-  return items;
-}
-
-List<DropdownMenuItem<String>> _timezoneItems(
-  String? currentValue,
-  List<String> timezones,
-) {
-  final seen = <String>{};
-  final items = <DropdownMenuItem<String>>[];
-  for (final timezone in timezones) {
-    final value = timezone.trim();
-    if (value.isEmpty || !seen.add(value)) continue;
-    items.add(DropdownMenuItem<String>(value: value, child: Text(value)));
-  }
-  final normalizedCurrent = _blankToNull(currentValue);
-  if (normalizedCurrent != null && seen.add(normalizedCurrent)) {
-    items.insert(
-      0,
-      DropdownMenuItem<String>(
-          value: normalizedCurrent, child: Text(normalizedCurrent)),
-    );
-  }
-  return items;
 }
 
 Object? _vehicleTypePayloadValue(String? value) {

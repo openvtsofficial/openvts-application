@@ -31,19 +31,32 @@ class _UserSubUserCreateSheetState
   final _nameController = TextEditingController();
   final _usernameController = TextEditingController();
   final _emailController = TextEditingController();
-  final _mobilePrefixController = TextEditingController();
   final _mobileNumberController = TextEditingController();
   final _passwordController = TextEditingController();
 
   var _isActive = true;
   var _obscurePassword = true;
+  String? _selectedMobilePrefix;
+
+  static const List<String> _mobilePrefixes = [
+    '+1',
+    '+44',
+    '+91',
+    '+86',
+    '+81',
+    '+33',
+    '+49',
+    '+39',
+    '+34',
+    '+61',
+    '+64',
+  ];
 
   @override
   void dispose() {
     _nameController.dispose();
     _usernameController.dispose();
     _emailController.dispose();
-    _mobilePrefixController.dispose();
     _mobileNumberController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -82,7 +95,7 @@ class _UserSubUserCreateSheetState
                       Text(
                         'Create Sub User',
                         style: OpenVtsTypography.label.copyWith(
-                          color: OpenVtsColors.textPrimary,
+                          color: Theme.of(context).colorScheme.onSurface,
                           fontWeight: FontWeight.w800,
                         ),
                       ),
@@ -90,7 +103,7 @@ class _UserSubUserCreateSheetState
                       Text(
                         'Create a compact login profile with controlled access.',
                         style: OpenVtsTypography.meta.copyWith(
-                          color: OpenVtsColors.textSecondary,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ),
                       const SizedBox(height: OpenVtsSpacing.md),
@@ -124,11 +137,11 @@ class _UserSubUserCreateSheetState
                         children: [
                           SizedBox(
                             width: 124,
-                            child: OpenVtsTextField(
-                              label: 'Prefix',
-                              controller: _mobilePrefixController,
-                              textInputAction: TextInputAction.next,
-                              prefixIcon: Icons.phone_android_rounded,
+                            child: _buildMobilePrefixDropdown(
+                              selectedPrefix: _selectedMobilePrefix,
+                              onChanged: (value) {
+                                setState(() => _selectedMobilePrefix = value);
+                              },
                             ),
                           ),
                           const SizedBox(width: OpenVtsSpacing.sm),
@@ -146,7 +159,7 @@ class _UserSubUserCreateSheetState
                       ),
                       const SizedBox(height: OpenVtsSpacing.sm),
                       OpenVtsTextField(
-                        label: 'Password (optional)',
+                        label: 'Password',
                         controller: _passwordController,
                         obscureText: _obscurePassword,
                         textInputAction: TextInputAction.done,
@@ -167,7 +180,7 @@ class _UserSubUserCreateSheetState
                             size: 18,
                           ),
                         ),
-                        validator: _optionalPasswordValidator,
+                        validator: _passwordValidator,
                       ),
                       const SizedBox(height: OpenVtsSpacing.sm),
                       Container(
@@ -176,9 +189,11 @@ class _UserSubUserCreateSheetState
                           vertical: OpenVtsSpacing.xs,
                         ),
                         decoration: BoxDecoration(
-                          color: OpenVtsColors.surface,
+                          color: Theme.of(context).colorScheme.surface,
                           borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: OpenVtsColors.border),
+                          border: Border.all(
+                              color:
+                                  Theme.of(context).colorScheme.outlineVariant),
                         ),
                         child: Row(
                           children: [
@@ -186,7 +201,9 @@ class _UserSubUserCreateSheetState
                               child: Text(
                                 'Active account',
                                 style: OpenVtsTypography.meta.copyWith(
-                                  color: OpenVtsColors.textSecondary,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant,
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
@@ -261,9 +278,9 @@ class _UserSubUserCreateSheetState
       name: _nameController.text.trim(),
       username: _optionalValue(_usernameController.text),
       email: _optionalValue(_emailController.text),
-      mobilePrefix: _optionalValue(_mobilePrefixController.text),
+      mobilePrefix: _selectedMobilePrefix,
       mobileNumber: _optionalValue(_mobileNumberController.text),
-      password: _optionalValue(_passwordController.text),
+      password: _passwordController.text,
       isActive: _isActive,
     );
 
@@ -331,13 +348,13 @@ class _UserSubUserCreateSheetState
     return null;
   }
 
-  String? _optionalPasswordValidator(String? value) {
-    final normalized = value ?? '';
-    if (normalized.trim().isEmpty) {
-      return null;
+  String? _passwordValidator(String? value) {
+    final password = value ?? '';
+    if (password.trim().isEmpty) {
+      return 'Password is required';
     }
-    if (normalized.length < 6) {
-      return 'Password must be at least 6 characters';
+    if (password.length < 6 || password.length > 100) {
+      return 'Password must be between 6 and 100 characters';
     }
     return null;
   }
@@ -348,5 +365,82 @@ class _UserSubUserCreateSheetState
       return null;
     }
     return normalized;
+  }
+
+  Widget _buildMobilePrefixDropdown({
+    required String? selectedPrefix,
+    required ValueChanged<String?> onChanged,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(bottom: OpenVtsSpacing.xs),
+          child: Text(
+            'Prefix',
+            style: OpenVtsTypography.meta.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+        Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: Theme.of(context).colorScheme.outlineVariant,
+            ),
+          ),
+          child: DropdownButton<String?>(
+            value: selectedPrefix,
+            isExpanded: true,
+            underline: const SizedBox.shrink(),
+            hint: Padding(
+              padding: const EdgeInsets.only(left: 12),
+              child: Text(
+                'Select',
+                style: OpenVtsTypography.meta.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+            items: [
+              DropdownMenuItem(
+                value: null,
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 12),
+                  child: Text(
+                    'Select',
+                    style: OpenVtsTypography.meta.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ),
+              ..._mobilePrefixes.map((prefix) {
+                return DropdownMenuItem(
+                  value: prefix,
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 12),
+                    child: Text(
+                      prefix,
+                      style: OpenVtsTypography.meta.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                );
+              }),
+            ],
+            onChanged: onChanged,
+            dropdownColor: Theme.of(context).brightness == Brightness.dark
+                ? OpenVtsColors.darkSurfaceElevated
+                : Theme.of(context).colorScheme.surface,
+          ),
+        ),
+      ],
+    );
   }
 }

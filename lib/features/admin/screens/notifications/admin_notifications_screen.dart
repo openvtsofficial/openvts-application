@@ -26,7 +26,8 @@ class AdminNotificationsScreen extends ConsumerWidget {
         onMarkAllAsRead: () async {
           try {
             final unreadCount = ref.read(
-              adminNotificationCenterProvider.select((value) => value.unreadCount),
+              adminNotificationCenterProvider
+                  .select((value) => value.unreadCount),
             );
             await controller.markAllAsRead();
             if (unreadCount > 0) {

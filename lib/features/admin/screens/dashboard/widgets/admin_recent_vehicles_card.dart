@@ -1,19 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/router/route_paths.dart';
 import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../core/utils/date_time_formatter.dart';
 import '../../../models/admin_dashboard_model.dart';
 import 'admin_dashboard_list_card.dart';
 
-class AdminRecentVehiclesCard extends StatelessWidget {
+class AdminRecentVehiclesCard extends ConsumerWidget {
   const AdminRecentVehiclesCard({required this.vehicles, super.key});
 
   final List<AdminRecentVehicle> vehicles;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final formatter = ref.watch(appDateFormatterProvider);
+
     return AdminDashboardListCard(
       title: 'Recent Vehicles',
       icon: Icons.directions_car_outlined,
@@ -22,16 +26,18 @@ class AdminRecentVehiclesCard extends StatelessWidget {
       emptyMessage: 'New vehicles will appear here.',
       itemCount: vehicles.length,
       itemBuilder: (context, index) {
-        return _RecentVehicleRow(vehicle: vehicles[index]);
+        return _RecentVehicleRow(
+            vehicle: vehicles[index], formatter: formatter);
       },
     );
   }
 }
 
 class _RecentVehicleRow extends StatelessWidget {
-  const _RecentVehicleRow({required this.vehicle});
+  const _RecentVehicleRow({required this.vehicle, required this.formatter});
 
   final AdminRecentVehicle vehicle;
+  final AppDateFormatter formatter;
 
   @override
   Widget build(BuildContext context) {
@@ -56,7 +62,7 @@ class _RecentVehicleRow extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: OpenVtsTypography.label.copyWith(
-                    color: OpenVtsColors.textPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -66,7 +72,7 @@ class _RecentVehicleRow extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: OpenVtsTypography.meta.copyWith(
-                    color: OpenVtsColors.textSecondary,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontSize: 10.5,
                     fontFeatures: const [FontFeature.tabularFigures()],
                   ),
@@ -88,12 +94,13 @@ class _RecentVehicleRow extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  adminDashboardRelativeDate(vehicle.createdAt),
+                  adminDashboardRelativeDate(vehicle.createdAt,
+                      formatter: formatter),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.end,
                   style: OpenVtsTypography.meta.copyWith(
-                    color: OpenVtsColors.textSecondary,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontSize: 10,
                   ),
                 ),
@@ -119,7 +126,7 @@ _VehicleStatus _vehicleStatus(AdminRecentVehicle vehicle) {
     return const _VehicleStatus(
       label: 'No Device',
       icon: Icons.wifi_off_outlined,
-      color: OpenVtsColors.textTertiary,
+      color: Color(0xFF71717A),
     );
   }
 
@@ -147,7 +154,7 @@ _VehicleStatus _vehicleStatus(AdminRecentVehicle vehicle) {
       return const _VehicleStatus(
         label: 'No Data',
         icon: Icons.storage_outlined,
-        color: OpenVtsColors.textTertiary,
+        color: Color(0xFF71717A),
       );
   }
 }

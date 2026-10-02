@@ -253,7 +253,7 @@ class _SubUsersHeaderCard extends StatelessWidget {
               Text(
                 'Sub Users',
                 style: OpenVtsTypography.label.copyWith(
-                  color: OpenVtsColors.textPrimary,
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontWeight: FontWeight.w800,
                 ),
               ),
@@ -261,7 +261,7 @@ class _SubUsersHeaderCard extends StatelessWidget {
               Text(
                 'Manage sub users and vehicle access.',
                 style: OpenVtsTypography.meta.copyWith(
-                  color: OpenVtsColors.textSecondary,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
             ],

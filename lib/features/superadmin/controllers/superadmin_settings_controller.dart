@@ -44,7 +44,8 @@ class SuperadminSettingsController
     unawaited(_loadForSection(section));
   }
 
-  Future<void> refreshCurrentSection() => _loadForSection(state.selectedSection);
+  Future<void> refreshCurrentSection() =>
+      _loadForSection(state.selectedSection);
 
   Future<void> _loadForSection(SuperadminSettingsSection section) async {
     switch (section) {
@@ -53,9 +54,6 @@ class SuperadminSettingsController
         break;
       case SuperadminSettingsSection.whiteLabel:
         await loadWhiteLabel();
-        break;
-      case SuperadminSettingsSection.smtp:
-        await loadSmtp();
         break;
       case SuperadminSettingsSection.localization:
         await loadLocalization();
@@ -89,16 +87,55 @@ class SuperadminSettingsController
   Future<bool> updateProfile(SuperadminUpdateProfileRequest request) async {
     state = state.copyWith(isSavingProfile: true, sectionErrorMessage: null);
     try {
-      final profile = await _service.updateProfile(request);
-      state = state.copyWith(profile: profile, isSavingProfile: false);
+      final result = await _service.updateProfile(request);
+      final canonical = result.refreshedProfile;
+      if (canonical != null) {
+        state = state.copyWith(profile: canonical, isSavingProfile: false);
+      } else {
+        // PATCH succeeded but refresh failed — apply optimistic update.
+        final optimistic = _applyRequestToProfile(state.profile, request);
+        state = state.copyWith(profile: optimistic, isSavingProfile: false);
+      }
       return true;
     } catch (error) {
+      // Only reaches here if the PATCH itself failed.
       state = state.copyWith(
         isSavingProfile: false,
         sectionErrorMessage: _toErrorMessage(error),
       );
       return false;
     }
+  }
+
+  /// Builds an optimistic profile from the submitted request fields, keeping
+  /// existing fields that were not part of the request unchanged.
+  SuperadminProfileSettings? _applyRequestToProfile(
+    SuperadminProfileSettings? current,
+    SuperadminUpdateProfileRequest request,
+  ) {
+    if (current == null) return null;
+    final base = current.address ?? const SuperadminAddressSettings();
+    // Use explicit field map so that intentional empty strings (no subdivision)
+    // are written through rather than falling back to the old value.
+    final address = SuperadminAddressSettings(
+      id: base.id,
+      addressLine: request.addressLine ?? base.addressLine,
+      countryCode: request.countryCode ?? base.countryCode,
+      stateCode: request.stateCode ?? base.stateCode,
+      cityName: request.cityName ?? base.cityName,
+      cityId: request.cityName ?? base.cityId,
+      cityCode: base.cityCode,
+      pincode: request.pincode ?? base.pincode,
+      fullAddress: base.fullAddress,
+    );
+    return current.copyWith(
+      name: request.name ?? current.name,
+      email: request.email ?? current.email,
+      mobilePrefix: request.mobilePrefix ?? current.mobilePrefix,
+      mobileNumber: request.mobileNumber ?? current.mobileNumber,
+      address: address,
+      cityName: request.cityName ?? current.cityName,
+    );
   }
 
   Future<bool> updateCompany(SuperadminUpdateCompanyRequest request) async {
@@ -171,7 +208,8 @@ class SuperadminSettingsController
   }
 
   Future<bool> requestEmailOtp() async {
-    state = state.copyWith(isRequestingEmailOtp: true, sectionErrorMessage: null);
+    state =
+        state.copyWith(isRequestingEmailOtp: true, sectionErrorMessage: null);
     try {
       await _service.requestEmailOtp();
       state = state.copyWith(isRequestingEmailOtp: false);
@@ -201,7 +239,8 @@ class SuperadminSettingsController
   }
 
   Future<bool> requestWhatsAppOtp() async {
-    state = state.copyWith(isRequestingWhatsAppOtp: true, sectionErrorMessage: null);
+    state = state.copyWith(
+        isRequestingWhatsAppOtp: true, sectionErrorMessage: null);
     try {
       await _service.requestWhatsAppOtp();
       state = state.copyWith(isRequestingWhatsAppOtp: false);
@@ -549,16 +588,38 @@ class SuperadminSettingsController
       final data = response?.data;
       if (data is Map) {
         final map = data.cast<String, dynamic>();
+
+        // Try single-value error keys
         for (final key in const ['message', 'error', 'detail']) {
           final value = map[key];
           if (value is String && value.trim().isNotEmpty) {
             return value.trim();
           }
         }
+
+        // Try errors array
+        final errors = map['errors'];
+        if (errors is List && errors.isNotEmpty) {
+          final first = errors.first;
+          if (first is String && first.trim().isNotEmpty) {
+            return first.trim();
+          }
+          if (first is Map) {
+            final firstMap = first.cast<String, dynamic>();
+            for (final key in const ['message', 'error', 'detail']) {
+              final value = firstMap[key];
+              if (value is String && value.trim().isNotEmpty) {
+                return value.trim();
+              }
+            }
+          }
+        }
+
+        // Try nested data object
         final nested = map['data'];
         if (nested is Map) {
           final nestedMap = nested.cast<String, dynamic>();
-          for (final key in const ['message', 'error']) {
+          for (final key in const ['message', 'error', 'detail']) {
             final value = nestedMap[key];
             if (value is String && value.trim().isNotEmpty) {
               return value.trim();

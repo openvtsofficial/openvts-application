@@ -34,7 +34,7 @@ class AdminPaymentsState {
         selectedStatus = null,
         selectedMode = null,
         searchQuery = '',
-        rangePreset = AdminPaymentsRangePreset.thisMonth,
+        rangePreset = AdminPaymentsRangePreset.last30Days,
         customFrom = null,
         customTo = null,
         page = 1,
@@ -81,7 +81,7 @@ class AdminPaymentsState {
       selectedStatus != null ||
       selectedMode != null ||
       searchQuery.trim().isNotEmpty ||
-      rangePreset != AdminPaymentsRangePreset.thisMonth;
+      rangePreset != AdminPaymentsRangePreset.last30Days;
 
   AdminPaymentsState copyWith({
     List<AdminPaymentTransaction>? transactions,

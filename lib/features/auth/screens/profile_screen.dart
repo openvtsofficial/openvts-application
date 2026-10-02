@@ -555,10 +555,26 @@ class _VerificationPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    final backgroundColor =
+        isDark ? color.withValues(alpha: 0.15) : color.withValues(alpha: 0.08);
+
+    final textColor = isDark
+        ? (color == OpenVtsColors.brandInk
+            ? theme.colorScheme.onSurface
+            : color)
+        : color;
+
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
+        color: backgroundColor,
         borderRadius: BorderRadius.circular(OpenVtsRadius.md),
+        border: isDark && color == OpenVtsColors.brandInk
+            ? Border.all(
+                color: theme.colorScheme.outline.withValues(alpha: 0.3))
+            : null,
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(
@@ -568,11 +584,11 @@ class _VerificationPill extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 16, color: color),
+            Icon(icon, size: 16, color: textColor),
             const SizedBox(width: OpenVtsSpacing.xxs),
             Text(
               label,
-              style: OpenVtsTypography.label.copyWith(color: color),
+              style: OpenVtsTypography.label.copyWith(color: textColor),
             ),
           ],
         ),

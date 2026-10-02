@@ -164,49 +164,46 @@ class AdminDriverAddress {
     Map<String, dynamic> address,
     Map<String, dynamic> root,
   ) {
-    final addressLine = _firstString(address, const [
-          'addressLine',
-          'address_line',
-          'address',
-        ]) ??
-        _firstString(root, const ['address', 'addressLine', 'address_line']) ??
-        '-';
-    final city = _firstString(address, const ['cityId', 'city_id', 'city']) ??
-        _firstString(root, const ['city', 'cityId', 'city_id']) ??
-        '-';
-    final state =
-        _firstString(address, const ['stateCode', 'state_code', 'state']) ??
-            _firstString(root, const [
-              'StateCode',
-              'stateCode',
-              'state_code',
-              'state',
-            ]) ??
-            '-';
-    final country = _firstString(address, const [
-          'countryCode',
-          'country_code',
-          'country',
-        ]) ??
-        _firstString(root, const ['countryCode', 'country_code', 'country']) ??
-        '-';
-    final pin =
-        _firstString(address, const ['pincode', 'pinCode', 'pin_code']) ??
-            _firstString(root, const ['pincode', 'pinCode', 'pin_code']) ??
-            '-';
+    // Scalar-only reads: Maps and Lists are rejected; '-' sentinel → null.
+    final addressLine = _firstAddressScalar(
+            address, const ['addressLine', 'address_line', 'address']) ??
+        _firstAddressScalar(root, const ['addressLine', 'address_line']);
+
+    final city =
+        _firstAddressScalar(address, const ['cityId', 'city_id', 'city']) ??
+            _firstAddressScalar(root, const ['city', 'cityId', 'city_id']);
+
+    final state = _firstAddressScalar(
+            address, const ['stateCode', 'state_code', 'state']) ??
+        _firstAddressScalar(
+            root, const ['StateCode', 'stateCode', 'state_code', 'state']);
+
+    final country = _firstAddressScalar(
+            address, const ['countryCode', 'country_code', 'country']) ??
+        _firstAddressScalar(
+            root, const ['countryCode', 'country_code', 'country']);
+
+    final pin = _firstAddressScalar(
+            address, const ['pincode', 'pinCode', 'pin_code']) ??
+        _firstAddressScalar(root, const ['pincode', 'pinCode', 'pin_code']);
+
+    // fullAddress: use the API-supplied value when present; otherwise join
+    // only the non-empty scalar parts in a stable, non-duplicated order.
+    final apiFullAddress =
+        _firstAddressScalar(address, const ['fullAddress', 'full_address']);
+
+    final composed = [addressLine, city, state, country, pin]
+        .where((v) => v != null && v.trim().isNotEmpty)
+        .join(', ');
 
     return AdminDriverAddress(
-      id: _firstString(address, const ['id', '_id']) ?? '-',
-      addressLine: addressLine,
-      countryCode: country,
-      stateCode: state,
-      cityId: city,
-      pincode: pin,
-      fullAddress: _firstString(
-              address, const ['fullAddress', 'full_address']) ??
-          [addressLine, city, state, country, pin]
-              .where((value) => value.trim().isNotEmpty && value.trim() != '-')
-              .join(', '),
+      id: _firstString(address, const ['id', '_id']) ?? '',
+      addressLine: addressLine ?? '',
+      countryCode: country ?? '',
+      stateCode: state ?? '',
+      cityId: city ?? '',
+      pincode: pin ?? '',
+      fullAddress: apiFullAddress ?? composed,
     );
   }
 }
@@ -292,20 +289,26 @@ class AdminDriverDocument {
 
   factory AdminDriverDocument.fromJson(dynamic raw) {
     final source = _extractDataMap(_asMap(raw));
+    // Backend includes `docType: true` in the Prisma query, returning a nested
+    // object.  Extract it structurally so id/name are never stringified.
+    final docTypeMap =
+        _firstMap(source, const ['docType']) ?? const <String, dynamic>{};
+
     return AdminDriverDocument(
       id: _firstString(source, const ['id', '_id', 'docId', 'doc_id']) ?? '',
       title: _firstString(source, const ['title', 'name']) ?? '-',
+      // Prefer the nested object's id; fall back to the flat FK scalar.
       docTypeId: _firstString(source, const [
             'docTypeId',
             'docTypeID',
             'documentTypeId',
           ]) ??
+          _firstString(docTypeMap, const ['id', '_id']) ??
           '-',
-      docTypeName: _firstString(source, const [
-            'docTypeName',
-            'docType',
-            'documentType',
-          ]) ??
+      // Prefer the nested object's name; fall back to flat scalar keys only
+      // (never stringify the Map itself).
+      docTypeName: _firstString(docTypeMap, const ['name', 'title']) ??
+          _firstString(source, const ['docTypeName', 'documentTypeName']) ??
           '-',
       description: _firstString(source, const ['description']) ?? '-',
       tags: _parseTags(source['tags']),
@@ -544,11 +547,20 @@ Map<String, dynamic>? _firstMap(
 String? _firstString(Map<String, dynamic> source, List<String> keys) {
   for (final key in keys) {
     final value = source[key];
-    if (value == null) continue;
+    // Reject Maps and Lists – they must never be stringified into a scalar field.
+    if (value == null || value is Map || value is List) continue;
     final text = value.toString().trim();
     if (text.isNotEmpty && text.toLowerCase() != 'null') return text;
   }
   return null;
+}
+
+/// Like [_firstString] but also treats the legacy `'-'` sentinel as absent,
+/// so address scalar fields always carry either a real value or null.
+String? _firstAddressScalar(Map<String, dynamic> source, List<String> keys) {
+  final value = _firstString(source, keys);
+  if (value == null || value == '-') return null;
+  return value;
 }
 
 dynamic _firstValue(Map<String, dynamic> source, List<String> keys) {

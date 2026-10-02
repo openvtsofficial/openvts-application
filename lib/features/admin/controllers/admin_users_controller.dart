@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -11,14 +13,19 @@ class AdminUsersController extends StateNotifier<AdminUsersState> {
   AdminUsersController({
     required AdminUsersService service,
     required AuthController authController,
+    this.onDashboardRefresh,
   })  : _service = service,
         _authController = authController,
         super(const AdminUsersState.initial());
 
   final AdminUsersService _service;
   final AuthController _authController;
+  final void Function()? onDashboardRefresh;
 
   Future<void> load() async {
+    // Fire country options load in parallel with the user list; errors are
+    // swallowed inside ensureCountryOptionsLoaded so neither blocks the other.
+    unawaited(ensureCountryOptionsLoaded());
     await _fetchUsers(
       refreshKey: state.refreshKey == 0 ? null : state.refreshKey.toString(),
       refreshing: state.hasUsers,
@@ -118,6 +125,19 @@ class AdminUsersController extends StateNotifier<AdminUsersState> {
     return _service.getCountries();
   }
 
+  /// Ensures country options are loaded into state exactly once.
+  /// Safe to call multiple times; subsequent calls are no-ops if already loaded.
+  Future<void> ensureCountryOptionsLoaded() async {
+    if (state.countryOptions.isNotEmpty) return;
+    try {
+      final options = await _service.getCountries();
+      if (!mounted) return;
+      state = state.copyWith(countryOptions: options);
+    } catch (_) {
+      // Silently ignore; UI falls back to LocationData hardcoded list.
+    }
+  }
+
   Future<List<AdminUserMobilePrefixOption>> getMobilePrefixes() {
     return _service.getMobilePrefixes();
   }
@@ -133,23 +153,25 @@ class AdminUsersController extends StateNotifier<AdminUsersState> {
     return _service.getCities(countryCode, stateCode);
   }
 
-  Future<void> createUser(AdminCreateUserRequest request) async {
+  Future<AdminUserDetails> createUser(AdminCreateUserRequest request) async {
     state = state.copyWith(
       isCreating: true,
       errorMessage: null,
     );
 
     try {
-      await _service.createUser(request);
+      final createdUser = await _service.createUser(request);
       if (!mounted) {
-        return;
+        return createdUser;
       }
 
       state = state.copyWith(isCreating: false);
       await refresh();
+      onDashboardRefresh?.call();
+      return createdUser;
     } catch (error) {
       if (!mounted) {
-        return;
+        rethrow;
       }
 
       state = state.copyWith(
@@ -182,6 +204,7 @@ class AdminUsersController extends StateNotifier<AdminUsersState> {
           errorMessage: null,
         ),
       );
+      onDashboardRefresh?.call();
     } catch (error) {
       if (!mounted) {
         return;
@@ -215,6 +238,7 @@ class AdminUsersController extends StateNotifier<AdminUsersState> {
         updatingIds: _removeId(state.updatingIds, id),
         errorMessage: null,
       );
+      onDashboardRefresh?.call();
     } catch (error) {
       if (!mounted) {
         return;
@@ -250,6 +274,7 @@ class AdminUsersController extends StateNotifier<AdminUsersState> {
           errorMessage: null,
         ),
       );
+      onDashboardRefresh?.call();
     } catch (error) {
       if (!mounted) {
         return;

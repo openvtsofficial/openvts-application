@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/providers/app_preferences_provider.dart';
 import '../../../core/providers/core_providers.dart';
 import '../../../core/router/route_paths.dart';
 import '../../../shared/widgets/open_vts_role_home.dart';
@@ -72,7 +73,10 @@ class SuperadminHomeScreen extends ConsumerWidget {
       roleLabel: 'Superadmin',
       profileImageUrl: resolveProfileImageUrl(baseUrl, user?.profileUrl),
       items: _items,
-      onToggleTheme: () => ref.read(themeModeProvider.notifier).toggle(),
+      onToggleTheme: () async {
+        await ref.read(themeModeProvider.notifier).toggle();
+        ref.invalidate(appLocalizationPreferencesProvider);
+      },
       notificationBadgeCount: unreadCount,
       onNotificationsPressed: () {
         ref.invalidate(superadminNotificationUnreadBadgeProvider);

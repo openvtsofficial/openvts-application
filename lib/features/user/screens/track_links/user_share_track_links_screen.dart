@@ -248,6 +248,9 @@ class _HeaderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    final isDark = brightness == Brightness.dark;
+
     return OpenVtsCard(
       padding: const EdgeInsets.all(OpenVtsSpacing.sm),
       child: Column(
@@ -281,7 +284,9 @@ class _HeaderCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: OpenVtsTypography.titleSmall.copyWith(
                         fontSize: 17,
-                        color: OpenVtsColors.textPrimary,
+                        color: isDark
+                            ? OpenVtsColors.white
+                            : OpenVtsColors.textPrimary,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
@@ -292,7 +297,9 @@ class _HeaderCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: OpenVtsTypography.meta.copyWith(
                         fontSize: 12,
-                        color: OpenVtsColors.textSecondary,
+                        color: isDark
+                            ? OpenVtsColors.white
+                            : OpenVtsColors.textSecondary,
                       ),
                     ),
                   ],
@@ -312,7 +319,6 @@ class _HeaderCard extends StatelessWidget {
                     label: Text(
                       'New Link',
                       style: OpenVtsTypography.label.copyWith(
-                        color: OpenVtsColors.white,
                         fontWeight: FontWeight.w800,
                       ),
                     ),

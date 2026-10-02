@@ -36,7 +36,9 @@ class UserSubUserDeleteSheet extends ConsumerWidget {
           Text(
             _displayName(subUser),
             style: OpenVtsTypography.titleSmall.copyWith(
-              color: OpenVtsColors.textPrimary,
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white
+                  : OpenVtsColors.textPrimary,
             ),
           ),
           const SizedBox(height: OpenVtsSpacing.xs),

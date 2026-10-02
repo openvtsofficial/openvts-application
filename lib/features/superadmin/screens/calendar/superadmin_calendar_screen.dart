@@ -8,6 +8,7 @@ import '../../../../core/theme/open_vts_colors.dart';
 import '../../../../core/theme/open_vts_radius.dart';
 import '../../../../core/theme/open_vts_spacing.dart';
 import '../../../../core/theme/open_vts_typography.dart';
+import '../../../../core/utils/date_time_formatter.dart';
 import '../../../../shared/widgets/open_vts_bottom_sheet.dart';
 import '../../../../shared/widgets/open_vts_error_view.dart';
 import '../../../../shared/widgets/open_vts_loader.dart';
@@ -21,6 +22,7 @@ class SuperadminCalendarScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final formatter = ref.watch(appDateFormatterProvider);
     final focusedDate = ref.watch(calendarFocusedDateProvider);
     final selectedDate = ref.watch(calendarSelectedDateProvider);
     final eventsAsync = ref.watch(calendarEventsProvider);
@@ -31,7 +33,6 @@ class SuperadminCalendarScreen extends ConsumerWidget {
     return OpenVtsPageScaffold(
       title: 'Calendar',
       headerMode: OpenVtsPageHeaderMode.closeable,
-      leading: const _HeaderLogoTile(),
       padding: const EdgeInsetsDirectional.fromSTEB(
         OpenVtsSpacing.md,
         OpenVtsSpacing.md,
@@ -88,11 +89,14 @@ class SuperadminCalendarScreen extends ConsumerWidget {
                     constraints: const BoxConstraints(maxWidth: 420),
                     child: LayoutBuilder(
                       builder: (context, constraints) {
-                        final tableWidth = (constraints.maxWidth - (gridHorizontalInset * 2))
-                            .clamp(280.0, 420.0)
-                            .toDouble();
-                        final columnWidth = (tableWidth / 7).clamp(44.0, 56.0).toDouble();
-                        final rowHeight = columnWidth + (dayGapY * 2) + rowBuffer;
+                        final tableWidth =
+                            (constraints.maxWidth - (gridHorizontalInset * 2))
+                                .clamp(280.0, 420.0)
+                                .toDouble();
+                        final columnWidth =
+                            (tableWidth / 7).clamp(44.0, 56.0).toDouble();
+                        final rowHeight =
+                            columnWidth + (dayGapY * 2) + rowBuffer;
 
                         return Padding(
                           padding: const EdgeInsets.fromLTRB(
@@ -108,7 +112,10 @@ class SuperadminCalendarScreen extends ConsumerWidget {
                                 DateFormat('MMMM yyyy').format(focusedDate),
                                 textAlign: TextAlign.center,
                                 style: OpenVtsTypography.titleMedium.copyWith(
-                                  color: OpenVtsColors.textPrimary,
+                                  color: Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? OpenVtsColors.darkTextPrimary
+                                      : OpenVtsColors.textPrimary,
                                   fontSize: 18,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -124,10 +131,12 @@ class SuperadminCalendarScreen extends ConsumerWidget {
                                 headerVisible: false,
                                 daysOfWeekHeight: 20,
                                 startingDayOfWeek: StartingDayOfWeek.sunday,
-                                availableCalendarFormats: const <CalendarFormat, String>{
+                                availableCalendarFormats: const <CalendarFormat,
+                                    String>{
                                   CalendarFormat.month: 'Month',
                                 },
-                                selectedDayPredicate: (day) => isSameDay(selectedDate, day),
+                                selectedDayPredicate: (day) =>
+                                    isSameDay(selectedDate, day),
                                 eventLoader: (day) {
                                   final event = eventsByDate[_formatDay(day)];
                                   return event == null
@@ -135,12 +144,22 @@ class SuperadminCalendarScreen extends ConsumerWidget {
                                       : <CalendarEvent>[event];
                                 },
                                 onDaySelected: (selectedDay, focusedDay) {
-                                  ref.read(calendarSelectedDateProvider.notifier).state = selectedDay;
-                                  ref.read(calendarFocusedDateProvider.notifier).state = focusedDay;
-                                  _showDayDetailsSheet(context, ref, selectedDay);
+                                  ref
+                                      .read(
+                                          calendarSelectedDateProvider.notifier)
+                                      .state = selectedDay;
+                                  ref
+                                      .read(
+                                          calendarFocusedDateProvider.notifier)
+                                      .state = focusedDay;
+                                  _showDayDetailsSheet(
+                                      context, ref, selectedDay);
                                 },
                                 onPageChanged: (focusedDay) {
-                                  ref.read(calendarFocusedDateProvider.notifier).state = focusedDay;
+                                  ref
+                                      .read(
+                                          calendarFocusedDateProvider.notifier)
+                                      .state = focusedDay;
                                 },
                                 calendarStyle: const CalendarStyle(
                                   outsideDaysVisible: true,
@@ -150,25 +169,34 @@ class SuperadminCalendarScreen extends ConsumerWidget {
                                 ),
                                 daysOfWeekStyle: DaysOfWeekStyle(
                                   weekdayStyle: OpenVtsTypography.meta.copyWith(
-                                    color: OpenVtsColors.textTertiary,
+                                    color: Theme.of(context).brightness ==
+                                            Brightness.dark
+                                        ? OpenVtsColors.darkTextSecondary
+                                        : OpenVtsColors.textTertiary,
                                     fontSize: 10,
                                     fontWeight: FontWeight.w600,
                                   ),
                                   weekendStyle: OpenVtsTypography.meta.copyWith(
-                                    color: OpenVtsColors.textTertiary,
+                                    color: Theme.of(context).brightness ==
+                                            Brightness.dark
+                                        ? OpenVtsColors.darkTextSecondary
+                                        : OpenVtsColors.textTertiary,
                                     fontSize: 10,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
                                 calendarBuilders: CalendarBuilders(
-                                  defaultBuilder: (context, day, _) => _buildDayCell(
+                                  defaultBuilder: (ctx, day, _) =>
+                                      _buildDayCell(
+                                    context: ctx,
                                     day: day,
                                     event: eventsByDate[_formatDay(day)],
                                     visibleFilters: filters,
                                     horizontalGap: dayGapX,
                                     verticalGap: dayGapY,
                                   ),
-                                  todayBuilder: (context, day, _) => _buildDayCell(
+                                  todayBuilder: (ctx, day, _) => _buildDayCell(
+                                    context: ctx,
                                     day: day,
                                     event: eventsByDate[_formatDay(day)],
                                     visibleFilters: filters,
@@ -176,7 +204,9 @@ class SuperadminCalendarScreen extends ConsumerWidget {
                                     verticalGap: dayGapY,
                                     isToday: true,
                                   ),
-                                  selectedBuilder: (context, day, _) => _buildDayCell(
+                                  selectedBuilder: (ctx, day, _) =>
+                                      _buildDayCell(
+                                    context: ctx,
                                     day: day,
                                     event: eventsByDate[_formatDay(day)],
                                     visibleFilters: filters,
@@ -185,7 +215,9 @@ class SuperadminCalendarScreen extends ConsumerWidget {
                                     isSelected: true,
                                     isToday: isSameDay(day, today),
                                   ),
-                                  outsideBuilder: (context, day, _) => _buildOutsideDayCell(
+                                  outsideBuilder: (ctx, day, _) =>
+                                      _buildOutsideDayCell(
+                                    ctx,
                                     day,
                                     horizontalGap: dayGapX,
                                     verticalGap: dayGapY,
@@ -207,15 +239,18 @@ class SuperadminCalendarScreen extends ConsumerWidget {
     );
   }
 
-  void _showDayDetailsSheet(BuildContext context, WidgetRef ref, DateTime date) {
+  void _showDayDetailsSheet(
+      BuildContext context, WidgetRef ref, DateTime date) {
+    final formatter = ref.read(appDateFormatterProvider);
     OpenVtsBottomSheet.show(
       context: context,
-      title: DateFormat('dd MMM yyyy').format(date),
+      title: formatter.formatDate(date),
       child: CalendarDayBottomSheet(date: date),
     );
   }
 
   Widget _buildDayCell({
+    required BuildContext context,
     required DateTime day,
     required List<String> visibleFilters,
     required double horizontalGap,
@@ -225,33 +260,44 @@ class SuperadminCalendarScreen extends ConsumerWidget {
     bool isSelected = false,
     bool isOutside = false,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     final foregroundColor = isSelected
-        ? OpenVtsColors.white
+        ? (isDark ? OpenVtsColors.brandInk : OpenVtsColors.white)
         : isOutside
-            ? OpenVtsColors.textTertiary
+            ? (isDark
+                ? OpenVtsColors.darkTextSecondary
+                : OpenVtsColors.textTertiary)
             : isToday
-                ? OpenVtsColors.brandInk
-                : OpenVtsColors.textPrimary;
+                ? (isDark ? OpenVtsColors.white : OpenVtsColors.brandInk)
+                : (isDark
+                    ? OpenVtsColors.darkTextPrimary
+                    : OpenVtsColors.textPrimary);
 
     final backgroundColor = isSelected
-        ? OpenVtsColors.brandInk
+        ? (isDark ? OpenVtsColors.white : OpenVtsColors.brandInk)
         : isToday
-        ? OpenVtsColors.surface
-        : OpenVtsColors.surfaceElevated;
+            ? (isDark ? OpenVtsColors.darkSurface : OpenVtsColors.surface)
+            : (isDark
+                ? OpenVtsColors.darkSurface
+                : OpenVtsColors.surfaceElevated);
 
     final borderColor = isSelected
-        ? OpenVtsColors.brandInk
+        ? (isDark ? OpenVtsColors.white : OpenVtsColors.brandInk)
         : isToday
-        ? OpenVtsColors.divider
-        : OpenVtsColors.border.withValues(alpha: 0.88);
+            ? (isDark ? OpenVtsColors.darkBorder : OpenVtsColors.divider)
+            : (isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border)
+                .withValues(alpha: 0.88);
 
     final metrics = <_DayMetricData>[];
 
     if (event != null) {
+      final selectedMetricColor =
+          isDark ? OpenVtsColors.brandInk : OpenVtsColors.white;
       if (visibleFilters.contains('users') && event.usersCount > 0) {
         metrics.add(
           _DayMetricData(
-            color: isSelected ? OpenVtsColors.white : OpenVtsColors.brandInk,
+            color: isSelected ? selectedMetricColor : OpenVtsColors.brandInk,
             label: 'Users',
             value: event.usersCount,
           ),
@@ -260,7 +306,7 @@ class SuperadminCalendarScreen extends ConsumerWidget {
       if (visibleFilters.contains('vehicle') && event.vehiclesCount > 0) {
         metrics.add(
           _DayMetricData(
-            color: isSelected ? OpenVtsColors.white : OpenVtsColors.success,
+            color: isSelected ? selectedMetricColor : OpenVtsColors.success,
             label: 'Vehicle',
             value: event.vehiclesCount,
           ),
@@ -269,7 +315,7 @@ class SuperadminCalendarScreen extends ConsumerWidget {
       if (visibleFilters.contains('expiry') && event.expiryCount > 0) {
         metrics.add(
           _DayMetricData(
-            color: isSelected ? OpenVtsColors.white : OpenVtsColors.error,
+            color: isSelected ? selectedMetricColor : OpenVtsColors.error,
             label: 'Expiry',
             value: event.expiryCount,
           ),
@@ -290,7 +336,8 @@ class SuperadminCalendarScreen extends ConsumerWidget {
         .toList(growable: false);
 
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: horizontalGap, vertical: verticalGap),
+      padding: EdgeInsets.symmetric(
+          horizontal: horizontalGap, vertical: verticalGap),
       child: Center(
         child: AspectRatio(
           aspectRatio: 1,
@@ -303,7 +350,10 @@ class SuperadminCalendarScreen extends ConsumerWidget {
               boxShadow: isSelected
                   ? <BoxShadow>[
                       BoxShadow(
-                        color: OpenVtsColors.brandInk.withValues(alpha: 0.06),
+                        color: (isDark
+                                ? OpenVtsColors.white
+                                : OpenVtsColors.brandInk)
+                            .withValues(alpha: 0.06),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
@@ -319,7 +369,9 @@ class SuperadminCalendarScreen extends ConsumerWidget {
                     color: foregroundColor,
                     fontSize: 13,
                     height: 1.0,
-                    fontWeight: isSelected || isToday ? FontWeight.w700 : FontWeight.w600,
+                    fontWeight: isSelected || isToday
+                        ? FontWeight.w700
+                        : FontWeight.w600,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -343,12 +395,15 @@ class SuperadminCalendarScreen extends ConsumerWidget {
   }
 
   Widget _buildOutsideDayCell(
+    BuildContext context,
     DateTime day, {
     required double horizontalGap,
     required double verticalGap,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: horizontalGap, vertical: verticalGap),
+      padding: EdgeInsets.symmetric(
+          horizontal: horizontalGap, vertical: verticalGap),
       child: Align(
         alignment: Alignment.topCenter,
         child: Padding(
@@ -356,7 +411,9 @@ class SuperadminCalendarScreen extends ConsumerWidget {
           child: Text(
             '${day.day}',
             style: OpenVtsTypography.meta.copyWith(
-              color: OpenVtsColors.textTertiary.withValues(alpha: 0.72),
+              color: isDark
+                  ? OpenVtsColors.darkTextSecondary.withValues(alpha: 0.5)
+                  : OpenVtsColors.textTertiary.withValues(alpha: 0.72),
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -440,34 +497,7 @@ class SuperadminCalendarScreen extends ConsumerWidget {
   }
 }
 
-class _HeaderLogoTile extends StatelessWidget {
-  const _HeaderLogoTile();
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsetsDirectional.only(start: OpenVtsSpacing.sm),
-      child: Align(
-        alignment: AlignmentDirectional.centerStart,
-        child: Container(
-          height: 36,
-          width: 36,
-          decoration: BoxDecoration(
-            color: OpenVtsColors.brandInk,
-            borderRadius: BorderRadius.circular(OpenVtsRadius.md),
-          ),
-          child: const Icon(
-            Icons.calendar_month_outlined,
-            color: OpenVtsColors.white,
-            size: 18,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _CalendarToolbar extends StatelessWidget {
+class _CalendarToolbar extends ConsumerWidget {
   const _CalendarToolbar({
     required this.displayedDate,
     required this.focusedDate,
@@ -487,7 +517,10 @@ class _CalendarToolbar extends StatelessWidget {
   final void Function(String value, bool selected) onToggleFilter;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final formatter = ref.watch(appDateFormatterProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -495,9 +528,11 @@ class _CalendarToolbar extends StatelessWidget {
           children: [
             Expanded(
               child: Text(
-                DateFormat('dd MMM yyyy').format(displayedDate),
+                formatter.formatDate(displayedDate),
                 style: OpenVtsTypography.titleMedium.copyWith(
-                  color: OpenVtsColors.textPrimary,
+                  color: isDark
+                      ? OpenVtsColors.darkTextPrimary
+                      : OpenVtsColors.textPrimary,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -509,8 +544,11 @@ class _CalendarToolbar extends StatelessWidget {
             const SizedBox(width: OpenVtsSpacing.xs),
             FilledButton.tonal(
               style: FilledButton.styleFrom(
-                backgroundColor: OpenVtsColors.surface,
-                foregroundColor: OpenVtsColors.textPrimary,
+                backgroundColor:
+                    isDark ? OpenVtsColors.darkSurface : OpenVtsColors.surface,
+                foregroundColor: isDark
+                    ? OpenVtsColors.darkTextPrimary
+                    : OpenVtsColors.textPrimary,
                 elevation: 0,
                 padding: const EdgeInsets.symmetric(
                   horizontal: OpenVtsSpacing.md,
@@ -518,7 +556,11 @@ class _CalendarToolbar extends StatelessWidget {
                 ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
-                  side: const BorderSide(color: OpenVtsColors.border),
+                  side: BorderSide(
+                    color: isDark
+                        ? OpenVtsColors.darkBorder
+                        : OpenVtsColors.border,
+                  ),
                 ),
               ),
               onPressed: onToday,
@@ -575,15 +617,21 @@ class _NavigationButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return SizedBox(
       width: 36,
       height: 36,
       child: IconButton(
         onPressed: onPressed,
         style: IconButton.styleFrom(
-          backgroundColor: OpenVtsColors.surface,
-          foregroundColor: OpenVtsColors.textPrimary,
-          side: const BorderSide(color: OpenVtsColors.border),
+          backgroundColor:
+              isDark ? OpenVtsColors.darkSurface : OpenVtsColors.surface,
+          foregroundColor: isDark
+              ? OpenVtsColors.darkTextPrimary
+              : OpenVtsColors.textPrimary,
+          side: BorderSide(
+            color: isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border,
+          ),
         ),
         icon: Icon(icon, size: 18),
       ),
@@ -608,34 +656,53 @@ class _FilterPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FilterChip(
-      selected: selected,
-      onSelected: (nextValue) => onChanged(value, nextValue),
-      avatar: Icon(
-        icon,
-        size: 14,
-        color: selected ? OpenVtsColors.white : OpenVtsColors.textSecondary,
-      ),
-      label: Text(label),
-      backgroundColor: OpenVtsColors.surfaceElevated,
-      selectedColor: OpenVtsColors.brandInkSoft,
-      checkmarkColor: OpenVtsColors.white,
-      side: BorderSide(
-        color: selected
-            ? OpenVtsColors.brandInkSoft.withValues(alpha: 0.9)
-            : OpenVtsColors.border.withValues(alpha: 0.85),
-      ),
-      labelStyle: OpenVtsTypography.meta.copyWith(
-        color: selected ? OpenVtsColors.white : OpenVtsColors.textPrimary,
-        fontWeight: FontWeight.w600,
-      ),
-      shape: RoundedRectangleBorder(
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final backgroundColor = selected
+        ? (isDark ? Colors.black : OpenVtsColors.white)
+        : Colors.transparent;
+    final textColor = isDark ? Colors.white : OpenVtsColors.brandInk;
+    final borderColor = isDark ? Colors.white : OpenVtsColors.border;
+
+    return Material(
+      color: backgroundColor,
+      borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
+      child: InkWell(
+        onTap: () => onChanged(value, !selected),
         borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 34),
+          padding: const EdgeInsets.symmetric(
+            horizontal: OpenVtsSpacing.sm,
+            vertical: OpenVtsSpacing.xs,
+          ),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
+            border: Border.all(
+              color: selected
+                  ? (isDark ? Colors.white : OpenVtsColors.brandInk)
+                  : borderColor,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 14,
+                color: textColor,
+              ),
+              const SizedBox(width: OpenVtsSpacing.xxs),
+              Text(
+                label,
+                style: OpenVtsTypography.meta.copyWith(
+                  color: textColor,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
-      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      visualDensity: VisualDensity.compact,
-      elevation: 0,
-      pressElevation: 0,
     );
   }
 }
@@ -655,10 +722,9 @@ class _DayMetricRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final labelColor = inverted
-        ? OpenVtsColors.white.withValues(alpha: 0.88)
-        : OpenVtsColors.textSecondary;
-    final valueColor = inverted ? OpenVtsColors.white : OpenVtsColors.textPrimary;
+    final scheme = Theme.of(context).colorScheme;
+    final labelColor = inverted ? scheme.onPrimary : scheme.onSurfaceVariant;
+    final valueColor = inverted ? scheme.onPrimary : scheme.onSurface;
 
     return Padding(
       padding: const EdgeInsets.only(top: 1),
@@ -721,14 +787,13 @@ class _TodayBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     final text = Text(
       'TODAY',
       style: OpenVtsTypography.meta.copyWith(
         fontSize: inverted ? 6.5 : 7,
         height: 1.0,
-        color: inverted
-            ? OpenVtsColors.white.withValues(alpha: 0.86)
-            : OpenVtsColors.white,
+        color: inverted ? scheme.onPrimary : scheme.onPrimary,
         fontWeight: FontWeight.w700,
         letterSpacing: inverted ? 0.25 : 0.3,
       ),
@@ -744,9 +809,7 @@ class _TodayBadge extends StatelessWidget {
         vertical: 2,
       ),
       decoration: BoxDecoration(
-        color: inverted
-            ? OpenVtsColors.white.withValues(alpha: 0.16)
-            : OpenVtsColors.brandInk,
+        color: scheme.primary,
         borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
       ),
       child: text,

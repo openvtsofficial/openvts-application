@@ -104,7 +104,8 @@ class _GeneralSettingsSectionState
       }
     } else {
       ToastHelper.showError(
-        ref.read(superadminSettingsControllerProvider).sectionErrorMessage ?? 'Failed to save settings',
+        ref.read(superadminSettingsControllerProvider).sectionErrorMessage ??
+            'Failed to save settings',
       );
     }
   }
@@ -120,7 +121,8 @@ class _GeneralSettingsSectionState
       ToastHelper.showInfo('Preview updated');
     } else {
       ToastHelper.showError(
-        ref.read(superadminSettingsControllerProvider).sectionErrorMessage ?? 'Failed to load preview',
+        ref.read(superadminSettingsControllerProvider).sectionErrorMessage ??
+            'Failed to load preview',
       );
     }
   }
@@ -132,7 +134,8 @@ class _GeneralSettingsSectionState
       ToastHelper.showInfo('Dry-run completed');
     } else {
       ToastHelper.showError(
-        ref.read(superadminSettingsControllerProvider).sectionErrorMessage ?? 'Dry-run failed',
+        ref.read(superadminSettingsControllerProvider).sectionErrorMessage ??
+            'Dry-run failed',
       );
     }
   }
@@ -141,7 +144,7 @@ class _GeneralSettingsSectionState
     final confirmed = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: OpenVtsColors.surfaceElevated,
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(
           top: Radius.circular(OpenVtsRadius.lg),
@@ -158,7 +161,8 @@ class _GeneralSettingsSectionState
       await _controller.previewDataRetention();
     } else {
       ToastHelper.showError(
-        ref.read(superadminSettingsControllerProvider).sectionErrorMessage ?? 'Cleanup failed',
+        ref.read(superadminSettingsControllerProvider).sectionErrorMessage ??
+            'Cleanup failed',
       );
     }
   }
@@ -185,10 +189,10 @@ class _GeneralSettingsSectionState
           children: [
             Text(
               state.sectionErrorMessage ?? 'Could not load settings.',
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: OpenVtsTypography.primaryFontFamily,
                 fontSize: 12.5,
-                color: OpenVtsColors.textSecondary,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
             const SizedBox(height: OpenVtsSpacing.sm),
@@ -320,9 +324,8 @@ class _GeneralSettingsSectionState
           const SizedBox(height: OpenVtsSpacing.md),
           _AdvancedCleanupCard(
             state: state,
-            onPreview: state.isPreviewingDataRetention
-                ? null
-                : _previewRetention,
+            onPreview:
+                state.isPreviewingDataRetention ? null : _previewRetention,
             onDryRun: state.isRunningDataRetention ? null : _dryRunRetention,
             onRun: state.isRunningDataRetention ? null : _openCleanupSheet,
           ),
@@ -358,14 +361,14 @@ class _CurrentConfigCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
               Icon(
                 Icons.fact_check_outlined,
                 size: 14,
-                color: OpenVtsColors.textTertiary,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
-              SizedBox(width: 6),
+              const SizedBox(width: 6),
               Text(
                 'CURRENT CONFIGURATION',
                 style: TextStyle(
@@ -373,7 +376,7 @@ class _CurrentConfigCard extends StatelessWidget {
                   fontSize: 10.5,
                   fontWeight: FontWeight.w600,
                   letterSpacing: 0.6,
-                  color: OpenVtsColors.textTertiary,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
             ],
@@ -444,19 +447,19 @@ class _ConfigTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final Color valueColor;
     if (positive == null) {
-      valueColor = OpenVtsColors.textPrimary;
+      valueColor = Theme.of(context).colorScheme.onSurface;
     } else if (positive!) {
       valueColor = OpenVtsColors.success;
     } else {
-      valueColor = OpenVtsColors.textTertiary;
+      valueColor = Theme.of(context).colorScheme.onSurfaceVariant;
     }
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
-        color: OpenVtsColors.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-        border: Border.all(color: OpenVtsColors.border),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -464,11 +467,11 @@ class _ConfigTile extends StatelessWidget {
         children: [
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: OpenVtsTypography.primaryFontFamily,
               fontSize: 10,
               fontWeight: FontWeight.w500,
-              color: OpenVtsColors.textTertiary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
           const SizedBox(height: 2),
@@ -527,8 +530,7 @@ class _BackupDaysDropdown extends StatelessWidget {
   Widget build(BuildContext context) {
     final hasValue = _kBackupOptions.any((o) => o.days == value);
     final items = <DropdownMenuItem<int>>[
-      if (!hasValue)
-        DropdownMenuItem(value: value, child: Text('$value days')),
+      if (!hasValue) DropdownMenuItem(value: value, child: Text('$value days')),
       for (final o in _kBackupOptions)
         DropdownMenuItem(
           value: o.days,
@@ -546,16 +548,16 @@ class _BackupDaysDropdown extends StatelessWidget {
             child: DropdownButton<int>(
               value: value,
               isExpanded: true,
-              icon: const Icon(
+              icon: Icon(
                 Icons.expand_more_rounded,
                 size: 18,
-                color: OpenVtsColors.textTertiary,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: OpenVtsTypography.primaryFontFamily,
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
-                color: OpenVtsColors.textPrimary,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
               items: items,
               onChanged: onChanged,
@@ -593,9 +595,9 @@ class _SegmentedControl<T> extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
-        color: OpenVtsColors.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-        border: Border.all(color: OpenVtsColors.border),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
       child: Row(
         children: [
@@ -643,7 +645,9 @@ class _SegBtn extends StatelessWidget {
             fontFamily: OpenVtsTypography.primaryFontFamily,
             fontSize: 11.5,
             fontWeight: FontWeight.w600,
-            color: selected ? OpenVtsColors.white : OpenVtsColors.textPrimary,
+            color: selected
+                ? Theme.of(context).colorScheme.onPrimary
+                : Theme.of(context).colorScheme.onSurface,
           ),
         ),
       ),
@@ -673,11 +677,11 @@ class _LabeledSwitchRow extends StatelessWidget {
         Expanded(
           child: Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: OpenVtsTypography.primaryFontFamily,
               fontSize: 12.5,
               fontWeight: FontWeight.w500,
-              color: OpenVtsColors.textPrimary,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
         ),
@@ -712,14 +716,14 @@ class _AdvancedCleanupCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Row(
+          Row(
             children: [
               Icon(
                 Icons.delete_sweep_outlined,
                 size: 16,
-                color: OpenVtsColors.textSecondary,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
-              SizedBox(width: 8),
+              const SizedBox(width: 8),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -731,17 +735,17 @@ class _AdvancedCleanupCard extends StatelessWidget {
                         fontFamily: OpenVtsTypography.primaryFontFamily,
                         fontSize: 13.5,
                         fontWeight: FontWeight.w600,
-                        color: OpenVtsColors.textPrimary,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
-                    SizedBox(height: 1),
+                    const SizedBox(height: 1),
                     Text(
                       'Permanently remove historical rows older than the retention period.',
                       style: TextStyle(
                         fontFamily: OpenVtsTypography.primaryFontFamily,
                         fontSize: 11,
                         height: 1.3,
-                        color: OpenVtsColors.textSecondary,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ],
@@ -800,8 +804,8 @@ class _AdvancedCleanupCard extends StatelessWidget {
                   label: 'Dry-run',
                   variant: OpenVtsButtonVariant.secondary,
                   height: 40,
-                  isLoading:
-                      state.isRunningDataRetention && (preview?.dryRun ?? false),
+                  isLoading: state.isRunningDataRetention &&
+                      (preview?.dryRun ?? false),
                   onPressed: onDryRun,
                 ),
               ),
@@ -837,9 +841,9 @@ class _RetentionSummaryBlock extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(OpenVtsSpacing.sm),
       decoration: BoxDecoration(
-        color: OpenVtsColors.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(OpenVtsRadius.md),
-        border: Border.all(color: OpenVtsColors.border),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -851,16 +855,16 @@ class _RetentionSummaryBlock extends StatelessWidget {
                     ? Icons.preview_rounded
                     : Icons.history_toggle_off_rounded,
                 size: 14,
-                color: OpenVtsColors.textSecondary,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
               const SizedBox(width: 4),
               Text(
                 summary.dryRun ? 'Dry-run summary' : 'Last cleanup',
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: OpenVtsTypography.primaryFontFamily,
                   fontSize: 11.5,
                   fontWeight: FontWeight.w600,
-                  color: OpenVtsColors.textPrimary,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
             ],
@@ -904,11 +908,11 @@ class _RetentionSummaryBlock extends StatelessWidget {
                 childrenPadding: EdgeInsets.zero,
                 title: Text(
                   'Tables (${summary.tables.length})',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: OpenVtsTypography.primaryFontFamily,
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: OpenVtsColors.textPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 children: [
@@ -943,10 +947,10 @@ class _SummaryRow extends StatelessWidget {
           Expanded(
             child: Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: OpenVtsTypography.primaryFontFamily,
                 fontSize: 11.5,
-                color: OpenVtsColors.textSecondary,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
           ),
@@ -956,7 +960,9 @@ class _SummaryRow extends StatelessWidget {
               fontFamily: OpenVtsTypography.primaryFontFamily,
               fontSize: 11.5,
               fontWeight: FontWeight.w600,
-              color: warn ? const Color(0xFFB76E00) : OpenVtsColors.textPrimary,
+              color: warn
+                  ? const Color(0xFFB76E00)
+                  : Theme.of(context).colorScheme.onSurface,
             ),
           ),
         ],
@@ -984,11 +990,11 @@ class _TableRow extends StatelessWidget {
                   tableLabel,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: OpenVtsTypography.primaryFontFamily,
                     fontSize: 11.5,
                     fontWeight: FontWeight.w600,
-                    color: OpenVtsColors.textPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
               ),
@@ -1061,20 +1067,20 @@ class _MiniMetric extends StatelessWidget {
       children: [
         Text(
           '$label:',
-          style: const TextStyle(
+          style: TextStyle(
             fontFamily: OpenVtsTypography.primaryFontFamily,
             fontSize: 10.5,
-            color: OpenVtsColors.textTertiary,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),
         const SizedBox(width: 3),
         Text(
           value,
-          style: const TextStyle(
+          style: TextStyle(
             fontFamily: OpenVtsTypography.primaryFontFamily,
             fontSize: 11,
             fontWeight: FontWeight.w600,
-            color: OpenVtsColors.textSecondary,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),
       ],
@@ -1138,7 +1144,7 @@ class _CleanupConfirmSheetState extends State<_CleanupConfirmSheet> {
                   height: 4,
                   margin: const EdgeInsets.only(bottom: OpenVtsSpacing.sm),
                   decoration: BoxDecoration(
-                    color: OpenVtsColors.border,
+                    color: Theme.of(context).colorScheme.outlineVariant,
                     borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
                   ),
                 ),
@@ -1160,49 +1166,49 @@ class _CleanupConfirmSheetState extends State<_CleanupConfirmSheet> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  const Expanded(
+                  Expanded(
                     child: Text(
                       'Confirm cleanup',
                       style: TextStyle(
                         fontFamily: OpenVtsTypography.primaryFontFamily,
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: OpenVtsColors.textPrimary,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 6),
-              const Text(
+              Text(
                 'This permanently deletes data older than the retention period. '
                 'It cannot be undone.',
                 style: TextStyle(
                   fontFamily: OpenVtsTypography.primaryFontFamily,
                   fontSize: 11.5,
                   height: 1.4,
-                  color: OpenVtsColors.textSecondary,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
               const SizedBox(height: OpenVtsSpacing.sm),
-              const Text.rich(
+              Text.rich(
                 TextSpan(
                   style: TextStyle(
                     fontFamily: OpenVtsTypography.primaryFontFamily,
                     fontSize: 11.5,
-                    color: OpenVtsColors.textSecondary,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                   children: [
-                    TextSpan(text: 'Type '),
+                    const TextSpan(text: 'Type '),
                     TextSpan(
                       text: _kCleanupPhrase,
                       style: TextStyle(
                         fontWeight: FontWeight.w700,
-                        color: OpenVtsColors.textPrimary,
+                        color: Theme.of(context).colorScheme.onSurface,
                         letterSpacing: 0.5,
                       ),
                     ),
-                    TextSpan(text: ' to enable the button.'),
+                    const TextSpan(text: ' to enable the button.'),
                   ],
                 ),
               ),
@@ -1271,11 +1277,13 @@ class _SectionHeader extends StatelessWidget {
             width: 28,
             height: 28,
             decoration: BoxDecoration(
-              color: OpenVtsColors.surface,
+              color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-              border: Border.all(color: OpenVtsColors.border),
+              border: Border.all(
+                  color: Theme.of(context).colorScheme.outlineVariant),
             ),
-            child: Icon(icon, size: 16, color: OpenVtsColors.textPrimary),
+            child: Icon(icon,
+                size: 16, color: Theme.of(context).colorScheme.onSurface),
           ),
           const SizedBox(width: OpenVtsSpacing.xs),
           Expanded(
@@ -1285,21 +1293,21 @@ class _SectionHeader extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: OpenVtsTypography.primaryFontFamily,
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: OpenVtsColors.textPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 const SizedBox(height: 1),
                 Text(
                   subtitle,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: OpenVtsTypography.primaryFontFamily,
                     fontSize: 11,
                     height: 1.3,
-                    color: OpenVtsColors.textSecondary,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
               ],
@@ -1341,7 +1349,9 @@ class _GroupedCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(icon, size: 16, color: OpenVtsColors.textSecondary),
+              Icon(icon,
+                  size: 16,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant),
               const SizedBox(width: 8),
               Expanded(
                 child: Column(
@@ -1350,21 +1360,21 @@ class _GroupedCard extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: OpenVtsTypography.primaryFontFamily,
                         fontSize: 13.5,
                         fontWeight: FontWeight.w600,
-                        color: OpenVtsColors.textPrimary,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     const SizedBox(height: 1),
                     Text(
                       subtitle,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: OpenVtsTypography.primaryFontFamily,
                         fontSize: 11,
                         height: 1.3,
-                        color: OpenVtsColors.textSecondary,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ],

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../l10n/app_localizations.dart';
 import 'user_localization_select_card.dart';
 import 'user_location_preset_chips.dart';
 
@@ -36,9 +36,10 @@ class UserMapDefaultsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return UserLocalizationSelectCard(
-      title: 'Map Defaults',
-      subtitle: 'Set default map center and zoom level.',
+      title: l10n.defaultMapFocus,
+      subtitle: l10n.defaultMapFocusSubtitle,
       icon: Icons.location_on_outlined,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -50,7 +51,7 @@ class UserMapDefaultsCard extends StatelessWidget {
                 return Column(
                   children: [
                     _CoordinateField(
-                      label: 'Latitude',
+                      label: l10n.latitude,
                       hintText: '37.7749',
                       controller: latitudeController,
                       errorText: latitudeError,
@@ -62,7 +63,7 @@ class UserMapDefaultsCard extends StatelessWidget {
                     ),
                     const SizedBox(height: OpenVtsSpacing.xs),
                     _CoordinateField(
-                      label: 'Longitude',
+                      label: l10n.longitude,
                       hintText: '-122.4194',
                       controller: longitudeController,
                       errorText: longitudeError,
@@ -81,7 +82,7 @@ class UserMapDefaultsCard extends StatelessWidget {
                 children: [
                   Expanded(
                     child: _CoordinateField(
-                      label: 'Latitude',
+                      label: l10n.latitude,
                       hintText: '37.7749',
                       controller: latitudeController,
                       errorText: latitudeError,
@@ -95,7 +96,7 @@ class UserMapDefaultsCard extends StatelessWidget {
                   const SizedBox(width: OpenVtsSpacing.sm),
                   Expanded(
                     child: _CoordinateField(
-                      label: 'Longitude',
+                      label: l10n.longitude,
                       hintText: '-122.4194',
                       controller: longitudeController,
                       errorText: longitudeError,
@@ -112,7 +113,7 @@ class UserMapDefaultsCard extends StatelessWidget {
           ),
           const SizedBox(height: OpenVtsSpacing.xs),
           _CoordinateField(
-            label: 'Map Zoom',
+            label: l10n.mapZoom,
             hintText: '10',
             controller: mapZoomController,
             errorText: mapZoomError,
@@ -121,9 +122,9 @@ class UserMapDefaultsCard extends StatelessWidget {
           ),
           const SizedBox(height: OpenVtsSpacing.xs),
           Text(
-            'Quick presets',
+            l10n.quickPresets,
             style: OpenVtsTypography.meta.copyWith(
-              color: OpenVtsColors.textSecondary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -164,7 +165,7 @@ class _CoordinateField extends StatelessWidget {
         Text(
           label,
           style: OpenVtsTypography.meta.copyWith(
-            color: OpenVtsColors.textSecondary,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
             fontWeight: FontWeight.w600,
           ),
         ),

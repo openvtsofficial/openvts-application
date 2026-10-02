@@ -18,6 +18,9 @@ class LiveMapRoleConfig {
     required this.role,
     required this.title,
     required this.homeRoute,
+    required this.telemetryNamespace,
+    required this.notificationNamespace,
+    this.socketAuthenticationRequired = true,
     required this.mapTelemetryEndpoint,
     required this.mapEventsEndpoint,
     required this.vehicleDetailsByImei,
@@ -52,6 +55,9 @@ class LiveMapRoleConfig {
   final LiveMapRole role;
   final String title;
   final String homeRoute;
+  final String telemetryNamespace;
+  final String? notificationNamespace;
+  final bool socketAuthenticationRequired;
 
   // --- Map streams ---------------------------------------------------------
   final String mapTelemetryEndpoint;
@@ -110,6 +116,8 @@ class LiveMapRoleConfig {
       role: LiveMapRole.superadmin,
       title: 'Live Map',
       homeRoute: RoutePaths.superadminHome,
+      telemetryNamespace: '/telemetry',
+      notificationNamespace: '/notifications',
       mapTelemetryEndpoint: '$base/map-telemetry',
       mapEventsEndpoint: '$base/map-events',
       vehicleDetailsByImei: (imei) =>
@@ -142,7 +150,7 @@ class LiveMapRoleConfig {
       commandSendMode: LiveMapCommandSendMode.byImei,
       notificationSubscribeMode:
           LiveMapNotificationSubscribeMode.superadminScope,
-      telemetrySubscribeMode: LiveMapTelemetrySubscribeMode.none,
+      telemetrySubscribeMode: LiveMapTelemetrySubscribeMode.superadminScope,
       visualSettingsStorageKey: StorageKeys.superadminMapVisualSettings,
       mapLayerStorageKey: StorageKeys.superadminMapLayerId,
     );
@@ -158,6 +166,8 @@ class LiveMapRoleConfig {
       role: LiveMapRole.admin,
       title: 'Live Map',
       homeRoute: RoutePaths.adminHome,
+      telemetryNamespace: '/telemetry',
+      notificationNamespace: '/notifications',
       mapTelemetryEndpoint: '$base/map-telemetry',
       mapEventsEndpoint: '$base/map-events',
       vehicleDetailsByImei: (imei) =>
@@ -203,6 +213,8 @@ class LiveMapRoleConfig {
       role: LiveMapRole.user,
       title: 'Live Map',
       homeRoute: RoutePaths.userHome,
+      telemetryNamespace: '/telemetry',
+      notificationNamespace: '/notifications',
       mapTelemetryEndpoint: '$base/map-telemetry',
       mapEventsEndpoint: '$base/map-events',
       vehicleDetailsByImei: (imei) =>
@@ -236,6 +248,56 @@ class LiveMapRoleConfig {
       telemetrySubscribeMode: LiveMapTelemetrySubscribeMode.imeis,
       visualSettingsStorageKey: StorageKeys.userMapVisualSettings,
       mapLayerStorageKey: StorageKeys.userMapLayerId,
+    );
+  }
+
+  /// Public, isolated, read-only demo map.
+  ///
+  /// REST data comes only from `/demo/*`, realtime data comes only from the
+  /// unauthenticated `/demo-telemetry` namespace, and all mutation attempts
+  /// are stopped by the central demo API policy before reaching the network.
+  factory LiveMapRoleConfig.demo() {
+    const base = '/demo';
+    return LiveMapRoleConfig(
+      role: LiveMapRole.user,
+      title: 'Live Map',
+      homeRoute: RoutePaths.userHome,
+      telemetryNamespace: '/demo-telemetry',
+      notificationNamespace: null,
+      socketAuthenticationRequired: false,
+      mapTelemetryEndpoint: '$base/map-telemetry',
+      mapEventsEndpoint: '$base/map-events',
+      vehicleDetailsByImei: (imei) =>
+          '$base/vehicles/by-imei/${_e(imei)}/details',
+      vehicleLogsByImei: (imei) => '$base/vehicles/by-imei/${_e(imei)}/logs',
+      vehicleEventsByImei: (imei) =>
+          '$base/vehicles/by-imei/${_e(imei)}/events',
+      vehicleHistoryByImei: (imei) =>
+          '$base/vehicles/by-imei/${_e(imei)}/history',
+      vehicleReplayByImei: (imei) =>
+          '$base/vehicles/by-imei/${_e(imei)}/replay',
+      vehicleSensorsByImei: (imei) =>
+          '$base/vehicles/by-imei/${_e(imei)}/sensors',
+      vehicleTrailByImei: (imei) => '$base/vehicles/by-imei/${_e(imei)}/trail',
+      geofencesEndpoint: '$base/geofences',
+      poisEndpoint: '$base/pois',
+      routesEndpoint: '$base/routes',
+      customCommandsEndpoint: '$base/customcommands',
+      systemVariablesEndpoint: '$base/systemvariables',
+      userSendCommandBulkEndpoint: '/user/commands/send-bulk',
+      commandStatusByCmdId: (cmdId) => '$base/commands/status/${_e(cmdId)}',
+      userCommandHistoryByVehicleId: (vehicleId) =>
+          '$base/vehicles/${_e(vehicleId)}/commands',
+      commandLogByCmdId: (cmdId) => '$base/commands/${_e(cmdId)}',
+      supportsGeofence: true,
+      supportsPoi: true,
+      supportsRoute: true,
+      supportsCommands: true,
+      commandSendMode: LiveMapCommandSendMode.bulkByVehicleId,
+      notificationSubscribeMode: LiveMapNotificationSubscribeMode.disabled,
+      telemetrySubscribeMode: LiveMapTelemetrySubscribeMode.demoScope,
+      visualSettingsStorageKey: StorageKeys.demoMapVisualSettings,
+      mapLayerStorageKey: StorageKeys.demoMapLayerId,
     );
   }
 

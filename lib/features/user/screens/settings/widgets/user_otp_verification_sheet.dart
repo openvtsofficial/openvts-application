@@ -93,9 +93,9 @@ class _UserOtpVerificationSheetState extends State<UserOtpVerificationSheet> {
     final insets = MediaQuery.viewInsetsOf(context).bottom;
 
     return DecoratedBox(
-      decoration: const BoxDecoration(
-        color: OpenVtsColors.surface,
-        borderRadius: BorderRadius.vertical(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainer,
+        borderRadius: const BorderRadius.vertical(
           top: Radius.circular(OpenVtsRadius.lg),
         ),
       ),
@@ -115,7 +115,7 @@ class _UserOtpVerificationSheetState extends State<UserOtpVerificationSheet> {
               Text(
                 widget.title,
                 style: OpenVtsTypography.label.copyWith(
-                  color: OpenVtsColors.textPrimary,
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -123,7 +123,7 @@ class _UserOtpVerificationSheetState extends State<UserOtpVerificationSheet> {
               Text(
                 widget.subtitle,
                 style: OpenVtsTypography.meta.copyWith(
-                  color: OpenVtsColors.textSecondary,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
               const SizedBox(height: OpenVtsSpacing.sm),

@@ -22,11 +22,14 @@ class OpenVtsEmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(title, style: OpenVtsTypography.titleSmall, textAlign: TextAlign.center),
+            Text(title,
+                style: OpenVtsTypography.titleSmall,
+                textAlign: TextAlign.center),
             const SizedBox(height: OpenVtsSpacing.xs),
             Text(
               message,
-              style: OpenVtsTypography.body.copyWith(color: OpenVtsColors.textSecondary),
+              style: OpenVtsTypography.body
+                  .copyWith(color: OpenVtsColors.textSecondary),
               textAlign: TextAlign.center,
             ),
           ],

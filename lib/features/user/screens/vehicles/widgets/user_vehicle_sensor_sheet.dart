@@ -286,7 +286,7 @@ class _SectionLabel extends StatelessWidget {
         Text(
           title,
           style: OpenVtsTypography.label.copyWith(
-            color: OpenVtsColors.textPrimary,
+            color: Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.w800,
           ),
         ),
@@ -294,7 +294,7 @@ class _SectionLabel extends StatelessWidget {
         Text(
           subtitle,
           style: OpenVtsTypography.meta.copyWith(
-            color: OpenVtsColors.textSecondary,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -313,9 +313,9 @@ class _RunResultCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(OpenVtsSpacing.sm),
       decoration: BoxDecoration(
-        color: OpenVtsColors.surface,
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-        border: Border.all(color: OpenVtsColors.border),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -323,7 +323,7 @@ class _RunResultCard extends StatelessWidget {
           Text(
             'Run Result',
             style: OpenVtsTypography.meta.copyWith(
-              color: OpenVtsColors.textSecondary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               fontWeight: FontWeight.w800,
             ),
           ),
@@ -363,7 +363,7 @@ class _ResultRow extends StatelessWidget {
             child: Text(
               label,
               style: OpenVtsTypography.meta.copyWith(
-                color: OpenVtsColors.textSecondary,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -372,8 +372,9 @@ class _ResultRow extends StatelessWidget {
             child: Text(
               value,
               style: OpenVtsTypography.meta.copyWith(
-                color:
-                    isError ? OpenVtsColors.error : OpenVtsColors.textPrimary,
+                color: isError
+                    ? OpenVtsColors.error
+                    : Theme.of(context).colorScheme.onSurface,
                 fontWeight: FontWeight.w800,
               ),
             ),

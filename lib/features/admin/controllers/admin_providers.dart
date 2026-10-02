@@ -16,7 +16,6 @@ import '../models/admin_plans_state.dart';
 import '../models/admin_settings_state.dart';
 import '../models/admin_support_state.dart';
 import '../models/admin_team_state.dart';
-import '../models/admin_transactions_state.dart';
 import '../models/admin_user_details_state.dart';
 import '../models/admin_users_state.dart';
 import '../models/admin_vehicle_state.dart';
@@ -31,7 +30,6 @@ import '../services/admin_plans_service.dart';
 import '../services/admin_settings_service.dart';
 import '../services/admin_support_service.dart';
 import '../services/admin_team_service.dart';
-import '../services/admin_transactions_service.dart';
 import '../services/admin_user_details_service.dart';
 import '../services/admin_users_service.dart';
 import '../services/admin_vehicle_service.dart';
@@ -45,7 +43,6 @@ import 'admin_plans_controller.dart';
 import 'admin_settings_controller.dart';
 import 'admin_support_controller.dart';
 import 'admin_team_controller.dart';
-import 'admin_transactions_controller.dart';
 import 'admin_user_details_controller.dart';
 import 'admin_users_controller.dart';
 import 'admin_vehicle_details_controller.dart';
@@ -99,11 +96,6 @@ final adminSupportServiceProvider = Provider<AdminSupportService>((ref) {
   return AdminSupportService(ref.watch(apiClientProvider));
 });
 
-final adminTransactionsServiceProvider =
-    Provider<AdminTransactionsService>((ref) {
-  return AdminTransactionsService(ref.watch(apiClientProvider));
-});
-
 final adminUserDetailsServiceProvider = Provider<AdminUserDetailsService>((
   ref,
 ) {
@@ -130,6 +122,12 @@ final adminVehiclesControllerProvider = StateNotifierProvider.autoDispose<
     AdminVehiclesController, AdminVehiclesState>((ref) {
   final controller = AdminVehiclesController(
     service: ref.watch(adminVehicleServiceProvider),
+    onDashboardRefresh: () {
+      try {
+        ref.read(adminDashboardControllerProvider.notifier).refresh();
+        // ignore: empty_catches
+      } catch (_) {}
+    },
   );
   controller.load();
   return controller;
@@ -142,6 +140,12 @@ final adminUsersControllerProvider =
   final controller = AdminUsersController(
     service: ref.watch(adminUsersServiceProvider),
     authController: ref.read(authControllerProvider.notifier),
+    onDashboardRefresh: () {
+      try {
+        ref.read(adminDashboardControllerProvider.notifier).refresh();
+        // ignore: empty_catches
+      } catch (_) {}
+    },
   );
   controller.load();
   return controller;
@@ -209,15 +213,6 @@ final adminSettingsControllerProvider = StateNotifierProvider.autoDispose<
 final adminSupportControllerProvider = StateNotifierProvider.autoDispose<
     AdminSupportController, AdminSupportState>((ref) {
   return AdminSupportController(ref.watch(adminSupportServiceProvider));
-});
-
-final adminTransactionsControllerProvider = StateNotifierProvider.autoDispose<
-    AdminTransactionsController, AdminTransactionsState>((ref) {
-  final controller = AdminTransactionsController(
-    service: ref.watch(adminTransactionsServiceProvider),
-  );
-  controller.load();
-  return controller;
 });
 
 final adminDriverDetailsControllerProvider = StateNotifierProvider.autoDispose

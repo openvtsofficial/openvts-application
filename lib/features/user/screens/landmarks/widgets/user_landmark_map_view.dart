@@ -155,17 +155,42 @@ class _UserLandmarkMapViewState extends State<UserLandmarkMapView> {
 
   void _fitToPoints(List<LatLng> points) {
     if (points.isEmpty) return;
-    if (points.length == 1) {
-      _controller.move(points.first, math.max(widget.initialZoom, 14));
+
+    // Sanitize and filter valid points.
+    final validPoints = <LatLng>[];
+    for (final p in points) {
+      if (_isValidLatLng(p)) {
+        validPoints.add(p);
+      }
+    }
+
+    if (validPoints.isEmpty) return;
+    if (validPoints.length == 1) {
+      _controller.move(validPoints.first, math.max(widget.initialZoom, 14));
       return;
     }
     _controller.fitCamera(
       CameraFit.bounds(
-        bounds: LatLngBounds.fromPoints(points),
+        bounds: LatLngBounds.fromPoints(validPoints),
         padding: const EdgeInsets.all(40),
         maxZoom: 17,
       ),
     );
+  }
+
+  bool _isValidLatLng(LatLng point) {
+    final lat = point.latitude;
+    final lon = point.longitude;
+
+    if (lat.isNaN || lat.isInfinite || lon.isNaN || lon.isInfinite) {
+      return false;
+    }
+
+    if (lat < -90 || lat > 90 || lon < -180 || lon > 180) {
+      return false;
+    }
+
+    return true;
   }
 
   @override
@@ -498,7 +523,7 @@ class UserLandmarkMapEdgeFade extends StatelessWidget {
   }
 }
 
-/// Small attribution badge satisfying tile provider requirements.
+/// Provider label; licensing and provider-specific attribution still require review.
 class UserLandmarkMapAttribution extends StatelessWidget {
   const UserLandmarkMapAttribution({super.key, this.text = '© Google'});
 

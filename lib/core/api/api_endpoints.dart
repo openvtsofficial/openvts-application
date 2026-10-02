@@ -12,6 +12,8 @@ class _AuthEndpoints {
   const _AuthEndpoints();
 
   String get login => '/auth/login';
+  String get verifyMfaLogin => '/auth/mfa/verify-login';
+  String get account => '/auth/account';
   String get refreshToken => '/auth/refresh-token';
   String get forgotPassword => '/auth/forgot-password';
   String get resetPassword => '/auth/reset-password';
@@ -58,7 +60,6 @@ class _SuperadminEndpoints {
   String activateAdmin(String id) => '/superadmin/activateadmin/$id';
   String deleteAdmin(String id) => '/superadmin/deleteadmin/$id';
   String adminLogin(String id) => '/superadmin/adminlogin/$id';
-  String get mapVehicles => '/superadmin/map/vehicles';
   String get mapEvents => '/superadmin/map-events';
   String get mapTelemetry => '/superadmin/map-telemetry';
   String get geofences => '/superadmin/geofences';
@@ -377,6 +378,10 @@ class _UserEndpoints {
       '/user/subusers/${Uri.encodeComponent(id)}/vehicles/unassign';
   String vehicleDetail(String id) => '/user/vehicles/$id';
   String get history => '/user/history';
+  String get reportOptions => '/user/reports/options';
+  String reportByKey(String reportKey) =>
+      '/user/reports/${Uri.encodeComponent(reportKey)}';
+  String get reportTimelineMap => '/user/reports/timeline/map';
   String get notificationPreferences => '/user/notifications/preferences';
   String get testFcmMe => '/user/notifications/test-fcm-me';
   String get notifications => '/user/notifications';

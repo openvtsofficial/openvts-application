@@ -46,6 +46,52 @@ class AdminTeamService {
     return fallback;
   }
 
+  Future<bool> updateTeamStatus(String teamId, bool isActive) async {
+    await _apiClient.patch<dynamic>(
+      '${ApiEndpoints.admin.teams}/$teamId',
+      data: {'isActive': isActive},
+      options: _mutationOptions,
+      parser: (json) => json,
+    );
+    return true;
+  }
+
+  Future<AdminTeamListItem> updateTeam(
+    String teamId,
+    AdminUpdateTeamRequest request,
+  ) async {
+    final response = await _apiClient.patch<dynamic>(
+      '${ApiEndpoints.admin.teams}/$teamId',
+      data: request.toJson(),
+      options: _mutationOptions,
+      parser: (json) => json,
+    );
+
+    final items = AdminTeamListItem.listFromJson(response.data);
+    if (items.isNotEmpty) {
+      return items.first;
+    }
+
+    return AdminTeamListItem.fromJson(<String, dynamic>{
+      ...request.toJson(),
+      ...(_asMap(response.data)),
+    });
+  }
+
+  Future<void> changeTeamMemberPassword(String teamId, String password) async {
+    final pass = password.trim();
+    if (pass.isEmpty) {
+      throw ArgumentError('password is required');
+    }
+
+    await _apiClient.patch<void>(
+      '${ApiEndpoints.admin.teams}/$teamId',
+      data: <String, dynamic>{'password': pass},
+      options: _mutationOptions,
+      parser: (_) {},
+    );
+  }
+
   Future<List<AdminTeamMobilePrefixOption>> getMobilePrefixes() async {
     final response = await _apiClient.get<dynamic>(
       ApiEndpoints.public.mobilePrefix,

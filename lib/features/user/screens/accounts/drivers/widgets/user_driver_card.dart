@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../../../core/router/route_paths.dart';
@@ -7,13 +8,12 @@ import '../../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../../core/utils/date_time_formatter.dart';
+import '../../../../../../shared/helpers/phone_helper.dart';
 import '../../../../../../shared/widgets/open_vts_card.dart';
 import '../../../../../../shared/widgets/open_vts_status_chip.dart';
 import '../../../../models/user_driver_model.dart';
 
-const DateTimeFormatter _dateFormatter = DateTimeFormatter();
-
-class UserDriverCard extends StatelessWidget {
+class UserDriverCard extends ConsumerWidget {
   const UserDriverCard({
     required this.driver,
     super.key,
@@ -22,7 +22,8 @@ class UserDriverCard extends StatelessWidget {
   final UserDriver driver;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final dateFormatter = ref.watch(appDateFormatterProvider);
     final hasDriverId = driver.id.trim().isNotEmpty;
 
     return OpenVtsCard(
@@ -45,14 +46,15 @@ class UserDriverCard extends StatelessWidget {
                 width: 34,
                 height: 34,
                 decoration: BoxDecoration(
-                  color: OpenVtsColors.surface,
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-                  border: Border.all(color: OpenVtsColors.border),
+                  border: Border.all(
+                      color: Theme.of(context).colorScheme.outlineVariant),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.badge_outlined,
                   size: 18,
-                  color: OpenVtsColors.textSecondary,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
               const SizedBox(width: OpenVtsSpacing.sm),
@@ -65,7 +67,9 @@ class UserDriverCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: OpenVtsTypography.label.copyWith(
-                        color: OpenVtsColors.textPrimary,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.white
+                            : Theme.of(context).colorScheme.onSurface,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
@@ -75,7 +79,7 @@ class UserDriverCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: OpenVtsTypography.meta.copyWith(
-                        color: OpenVtsColors.textSecondary,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -83,10 +87,10 @@ class UserDriverCard extends StatelessWidget {
                 ),
               ),
               if (hasDriverId)
-                const Icon(
+                Icon(
                   Icons.chevron_right_rounded,
                   size: 18,
-                  color: OpenVtsColors.textTertiary,
+                  color: Theme.of(context).colorScheme.outline,
                 ),
             ],
           ),
@@ -129,7 +133,7 @@ class UserDriverCard extends StatelessWidget {
               ),
               _MetaPill(
                 icon: Icons.calendar_today_outlined,
-                label: _createdLabel(driver),
+                label: _createdLabel(driver, dateFormatter),
               ),
             ],
           ),
@@ -150,20 +154,21 @@ class _MetaPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Container(
       constraints: const BoxConstraints(maxWidth: 280),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: OpenVtsColors.textSecondary.withValues(alpha: 0.04),
+        color: scheme.onSurfaceVariant.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
         border: Border.all(
-          color: OpenVtsColors.textSecondary.withValues(alpha: 0.14),
+          color: scheme.onSurfaceVariant.withValues(alpha: 0.2),
         ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12, color: OpenVtsColors.textSecondary),
+          Icon(icon, size: 12, color: scheme.onSurfaceVariant),
           const SizedBox(width: 4),
           Flexible(
             child: Text(
@@ -171,7 +176,7 @@ class _MetaPill extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: OpenVtsTypography.meta.copyWith(
-                color: OpenVtsColors.textSecondary,
+                color: scheme.onSurfaceVariant,
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
               ),
@@ -202,13 +207,11 @@ String _usernameLabel(UserDriver driver) {
 }
 
 String _phoneLabel(UserDriver driver) {
-  final prefix = driver.mobilePrefix.trim();
-  final mobile = driver.mobile.trim();
-  final value = [prefix, mobile]
-      .where((part) => part.isNotEmpty && part != '-')
-      .join(' ')
-      .trim();
-  return value.isEmpty ? '-' : value;
+  final normalized = normalizePhoneParts(
+    dialCode: driver.mobilePrefix,
+    mobile: driver.mobile,
+  );
+  return normalized.displayNumber;
 }
 
 String _assignmentLabel(UserDriver driver) {
@@ -226,10 +229,10 @@ String _assignmentLabel(UserDriver driver) {
   return combined.isEmpty ? 'Assigned' : combined;
 }
 
-String _createdLabel(UserDriver driver) {
+String _createdLabel(UserDriver driver, dynamic formatter) {
   final createdAt = driver.createdAt;
   if (createdAt == null) {
     return 'Created date unavailable';
   }
-  return _dateFormatter.formatDate(createdAt.toLocal());
+  return formatter.formatDate(createdAt.toLocal());
 }

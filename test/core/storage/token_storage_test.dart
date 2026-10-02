@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -30,7 +31,7 @@ void main() {
     );
   }
 
-  test('resolves active role by priority user > admin > superadmin', () async {
+  test('activates the most recently authenticated role', () async {
     await saveSession(UserRole.superadmin);
     await saveSession(UserRole.admin);
 
@@ -44,6 +45,24 @@ void main() {
     expect(activeSession, isNotNull);
     expect(activeSession?.role, UserRole.user);
     expect(activeSession?.accessToken, 'access-user');
+  });
+
+  test('a newly authenticated role remains active when older roles exist',
+      () async {
+    await saveSession(UserRole.user);
+    await saveSession(UserRole.superadmin);
+
+    expect(await tokenStorage.getActiveRoleByPriority(), UserRole.superadmin);
+    expect(
+      await secureStorage.read(key: StorageKeys.activeRole),
+      UserRole.superadmin.apiValue,
+    );
+
+    final restoredStorage = TokenStorage(secureStorage);
+    expect(
+      (await restoredStorage.getActiveSession())?.role,
+      UserRole.superadmin,
+    );
   });
 
   test('clears only the selected role session and falls back by priority',
@@ -173,6 +192,159 @@ void main() {
     expect(await secureStorage.read(key: StorageKeys.userRole), isNull);
     expect(await secureStorage.read(key: StorageKeys.currentUser), isNull);
   });
+
+  test('logout during a pending refresh write wins in cache and durable storage',
+      () async {
+    final delayedStorage = _DelayedSecureStorage();
+    tokenStorage = TokenStorage(delayedStorage);
+    await saveSession(UserRole.user);
+    final original = (await tokenStorage.getActiveSession())!;
+    final generation = tokenStorage.sessionRevision;
+    delayedStorage.pauseNextWrite = true;
+
+    final refreshed = tokenStorage.saveRefreshedSession(
+      expectedSession: original,
+      accessToken: 'rotated-access',
+      refreshToken: 'rotated-refresh',
+      currentUserJson: jsonEncode(original.user.toJson()),
+    );
+    await delayedStorage.writeStarted.future.timeout(const Duration(seconds: 2));
+    final logout = tokenStorage.clearAllSessions();
+    expect(tokenStorage.sessionRevision, greaterThan(generation));
+    delayedStorage.resumeWrite.complete();
+
+    expect(await refreshed.timeout(const Duration(seconds: 2)), isFalse);
+    await logout.timeout(const Duration(seconds: 2));
+    expect(await tokenStorage.getActiveSession(), isNull);
+    expect(await TokenStorage(delayedStorage).getActiveSession(), isNull);
+  });
+
+  test('normal token rotation persists without changing the account revision',
+      () async {
+    await saveSession(UserRole.user);
+    final original = (await tokenStorage.getActiveSession())!;
+    final revision = tokenStorage.sessionRevision;
+    expect(await tokenStorage.saveRefreshedSession(
+      expectedSession: original,
+      accessToken: 'rotated-access',
+      refreshToken: 'rotated-refresh',
+      currentUserJson: jsonEncode(original.user.toJson()),
+    ), isTrue);
+    expect(tokenStorage.sessionRevision, revision);
+    final restored = await TokenStorage(secureStorage).getActiveSession();
+    expect(restored?.accessToken, 'rotated-access');
+    expect(restored?.refreshToken, 'rotated-refresh');
+  });
+
+  test('new login during a pending refresh write remains the durable session',
+      () async {
+    final delayedStorage = _DelayedSecureStorage();
+    tokenStorage = TokenStorage(delayedStorage);
+    await saveSession(UserRole.user);
+    final original = (await tokenStorage.getActiveSession())!;
+    delayedStorage.pauseNextWrite = true;
+    final refreshed = tokenStorage.saveRefreshedSession(
+      expectedSession: original,
+      accessToken: 'rotated-access',
+      refreshToken: 'rotated-refresh',
+      currentUserJson: jsonEncode(original.user.toJson()),
+    );
+    await delayedStorage.writeStarted.future.timeout(const Duration(seconds: 2));
+    final login = tokenStorage.saveSessionForRole(
+      role: UserRole.user,
+      accessToken: 'new-account-access',
+      refreshToken: 'new-account-refresh',
+      currentUserJson: jsonEncode(original.user.copyWith(id: 'new-account').toJson()),
+    );
+    delayedStorage.resumeWrite.complete();
+
+    expect(await refreshed.timeout(const Duration(seconds: 2)), isFalse);
+    await login.timeout(const Duration(seconds: 2));
+    expect((await tokenStorage.getActiveSession())?.user.id, 'new-account');
+    final restored = await TokenStorage(delayedStorage).getActiveSession();
+    expect(restored?.user.id, 'new-account');
+    expect(restored?.accessToken, 'new-account-access');
+    expect(restored?.refreshToken, 'new-account-refresh');
+  });
+
+  test('a stale refresh cannot overwrite an already completed login', () async {
+    await saveSession(UserRole.user);
+    final original = (await tokenStorage.getActiveSession())!;
+    await tokenStorage.saveSessionForRole(
+      role: UserRole.user,
+      accessToken: 'new-login-access',
+      refreshToken: 'new-login-refresh',
+      currentUserJson: jsonEncode(original.user.toJson()),
+    );
+    final saved = await tokenStorage.saveRefreshedSession(
+      expectedSession: original,
+      accessToken: 'stale-refresh-access',
+      refreshToken: 'stale-refresh-token',
+      currentUserJson: jsonEncode(original.user.toJson()),
+    );
+    expect(saved, isFalse);
+    expect((await tokenStorage.getActiveSession())?.accessToken, 'new-login-access');
+  });
+
+  test('an invalid-refresh clear cannot delete a queued newer login', () async {
+    await saveSession(UserRole.user);
+    final original = (await tokenStorage.getActiveSession())!;
+    final revision = tokenStorage.sessionRevision;
+    final invalidRefreshClear = tokenStorage.clearSessionIfCurrent(
+      expectedSession: original,
+      expectedRevision: revision,
+    );
+    // Both actions are enqueued in the same event turn. The explicit login
+    // invalidates the old response immediately, before storage processing.
+    final login = tokenStorage.saveSessionForRole(
+      role: UserRole.user,
+      accessToken: 'new-login-access',
+      refreshToken: 'new-login-refresh',
+      currentUserJson: jsonEncode(original.user.toJson()),
+    );
+    expect(await invalidRefreshClear, isFalse);
+    await login;
+    expect((await TokenStorage(secureStorage).getActiveSession())?.accessToken,
+        'new-login-access');
+  });
+}
+
+/// Implements only the storage operations TokenStorage uses. The test holds a
+/// real async write boundary instead of depending on timers to cause a race.
+class _DelayedSecureStorage implements FlutterSecureStorage {
+  final Map<String, String> _values = {};
+  bool pauseNextWrite = false;
+  final writeStarted = Completer<void>();
+  final resumeWrite = Completer<void>();
+
+  Future<void> _write(String key, String? value) async {
+    if (pauseNextWrite) {
+      pauseNextWrite = false;
+      writeStarted.complete();
+      await resumeWrite.future;
+    }
+    if (value == null) {
+      _values.remove(key);
+    } else {
+      _values[key] = value;
+    }
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) {
+    final key = invocation.namedArguments[#key] as String?;
+    if (invocation.memberName == #read && key != null) {
+      return Future<String?>.value(_values[key]);
+    }
+    if (invocation.memberName == #write && key != null) {
+      return _write(key, invocation.namedArguments[#value] as String?);
+    }
+    if (invocation.memberName == #delete && key != null) {
+      _values.remove(key);
+      return Future<void>.value();
+    }
+    return super.noSuchMethod(invocation);
+  }
 }
 
 CurrentUser _userForRole(UserRole role) {

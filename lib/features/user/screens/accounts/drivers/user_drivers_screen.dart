@@ -157,7 +157,7 @@ class _DriversHeaderCard extends StatelessWidget {
               Text(
                 'Drivers',
                 style: OpenVtsTypography.label.copyWith(
-                  color: OpenVtsColors.textPrimary,
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontWeight: FontWeight.w800,
                 ),
               ),
@@ -165,7 +165,7 @@ class _DriversHeaderCard extends StatelessWidget {
               Text(
                 'Manage drivers, assignments, documents, and activity.',
                 style: OpenVtsTypography.meta.copyWith(
-                  color: OpenVtsColors.textSecondary,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
             ],

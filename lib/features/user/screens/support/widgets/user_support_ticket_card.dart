@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:open_vts/core/theme/open_vts_colors.dart';
 import 'package:open_vts/core/theme/open_vts_radius.dart';
 import 'package:open_vts/core/theme/open_vts_spacing.dart';
@@ -7,9 +8,7 @@ import 'package:open_vts/core/utils/date_time_formatter.dart';
 import 'package:open_vts/features/user/models/user_support_model.dart';
 import 'package:open_vts/shared/widgets/open_vts_card.dart';
 
-const DateTimeFormatter _dateFormatter = DateTimeFormatter();
-
-class UserSupportTicketCard extends StatelessWidget {
+class UserSupportTicketCard extends ConsumerWidget {
   const UserSupportTicketCard({
     required this.ticket,
     this.onTap,
@@ -26,7 +25,8 @@ class UserSupportTicketCard extends StatelessWidget {
   final bool showUnreadIndicator;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final dateFormatter = ref.watch(appDateFormatterProvider);
     final activityDate =
         ticket.lastMessageAt ?? ticket.updatedAt ?? ticket.createdAt;
     final preview = lastMessagePreview?.trim();
@@ -60,7 +60,7 @@ class UserSupportTicketCard extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: OpenVtsTypography.body.copyWith(
-                        color: OpenVtsColors.textPrimary,
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontWeight: FontWeight.w800,
                         height: 1.25,
                       ),
@@ -91,7 +91,7 @@ class UserSupportTicketCard extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: OpenVtsTypography.meta.copyWith(
-                    color: OpenVtsColors.textSecondary,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     height: 1.35,
                   ),
                 ),
@@ -103,11 +103,11 @@ class UserSupportTicketCard extends StatelessWidget {
                     child: Text(
                       activityDate == null
                           ? 'No activity yet'
-                          : _dateFormatter.formatDateTime(activityDate),
+                          : dateFormatter.formatDateTime(activityDate),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: OpenVtsTypography.meta.copyWith(
-                        color: OpenVtsColors.textTertiary,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ),
@@ -115,7 +115,7 @@ class UserSupportTicketCard extends StatelessWidget {
                   Text(
                     '${ticket.messageCount} ${ticket.messageCount == 1 ? 'msg' : 'msgs'}',
                     style: OpenVtsTypography.meta.copyWith(
-                      color: OpenVtsColors.textTertiary,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -199,13 +199,14 @@ class _PlainMeta extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: OpenVtsSpacing.xs,
         vertical: OpenVtsSpacing.xxs,
       ),
       decoration: BoxDecoration(
-        border: Border.all(color: OpenVtsColors.border),
+        border: Border.all(color: colorScheme.outline),
         borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
       ),
       child: Text(
@@ -213,7 +214,7 @@ class _PlainMeta extends StatelessWidget {
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: OpenVtsTypography.meta.copyWith(
-          color: OpenVtsColors.textSecondary,
+          color: colorScheme.onSurfaceVariant,
           fontWeight: FontWeight.w600,
         ),
       ),

@@ -9,6 +9,9 @@ import '../api/interceptors/error_interceptor.dart';
 import '../api/interceptors/logging_interceptor.dart';
 import '../api/interceptors/refresh_token_interceptor.dart';
 import '../config/app_config.dart';
+import '../demo/demo_api_policy.dart';
+import '../demo/demo_mode_store.dart';
+import '../demo/demo_session_service.dart';
 import '../notifications/mobile_push_controller.dart';
 import '../notifications/mobile_push_service.dart';
 import '../notifications/mobile_push_state.dart';
@@ -35,6 +38,10 @@ final localCacheProvider = Provider<LocalCache>((ref) {
   return LocalCache(prefs);
 });
 
+final demoModeStoreProvider = Provider<DemoModeStore>((ref) {
+  return DemoModeStore(ref.watch(localCacheProvider));
+});
+
 final themeModeProvider =
     StateNotifierProvider<ThemeModeController, ThemeMode>((ref) {
   return ThemeModeController(ref.watch(localCacheProvider));
@@ -58,7 +65,11 @@ final dioProvider = Provider<Dio>((ref) {
       },
     ),
   );
+  // Cancel the old server's in-flight requests before a new server can use
+  // this account store. An old 401 must never retry with new credentials.
+  ref.onDispose(() => dio.close(force: true));
 
+  dio.interceptors.add(_ServerUrlPolicyInterceptor());
   dio.interceptors.add(_BodylessDeleteContentTypeInterceptor());
 
   final tokenStorage = ref.watch(tokenStorageProvider);
@@ -75,6 +86,28 @@ final dioProvider = Provider<Dio>((ref) {
   return dio;
 });
 
+class _ServerUrlPolicyInterceptor extends Interceptor {
+  @override
+  void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
+    final error = AppConfig.validateApiBaseUrl(options.baseUrl);
+    // Validate the origin of absolute endpoints too, before attaching tokens.
+    final target = options.uri;
+    final targetError = AppConfig.validateApiBaseUrl(
+      target.replace(query: null, fragment: null).toString().split('?').first.split('#').first,
+    );
+    if (error != null || targetError != null) {
+      handler.reject(DioException(
+        requestOptions: options,
+        type: DioExceptionType.unknown,
+        message: error ?? targetError,
+        error: FormatException(error ?? targetError!),
+      ));
+      return;
+    }
+    handler.next(options);
+  }
+}
+
 class _BodylessDeleteContentTypeInterceptor extends Interceptor {
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
@@ -89,7 +122,15 @@ class _BodylessDeleteContentTypeInterceptor extends Interceptor {
 }
 
 final apiClientProvider = Provider<ApiClient>((ref) {
-  return ApiClient(ref.watch(dioProvider));
+  final demoModeStore = ref.watch(demoModeStoreProvider);
+  return ApiClient(
+    ref.watch(dioProvider),
+    demoPolicy: DemoApiPolicy(isDemoMode: () => demoModeStore.isEnabled),
+  );
+});
+
+final demoSessionServiceProvider = Provider<DemoSessionService>((ref) {
+  return DemoSessionService(ref.watch(apiClientProvider));
 });
 
 final mobilePushServiceProvider = Provider<MobilePushService>((ref) {
@@ -113,10 +154,12 @@ final mobilePushControllerProvider =
 });
 
 final socketServiceProvider = Provider<SocketService>((ref) {
-  return SocketService(
+  final service = SocketService(
     ref.watch(tokenStorageProvider),
     apiBaseUrl: ref.watch(apiBaseUrlProvider),
   );
+  ref.onDispose(service.dispose);
+  return service;
 });
 
 class ThemeModeController extends StateNotifier<ThemeMode> {
@@ -128,6 +171,8 @@ class ThemeModeController extends StateNotifier<ThemeMode> {
     switch (localCache.getString(StorageKeys.themeMode)) {
       case 'dark':
         return ThemeMode.dark;
+      case 'system':
+        return ThemeMode.system;
       case 'light':
       default:
         return ThemeMode.light;
@@ -135,13 +180,17 @@ class ThemeModeController extends StateNotifier<ThemeMode> {
   }
 
   Future<void> setThemeMode(ThemeMode mode) async {
-    final normalizedMode =
-        mode == ThemeMode.dark ? ThemeMode.dark : ThemeMode.light;
-    await _localCache.setString(
-      StorageKeys.themeMode,
-      normalizedMode == ThemeMode.dark ? 'dark' : 'light',
-    );
-    state = normalizedMode;
+    final String stored;
+    switch (mode) {
+      case ThemeMode.dark:
+        stored = 'dark';
+      case ThemeMode.system:
+        stored = 'system';
+      case ThemeMode.light:
+        stored = 'light';
+    }
+    await _localCache.setString(StorageKeys.themeMode, stored);
+    state = mode;
   }
 
   Future<void> toggle() {
@@ -170,6 +219,8 @@ class ApiBaseUrlController extends StateNotifier<String> {
   bool get isUsingDefault => state == defaultUrl;
 
   Future<void> saveCustomUrl(String value) async {
+    final error = AppConfig.validateApiBaseUrl(value);
+    if (error != null) throw FormatException(error);
     final normalizedValue = _normalizeUrl(value);
     await _localCache.setString(
         StorageKeys.apiBaseUrlOverride, normalizedValue);

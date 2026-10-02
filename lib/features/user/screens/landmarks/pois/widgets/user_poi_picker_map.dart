@@ -1,21 +1,21 @@
 import 'dart:math' as math;
 
+import 'package:dio/dio.dart' show Dio, BaseOptions;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../../../../core/theme/open_vts_colors.dart';
+import '../../../../../../core/widgets/map_attribution.dart';
 import '../../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../../shared/widgets/open_vts_button.dart';
+import '../../../../../../shared/widgets/open_vts_map_layer_selector.dart';
 import '../../../../models/user_landmark_model.dart';
 
-const String _kPoiTileUrl =
-    'https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}';
-const List<String> _kPoiTileSubdomains = <String>['mt0', 'mt1', 'mt2', 'mt3'];
 const LatLng _kPoiFallbackCenter = LatLng(20.5937, 78.9629);
 
 /// Result returned from [UserPoiPickerMap].
@@ -36,11 +36,13 @@ class UserPoiPickerMap extends StatefulWidget {
     this.initialPoint,
     this.initialToleranceM,
     this.title = 'Pick location',
+    this.searchClient,
   });
 
   final LatLng? initialPoint;
   final double? initialToleranceM;
   final String title;
+  final Dio? searchClient;
 
   @override
   State<UserPoiPickerMap> createState() => _UserPoiPickerMapState();
@@ -53,8 +55,14 @@ class _UserPoiPickerMapState extends State<UserPoiPickerMap> {
   late final TextEditingController _latCtrl;
   late final TextEditingController _lonCtrl;
   late final TextEditingController _tolCtrl;
+  late final TextEditingController _searchCtrl;
 
   static const double _nudgeMeters = 10;
+  String _selectedLayerId = 'google-road';
+  List<_NominatimResult> _searchResults = [];
+  bool _searchLoading = false;
+  late final Dio _nominatimDio;
+  late final bool _ownsNominatimDio;
 
   @override
   void initState() {
@@ -71,6 +79,18 @@ class _UserPoiPickerMapState extends State<UserPoiPickerMap> {
     _tolCtrl = TextEditingController(
       text: _tolerance > 0 ? _tolerance.toStringAsFixed(0) : '',
     );
+    _searchCtrl = TextEditingController();
+    _ownsNominatimDio = widget.searchClient == null;
+    _nominatimDio = widget.searchClient ??
+        Dio(
+          BaseOptions(
+            connectTimeout: const Duration(seconds: 6),
+            receiveTimeout: const Duration(seconds: 8),
+            headers: {
+              'User-Agent': 'OpenVTS-Mobile/1.0 (poi-search)',
+            },
+          ),
+        );
   }
 
   @override
@@ -78,6 +98,10 @@ class _UserPoiPickerMapState extends State<UserPoiPickerMap> {
     _latCtrl.dispose();
     _lonCtrl.dispose();
     _tolCtrl.dispose();
+    _searchCtrl.dispose();
+    if (_ownsNominatimDio) {
+      _nominatimDio.close(force: true);
+    }
     super.dispose();
   }
 
@@ -142,35 +166,98 @@ class _UserPoiPickerMapState extends State<UserPoiPickerMap> {
     );
   }
 
+  Future<void> _searchPlace() async {
+    final query = _searchCtrl.text.trim();
+    if (query.length < 3) {
+      setState(() => _searchResults = []);
+      return;
+    }
+
+    setState(() => _searchLoading = true);
+    try {
+      final response = await _nominatimDio.get<List<dynamic>>(
+        'https://nominatim.openstreetmap.org/search',
+        queryParameters: {
+          'q': query,
+          'format': 'json',
+          'limit': 5,
+          'addressdetails': 0,
+        },
+      );
+
+      if (!mounted) return;
+
+      final results = <_NominatimResult>[];
+      if (response.data is List) {
+        for (final item in response.data!) {
+          if (item is Map<String, dynamic>) {
+            final lat = double.tryParse(item['lat'].toString());
+            final lon = double.tryParse(item['lon'].toString());
+            if (lat != null && lon != null) {
+              results.add(_NominatimResult(
+                label: item['display_name'] ?? '',
+                lat: lat,
+                lon: lon,
+              ));
+            }
+          }
+        }
+      }
+
+      setState(() {
+        _searchResults = results;
+        _searchLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _searchResults = [];
+        _searchLoading = false;
+      });
+    }
+  }
+
+  void _selectSearchResult(_NominatimResult result) {
+    final point = LatLng(result.lat, result.lon);
+    _setPoint(point, recenter: true);
+    _searchCtrl.clear();
+    setState(() => _searchResults = []);
+  }
+
+  MapLayerOption _getSelectedLayer() {
+    final layer = mapLayerOptionById(_selectedLayerId);
+    return layer ?? primaryMapLayerOptions.first;
+  }
+
   @override
   Widget build(BuildContext context) {
     final center = _point ?? widget.initialPoint ?? _kPoiFallbackCenter;
     return Scaffold(
-      backgroundColor: OpenVtsColors.surface,
+      backgroundColor: OpenVtsColors.brandInk,
       appBar: AppBar(
-        backgroundColor: OpenVtsColors.surfaceElevated,
+        backgroundColor: OpenVtsColors.brandInk,
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.close, color: OpenVtsColors.textPrimary),
+          icon: Icon(Icons.close, color: OpenVtsColors.white),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
           widget.title,
           style: OpenVtsTypography.titleSmall.copyWith(
-            color: OpenVtsColors.textPrimary,
+            color: OpenVtsColors.white,
           ),
         ),
         actions: [
           TextButton(
             onPressed: _save,
             style: TextButton.styleFrom(
-              foregroundColor: OpenVtsColors.brandInk,
+              foregroundColor: OpenVtsColors.white,
             ),
             child: Text(
               'Save',
               style: OpenVtsTypography.label.copyWith(
-                color: OpenVtsColors.brandInk,
+                color: OpenVtsColors.white,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -179,7 +266,7 @@ class _UserPoiPickerMapState extends State<UserPoiPickerMap> {
         ],
         bottom: const PreferredSize(
           preferredSize: Size.fromHeight(1),
-          child: Divider(height: 1, color: OpenVtsColors.divider),
+          child: Divider(height: 1, color: OpenVtsColors.white),
         ),
       ),
       body: Column(
@@ -187,51 +274,82 @@ class _UserPoiPickerMapState extends State<UserPoiPickerMap> {
           Expanded(
             child: ColoredBox(
               color: const Color(0xFFE8EEF5),
-              child: FlutterMap(
-                mapController: _map,
-                options: MapOptions(
-                  initialCenter: center,
-                  initialZoom: widget.initialPoint == null ? 4.5 : 15,
-                  minZoom: 2,
-                  maxZoom: 19,
-                  interactionOptions: const InteractionOptions(
-                    flags: InteractiveFlag.all,
-                  ),
-                  onTap: (_, latlng) => _setPoint(latlng),
-                ),
+              child: Stack(
                 children: [
-                  TileLayer(
-                    urlTemplate: _kPoiTileUrl,
-                    subdomains: _kPoiTileSubdomains,
-                    userAgentPackageName: 'com.openvts.mobile',
+                  FlutterMap(
+                    mapController: _map,
+                    options: MapOptions(
+                      initialCenter: center,
+                      initialZoom: widget.initialPoint == null ? 4.5 : 15,
+                      minZoom: 2,
+                      maxZoom: 19,
+                      interactionOptions: const InteractionOptions(
+                        flags: InteractiveFlag.all,
+                      ),
+                      onTap: (_, latlng) => _setPoint(latlng),
+                    ),
+                    children: [
+                      TileLayer(
+                        key: ValueKey<String>(_selectedLayerId),
+                        urlTemplate: _getSelectedLayer().url,
+                        subdomains: _getSelectedLayer().subdomains,
+                        userAgentPackageName: 'com.openvts.mobile',
+                      ),
+                      if (_point != null && _tolerance > 0)
+                        CircleLayer(
+                          circles: [
+                            CircleMarker(
+                              point: _point!,
+                              useRadiusInMeter: true,
+                              radius: _tolerance,
+                              color: OpenVtsColors.brandInk
+                                  .withValues(alpha: 0.10),
+                              borderStrokeWidth: 1.2,
+                              borderColor: OpenVtsColors.brandInk.withValues(
+                                alpha: 0.6,
+                              ),
+                            ),
+                          ],
+                        ),
+                      if (_point != null)
+                        MarkerLayer(
+                          markers: [
+                            Marker(
+                              point: _point!,
+                              width: 22,
+                              height: 22,
+                              alignment: Alignment.center,
+                              child: const _PickerPin(),
+                            ),
+                          ],
+                        ),
+                      OpenVtsMapAttribution(layerId: _selectedLayerId),
+                    ],
                   ),
-                  if (_point != null && _tolerance > 0)
-                    CircleLayer(
-                      circles: [
-                        CircleMarker(
-                          point: _point!,
-                          useRadiusInMeter: true,
-                          radius: _tolerance,
-                          color: OpenVtsColors.brandInk.withValues(alpha: 0.10),
-                          borderStrokeWidth: 1.2,
-                          borderColor: OpenVtsColors.brandInk.withValues(
-                            alpha: 0.6,
-                          ),
-                        ),
-                      ],
+                  // Layer button at top-right
+                  Positioned(
+                    top: OpenVtsSpacing.sm,
+                    right: OpenVtsSpacing.sm,
+                    child: OpenVtsMapLayerSelectorButton(
+                      selectedLayerId: _selectedLayerId,
+                      onLayerSelected: (layer) {
+                        setState(() => _selectedLayerId = layer.id);
+                      },
                     ),
-                  if (_point != null)
-                    MarkerLayer(
-                      markers: [
-                        Marker(
-                          point: _point!,
-                          width: 22,
-                          height: 22,
-                          alignment: Alignment.center,
-                          child: const _PickerPin(),
-                        ),
-                      ],
+                  ),
+                  // Search bar below layer button area
+                  Positioned(
+                    top: OpenVtsSpacing.sm + 56,
+                    left: OpenVtsSpacing.sm,
+                    right: OpenVtsSpacing.sm,
+                    child: _SearchBar(
+                      controller: _searchCtrl,
+                      isLoading: _searchLoading,
+                      results: _searchResults,
+                      onSearch: _searchPlace,
+                      onSelectResult: _selectSearchResult,
                     ),
+                  ),
                 ],
               ),
             ),
@@ -331,9 +449,9 @@ class _Panel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(
-        color: OpenVtsColors.surfaceElevated,
+        color: OpenVtsColors.brandInk,
         border: Border(
-          top: BorderSide(color: OpenVtsColors.divider),
+          top: BorderSide(color: OpenVtsColors.white),
         ),
       ),
       padding: const EdgeInsets.fromLTRB(
@@ -379,7 +497,7 @@ class _Panel extends StatelessWidget {
                 Text(
                   'Nudge 10 m',
                   style: OpenVtsTypography.meta.copyWith(
-                    color: OpenVtsColors.textSecondary,
+                    color: OpenVtsColors.white,
                   ),
                 ),
                 const Spacer(),
@@ -406,53 +524,89 @@ class _Panel extends StatelessWidget {
               ],
             ),
             const SizedBox(height: OpenVtsSpacing.xs),
-            Row(
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'Tolerance',
                   style: OpenVtsTypography.label.copyWith(
-                    color: OpenVtsColors.textPrimary,
+                    color: OpenVtsColors.white,
                   ),
                 ),
-                const SizedBox(width: OpenVtsSpacing.xs),
-                Expanded(
-                  child: Slider(
-                    value: tolerance.clamp(0, 1000).toDouble(),
-                    min: 0,
-                    max: 1000,
-                    divisions: 100,
-                    activeColor: OpenVtsColors.brandInk,
-                    inactiveColor: OpenVtsColors.border,
-                    label: tolerance > 0
-                        ? '${tolerance.toStringAsFixed(0)} m'
-                        : 'off',
-                    onChanged: onToleranceChanged,
-                  ),
-                ),
-                SizedBox(
-                  width: 70,
-                  child: TextField(
-                    controller: tolCtrl,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
+                const SizedBox(height: OpenVtsSpacing.xs),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Slider(
+                        value: tolerance.clamp(0, 1000).toDouble(),
+                        min: 0,
+                        max: 1000,
+                        divisions: 100,
+                        activeColor: OpenVtsColors.white,
+                        inactiveColor: const Color(0xFF666666),
+                        label: tolerance > 0
+                            ? '${tolerance.toStringAsFixed(0)} m'
+                            : 'off',
+                        onChanged: onToleranceChanged,
+                      ),
                     ),
-                    inputFormatters: <TextInputFormatter>[
-                      FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
-                    ],
-                    style: OpenVtsTypography.numeric,
-                    textAlign: TextAlign.center,
-                    decoration: const InputDecoration(
-                      isDense: true,
-                      hintText: '0',
-                      suffixText: 'm',
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: 8,
+                    const SizedBox(width: OpenVtsSpacing.sm),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
                         vertical: 8,
                       ),
-                      border: OutlineInputBorder(),
+                      decoration: BoxDecoration(
+                        color: OpenVtsColors.brandInk,
+                        borderRadius: BorderRadius.circular(4),
+                        border:
+                            Border.all(color: OpenVtsColors.white, width: 1),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          SizedBox(
+                            width: 40,
+                            child: TextField(
+                              controller: tolCtrl,
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                decimal: true,
+                              ),
+                              inputFormatters: <TextInputFormatter>[
+                                FilteringTextInputFormatter.allow(
+                                    RegExp(r'[0-9.]')),
+                              ],
+                              cursorColor: OpenVtsColors.white,
+                              style: OpenVtsTypography.numeric.copyWith(
+                                color: OpenVtsColors.white,
+                                fontWeight: FontWeight.w700,
+                              ),
+                              textAlign: TextAlign.center,
+                              decoration: const InputDecoration(
+                                isDense: true,
+                                filled: false,
+                                hintText: '0',
+                                hintStyle:
+                                    TextStyle(color: OpenVtsColors.white),
+                                contentPadding: EdgeInsets.zero,
+                                border: InputBorder.none,
+                              ),
+                              onChanged: (_) => onApplyTolerance(),
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            'm',
+                            style: OpenVtsTypography.label.copyWith(
+                              color: OpenVtsColors.white,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    onChanged: (_) => onApplyTolerance(),
-                  ),
+                  ],
                 ),
               ],
             ),
@@ -490,14 +644,18 @@ class _CoordField extends StatelessWidget {
       inputFormatters: <TextInputFormatter>[
         FilteringTextInputFormatter.allow(RegExp(r'[0-9.\-]')),
       ],
-      style: OpenVtsTypography.numeric,
+      cursorColor: OpenVtsColors.white,
+      style: OpenVtsTypography.numeric.copyWith(
+        color: OpenVtsColors.white,
+      ),
       onSubmitted: (_) => onSubmitted(),
       onEditingComplete: onSubmitted,
       decoration: InputDecoration(
         isDense: true,
+        filled: false,
         labelText: label,
         labelStyle: OpenVtsTypography.meta.copyWith(
-          color: OpenVtsColors.textSecondary,
+          color: OpenVtsColors.white,
         ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: OpenVtsSpacing.sm,
@@ -505,16 +663,16 @@ class _CoordField extends StatelessWidget {
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(OpenVtsRadius.button),
-          borderSide: const BorderSide(color: OpenVtsColors.border),
+          borderSide: const BorderSide(color: OpenVtsColors.white),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(OpenVtsRadius.button),
-          borderSide: const BorderSide(color: OpenVtsColors.border),
+          borderSide: const BorderSide(color: OpenVtsColors.white),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(OpenVtsRadius.button),
           borderSide: const BorderSide(
-            color: OpenVtsColors.brandInk,
+            color: OpenVtsColors.white,
             width: 1.4,
           ),
         ),
@@ -548,10 +706,146 @@ class _IconBtn extends StatelessWidget {
             icon,
             size: 18,
             color: disabled
-                ? OpenVtsColors.textTertiary
-                : OpenVtsColors.textPrimary,
+                ? OpenVtsColors.white.withValues(alpha: 0.4)
+                : OpenVtsColors.white,
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _NominatimResult {
+  const _NominatimResult({
+    required this.label,
+    required this.lat,
+    required this.lon,
+  });
+
+  final String label;
+  final double lat;
+  final double lon;
+}
+
+class _SearchBar extends StatelessWidget {
+  const _SearchBar({
+    required this.controller,
+    required this.isLoading,
+    required this.results,
+    required this.onSearch,
+    required this.onSelectResult,
+  });
+
+  final TextEditingController controller;
+  final bool isLoading;
+  final List<_NominatimResult> results;
+  final VoidCallback onSearch;
+  final Function(_NominatimResult) onSelectResult;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: OpenVtsColors.brandInk,
+        borderRadius: BorderRadius.circular(OpenVtsRadius.md),
+        border: Border.all(color: OpenVtsColors.white),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x14000000),
+            blurRadius: 6,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: TextField(
+              controller: controller,
+              onChanged: (_) => onSearch(),
+              cursorColor: OpenVtsColors.white,
+              style: OpenVtsTypography.body.copyWith(
+                color: OpenVtsColors.white,
+              ),
+              decoration: InputDecoration(
+                isDense: true,
+                filled: false,
+                hintText: 'Search place...',
+                hintStyle: OpenVtsTypography.body.copyWith(
+                  color: OpenVtsColors.white.withValues(alpha: 0.6),
+                ),
+                prefixIcon: Icon(
+                  Icons.search,
+                  size: 18,
+                  color: OpenVtsColors.white,
+                ),
+                suffixIcon: isLoading
+                    ? Padding(
+                        padding: const EdgeInsets.all(8),
+                        child: SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              OpenVtsColors.white.withValues(alpha: 0.85),
+                            ),
+                          ),
+                        ),
+                      )
+                    : controller.text.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.close,
+                                size: 18, color: OpenVtsColors.white),
+                            onPressed: () {
+                              controller.clear();
+                              onSearch();
+                            },
+                          )
+                        : null,
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                suffixIconColor: OpenVtsColors.white,
+              ),
+            ),
+          ),
+          if (results.isNotEmpty)
+            Container(
+              constraints: const BoxConstraints(maxHeight: 200),
+              decoration: BoxDecoration(
+                border: Border(
+                  top: BorderSide(
+                      color: OpenVtsColors.white.withValues(alpha: 0.2)),
+                ),
+              ),
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: results.length,
+                itemBuilder: (context, index) {
+                  final result = results[index];
+                  return InkWell(
+                    onTap: () => onSelectResult(result),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      child: Text(
+                        result.label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: OpenVtsTypography.body.copyWith(
+                          color: OpenVtsColors.white,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+        ],
       ),
     );
   }

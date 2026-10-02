@@ -12,6 +12,13 @@ class AdminLogsController extends StateNotifier<AdminLogsState> {
   AdminLogsController({required AdminLogsService service})
       : _service = service,
         super(const AdminLogsState.initial()) {
+    // Surface default date windows in the pickers so users know why results are
+    // bounded.  The backend applies the same defaults when `from` is absent.
+    final now = DateTime.now();
+    state = state.copyWith(
+      vehicleFrom: now.subtract(const Duration(hours: 24)),
+      telemetryFrom: now.subtract(const Duration(hours: 1)),
+    );
     unawaited(loadInitial());
   }
 
@@ -68,9 +75,8 @@ class AdminLogsController extends StateNotifier<AdminLogsState> {
     try {
       final page = await _service.getActivityLogs(
         limit: 20,
-        q: state.activitySearch,
+        q: _effectiveActivityQuery(state),
         userId: state.activityUserId,
-        actionPrefix: state.activityActionPrefix,
         entity: state.activityEntity,
         from: _fmt(state.activityFrom),
         to: _fmt(state.activityTo),
@@ -100,9 +106,8 @@ class AdminLogsController extends StateNotifier<AdminLogsState> {
       final page = await _service.getActivityLogs(
         limit: 20,
         cursorId: state.activityNextCursorId,
-        q: state.activitySearch,
+        q: _effectiveActivityQuery(state),
         userId: state.activityUserId,
-        actionPrefix: state.activityActionPrefix,
         entity: state.activityEntity,
         from: _fmt(state.activityFrom),
         to: _fmt(state.activityTo),
@@ -131,18 +136,16 @@ class AdminLogsController extends StateNotifier<AdminLogsState> {
       vehicleNextCursorId: null,
     );
     try {
-      final now = DateTime.now();
-      final fromDefault = now.subtract(const Duration(hours: 24));
       final page = await _service.getVehicleEventLogs(
         limit: 50,
-        from: _fmt(state.vehicleFrom ?? fromDefault),
+        from: _fmt(state.vehicleFrom),
         to: _fmt(state.vehicleTo),
         vehicleId: state.vehicleVehicleId,
         userId: state.vehicleUserId,
         source: state.vehicleSource,
         severity: state.vehicleSeverity,
-        isRead: _readFilterValue(state.vehicleReadFilter),
         q: state.vehicleSearch,
+        isRead: _serverReadFilter(state.vehicleReadFilter),
         dedupe: state.vehicleDedupe,
       );
       state = state.copyWith(
@@ -166,19 +169,17 @@ class AdminLogsController extends StateNotifier<AdminLogsState> {
     }
     state = state.copyWith(isLoadingMoreVehicle: true);
     try {
-      final now = DateTime.now();
-      final fromDefault = now.subtract(const Duration(hours: 24));
       final page = await _service.getVehicleEventLogs(
         limit: 50,
         cursorId: state.vehicleNextCursorId,
-        from: _fmt(state.vehicleFrom ?? fromDefault),
+        from: _fmt(state.vehicleFrom),
         to: _fmt(state.vehicleTo),
         vehicleId: state.vehicleVehicleId,
         userId: state.vehicleUserId,
         source: state.vehicleSource,
         severity: state.vehicleSeverity,
-        isRead: _readFilterValue(state.vehicleReadFilter),
         q: state.vehicleSearch,
+        isRead: _serverReadFilter(state.vehicleReadFilter),
         dedupe: state.vehicleDedupe,
       );
       state = state.copyWith(
@@ -204,11 +205,9 @@ class AdminLogsController extends StateNotifier<AdminLogsState> {
       telemetryNextCursor: null,
     );
     try {
-      final now = DateTime.now();
-      final fromDefault = now.subtract(const Duration(hours: 1));
       final page = await _service.getTelemetryLogs(
         limit: 200,
-        from: _fmt(state.telemetryFrom ?? fromDefault),
+        from: _fmt(state.telemetryFrom),
         to: _fmt(state.telemetryTo),
         vehicleId: state.telemetryVehicleId,
         imei: state.telemetryImeiSearch,
@@ -235,12 +234,10 @@ class AdminLogsController extends StateNotifier<AdminLogsState> {
     }
     state = state.copyWith(isLoadingMoreTelemetry: true);
     try {
-      final now = DateTime.now();
-      final fromDefault = now.subtract(const Duration(hours: 1));
       final page = await _service.getTelemetryLogs(
         limit: 200,
         beforeId: state.telemetryNextCursor,
-        from: _fmt(state.telemetryFrom ?? fromDefault),
+        from: _fmt(state.telemetryFrom),
         to: _fmt(state.telemetryTo),
         vehicleId: state.telemetryVehicleId,
         imei: state.telemetryImeiSearch,
@@ -269,11 +266,12 @@ class AdminLogsController extends StateNotifier<AdminLogsState> {
     String? search,
     DateTime? from,
     DateTime? to,
+    bool clearUserId = false,
     bool clearFrom = false,
     bool clearTo = false,
   }) {
     state = state.copyWith(
-      activityUserId: userId ?? state.activityUserId,
+      activityUserId: clearUserId ? null : userId ?? state.activityUserId,
       activityActionPrefix: actionPrefix ?? state.activityActionPrefix,
       activityEntity: entity ?? state.activityEntity,
       activitySearch: search ?? state.activitySearch,
@@ -295,12 +293,15 @@ class AdminLogsController extends StateNotifier<AdminLogsState> {
     DateTime? from,
     DateTime? to,
     bool? dedupe,
+    bool clearVehicleId = false,
+    bool clearUserId = false,
     bool clearFrom = false,
     bool clearTo = false,
   }) {
     state = state.copyWith(
-      vehicleVehicleId: vehicleId ?? state.vehicleVehicleId,
-      vehicleUserId: userId ?? state.vehicleUserId,
+      vehicleVehicleId:
+          clearVehicleId ? null : vehicleId ?? state.vehicleVehicleId,
+      vehicleUserId: clearUserId ? null : userId ?? state.vehicleUserId,
       vehicleSource: source ?? state.vehicleSource,
       vehicleSeverity: severity ?? state.vehicleSeverity,
       vehicleReadFilter: readFilter ?? state.vehicleReadFilter,
@@ -319,21 +320,25 @@ class AdminLogsController extends StateNotifier<AdminLogsState> {
     String? imeiSearch,
     DateTime? from,
     DateTime? to,
+    AdminReadFilter? readFilter,
+    bool clearVehicleId = false,
     bool clearFrom = false,
     bool clearTo = false,
   }) {
     state = state.copyWith(
-      telemetryVehicleId: vehicleId ?? state.telemetryVehicleId,
+      telemetryVehicleId:
+          clearVehicleId ? null : vehicleId ?? state.telemetryVehicleId,
       telemetryPacketType: packetType ?? state.telemetryPacketType,
       telemetryImeiSearch: imeiSearch ?? state.telemetryImeiSearch,
       telemetryFrom: clearFrom ? null : from ?? state.telemetryFrom,
       telemetryTo: clearTo ? null : to ?? state.telemetryTo,
+      telemetryReadFilter: readFilter ?? state.telemetryReadFilter,
       telemetryLogs: const <AdminTelemetryLogItem>[],
       telemetryNextCursor: null,
     );
   }
 
-  Future<AdminVehicleEventDetail> getVehicleEventDetail(String id) {
+  Future<AdminVehicleEventDetail> getVehicleEventDetail(String id) async {
     return _service.getVehicleEventDetail(id);
   }
 
@@ -341,13 +346,25 @@ class AdminLogsController extends StateNotifier<AdminLogsState> {
     return _service.getTelemetryDetail(id);
   }
 
-  String _fmt(DateTime? dt) {
-    if (dt == null) return '';
+  /// Manual search text takes priority; falls back to the selected chip keyword.
+  /// Both are sent as `q` (backend: action/entity contains match), never as
+  /// `actionPrefix` (backend: action startsWith) because chip values like
+  /// "AUTH" do not match the `ROLE.RESOURCE.OP` action format.
+  static String? _effectiveActivityQuery(AdminLogsState s) {
+    final manual = s.activitySearch.trim();
+    if (manual.isNotEmpty) return manual;
+    final chip = s.activityActionPrefix.trim();
+    if (chip.isNotEmpty) return chip;
+    return null;
+  }
+
+  String? _fmt(DateTime? dt) {
+    if (dt == null) return null;
     return dt.toUtc().toIso8601String();
   }
 
-  bool? _readFilterValue(AdminReadFilter f) {
-    switch (f) {
+  bool? _serverReadFilter(AdminReadFilter filter) {
+    switch (filter) {
       case AdminReadFilter.all:
         return null;
       case AdminReadFilter.read:
@@ -369,6 +386,6 @@ class AdminLogsController extends StateNotifier<AdminLogsState> {
       final m = e.message?.trim();
       if (m != null && m.isNotEmpty) return m;
     }
-    return e.toString().replaceFirst('Exception: ', '').trim();
+    return 'Unable to load vehicle events.';
   }
 }

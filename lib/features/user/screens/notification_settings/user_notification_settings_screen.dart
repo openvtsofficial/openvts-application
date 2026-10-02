@@ -20,12 +20,14 @@ import '../../../auth/controllers/auth_controller.dart';
 import '../../controllers/user_providers.dart';
 import '../../models/user_notification_settings_model.dart';
 import 'widgets/user_basic_notification_tab.dart';
+import 'widgets/user_duration_notification_tab.dart';
 import 'widgets/user_geofence_notification_tab.dart';
 import 'widgets/user_mobile_push_diagnostics_card.dart';
 import 'widgets/user_notification_group_tabs.dart';
 import 'widgets/user_notification_save_bar.dart';
 import 'widgets/user_notification_settings_header.dart';
 import 'widgets/user_overspeed_notification_tab.dart';
+import 'widgets/user_route_notification_tab.dart';
 
 const double _notificationSettingsMaxWidth = 920;
 const String _mobilePushTestTooltip =
@@ -65,6 +67,9 @@ class _NotificationSettingsDiagnosticsBootstrapperState
       if (!mounted) {
         return;
       }
+      if (ref.read(authControllerProvider).isDemo) {
+        return;
+      }
       final controller = ref.read(mobilePushControllerProvider.notifier);
       unawaited(controller.refreshPermissionStatus());
       unawaited(controller.refreshTokenDiagnostics());
@@ -85,6 +90,7 @@ class _UserNotificationSettingsScreenBody extends ConsumerWidget {
     final mobilePushState = ref.watch(mobilePushControllerProvider);
     final mobilePushController =
         ref.read(mobilePushControllerProvider.notifier);
+    final canUseMobilePush = authState.isRealSession;
 
     Future<void> handleSaveRequest() async {
       final before = ref.read(userNotificationSettingsControllerProvider);
@@ -151,7 +157,7 @@ class _UserNotificationSettingsScreenBody extends ConsumerWidget {
     }
 
     Future<void> handleMobilePushRetry() async {
-      if (!authState.isAuthenticated) {
+      if (!canUseMobilePush) {
         return;
       }
 
@@ -200,12 +206,10 @@ class _UserNotificationSettingsScreenBody extends ConsumerWidget {
     }
 
     final selectedGroup = state.selectedTab;
-    final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
     final showSaveBar = state.isDirty || state.isSaving;
-    final listBottomPadding =
-        showSaveBar ? (116.0 + keyboardInset) : OpenVtsSpacing.lg;
-    final isMobilePushBusy =
-        mobilePushState.isInitializing || mobilePushState.isTesting;
+    final isMobilePushBusy = !canUseMobilePush ||
+        mobilePushState.isInitializing ||
+        mobilePushState.isTesting;
 
     Future<void> handleMenuAction(_SettingsMenuAction action) async {
       switch (action) {
@@ -272,138 +276,176 @@ class _UserNotificationSettingsScreenBody extends ConsumerWidget {
             child: ConstrainedBox(
               constraints:
                   const BoxConstraints(maxWidth: _notificationSettingsMaxWidth),
-              child: Stack(
+              child: Column(
                 children: [
-                  RefreshIndicator(
-                    onRefresh: handleRefreshRequest,
-                    child: ListView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      padding: EdgeInsets.only(bottom: listBottomPadding),
-                      children: [
-                        if (state.errorMessage != null)
-                          Padding(
-                            padding: const EdgeInsets.only(
-                                bottom: OpenVtsSpacing.sm),
-                            child: _InlineErrorBanner(
-                              message: state.errorMessage!,
-                              onDismiss: controller.clearError,
+                  Expanded(
+                    child: RefreshIndicator(
+                      onRefresh: handleRefreshRequest,
+                      child: ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.only(
+                          bottom: OpenVtsSpacing.lg,
+                        ),
+                        children: [
+                          if (state.errorMessage != null)
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                  bottom: OpenVtsSpacing.sm),
+                              child: _InlineErrorBanner(
+                                message: state.errorMessage!,
+                                onDismiss: controller.clearError,
+                              ),
                             ),
+                          UserNotificationSettingsHeader(
+                            vehicleCount: state.vehicleCount,
+                            geofenceCount: state.geofenceCount,
+                            isDirty: state.isDirty,
+                            lastSavedAt: state.lastSavedAt,
                           ),
-                        UserNotificationSettingsHeader(
-                          vehicleCount: state.vehicleCount,
-                          geofenceCount: state.geofenceCount,
-                          isDirty: state.isDirty,
-                          lastSavedAt: state.lastSavedAt,
-                        ),
-                        const SizedBox(height: OpenVtsSpacing.sm),
-                        UserNotificationGroupTabs(
-                          selectedGroup: selectedGroup,
-                          onChanged: controller.setSelectedTab,
-                        ),
-                        const SizedBox(height: OpenVtsSpacing.sm),
-                        _GroupActionsCard(
-                          isTestNotifyLoading: mobilePushState.isTesting,
-                          onTestNotify: isMobilePushBusy
-                              ? null
-                              : () {
-                                  unawaited(handleTestNotification());
-                                },
-                          onRefresh: state.isLoading || state.isRefreshing
-                              ? null
-                              : () {
-                                  unawaited(handleRefreshRequest());
-                                },
-                          onReset: state.isDirty && !state.isSaving
-                              ? controller.reset
-                              : null,
-                        ),
-                        const SizedBox(height: OpenVtsSpacing.sm),
-                        UserMobilePushDiagnosticsCard(
-                          state: mobilePushState,
-                          showActions: authState.isAuthenticated,
-                          onRetryRegistration: authState.isAuthenticated &&
-                                  mobilePushState.isSupported &&
-                                  !isMobilePushBusy
-                              ? () {
-                                  unawaited(handleMobilePushRetry());
-                                }
-                              : null,
-                          onSendTestNotification:
-                              authState.isAuthenticated && !isMobilePushBusy
-                                  ? () {
-                                      unawaited(handleTestNotification());
-                                    }
-                                  : null,
-                        ),
-                        const SizedBox(height: OpenVtsSpacing.sm),
-                        switch (selectedGroup) {
-                          UserNotificationGroup.basic =>
-                            UserBasicNotificationTab(
-                              preferences: preferences,
-                              channelFlags: preferences.channels.flagsFor(
-                                UserNotificationGroup.basic,
-                              ),
-                              onChannelChanged: (channel, value) {
-                                controller.updateChannel(
+                          const SizedBox(height: OpenVtsSpacing.sm),
+                          UserNotificationGroupTabs(
+                            selectedGroup: selectedGroup,
+                            onChanged: controller.setSelectedTab,
+                          ),
+                          const SizedBox(height: OpenVtsSpacing.sm),
+                          const Text(
+                            'Notifications are optional. Enabling or testing notifications '
+                            'shares a push token with your server and Firebase to deliver alerts.',
+                          ),
+                          const SizedBox(height: OpenVtsSpacing.sm),
+                          _GroupActionsCard(
+                            isTestNotifyLoading: mobilePushState.isTesting,
+                            onTestNotify: isMobilePushBusy
+                                ? null
+                                : () {
+                                    unawaited(handleTestNotification());
+                                  },
+                            onRefresh: state.isLoading || state.isRefreshing
+                                ? null
+                                : () {
+                                    unawaited(handleRefreshRequest());
+                                  },
+                            onReset: state.isDirty && !state.isSaving
+                                ? controller.reset
+                                : null,
+                          ),
+                          const SizedBox(height: OpenVtsSpacing.sm),
+                          UserMobilePushDiagnosticsCard(
+                            state: mobilePushState,
+                            showActions: canUseMobilePush,
+                            onRetryRegistration: canUseMobilePush &&
+                                    mobilePushState.isSupported &&
+                                    !isMobilePushBusy
+                                ? () {
+                                    unawaited(handleMobilePushRetry());
+                                  }
+                                : null,
+                            onSendTestNotification:
+                                canUseMobilePush && !isMobilePushBusy
+                                    ? () {
+                                        unawaited(handleTestNotification());
+                                      }
+                                    : null,
+                          ),
+                          const SizedBox(height: OpenVtsSpacing.sm),
+                          switch (selectedGroup) {
+                            UserNotificationGroup.basic =>
+                              UserBasicNotificationTab(
+                                preferences: preferences,
+                                channelFlags: preferences.channels.flagsFor(
                                   UserNotificationGroup.basic,
-                                  channel,
-                                  value,
-                                );
-                              },
-                              onVehicleToggle: controller.updateBasicToggle,
-                            ),
-                          UserNotificationGroup.overspeed =>
-                            UserOverspeedNotificationTab(
-                              preferences: preferences,
-                              channelFlags: preferences.channels.flagsFor(
-                                UserNotificationGroup.overspeed,
+                                ),
+                                onChannelChanged: (channel, value) {
+                                  controller.updateChannel(
+                                    UserNotificationGroup.basic,
+                                    channel,
+                                    value,
+                                  );
+                                },
+                                onVehicleToggle: controller.updateBasicToggle,
                               ),
-                              onChannelChanged: (channel, value) {
-                                controller.updateChannel(
+                            UserNotificationGroup.overspeed =>
+                              UserOverspeedNotificationTab(
+                                preferences: preferences,
+                                channelFlags: preferences.channels.flagsFor(
                                   UserNotificationGroup.overspeed,
-                                  channel,
-                                  value,
-                                );
-                              },
-                              onOverspeedEnabledChanged:
-                                  controller.updateOverspeedEnabled,
-                              onSpeedLimitChanged:
-                                  controller.updateOverspeedLimit,
-                            ),
-                          UserNotificationGroup.geofence =>
-                            UserGeofenceNotificationTab(
-                              preferences: preferences,
-                              channelFlags: preferences.channels.flagsFor(
-                                UserNotificationGroup.geofence,
+                                ),
+                                onChannelChanged: (channel, value) {
+                                  controller.updateChannel(
+                                    UserNotificationGroup.overspeed,
+                                    channel,
+                                    value,
+                                  );
+                                },
+                                onOverspeedEnabledChanged:
+                                    controller.updateOverspeedEnabled,
+                                onSpeedLimitChanged:
+                                    controller.updateOverspeedLimit,
                               ),
-                              onChannelChanged: (channel, value) {
-                                controller.updateChannel(
+                            UserNotificationGroup.duration =>
+                              UserDurationNotificationTab(
+                                preferences: preferences,
+                                channelFlags: preferences.channels.flagsFor(
+                                  UserNotificationGroup.duration,
+                                ),
+                                onChannelChanged: (channel, value) {
+                                  controller.updateChannel(
+                                    UserNotificationGroup.duration,
+                                    channel,
+                                    value,
+                                  );
+                                },
+                                onEnabledChanged:
+                                    controller.updateDurationEnabled,
+                                onLimitChanged: controller.updateDurationLimit,
+                              ),
+                            UserNotificationGroup.geofence =>
+                              UserGeofenceNotificationTab(
+                                preferences: preferences,
+                                channelFlags: preferences.channels.flagsFor(
                                   UserNotificationGroup.geofence,
-                                  channel,
-                                  value,
-                                );
-                              },
-                              onGeofenceToggle: controller.updateGeofenceToggle,
-                            ),
-                        },
-                        const SizedBox(height: OpenVtsSpacing.sm),
-                      ],
+                                ),
+                                onChannelChanged: (channel, value) {
+                                  controller.updateChannel(
+                                    UserNotificationGroup.geofence,
+                                    channel,
+                                    value,
+                                  );
+                                },
+                                onGeofenceToggle:
+                                    controller.updateGeofenceToggle,
+                              ),
+                            UserNotificationGroup.route =>
+                              UserRouteNotificationTab(
+                                preferences: preferences,
+                                channelFlags: preferences.channels.flagsFor(
+                                  UserNotificationGroup.route,
+                                ),
+                                onChannelChanged: (channel, value) {
+                                  controller.updateChannel(
+                                    UserNotificationGroup.route,
+                                    channel,
+                                    value,
+                                  );
+                                },
+                                onRouteToggle: controller.updateRouteToggle,
+                              ),
+                          },
+                          const SizedBox(height: OpenVtsSpacing.sm),
+                        ],
+                      ),
                     ),
                   ),
                   if (showSaveBar)
-                    Align(
-                      alignment: Alignment.bottomCenter,
-                      child: UserNotificationSaveBar(
-                        isSaving: state.isSaving,
-                        canSave: state.isDirty &&
-                            !state.isSaving &&
-                            !state.isTesting,
-                        canReset: state.isDirty && !state.isSaving,
-                        onSave: () {
-                          unawaited(handleSaveRequest());
-                        },
-                        onReset: controller.reset,
-                      ),
+                    UserNotificationSaveBar(
+                      isSaving: state.isSaving,
+                      canSave:
+                          state.isDirty && !state.isSaving && !state.isTesting,
+                      canReset: state.isDirty && !state.isSaving,
+                      onSave: () {
+                        unawaited(handleSaveRequest());
+                      },
+                      onReset: controller.reset,
                     ),
                 ],
               ),
@@ -579,6 +621,9 @@ class _ActionMenuItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     final child = Row(
       children: [
         if (isLoading)
@@ -590,13 +635,15 @@ class _ActionMenuItem extends StatelessWidget {
           Icon(
             icon,
             size: 16,
-            color: OpenVtsColors.textSecondary,
+            color: isDark
+                ? OpenVtsColors.white.withValues(alpha: 0.7)
+                : OpenVtsColors.textSecondary,
           ),
         const SizedBox(width: OpenVtsSpacing.xs),
         Text(
           label,
           style: OpenVtsTypography.meta.copyWith(
-            color: OpenVtsColors.textPrimary,
+            color: isDark ? OpenVtsColors.white : OpenVtsColors.textPrimary,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -676,9 +723,14 @@ class _CompactActionChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final disabled = onTap == null && !isLoading;
-    final foregroundColor =
-        disabled ? OpenVtsColors.textTertiary : OpenVtsColors.textSecondary;
+    final foregroundColor = isDark
+        ? (disabled
+            ? OpenVtsColors.white.withValues(alpha: 0.5)
+            : OpenVtsColors.white.withValues(alpha: 0.7))
+        : (disabled ? OpenVtsColors.textTertiary : OpenVtsColors.textSecondary);
     final child = InkWell(
       borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
       onTap: isLoading ? null : onTap,
@@ -686,10 +738,17 @@ class _CompactActionChip extends StatelessWidget {
         height: 44,
         padding: const EdgeInsets.symmetric(horizontal: OpenVtsSpacing.xs),
         decoration: BoxDecoration(
-          color:
-              disabled ? OpenVtsColors.surface : OpenVtsColors.surfaceElevated,
+          color: isDark
+              ? Colors.black
+              : (disabled
+                  ? OpenVtsColors.surface
+                  : OpenVtsColors.surfaceElevated),
           borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
-          border: Border.all(color: OpenVtsColors.border),
+          border: Border.all(
+            color: isDark
+                ? OpenVtsColors.white
+                : (disabled ? OpenVtsColors.border : OpenVtsColors.border),
+          ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -709,9 +768,13 @@ class _CompactActionChip extends StatelessWidget {
             Text(
               label,
               style: OpenVtsTypography.meta.copyWith(
-                color: disabled
-                    ? OpenVtsColors.textTertiary
-                    : OpenVtsColors.textPrimary,
+                color: isDark
+                    ? (disabled
+                        ? OpenVtsColors.white.withValues(alpha: 0.5)
+                        : OpenVtsColors.white)
+                    : (disabled
+                        ? OpenVtsColors.textTertiary
+                        : OpenVtsColors.textPrimary),
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -787,6 +850,9 @@ class _InlineErrorBanner extends StatelessWidget {
 }
 
 Future<bool> _showRefreshDiscardSheet(BuildContext context) async {
+  final theme = Theme.of(context);
+  final isDark = theme.brightness == Brightness.dark;
+
   final shouldDiscard = await showModalBottomSheet<bool>(
     context: context,
     backgroundColor: Colors.transparent,
@@ -805,7 +871,9 @@ Future<bool> _showRefreshDiscardSheet(BuildContext context) async {
                 Text(
                   'Discard unsaved changes?',
                   style: OpenVtsTypography.label.copyWith(
-                    color: OpenVtsColors.textPrimary,
+                    color: isDark
+                        ? OpenVtsColors.white
+                        : OpenVtsColors.textPrimary,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -813,7 +881,9 @@ Future<bool> _showRefreshDiscardSheet(BuildContext context) async {
                 Text(
                   'Refreshing will replace your current unsaved notification edits with the latest server settings.',
                   style: OpenVtsTypography.meta.copyWith(
-                    color: OpenVtsColors.textSecondary,
+                    color: isDark
+                        ? OpenVtsColors.white.withValues(alpha: 0.7)
+                        : OpenVtsColors.textSecondary,
                   ),
                 ),
                 const SizedBox(height: OpenVtsSpacing.sm),

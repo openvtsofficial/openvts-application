@@ -23,19 +23,18 @@ import 'widgets/user_transaction_details_sheet.dart';
 import 'widgets/user_transactions_filter_card.dart';
 import 'widgets/user_transactions_summary_strip.dart';
 
-const DateTimeFormatter _transactionsFormatter = DateTimeFormatter();
-
 class UserTransactionsScreen extends ConsumerWidget {
   const UserTransactionsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final transactionsFormatter = ref.watch(appDateFormatterProvider);
     final state = ref.watch(userTransactionsControllerProvider);
     final controller = ref.read(userTransactionsControllerProvider.notifier);
     final currentUserId = ref.watch(
       authControllerProvider.select((authState) => authState.user?.id),
     );
-    final filteredTransactions = state.filteredTransactions;
+    final filteredTransactions = state.filteredTransactionsFor(currentUserId);
 
     return OpenVtsPageScaffold(
       title: 'Transactions',
@@ -76,7 +75,7 @@ class UserTransactionsScreen extends ConsumerWidget {
                     _TransactionsHeaderCard(
                       loadedCount: filteredTransactions.length,
                       totalCount: state.total,
-                      rangeLabel: _rangeLabel(state),
+                      rangeLabel: _rangeLabel(state, transactionsFormatter),
                     ),
                     const SizedBox(height: OpenVtsSpacing.sm),
                     UserTransactionsSummaryStrip(
@@ -90,7 +89,7 @@ class UserTransactionsScreen extends ConsumerWidget {
                       customTo: state.customTo,
                       selectedStatus: state.selectedStatus,
                       selectedPaymentMode: state.selectedPaymentMode,
-                      selectedPaymentType: state.selectedPaymentType,
+                      selectedDirection: state.selectedDirection,
                       hasActiveFilters: state.hasActiveFilters,
                       onSearchChanged: controller.setSearchQuery,
                       onRangePresetChanged: (preset) {
@@ -103,7 +102,7 @@ class UserTransactionsScreen extends ConsumerWidget {
                         unawaited(controller.setStatusFilter(status));
                       },
                       onPaymentModeChanged: controller.setPaymentModeFilter,
-                      onPaymentTypeChanged: controller.setPaymentTypeFilter,
+                      onDirectionChanged: controller.setDirectionFilter,
                       onClearFilters: () {
                         unawaited(controller.clearFilters());
                       },
@@ -192,6 +191,10 @@ class _TransactionsHeaderCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final resolvedTotal = totalCount <= 0 ? loadedCount : totalCount;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final headingColor = isDark ? Colors.white : OpenVtsColors.textPrimary;
+    final subheadingColor =
+        isDark ? Colors.grey[300] : OpenVtsColors.textSecondary;
 
     return OpenVtsCard(
       padding: const EdgeInsets.all(OpenVtsSpacing.sm),
@@ -202,14 +205,14 @@ class _TransactionsHeaderCard extends StatelessWidget {
             'Transactions',
             style: OpenVtsTypography.label.copyWith(
               fontWeight: FontWeight.w700,
-              color: OpenVtsColors.textPrimary,
+              color: headingColor,
             ),
           ),
           const SizedBox(height: OpenVtsSpacing.xxs),
           Text(
             'View payments, credits, debits, and billing records.',
             style: OpenVtsTypography.meta.copyWith(
-              color: OpenVtsColors.textSecondary,
+              color: subheadingColor,
             ),
           ),
           const SizedBox(height: OpenVtsSpacing.xs),
@@ -242,20 +245,29 @@ class _HeaderValueChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final backgroundColor =
+        isDark ? Colors.black : OpenVtsColors.surfaceElevated;
+    final borderColor = isDark ? Colors.white : OpenVtsColors.border;
+    final textColor = isDark ? Colors.white : OpenVtsColors.textPrimary;
+
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: OpenVtsSpacing.xs,
         vertical: 6,
       ),
       decoration: BoxDecoration(
-        color: OpenVtsColors.surfaceElevated,
+        color: backgroundColor,
         borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-        border: Border.all(color: OpenVtsColors.border),
+        border: Border.all(
+          color: borderColor,
+          width: isDark ? 1 : 1,
+        ),
       ),
       child: Text(
         '$label: $value',
         style: OpenVtsTypography.meta.copyWith(
-          color: OpenVtsColors.textPrimary,
+          color: textColor,
           fontWeight: FontWeight.w600,
         ),
       ),
@@ -270,20 +282,28 @@ class _HeaderTagChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final backgroundColor = isDark ? Colors.black : OpenVtsColors.surface;
+    final borderColor = isDark ? Colors.white : OpenVtsColors.border;
+    final textColor = isDark ? Colors.grey[300] : OpenVtsColors.textSecondary;
+
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: OpenVtsSpacing.xs,
         vertical: 6,
       ),
       decoration: BoxDecoration(
-        color: OpenVtsColors.surface,
+        color: backgroundColor,
         borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-        border: Border.all(color: OpenVtsColors.border),
+        border: Border.all(
+          color: borderColor,
+          width: isDark ? 1 : 1,
+        ),
       ),
       child: Text(
         text,
         style: OpenVtsTypography.meta.copyWith(
-          color: OpenVtsColors.textSecondary,
+          color: textColor,
           fontWeight: FontWeight.w600,
         ),
       ),
@@ -330,7 +350,7 @@ class _InlineErrorBanner extends StatelessWidget {
   }
 }
 
-String? _rangeLabel(UserTransactionsState state) {
+String? _rangeLabel(UserTransactionsState state, dynamic formatter) {
   switch (state.rangePreset) {
     case UserTransactionsRangePreset.thisMonth:
       return 'This Month';
@@ -345,14 +365,14 @@ String? _rangeLabel(UserTransactionsState state) {
         return null;
       }
       if (from != null && to != null) {
-        final fromLabel = _transactionsFormatter.formatDate(from.toLocal());
-        final toLabel = _transactionsFormatter.formatDate(to.toLocal());
+        final fromLabel = formatter.formatDate(from.toLocal());
+        final toLabel = formatter.formatDate(to.toLocal());
         return '$fromLabel - $toLabel';
       }
       if (from != null) {
-        return 'From ${_transactionsFormatter.formatDate(from.toLocal())}';
+        return 'From ${formatter.formatDate(from.toLocal())}';
       }
-      return 'Until ${_transactionsFormatter.formatDate(to!.toLocal())}';
+      return 'Until ${formatter.formatDate(to!.toLocal())}';
   }
 }
 

@@ -6,6 +6,7 @@ import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../core/utils/date_time_formatter.dart';
 import '../../../models/admin_users_model.dart';
+import '../../../utils/location_label_resolver.dart';
 
 enum AdminUserCardAction {
   viewDetails,
@@ -56,6 +57,7 @@ class AdminUserCard extends StatelessWidget {
     required this.onTap,
     required this.onStatusChanged,
     required this.onActionSelected,
+    this.countryOptions = const [],
     super.key,
   });
 
@@ -66,6 +68,11 @@ class AdminUserCard extends StatelessWidget {
   final VoidCallback onTap;
   final ValueChanged<bool> onStatusChanged;
   final ValueChanged<AdminUserCardAction> onActionSelected;
+
+  /// Cached country reference options used to resolve codes to readable names.
+  /// Provided by the parent screen; defaults to empty (falls back to hardcoded
+  /// LocationData).
+  final List<AdminUserCountryOption> countryOptions;
 
   @override
   Widget build(BuildContext context) {
@@ -86,7 +93,7 @@ class AdminUserCard extends StatelessWidget {
             onActionSelected: onActionSelected,
           ),
           const SizedBox(height: OpenVtsSpacing.md),
-          _CardInfoGrid(user: user),
+          _CardInfoGrid(user: user, countryOptions: countryOptions),
           const SizedBox(height: OpenVtsSpacing.md),
           _CardMetricsRow(user: user),
           if (isDeleting) ...[
@@ -162,7 +169,7 @@ class _CardHeader extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: OpenVtsTypography.label.copyWith(
-                  color: OpenVtsColors.textSecondary,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
             ],
@@ -250,9 +257,9 @@ class _StatusToggle extends StatelessWidget {
         child: Switch(
           value: isActive,
           onChanged: isBusy ? null : onChanged,
-          activeThumbColor: OpenVtsColors.white,
+          activeThumbColor: Theme.of(context).colorScheme.onPrimary,
           activeTrackColor: _primaryInkColor(context),
-          inactiveThumbColor: OpenVtsColors.white,
+          inactiveThumbColor: Theme.of(context).colorScheme.onPrimary,
           inactiveTrackColor: _softBorderColor(context),
           materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
         ),
@@ -300,10 +307,10 @@ class _CardMenu extends StatelessWidget {
             _menuItem(context, action),
       ],
       enabled: !isBusy,
-      icon: const Icon(
+      icon: Icon(
         Icons.more_vert_rounded,
         size: 18,
-        color: OpenVtsColors.textSecondary,
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
       ),
       padding: EdgeInsets.zero,
       splashRadius: 18,
@@ -343,20 +350,20 @@ class _CardMenu extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _CardInfoGrid extends StatelessWidget {
-  const _CardInfoGrid({required this.user});
+  const _CardInfoGrid({
+    required this.user,
+    this.countryOptions = const [],
+  });
 
   final AdminUserListItem user;
+  final List<AdminUserCountryOption> countryOptions;
 
   @override
   Widget build(BuildContext context) {
     final emailValue = _displayValue(user.email);
     final phoneValue = _displayValue(user.mobileDisplay);
     final companyValue = _displayValue(user.companyName);
-    final countryValue = _displayValue(
-      user.countryCode.trim().isNotEmpty
-          ? user.countryCode.trim().toUpperCase()
-          : _locationText(user),
-    );
+    final countryValue = _displayValue(_locationText(user, countryOptions));
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -438,7 +445,11 @@ class _InfoRow extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Icon(icon, size: 16, color: OpenVtsColors.textSecondary),
+        Icon(
+          icon,
+          size: 16,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
         const SizedBox(width: OpenVtsSpacing.xs),
         Expanded(
           child: Text(
@@ -446,7 +457,7 @@ class _InfoRow extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: OpenVtsTypography.label.copyWith(
-              color: OpenVtsColors.textPrimary,
+              color: Theme.of(context).colorScheme.onSurface,
               height: 1.4,
             ),
           ),
@@ -568,7 +579,11 @@ class _MetricCell extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(icon, size: 14, color: OpenVtsColors.textSecondary),
+              Icon(
+                icon,
+                size: 14,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
               const SizedBox(width: OpenVtsSpacing.xxs + 2),
               Flexible(
                 child: Text(
@@ -576,7 +591,7 @@ class _MetricCell extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: OpenVtsTypography.meta.copyWith(
-                    color: OpenVtsColors.textSecondary,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -707,20 +722,34 @@ String _initials(AdminUserListItem user) {
       .toUpperCase();
 }
 
-String _locationText(AdminUserListItem user) {
+String _locationText(
+  AdminUserListItem user,
+  List<AdminUserCountryOption> countryOptions,
+) {
   final parts = <String>[];
-  final country = user.countryCode.trim().toUpperCase();
-  if (country.isNotEmpty) {
-    parts.add(country);
+
+  final countryCode = user.countryCode.trim();
+  if (countryCode.isNotEmpty) {
+    parts.add(LocationLabelResolver.resolveCountry(
+      countryCode,
+      apiOptions: countryOptions,
+    ));
   }
-  final state = user.stateCode.trim();
-  if (state.isNotEmpty) {
-    parts.add(state);
+
+  final stateCode = user.stateCode.trim();
+  if (stateCode.isNotEmpty) {
+    parts.add(LocationLabelResolver.resolveState(
+      countryCode,
+      stateCode,
+      apiOptions: const [],
+    ));
   }
+
   final city = user.city.trim();
   if (city.isNotEmpty) {
     parts.add(city);
   }
+
   return parts.isEmpty ? '\u2014' : parts.join(', ');
 }
 

@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/api/api_exception.dart';
 import '../models/admin_drivers_model.dart';
 import '../models/admin_drivers_state.dart';
+import '../services/admin_driver_timestamp_storage.dart';
 import '../services/admin_drivers_service.dart';
 
 class AdminDriversController extends StateNotifier<AdminDriversState> {
@@ -94,8 +97,40 @@ class AdminDriversController extends StateNotifier<AdminDriversState> {
     return _service.getUsersForDriverPrimarySelection();
   }
 
+  Future<void> updateDriverStatus(String driverId, bool isActive) async {
+    final driverIndex = state.drivers.indexWhere((d) => d.id == driverId);
+    if (driverIndex == -1) return;
+
+    final previousDriver = state.drivers[driverIndex];
+    final updatingIds = {...state.updatingDriverIds, driverId};
+    state = state.copyWith(updatingDriverIds: updatingIds);
+
+    try {
+      await _service.updateDriverStatus(id: driverId, isActive: isActive);
+      if (!mounted) return;
+
+      final updatedDriver = previousDriver.copyWith(isActive: isActive);
+      final updatedDrivers = <AdminDriverListItem>[...state.drivers];
+      updatedDrivers[driverIndex] = updatedDriver;
+
+      state = _withFilteredDrivers(
+        state.copyWith(
+          drivers: updatedDrivers,
+          updatingDriverIds: updatingIds..remove(driverId),
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      state = state.copyWith(
+        updatingDriverIds: updatingIds..remove(driverId),
+      );
+      rethrow;
+    }
+  }
+
   Future<void> deleteDriver(String driverId) async {
     await _service.deleteDriver(driverId);
+    unawaited(AdminDriverTimestampStorage.clearUpdatedAt(driverId));
     if (!mounted) return;
     final updated =
         state.drivers.where((d) => d.id != driverId).toList(growable: false);
@@ -130,7 +165,26 @@ class AdminDriversController extends StateNotifier<AdminDriversState> {
     );
 
     try {
-      final drivers = await _service.getDrivers(refreshKey: refreshKey);
+      final rawDrivers = await _service.getDrivers(refreshKey: refreshKey);
+      if (!mounted) {
+        return;
+      }
+
+      // Enrich every driver with a stable effective updatedAt in one prefs read.
+      final ids = rawDrivers.map((d) => d.id).where((id) => id.isNotEmpty);
+      final persistedMap =
+          await AdminDriverTimestampStorage.readUpdatedAtMap(ids);
+
+      final drivers = rawDrivers.map((driver) {
+        final effective = resolveDriverEffectiveUpdatedAt(
+          serverUpdatedAt: driver.updatedAt,
+          persistedUpdatedAt: persistedMap[driver.id],
+          createdAt: driver.createdAt,
+        );
+        if (effective == driver.updatedAt) return driver;
+        return driver.copyWith(updatedAt: effective);
+      }).toList(growable: false);
+
       if (!mounted) {
         return;
       }

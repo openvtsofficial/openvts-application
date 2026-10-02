@@ -49,6 +49,8 @@ class _LoginFormState extends State<LoginForm> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return AutofillGroup(
       child: Form(
         key: _formKey,
@@ -85,7 +87,9 @@ class _LoginFormState extends State<LoginForm> {
                   _obscurePassword
                       ? Icons.visibility_outlined
                       : Icons.visibility_off_outlined,
-                  color: OpenVtsColors.textSecondary,
+                  color: isDark
+                      ? OpenVtsColors.darkTextSecondary
+                      : OpenVtsColors.textSecondary,
                 ),
               ),
               validator: (value) =>
@@ -100,7 +104,9 @@ class _LoginFormState extends State<LoginForm> {
                     ? null
                     : () => context.push(RoutePaths.forgotPassword),
                 style: TextButton.styleFrom(
-                  foregroundColor: OpenVtsColors.textTertiary,
+                  foregroundColor: isDark
+                      ? OpenVtsColors.darkTextTertiary
+                      : OpenVtsColors.textTertiary,
                   minimumSize: const Size(44, 44),
                   padding: EdgeInsets.zero,
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,

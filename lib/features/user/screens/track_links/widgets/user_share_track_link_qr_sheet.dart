@@ -72,21 +72,27 @@ class UserShareTrackLinkQrSheet extends StatelessWidget {
           ),
         ),
         const SizedBox(height: OpenVtsSpacing.md),
-        Container(
-          padding: const EdgeInsets.all(OpenVtsSpacing.sm),
-          decoration: BoxDecoration(
-            color: OpenVtsColors.surfaceElevated,
-            borderRadius: BorderRadius.circular(OpenVtsRadius.lg),
-            border: Border.all(color: OpenVtsColors.border),
-          ),
-          child: Text(
-            publicUrl,
-            style: OpenVtsTypography.meta.copyWith(
-              color: OpenVtsColors.textPrimary,
-              fontFamily: 'monospace',
-              fontWeight: FontWeight.w700,
-            ),
-          ),
+        Builder(
+          builder: (context) {
+            final isDark = Theme.of(context).brightness == Brightness.dark;
+            return Container(
+              padding: const EdgeInsets.all(OpenVtsSpacing.sm),
+              decoration: BoxDecoration(
+                color: isDark ? Colors.black : OpenVtsColors.white,
+                borderRadius: BorderRadius.circular(OpenVtsRadius.lg),
+                border: Border.all(
+                    color: isDark ? OpenVtsColors.white : OpenVtsColors.border),
+              ),
+              child: Text(
+                publicUrl,
+                style: OpenVtsTypography.meta.copyWith(
+                  color: isDark ? OpenVtsColors.white : OpenVtsColors.brandInk,
+                  fontFamily: 'monospace',
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            );
+          },
         ),
         const SizedBox(height: OpenVtsSpacing.sm),
         Row(

@@ -19,6 +19,9 @@ class UserDashboardController extends StateNotifier<UserDashboardState> {
   final UserDashboardService _service;
   final LocalCache _localCache;
 
+  // Prevents duplicate concurrent refresh calls from stacking.
+  bool _isRefreshing = false;
+
   Future<void> loadInitial() async {
     _service.invalidateDashboardOverviewCache();
     state = state.copyWith(
@@ -62,6 +65,8 @@ class UserDashboardController extends StateNotifier<UserDashboardState> {
   }
 
   Future<void> refresh() async {
+    if (_isRefreshing) return;
+    _isRefreshing = true;
     _service.invalidateDashboardOverviewCache();
     state = state.copyWith(
       isRefreshing: true,
@@ -83,6 +88,7 @@ class UserDashboardController extends StateNotifier<UserDashboardState> {
           orderedWidgets: const <UserDashboardWidgetConfig>[],
           isRefreshing: false,
         );
+        _isRefreshing = false;
         return;
       }
 
@@ -104,6 +110,8 @@ class UserDashboardController extends StateNotifier<UserDashboardState> {
         isRefreshing: false,
         errorMessage: _toErrorMessage(error),
       );
+    } finally {
+      _isRefreshing = false;
     }
   }
 

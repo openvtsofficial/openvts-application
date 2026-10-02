@@ -19,7 +19,7 @@ import 'widgets/admin_details_payments_tab.dart';
 import 'widgets/admin_details_profile_tab.dart';
 import 'widgets/admin_details_vehicles_tab.dart';
 
-class SuperadminAdminDetailsScreen extends ConsumerWidget {
+class SuperadminAdminDetailsScreen extends ConsumerStatefulWidget {
   const SuperadminAdminDetailsScreen({
     required this.adminId,
     this.initialAdmin,
@@ -30,14 +30,37 @@ class SuperadminAdminDetailsScreen extends ConsumerWidget {
   final SuperadminAdministrator? initialAdmin;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final provider = superadminAdminDetailsControllerProvider(adminId);
+  ConsumerState<SuperadminAdminDetailsScreen> createState() =>
+      _SuperadminAdminDetailsScreenState();
+}
+
+class _SuperadminAdminDetailsScreenState
+    extends ConsumerState<SuperadminAdminDetailsScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Seed initial admin and data from list item
+    if (widget.initialAdmin != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final controller = ref.read(
+            superadminAdminDetailsControllerProvider(widget.adminId).notifier);
+        controller.seedInitialAdmin(widget.initialAdmin);
+        controller.seedInitialData(
+          vehicleCount: widget.initialAdmin!.totalVehicles > 0
+              ? widget.initialAdmin!.totalVehicles
+              : null,
+          lastLogin: widget.initialAdmin!.lastLoginAt,
+        );
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = superadminAdminDetailsControllerProvider(widget.adminId);
 
     final adminName = ref.watch(provider.select((s) => s.admin?.name ?? ''));
-    final isActive = ref.watch(
-      provider
-          .select((s) => s.admin?.isActive ?? initialAdmin?.isActive ?? false),
-    );
+    final isActive = ref.watch(provider.select((s) => s.effectiveIsActive));
     final isUpdatingStatus =
         ref.watch(provider.select((s) => s.isUpdatingStatus));
     final isDeletingAdmin =
@@ -45,13 +68,16 @@ class SuperadminAdminDetailsScreen extends ConsumerWidget {
 
     final title = adminName.trim().isNotEmpty
         ? adminName
-        : (initialAdmin?.name.trim().isNotEmpty == true
-            ? initialAdmin!.name
+        : (widget.initialAdmin?.name.trim().isNotEmpty == true
+            ? widget.initialAdmin!.name
             : 'Administrator');
 
     return OpenVtsPageScaffold(
       title: title,
       headerMode: OpenVtsPageHeaderMode.closeable,
+      leading: _HeaderAvatar(
+        adminName: title,
+      ),
       onClose: () => Navigator.of(context).maybePop(),
       actions: [
         _HeaderStatusChip(isActive: isActive),
@@ -66,12 +92,12 @@ class SuperadminAdminDetailsScreen extends ConsumerWidget {
         ),
         const SizedBox(width: 4),
       ],
-      body: _Body(adminId: adminId, initialAdmin: initialAdmin),
+      body: _Body(adminId: widget.adminId, initialAdmin: widget.initialAdmin),
     );
   }
 
   Future<void> _refreshAll(WidgetRef ref) async {
-    final provider = superadminAdminDetailsControllerProvider(adminId);
+    final provider = superadminAdminDetailsControllerProvider(widget.adminId);
     final controller = ref.read(provider.notifier);
     final selectedTab = ref.read(provider.select((s) => s.selectedTab));
     await controller.refreshAdmin();
@@ -100,12 +126,10 @@ class SuperadminAdminDetailsScreen extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
   ) async {
-    final provider = superadminAdminDetailsControllerProvider(adminId);
+    final provider = superadminAdminDetailsControllerProvider(widget.adminId);
     final controller = ref.read(provider.notifier);
-    final currentlyActive = ref.read(
-      provider
-          .select((s) => s.admin?.isActive ?? initialAdmin?.isActive ?? false),
-    );
+    final currentlyActive =
+        ref.read(provider.select((s) => s.effectiveIsActive));
     final next = !currentlyActive;
     final ok = await controller.updateStatus(next);
     if (!context.mounted) return;
@@ -127,13 +151,13 @@ class SuperadminAdminDetailsScreen extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
   ) async {
-    final provider = superadminAdminDetailsControllerProvider(adminId);
+    final provider = superadminAdminDetailsControllerProvider(widget.adminId);
     final controller = ref.read(provider.notifier);
     final adminNameNow = ref.read(provider.select((s) => s.admin?.name ?? ''));
     final name = adminNameNow.trim().isNotEmpty
         ? adminNameNow
-        : (initialAdmin?.name.trim().isNotEmpty == true
-            ? initialAdmin!.name
+        : (widget.initialAdmin?.name.trim().isNotEmpty == true
+            ? widget.initialAdmin!.name
             : 'this administrator');
 
     final confirmed = await showDialog<bool>(
@@ -183,6 +207,47 @@ class SuperadminAdminDetailsScreen extends ConsumerWidget {
 // Header widgets
 // ---------------------------------------------------------------------------
 
+class _HeaderAvatar extends StatelessWidget {
+  const _HeaderAvatar({required this.adminName});
+
+  final String adminName;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final initial =
+        adminName.trim().isNotEmpty ? adminName.trim()[0].toUpperCase() : '?';
+
+    return Padding(
+      padding: const EdgeInsetsDirectional.only(start: OpenVtsSpacing.sm),
+      child: Align(
+        alignment: AlignmentDirectional.centerStart,
+        child: Container(
+          height: 36,
+          width: 36,
+          decoration: BoxDecoration(
+            color:
+                isDark ? Colors.black : Theme.of(context).colorScheme.primary,
+            borderRadius: BorderRadius.circular(OpenVtsRadius.md),
+            border: isDark ? Border.all(color: Colors.white, width: 1) : null,
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            initial,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: isDark
+                  ? Colors.white
+                  : Theme.of(context).colorScheme.onPrimary,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _HeaderStatusChip extends StatelessWidget {
   const _HeaderStatusChip({required this.isActive});
 
@@ -190,8 +255,12 @@ class _HeaderStatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color =
-        isActive ? OpenVtsColors.brandInk : OpenVtsColors.textTertiary;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final color = isActive
+        ? (isDark ? OpenVtsColors.darkTextPrimary : OpenVtsColors.brandInk)
+        : (isDark
+            ? OpenVtsColors.darkTextTertiary
+            : OpenVtsColors.textTertiary);
     return Center(
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -234,12 +303,18 @@ class _HeaderMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return PopupMenuButton<_AdminDetailsMenuAction>(
       tooltip: 'More actions',
-      icon: const Icon(
+      icon: Icon(
         Icons.more_vert_rounded,
         size: 20,
-        color: OpenVtsColors.textSecondary,
+        color: scheme.onSurface.withValues(alpha: 0.7),
+      ),
+      color: scheme.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: BorderSide(color: scheme.outline.withValues(alpha: 0.2)),
       ),
       onSelected: (value) {
         switch (value) {
@@ -298,8 +373,8 @@ class _MenuRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color =
-        isDestructive ? OpenVtsColors.error : OpenVtsColors.textPrimary;
+    final scheme = Theme.of(context).colorScheme;
+    final color = isDestructive ? OpenVtsColors.error : scheme.onSurface;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -402,14 +477,37 @@ class _Body extends ConsumerWidget {
 // Summary card
 // ---------------------------------------------------------------------------
 
-class _SummaryCard extends StatelessWidget {
+class _SummaryCard extends ConsumerWidget {
   const _SummaryCard({required this.admin, required this.fallback});
 
   final SuperadminAdminDetails? admin;
   final SuperadminAdministrator? fallback;
 
+  int? _resolveVehicleCount(
+    SuperadminAdminDetails? admin,
+    SuperadminAdministrator? fallback,
+    SuperadminAdminDetailsState state,
+  ) {
+    // Priority 1: Explicit vehicle count from state
+    if (state.vehicleCount != null) return state.vehicleCount;
+
+    // Priority 2: Admin detail response if >= 0
+    if (admin != null && admin.totalVehicles >= 0) return admin.totalVehicles;
+
+    // Priority 3: Initial admin from list if > 0
+    if (fallback != null && fallback.totalVehicles > 0) {
+      return fallback.totalVehicles;
+    }
+
+    // Priority 4: If vehicles tab has loaded, use actual length
+    if (state.hasLoadedVehicles) return state.vehicles.length;
+
+    // Unknown
+    return null;
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final name = admin?.name.trim().isNotEmpty == true
         ? admin!.name
         : (fallback?.name ?? 'Administrator');
@@ -422,10 +520,28 @@ class _SummaryCard extends StatelessWidget {
     final phone = admin?.mobileDisplay.trim().isNotEmpty == true
         ? admin!.mobileDisplay
         : (fallback?.phoneDisplay ?? '');
-    final isActive = admin?.isActive ?? fallback?.isActive ?? false;
+
+    // Get adminId to watch effectiveIsActive
+    String? resolvedAdminId;
+    if (admin?.id.trim().isNotEmpty == true) {
+      resolvedAdminId = admin!.id;
+    } else if (fallback?.id.trim().isNotEmpty == true) {
+      resolvedAdminId = fallback!.id;
+    }
+
+    final controllerState = resolvedAdminId != null
+        ? ref.watch(superadminAdminDetailsControllerProvider(resolvedAdminId))
+        : null;
+
+    final isActive =
+        controllerState?.effectiveIsActive ?? fallback?.isActive ?? false;
     final isVerified = admin?.isEmailVerified ?? fallback?.isVerified ?? false;
     final credits = admin?.credits ?? fallback?.totalCredits ?? 0;
-    final vehicles = admin?.totalVehicles ?? fallback?.totalVehicles ?? 0;
+
+    final vehicles = controllerState != null
+        ? (_resolveVehicleCount(admin, fallback, controllerState) ?? 0)
+        : (admin?.totalVehicles ?? fallback?.totalVehicles ?? 0);
+
     final initial = name.trim().isNotEmpty ? name.trim()[0].toUpperCase() : '?';
 
     return OpenVtsCard(
@@ -440,16 +556,23 @@ class _SummaryCard extends StatelessWidget {
                 height: 44,
                 width: 44,
                 alignment: Alignment.center,
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: OpenVtsColors.surface,
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Colors.black
+                      : Theme.of(context).colorScheme.surfaceContainer,
+                  border: Theme.of(context).brightness == Brightness.dark
+                      ? Border.all(color: Colors.white, width: 1)
+                      : null,
                 ),
                 child: Text(
                   initial,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
-                    color: OpenVtsColors.textPrimary,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.white
+                        : Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
               ),
@@ -460,10 +583,10 @@ class _SummaryCard extends StatelessWidget {
                   children: [
                     Text(
                       name,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
-                        color: OpenVtsColors.textPrimary,
+                        color: Theme.of(context).colorScheme.onSurface,
                         height: 1.2,
                       ),
                       maxLines: 1,
@@ -473,9 +596,9 @@ class _SummaryCard extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text(
                         '@$username',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
-                          color: OpenVtsColors.textSecondary,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                           height: 1.2,
                         ),
                         maxLines: 1,
@@ -492,8 +615,12 @@ class _SummaryCard extends StatelessWidget {
                   _Pill(
                     label: isActive ? 'Active' : 'Inactive',
                     color: isActive
-                        ? OpenVtsColors.brandInk
-                        : OpenVtsColors.textTertiary,
+                        ? (Theme.of(context).brightness == Brightness.dark
+                            ? OpenVtsColors.darkTextPrimary
+                            : OpenVtsColors.brandInk)
+                        : (Theme.of(context).brightness == Brightness.dark
+                            ? OpenVtsColors.darkTextTertiary
+                            : OpenVtsColors.textTertiary),
                   ),
                   if (isVerified) ...[
                     const SizedBox(height: 4),
@@ -510,7 +637,11 @@ class _SummaryCard extends StatelessWidget {
           if (email.isNotEmpty || phone.isNotEmpty) ...[
             const SizedBox(height: OpenVtsSpacing.sm),
             if (email.isNotEmpty)
-              _ContactLine(icon: Icons.mail_outline_rounded, text: email),
+              _ContactLineWithVerification(
+                icon: Icons.mail_outline_rounded,
+                text: email,
+                isVerified: isVerified,
+              ),
             if (email.isNotEmpty && phone.isNotEmpty) const SizedBox(height: 4),
             if (phone.isNotEmpty)
               _ContactLine(icon: Icons.phone_outlined, text: phone),
@@ -553,18 +684,65 @@ class _ContactLine extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 14, color: OpenVtsColors.textTertiary),
+        Icon(icon,
+            size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
         const SizedBox(width: 6),
         Expanded(
           child: Text(
             text,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12,
-              color: OpenVtsColors.textSecondary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               height: 1.2,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ContactLineWithVerification extends StatelessWidget {
+  const _ContactLineWithVerification({
+    required this.icon,
+    required this.text,
+    required this.isVerified,
+  });
+
+  final IconData icon;
+  final String text;
+  final bool isVerified;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon,
+            size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
+        const SizedBox(width: 6),
+        Flexible(
+          child: Text(
+            text,
+            style: TextStyle(
+              fontSize: 12,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              height: 1.2,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        const SizedBox(width: 4),
+        Tooltip(
+          message: isVerified ? 'Email verified' : 'Email unverified',
+          child: Icon(
+            isVerified
+                ? Icons.check_circle_rounded
+                : Icons.error_outline_rounded,
+            size: 15,
+            color: isVerified ? OpenVtsColors.success : OpenVtsColors.warning,
           ),
         ),
       ],
@@ -622,19 +800,20 @@ class _MetricTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: OpenVtsSpacing.sm,
         vertical: OpenVtsSpacing.sm,
       ),
       decoration: BoxDecoration(
-        color: OpenVtsColors.surface,
+        color: scheme.surfaceContainer,
         borderRadius: BorderRadius.circular(OpenVtsRadius.md),
-        border: Border.all(color: OpenVtsColors.border),
+        border: Border.all(color: scheme.outlineVariant),
       ),
       child: Row(
         children: [
-          Icon(icon, size: 16, color: OpenVtsColors.textSecondary),
+          Icon(icon, size: 16, color: scheme.onSurfaceVariant),
           const SizedBox(width: 8),
           Expanded(
             child: Column(
@@ -643,19 +822,19 @@ class _MetricTile extends StatelessWidget {
               children: [
                 Text(
                   label,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11,
-                    color: OpenVtsColors.textTertiary,
+                    color: scheme.onSurfaceVariant,
                     height: 1.1,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   value,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
-                    color: OpenVtsColors.textPrimary,
+                    color: scheme.onSurface,
                     height: 1.1,
                   ),
                   maxLines: 1,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../../core/router/route_paths.dart';
@@ -13,15 +14,14 @@ import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../../../shared/widgets/open_vts_status_chip.dart';
 import '../../../models/user_vehicle_model.dart';
 
-const DateTimeFormatter _dateFormatter = DateTimeFormatter();
-
-class UserVehicleCard extends StatelessWidget {
+class UserVehicleCard extends ConsumerWidget {
   const UserVehicleCard({required this.vehicle, super.key});
 
   final UserVehicleListItem vehicle;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final formatter = ref.watch(appDateFormatterProvider);
     return OpenVtsCard(
       onTap: () => context.push(
         RoutePaths.userVehicleDetailsPath(vehicle.id),
@@ -38,14 +38,17 @@ class UserVehicleCard extends StatelessWidget {
                 width: 34,
                 height: 34,
                 decoration: BoxDecoration(
-                  color: OpenVtsColors.textPrimary.withValues(alpha: 0.04),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.04),
                   borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-                  border: Border.all(color: OpenVtsColors.border),
+                  border: Border.all(color: _softBorderColor(context)),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.directions_car_filled_outlined,
                   size: 19,
-                  color: OpenVtsColors.textSecondary,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
               const SizedBox(width: OpenVtsSpacing.sm),
@@ -58,7 +61,7 @@ class UserVehicleCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: OpenVtsTypography.label.copyWith(
-                        color: OpenVtsColors.textPrimary,
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
@@ -71,7 +74,7 @@ class UserVehicleCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: OpenVtsTypography.meta.copyWith(
-                        color: OpenVtsColors.textSecondary,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -109,8 +112,7 @@ class UserVehicleCard extends StatelessWidget {
               if (vehicle.createdAt != null)
                 _MetaPill(
                   icon: Icons.calendar_today_outlined,
-                  label:
-                      _dateFormatter.formatDate(vehicle.createdAt!.toLocal()),
+                  label: formatter.formatDate(vehicle.createdAt!),
                 ),
               if (vehicle.isLicenseBlocked)
                 const _StatusPill(
@@ -143,7 +145,7 @@ class _MetaPill extends StatelessWidget {
     final content = _StatusPill(
       icon: icon,
       label: label,
-      color: OpenVtsColors.textSecondary,
+      color: Theme.of(context).colorScheme.onSurfaceVariant,
     );
 
     if (normalizedCopyValue.isEmpty) return content;
@@ -224,4 +226,10 @@ String _joinParts(List<String?> parts) {
       .where((item) => item.isNotEmpty && item != '-')
       .toList(growable: false);
   return normalized.isEmpty ? '-' : normalized.join(' - ');
+}
+
+Color _softBorderColor(BuildContext context) {
+  return Theme.of(context).brightness == Brightness.dark
+      ? OpenVtsColors.darkBorder
+      : OpenVtsColors.border;
 }

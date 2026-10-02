@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -396,8 +397,39 @@ class _SuperadminCreateAdminScreenState
         )
         .toList(growable: false);
 
-    final isStateLoading =
-        _selectedCountryCode != null && state.isCatalogLoading;
+    // Derive applicability from load outcomes, not just list emptiness.
+    final countrySelected = _selectedCountryCode != null;
+    final statesApplicable = state.hasStates;
+    final citiesApplicable = state.hasCities;
+
+    // State field is enabled only when the country has known states.
+    final stateEnabled = statesApplicable;
+    // City field is enabled only when the selected state has known cities.
+    final cityEnabled = citiesApplicable;
+
+    String stateHint;
+    if (!countrySelected) {
+      stateHint = 'Select a country first';
+    } else if (state.isLoadingStates) {
+      stateHint = 'Loading states…';
+    } else if (statesApplicable) {
+      stateHint = 'Select a state';
+    } else {
+      stateHint = 'Not applicable';
+    }
+
+    String cityHint;
+    if (!statesApplicable) {
+      cityHint = 'Not applicable';
+    } else if (_selectedStateCode == null) {
+      cityHint = 'Select a state first';
+    } else if (state.isLoadingCities) {
+      cityHint = 'Loading cities…';
+    } else if (citiesApplicable) {
+      cityHint = 'Select a city';
+    } else {
+      cityHint = 'Not applicable';
+    }
 
     return _FormSection(
       icon: Icons.location_on_outlined,
@@ -443,21 +475,17 @@ class _SuperadminCreateAdminScreenState
         ),
         OpenVtsSearchableDropdown<String>(
           label: 'State',
-          required: true,
-          enabled: _selectedCountryCode != null,
-          hintText: _selectedCountryCode == null
-              ? 'Select a country first'
-              : 'Select a state',
+          required: false,
+          enabled: stateEnabled,
+          hintText: stateHint,
           searchHintText: 'Search state',
           sheetTitle: 'Select state',
           leadingIcon: Icons.map_outlined,
           options: stateOptions,
           value: _selectedStateCode,
-          isLoading: isStateLoading && stateOptions.isEmpty,
-          validator: (value) => value == null || value.trim().isEmpty
-              ? 'State is required'
-              : null,
+          isLoading: state.isLoadingStates,
           onChanged: (value) async {
+            if (!stateEnabled) return;
             setState(() {
               _selectedStateCode = value;
               _selectedCityName = null;
@@ -472,29 +500,29 @@ class _SuperadminCreateAdminScreenState
                 if (!mounted) {
                   return;
                 }
-                ToastHelper.showError(error.toString(), context: context);
+                ToastHelper.showError(
+                  error.toString(),
+                  context: context,
+                );
               }
             }
           },
         ),
         OpenVtsSearchableDropdown<String>(
           label: 'City',
-          required: true,
-          enabled: _selectedStateCode != null,
-          hintText: _selectedStateCode == null
-              ? 'Select a state first'
-              : 'Select a city',
+          required: false,
+          enabled: cityEnabled,
+          hintText: cityHint,
           searchHintText: 'Search city',
           sheetTitle: 'Select city',
           leadingIcon: Icons.location_city_outlined,
           options: cityOptions,
           value: _selectedCityName,
-          isLoading: _selectedStateCode != null &&
-              state.isCatalogLoading &&
-              cityOptions.isEmpty,
-          validator: (value) =>
-              value == null || value.trim().isEmpty ? 'City is required' : null,
-          onChanged: (value) => setState(() => _selectedCityName = value),
+          isLoading: state.isLoadingCities,
+          onChanged: (value) {
+            if (!cityEnabled) return;
+            setState(() => _selectedCityName = value);
+          },
         ),
         OpenVtsTextField(
           label: 'Pincode',
@@ -502,6 +530,9 @@ class _SuperadminCreateAdminScreenState
           controller: _pincodeController,
           keyboardType: TextInputType.number,
           textInputAction: TextInputAction.next,
+          inputFormatters: [
+            FilteringTextInputFormatter.digitsOnly,
+          ],
           validator: Validators.pincodeOptional,
         ),
       ],
@@ -545,19 +576,18 @@ class _SuperadminCreateAdminScreenState
     final selectedCountry = state.countries
         .where((item) => item.code == _selectedCountryCode)
         .firstOrNull;
-    final selectedState = state.stateOptions
-        .where((item) => item.code == _selectedStateCode)
-        .firstOrNull;
 
-    if (selectedCountry == null ||
-        selectedState == null ||
-        _selectedCityName == null) {
+    if (selectedCountry == null) {
       ToastHelper.showError(
-        'Country, state, and city are required.',
+        'Country is required.',
         context: context,
       );
       return;
     }
+
+    // Use empty string for genuinely unavailable subdivisions per backend contract.
+    final stateValue = state.hasStates ? (_selectedStateCode ?? '') : '';
+    final cityValue = state.hasCities ? (_selectedCityName ?? '') : '';
 
     try {
       await controller.createAdministrator(
@@ -571,8 +601,8 @@ class _SuperadminCreateAdminScreenState
           companyName: _companyController.text,
           address: _addressController.text,
           country: selectedCountry.code,
-          state: selectedState.code,
-          city: _selectedCityName!,
+          state: stateValue,
+          city: cityValue,
           pincode: _pincodeController.text,
           credits: _creditsController.text,
         ),

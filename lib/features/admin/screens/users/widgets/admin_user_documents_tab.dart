@@ -9,6 +9,7 @@ import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../core/utils/date_time_formatter.dart';
+import '../../../../../core/utils/validators.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../shared/widgets/open_vts_bottom_sheet.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
@@ -224,16 +225,16 @@ class _SummaryCard extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.description_outlined,
                       size: 17,
-                      color: OpenVtsColors.textSecondary,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                     const SizedBox(width: OpenVtsSpacing.xs),
                     Text(
                       'Documents',
                       style: OpenVtsTypography.label.copyWith(
-                        color: OpenVtsColors.textPrimary,
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
@@ -251,7 +252,7 @@ class _SummaryCard extends StatelessWidget {
                 Text(
                   '$documentCount files - $typeCount user types',
                   style: OpenVtsTypography.meta.copyWith(
-                    color: OpenVtsColors.textSecondary,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -314,7 +315,7 @@ class _DocumentCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: OpenVtsTypography.label.copyWith(
-                        color: OpenVtsColors.textPrimary,
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontSize: 13,
                         fontWeight: FontWeight.w800,
                       ),
@@ -325,7 +326,7 @@ class _DocumentCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: OpenVtsTypography.meta.copyWith(
-                        color: OpenVtsColors.textSecondary,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -342,7 +343,11 @@ class _DocumentCard extends StatelessWidget {
                         height: 16,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Icon(Icons.more_vert_rounded, size: 18),
+                    : Icon(
+                        Icons.more_vert_rounded,
+                        size: 18,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                 onSelected: (action) {
                   switch (action) {
                     case _DocumentAction.view:
@@ -400,15 +405,7 @@ class _DocumentCard extends StatelessWidget {
                     ? 'No expiry'
                     : 'Expiry ${_dateText(document.expiryAt)}',
               ),
-              _MetaPill(
-                icon: document.isVisible
-                    ? Icons.visibility_outlined
-                    : Icons.visibility_off_outlined,
-                label: document.isVisible ? 'Visible' : 'Hidden',
-                color: document.isVisible
-                    ? OpenVtsColors.brandInk
-                    : OpenVtsColors.textTertiary,
-              ),
+              _VisibilityPill(isVisible: document.isVisible),
               _MetaPill(
                 icon: Icons.calendar_today_outlined,
                 label: 'Added ${_dateText(document.createdAt)}',
@@ -506,16 +503,7 @@ class _DocumentSheetState extends ConsumerState<_DocumentSheet> {
                     hintText: 'Document title',
                     prefixIcon: Icons.title_rounded,
                     textInputAction: TextInputAction.next,
-                    validator: (value) {
-                      final normalized = value?.trim() ?? '';
-                      if (normalized.isEmpty) {
-                        return 'Title is required.';
-                      }
-                      if (normalized.length > 120) {
-                        return 'Title is too long.';
-                      }
-                      return null;
-                    },
+                    validator: Validators.documentTitle,
                   ),
                   const SizedBox(height: OpenVtsSpacing.sm),
                   _FilePickerField(
@@ -783,18 +771,20 @@ class _FilePickerField extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(OpenVtsSpacing.sm),
           decoration: BoxDecoration(
-            color: OpenVtsColors.surface,
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
             border: Border.all(
-              color: showError ? OpenVtsColors.error : OpenVtsColors.border,
+              color: showError
+                  ? OpenVtsColors.error
+                  : Theme.of(context).colorScheme.outlineVariant,
             ),
           ),
           child: Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.attach_file_rounded,
                 size: 18,
-                color: OpenVtsColors.textSecondary,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
               const SizedBox(width: OpenVtsSpacing.xs),
               Expanded(
@@ -804,8 +794,8 @@ class _FilePickerField extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: OpenVtsTypography.meta.copyWith(
                     color: currentName.isEmpty
-                        ? OpenVtsColors.textTertiary
-                        : OpenVtsColors.textPrimary,
+                        ? Theme.of(context).colorScheme.onSurfaceVariant
+                        : Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -872,16 +862,17 @@ class _ExpiryField extends StatelessWidget {
               vertical: OpenVtsSpacing.xs,
             ),
             decoration: BoxDecoration(
-              color: OpenVtsColors.surface,
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-              border: Border.all(color: OpenVtsColors.border),
+              border: Border.all(
+                  color: Theme.of(context).colorScheme.outlineVariant),
             ),
             child: Row(
               children: [
-                const Icon(
+                Icon(
                   Icons.event_outlined,
                   size: 18,
-                  color: OpenVtsColors.textSecondary,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
                 const SizedBox(width: OpenVtsSpacing.xs),
                 Expanded(
@@ -889,8 +880,8 @@ class _ExpiryField extends StatelessWidget {
                     value == null ? 'No expiry' : _dateText(value),
                     style: OpenVtsTypography.meta.copyWith(
                       color: value == null
-                          ? OpenVtsColors.textTertiary
-                          : OpenVtsColors.textPrimary,
+                          ? Theme.of(context).colorScheme.onSurfaceVariant
+                          : Theme.of(context).colorScheme.onSurface,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -907,10 +898,10 @@ class _ExpiryField extends StatelessWidget {
                     ),
                   )
                 else
-                  const Icon(
+                  Icon(
                     Icons.expand_more_rounded,
                     size: 18,
-                    color: OpenVtsColors.textSecondary,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
               ],
             ),
@@ -935,16 +926,16 @@ class _VisibilityToggle extends StatelessWidget {
         vertical: OpenVtsSpacing.xs,
       ),
       decoration: BoxDecoration(
-        color: OpenVtsColors.surface,
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-        border: Border.all(color: OpenVtsColors.border),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
       child: Row(
         children: [
           Icon(
             value ? Icons.visibility_outlined : Icons.visibility_off_outlined,
             size: 18,
-            color: OpenVtsColors.textSecondary,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
           const SizedBox(width: OpenVtsSpacing.xs),
           Expanded(
@@ -954,13 +945,13 @@ class _VisibilityToggle extends StatelessWidget {
                 Text(
                   'Visible to user',
                   style: OpenVtsTypography.label.copyWith(
-                    color: OpenVtsColors.textPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 Text(
                   value ? 'Shown in user documents' : 'Hidden from user',
                   style: OpenVtsTypography.meta.copyWith(
-                    color: OpenVtsColors.textSecondary,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
               ],
@@ -986,14 +977,14 @@ class _ExtensionBadge extends StatelessWidget {
       height: 40,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: OpenVtsColors.surface,
+        color: Theme.of(context).colorScheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-        border: Border.all(color: OpenVtsColors.border),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
       child: Text(
         label.length > 4 ? label.substring(0, 4) : label,
         style: OpenVtsTypography.meta.copyWith(
-          color: OpenVtsColors.textPrimary,
+          color: Theme.of(context).colorScheme.onSurface,
           fontSize: 10,
           fontWeight: FontWeight.w800,
         ),
@@ -1012,7 +1003,8 @@ class _InfoLine extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 14, color: OpenVtsColors.textTertiary),
+        Icon(icon,
+            size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
         const SizedBox(width: OpenVtsSpacing.xs),
         Expanded(
           child: Text(
@@ -1020,7 +1012,7 @@ class _InfoLine extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: OpenVtsTypography.meta.copyWith(
-              color: OpenVtsColors.textSecondary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -1034,31 +1026,72 @@ class _MetaPill extends StatelessWidget {
   const _MetaPill({
     required this.icon,
     required this.label,
-    this.color = OpenVtsColors.textSecondary,
+    this.color,
   });
 
   final IconData icon;
   final String label;
-  final Color color;
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
+    final pillColor = color ?? Theme.of(context).colorScheme.onSurfaceVariant;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.06),
+        color: pillColor.withValues(alpha: 0.14),
         borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
-        border: Border.all(color: color.withValues(alpha: 0.18)),
+        border: Border.all(color: pillColor.withValues(alpha: 0.28)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12, color: color),
+          Icon(icon, size: 12, color: pillColor),
           const SizedBox(width: 4),
           Text(
             label,
             style: OpenVtsTypography.meta.copyWith(
-              color: color,
+              color: pillColor,
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _VisibilityPill extends StatelessWidget {
+  const _VisibilityPill({required this.isVisible});
+
+  final bool isVisible;
+
+  @override
+  Widget build(BuildContext context) {
+    final pillColor = Theme.of(context).colorScheme.onSurfaceVariant;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: pillColor.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
+        border: Border.all(color: pillColor.withValues(alpha: 0.28)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            isVisible
+                ? Icons.visibility_outlined
+                : Icons.visibility_off_outlined,
+            size: 12,
+            color: pillColor,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            isVisible ? 'Visible' : 'Hidden',
+            style: OpenVtsTypography.meta.copyWith(
+              color: pillColor,
               fontSize: 11,
               fontWeight: FontWeight.w700,
             ),
@@ -1082,8 +1115,9 @@ class _MenuRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color =
-        isDestructive ? OpenVtsColors.error : OpenVtsColors.textPrimary;
+    final color = isDestructive
+        ? OpenVtsColors.error
+        : Theme.of(context).colorScheme.onSurface;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -1111,9 +1145,9 @@ class _InlineError extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(OpenVtsSpacing.sm),
       decoration: BoxDecoration(
-        color: OpenVtsColors.error.withValues(alpha: 0.05),
+        color: OpenVtsColors.error.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-        border: Border.all(color: OpenVtsColors.error.withValues(alpha: 0.2)),
+        border: Border.all(color: OpenVtsColors.error.withValues(alpha: 0.3)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1159,7 +1193,7 @@ class _SectionLoader extends StatelessWidget {
           Text(
             'Loading $title',
             style: OpenVtsTypography.label.copyWith(
-              color: OpenVtsColors.textSecondary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -1194,7 +1228,7 @@ class _SectionErrorCard extends StatelessWidget {
                 child: Text(
                   'Unable to load documents',
                   style: OpenVtsTypography.label.copyWith(
-                    color: OpenVtsColors.textPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -1205,7 +1239,7 @@ class _SectionErrorCard extends StatelessWidget {
           Text(
             message,
             style: OpenVtsTypography.meta.copyWith(
-              color: OpenVtsColors.textSecondary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
           const SizedBox(height: OpenVtsSpacing.sm),
@@ -1232,14 +1266,14 @@ class _EmptyCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(OpenVtsSpacing.md),
       decoration: BoxDecoration(
-        color: OpenVtsColors.surface,
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-        border: Border.all(color: OpenVtsColors.border),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
       child: Text(
         label,
         style: OpenVtsTypography.meta.copyWith(
-          color: OpenVtsColors.textSecondary,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
           fontWeight: FontWeight.w700,
         ),
       ),

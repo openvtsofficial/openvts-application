@@ -7,7 +7,6 @@ import '../../../../core/theme/open_vts_colors.dart';
 import '../../../../core/theme/open_vts_radius.dart';
 import '../../../../core/theme/open_vts_spacing.dart';
 import '../../../../core/theme/open_vts_typography.dart';
-import '../../../../core/utils/date_time_formatter.dart';
 import '../../../../shared/helpers/toast_helper.dart';
 import '../../../../shared/widgets/open_vts_bottom_sheet.dart';
 import '../../../../shared/widgets/open_vts_button.dart';
@@ -45,6 +44,21 @@ class AdminUserDetailsScreen extends ConsumerStatefulWidget {
 class _AdminUserDetailsScreenState
     extends ConsumerState<AdminUserDetailsScreen> {
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final controller =
+          ref.read(adminUserDetailsControllerProvider(widget.userId).notifier);
+      // Seed initial data if available
+      if (widget.initialUser != null) {
+        controller.seedInitialData(lastLogin: widget.initialUser!.updatedAt);
+      }
+      // Ensure vehicle count is loaded early for summary card (don't wait for Vehicle tab)
+      controller.ensureVehicleCountLoaded();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final provider = adminUserDetailsControllerProvider(widget.userId);
     final state = ref.watch(provider);
@@ -53,6 +67,7 @@ class _AdminUserDetailsScreenState
       details: state.user,
       fallback: widget.initialUser,
       userId: widget.userId,
+      effectiveIsActive: state.effectiveIsActive,
     );
 
     return OpenVtsPageScaffold(
@@ -97,7 +112,7 @@ class _AdminUserDetailsScreenState
               _SummaryCard(
                 user: user,
                 isSyncing: state.isLoadingProfile,
-                linkedVehiclesCount: state.linkedVehicles.length,
+                resolvedVehicleCount: state.resolvedVehicleCount,
               ),
             if (state.errorMessage != null && !user.hasKnownData) ...[
               const SizedBox(height: OpenVtsSpacing.sm),
@@ -240,7 +255,7 @@ class _AdminUserDetailsScreenState
         'Signed in as ${user.displayName}.',
         context: context,
       );
-      context.go(RoutePaths.userDashboard);
+      context.go(RoutePaths.userHome);
     } catch (_) {
       if (!mounted) {
         return;
@@ -376,7 +391,8 @@ class _HeaderMenu extends StatelessWidget {
         const PopupMenuItem(
           value: _HeaderMenuAction.editCompany,
           height: 40,
-          child: _MenuRow(icon: Icons.apartment_outlined, label: 'Edit Company'),
+          child:
+              _MenuRow(icon: Icons.apartment_outlined, label: 'Edit Company'),
         ),
         PopupMenuItem(
           value: _HeaderMenuAction.toggleStatus,
@@ -425,8 +441,10 @@ class _MenuRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color =
-        isDestructive ? OpenVtsColors.error : OpenVtsColors.textPrimary;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final color = isDestructive
+        ? OpenVtsColors.error
+        : (isDark ? OpenVtsColors.white : OpenVtsColors.textPrimary);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -445,138 +463,139 @@ class _SummaryCard extends StatelessWidget {
   const _SummaryCard({
     required this.user,
     required this.isSyncing,
-    required this.linkedVehiclesCount,
+    required this.resolvedVehicleCount,
   });
 
   final _UserSnapshot user;
   final bool isSyncing;
-  final int linkedVehiclesCount;
+  final int? resolvedVehicleCount;
 
   @override
   Widget build(BuildContext context) {
-    final resolvedVehicleCount = user.vehicleCount ?? linkedVehiclesCount;
     return OpenVtsCard(
       padding: const EdgeInsets.all(OpenVtsSpacing.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              _InitialsAvatar(initials: user.initials),
+              Container(
+                height: 44,
+                width: 44,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                ),
+                child: Text(
+                  user.initials,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+              ),
               const SizedBox(width: OpenVtsSpacing.sm),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            user.displayName,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                ),
-                          ),
-                        ),
-                        if (isSyncing) ...[
-                          const SizedBox(width: OpenVtsSpacing.xs),
-                          const SizedBox(
-                            width: 14,
-                            height: 14,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          ),
-                        ],
-                      ],
-                    ),
-                    const SizedBox(height: OpenVtsSpacing.xxs),
                     Text(
-                      user.usernameLabel,
+                      user.displayName,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: Theme.of(context).colorScheme.onSurface,
+                        height: 1.2,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: OpenVtsColors.textSecondary,
-                          ),
                     ),
-                    const SizedBox(height: OpenVtsSpacing.xs),
-                    Wrap(
-                      spacing: OpenVtsSpacing.xs,
-                      runSpacing: OpenVtsSpacing.xxs,
-                      children: [
-                        _StatusChip(isActive: user.isActive),
-                        _VerifiedChip(isVerified: user.isEmailVerified),
-                      ],
-                    ),
+                    if (user.username.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        '@${user.username}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          height: 1.2,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ],
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: OpenVtsSpacing.md),
-          const Divider(height: 1, color: OpenVtsColors.border),
-          const SizedBox(height: OpenVtsSpacing.md),
-          _CompactInfoLine(icon: Icons.mail_outline_rounded, value: user.email),
-          _CompactInfoLine(icon: Icons.phone_outlined, value: user.phone),
-          const SizedBox(height: OpenVtsSpacing.md),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final metricRows = <Widget>[
-                _MetricTile(
-                  icon: Icons.directions_car_outlined,
-                  label: 'Vehicles',
-                  value: resolvedVehicleCount.toString(),
-                ),
-                _MetricTile(
-                  icon: Icons.calendar_today_rounded,
-                  label: 'Created',
-                  value: _dateLabel(user.createdAt),
-                ),
-                _MetricTile(
-                  icon: Icons.update_rounded,
-                  label: 'Updated',
-                  value: _dateLabel(user.updatedAt),
-                ),
-                _MetricTile(
-                  icon: Icons.apartment_outlined,
-                  label: 'Company',
-                  value: _displayValue(user.company),
-                ),
-              ];
-
-              if (constraints.maxWidth < 420) {
-                return Column(
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(child: metricRows[0]),
-                        const SizedBox(width: OpenVtsSpacing.sm),
-                        Expanded(child: metricRows[1]),
-                      ],
-                    ),
-                    const SizedBox(height: OpenVtsSpacing.sm),
-                    Row(
-                      children: [
-                        Expanded(child: metricRows[2]),
-                        const SizedBox(width: OpenVtsSpacing.sm),
-                        Expanded(child: metricRows[3]),
-                      ],
+              const SizedBox(width: OpenVtsSpacing.sm),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  _StatusChip(isActive: user.isActive),
+                  if (user.isEmailVerified) ...[
+                    const SizedBox(height: 4),
+                    const _MicroChip(
+                      label: 'Verified',
+                      icon: Icons.verified_outlined,
+                      color: OpenVtsColors.success,
                     ),
                   ],
-                );
-              }
-
-              return GridView.count(
-                shrinkWrap: true,
-                crossAxisCount: 2,
-                crossAxisSpacing: OpenVtsSpacing.sm,
-                mainAxisSpacing: OpenVtsSpacing.sm,
-                childAspectRatio: 2.1,
-                physics: const NeverScrollableScrollPhysics(),
-                children: metricRows,
-              );
-            },
+                ],
+              ),
+            ],
+          ),
+          if (user.email.isNotEmpty || user.phone.isNotEmpty) ...[
+            const SizedBox(height: OpenVtsSpacing.sm),
+            if (user.email.isNotEmpty)
+              _ContactLineWithVerification(
+                icon: Icons.mail_outline_rounded,
+                text: user.email,
+                isVerified: user.isEmailVerified,
+              ),
+            if (user.email.isNotEmpty && user.phone.isNotEmpty)
+              const SizedBox(height: 4),
+            if (user.phone.isNotEmpty)
+              _CompactInfoLine(icon: Icons.phone_outlined, value: user.phone),
+          ],
+          const SizedBox(height: OpenVtsSpacing.md),
+          Divider(
+            height: 1,
+            color: Theme.of(context).colorScheme.outlineVariant,
+          ),
+          const SizedBox(height: OpenVtsSpacing.md),
+          Row(
+            children: [
+              Expanded(
+                child: _MetricTile(
+                  icon: Icons.directions_car_outlined,
+                  label: 'Vehicles',
+                  value: resolvedVehicleCount == null
+                      ? '—'
+                      : resolvedVehicleCount.toString(),
+                ),
+              ),
+              const SizedBox(width: OpenVtsSpacing.sm),
+              if (isSyncing)
+                const Expanded(
+                  child: Center(
+                    child: SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  ),
+                )
+              else
+                Expanded(
+                  child: _MetricTile(
+                    icon: Icons.apartment_outlined,
+                    label: 'Company',
+                    value: _displayValue(user.company),
+                  ),
+                ),
+            ],
           ),
         ],
       ),
@@ -615,33 +634,6 @@ class _SummarySkeleton extends StatelessWidget {
   }
 }
 
-class _InitialsAvatar extends StatelessWidget {
-  const _InitialsAvatar({required this.initials});
-
-  final String initials;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 56,
-      height: 56,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: OpenVtsColors.surface,
-        borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
-        border: Border.all(color: OpenVtsColors.border),
-      ),
-      child: Text(
-        initials,
-        style: OpenVtsTypography.label.copyWith(
-          color: OpenVtsColors.textPrimary,
-          fontWeight: FontWeight.w800,
-        ),
-      ),
-    );
-  }
-}
-
 class _StatusChip extends StatelessWidget {
   const _StatusChip({required this.isActive});
 
@@ -649,26 +641,15 @@ class _StatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isActive ? OpenVtsColors.brandInk : OpenVtsColors.textTertiary;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final color = isActive
+        ? (isDark ? OpenVtsColors.white : OpenVtsColors.brandInk)
+        : Theme.of(context).colorScheme.outline;
     return _MicroChip(
       label: isActive ? 'Active' : 'Inactive',
-      icon: isActive ? Icons.check_circle_outline_rounded : Icons.pause_circle_outline_rounded,
-      color: color,
-    );
-  }
-}
-
-class _VerifiedChip extends StatelessWidget {
-  const _VerifiedChip({required this.isVerified});
-
-  final bool isVerified;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = isVerified ? OpenVtsColors.success : OpenVtsColors.warning;
-    return _MicroChip(
-      label: isVerified ? 'Verified' : 'Unverified',
-      icon: isVerified ? Icons.verified_outlined : Icons.gpp_maybe_rounded,
+      icon: isActive
+          ? Icons.check_circle_outline_rounded
+          : Icons.pause_circle_outline_rounded,
       color: color,
     );
   }
@@ -687,12 +668,14 @@ class _MicroChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.06),
+        color: color.withValues(alpha: isDark ? 0.15 : 0.06),
         borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
-        border: Border.all(color: color.withValues(alpha: 0.22)),
+        border:
+            Border.all(color: color.withValues(alpha: isDark ? 0.35 : 0.22)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -713,6 +696,57 @@ class _MicroChip extends StatelessWidget {
   }
 }
 
+class _ContactLineWithVerification extends StatelessWidget {
+  const _ContactLineWithVerification({
+    required this.icon,
+    required this.text,
+    required this.isVerified,
+  });
+
+  final IconData icon;
+  final String text;
+  final bool isVerified;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: OpenVtsSpacing.xxs),
+      child: Row(
+        children: [
+          Icon(
+            icon,
+            size: 14,
+            color: Theme.of(context).colorScheme.outline,
+          ),
+          const SizedBox(width: OpenVtsSpacing.xs),
+          Flexible(
+            child: Text(
+              _displayValue(text),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: OpenVtsTypography.meta.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          const SizedBox(width: 4),
+          Tooltip(
+            message: isVerified ? 'Email verified' : 'Email unverified',
+            child: Icon(
+              isVerified
+                  ? Icons.check_circle_rounded
+                  : Icons.error_outline_rounded,
+              size: 15,
+              color: isVerified ? OpenVtsColors.success : OpenVtsColors.warning,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _CompactInfoLine extends StatelessWidget {
   const _CompactInfoLine({required this.icon, required this.value});
 
@@ -725,7 +759,11 @@ class _CompactInfoLine extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: OpenVtsSpacing.xxs),
       child: Row(
         children: [
-          Icon(icon, size: 14, color: OpenVtsColors.textTertiary),
+          Icon(
+            icon,
+            size: 14,
+            color: Theme.of(context).colorScheme.outline,
+          ),
           const SizedBox(width: OpenVtsSpacing.xs),
           Expanded(
             child: Text(
@@ -733,7 +771,7 @@ class _CompactInfoLine extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: OpenVtsTypography.meta.copyWith(
-                color: OpenVtsColors.textSecondary,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -763,13 +801,22 @@ class _MetricTile extends StatelessWidget {
         vertical: OpenVtsSpacing.sm,
       ),
       decoration: BoxDecoration(
-        color: OpenVtsColors.background,
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(OpenVtsRadius.md),
-        border: Border.all(color: OpenVtsColors.border.withValues(alpha: 0.7)),
+        border: Border.all(
+          color: Theme.of(context)
+              .colorScheme
+              .outlineVariant
+              .withValues(alpha: 0.7),
+        ),
       ),
       child: Row(
         children: [
-          Icon(icon, size: 16, color: OpenVtsColors.textSecondary),
+          Icon(
+            icon,
+            size: 16,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
           const SizedBox(width: OpenVtsSpacing.xs),
           Expanded(
             child: Column(
@@ -779,7 +826,7 @@ class _MetricTile extends StatelessWidget {
                 Text(
                   label,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: OpenVtsColors.textSecondary,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                 ),
                 const SizedBox(height: 2),
@@ -789,6 +836,7 @@ class _MetricTile extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.w700,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                 ),
               ],
@@ -842,17 +890,21 @@ class _TabChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final background =
-        isSelected ? OpenVtsColors.brandInk : OpenVtsColors.white;
-    final foreground =
-        isSelected ? OpenVtsColors.white : OpenVtsColors.textPrimary;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final background = isSelected
+        ? OpenVtsColors.brandInk
+        : Theme.of(context).colorScheme.surface;
+    final foreground = isSelected
+        ? (isDark ? OpenVtsColors.darkTextPrimary : OpenVtsColors.white)
+        : Theme.of(context).colorScheme.onSurface;
+    final borderColor = isSelected
+        ? OpenVtsColors.brandInk
+        : Theme.of(context).colorScheme.outlineVariant;
     return Material(
       color: background,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
-        side: BorderSide(
-          color: isSelected ? OpenVtsColors.brandInk : OpenVtsColors.border,
-        ),
+        side: BorderSide(color: borderColor),
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
@@ -1213,6 +1265,7 @@ class _UserSnapshot {
     required AdminUserDetails? details,
     required AdminUserListItem? fallback,
     required String userId,
+    required bool effectiveIsActive,
   }) {
     if (details != null) {
       final address = details.address;
@@ -1225,7 +1278,7 @@ class _UserSnapshot {
         username: details.username,
         email: details.email,
         phone: details.mobileDisplay,
-        isActive: details.isActive,
+        isActive: effectiveIsActive,
         isEmailVerified: details.isEmailVerified,
         company: company,
         location: details.location,
@@ -1246,7 +1299,7 @@ class _UserSnapshot {
         username: fallback.username,
         email: fallback.email,
         phone: fallback.mobileDisplay,
-        isActive: fallback.isActive,
+        isActive: effectiveIsActive,
         isEmailVerified: fallback.isEmailVerified,
         company: fallback.companyName,
         location: fallback.location,
@@ -1266,7 +1319,7 @@ class _UserSnapshot {
       username: '',
       email: '',
       phone: '',
-      isActive: false,
+      isActive: effectiveIsActive,
       isEmailVerified: false,
       company: '',
       location: '',
@@ -1327,11 +1380,4 @@ String _displayValue(String value) {
     return '-';
   }
   return normalized;
-}
-
-String _dateLabel(DateTime? value) {
-  if (value == null) {
-    return '—';
-  }
-  return const DateTimeFormatter().formatDate(value.toLocal());
 }

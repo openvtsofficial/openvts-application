@@ -10,7 +10,7 @@ import '../../../models/admin_payments_model.dart';
 import '../../../models/admin_payments_state.dart';
 import '../../../models/admin_users_model.dart';
 
-class AdminPaymentsFiltersCard extends StatelessWidget {
+class AdminPaymentsFiltersCard extends StatefulWidget {
   const AdminPaymentsFiltersCard({
     required this.state,
     required this.onUserChanged,
@@ -33,228 +33,374 @@ class AdminPaymentsFiltersCard extends StatelessWidget {
   final VoidCallback onApply;
 
   @override
+  State<AdminPaymentsFiltersCard> createState() =>
+      _AdminPaymentsFiltersCardState();
+}
+
+class _AdminPaymentsFiltersCardState extends State<AdminPaymentsFiltersCard> {
+  bool _showAdvancedFilters = false;
+
+  @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final headingColor = isDark ? Colors.white : OpenVtsColors.textPrimary;
+    final hasAdvancedSelection = widget.state.selectedMode != null;
+    final showAdvancedFilters = _showAdvancedFilters || hasAdvancedSelection;
+
     return OpenVtsCard(
-      padding: const EdgeInsets.all(OpenVtsSpacing.md),
+      padding: const EdgeInsets.all(OpenVtsSpacing.sm),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: OpenVtsColors.surfaceElevated,
-                  borderRadius: BorderRadius.circular(OpenVtsRadius.md),
-                  border: Border.all(color: OpenVtsColors.border),
-                ),
-                child: const Icon(
-                  Icons.filter_list_rounded,
-                  size: 18,
-                  color: OpenVtsColors.textPrimary,
+              Text(
+                'Filters',
+                style: OpenVtsTypography.label.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: headingColor,
                 ),
               ),
-              const SizedBox(width: OpenVtsSpacing.sm),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Filters', style: OpenVtsTypography.titleSmall),
-                    const SizedBox(height: OpenVtsSpacing.xxs),
-                    Text(
-                      'Refine payments by user, status, mode, and date.',
-                      style: OpenVtsTypography.meta.copyWith(
-                        color: OpenVtsColors.textSecondary,
-                      ),
+              const Spacer(),
+              if (widget.state.hasActiveFilters)
+                TextButton.icon(
+                  onPressed: _handleClear,
+                  style: TextButton.styleFrom(
+                    foregroundColor: OpenVtsColors.textSecondary,
+                    visualDensity: VisualDensity.compact,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: OpenVtsSpacing.xs,
                     ),
-                  ],
+                    minimumSize: const Size(44, 44),
+                  ),
+                  icon: const Icon(Icons.filter_alt_off_outlined, size: 14),
+                  label: Text(
+                    'Clear',
+                    style: OpenVtsTypography.meta.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: OpenVtsSpacing.sm),
+          const _SectionLabel(text: 'Date Range'),
+          const SizedBox(height: OpenVtsSpacing.xs),
+          Wrap(
+            spacing: OpenVtsSpacing.xs,
+            runSpacing: OpenVtsSpacing.xs,
+            children: [
+              _CompactChoiceChip(
+                label: 'Today',
+                selected:
+                    widget.state.rangePreset == AdminPaymentsRangePreset.today,
+                onTap: () => widget.onRangePresetChanged(
+                  AdminPaymentsRangePreset.today,
+                ),
+              ),
+              _CompactChoiceChip(
+                label: 'Yesterday',
+                selected: widget.state.rangePreset ==
+                    AdminPaymentsRangePreset.yesterday,
+                onTap: () => widget.onRangePresetChanged(
+                  AdminPaymentsRangePreset.yesterday,
+                ),
+              ),
+              _CompactChoiceChip(
+                label: 'Last 12 Hours',
+                selected: widget.state.rangePreset ==
+                    AdminPaymentsRangePreset.last12Hours,
+                onTap: () => widget.onRangePresetChanged(
+                  AdminPaymentsRangePreset.last12Hours,
+                ),
+              ),
+              _CompactChoiceChip(
+                label: 'Last 24 Hours',
+                selected: widget.state.rangePreset ==
+                    AdminPaymentsRangePreset.last24Hours,
+                onTap: () => widget.onRangePresetChanged(
+                  AdminPaymentsRangePreset.last24Hours,
+                ),
+              ),
+              _CompactChoiceChip(
+                label: 'Last 7 Days',
+                selected: widget.state.rangePreset ==
+                    AdminPaymentsRangePreset.last7Days,
+                onTap: () => widget.onRangePresetChanged(
+                  AdminPaymentsRangePreset.last7Days,
+                ),
+              ),
+              _CompactChoiceChip(
+                label: 'Last 30 Days',
+                selected: widget.state.rangePreset ==
+                    AdminPaymentsRangePreset.last30Days,
+                onTap: () => widget.onRangePresetChanged(
+                  AdminPaymentsRangePreset.last30Days,
+                ),
+              ),
+              _CompactChoiceChip(
+                label: 'This Month',
+                selected: widget.state.rangePreset ==
+                    AdminPaymentsRangePreset.thisMonth,
+                onTap: () => widget.onRangePresetChanged(
+                  AdminPaymentsRangePreset.thisMonth,
+                ),
+              ),
+              _CompactChoiceChip(
+                label: 'This Year',
+                selected: widget.state.rangePreset ==
+                    AdminPaymentsRangePreset.thisYear,
+                onTap: () => widget.onRangePresetChanged(
+                  AdminPaymentsRangePreset.thisYear,
+                ),
+              ),
+              _CompactChoiceChip(
+                label: 'Custom',
+                selected:
+                    widget.state.rangePreset == AdminPaymentsRangePreset.custom,
+                onTap: () => widget.onRangePresetChanged(
+                  AdminPaymentsRangePreset.custom,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: OpenVtsSpacing.md),
-          DropdownButtonFormField<String?>(
-            initialValue: state.selectedUserId,
-            decoration: const InputDecoration(labelText: 'User'),
-            items: [
-              const DropdownMenuItem<String?>(
-                  value: null, child: Text('All Users')),
-              ...state.users.map(
-                (u) => DropdownMenuItem<String?>(
-                  value: u.id,
-                  child: _userLabel(u),
-                ),
-              ),
-            ],
-            onChanged: onUserChanged,
-          ),
-          const SizedBox(height: OpenVtsSpacing.sm),
-          _chips(
-            'Status',
-            [
-              _chip('All', state.selectedStatus == null,
-                  () => onStatusChanged(null)),
-              _chip(
-                  'Success',
-                  state.selectedStatus == AdminPaymentStatus.success,
-                  () => onStatusChanged(AdminPaymentStatus.success)),
-              _chip(
-                  'Pending',
-                  state.selectedStatus == AdminPaymentStatus.pending,
-                  () => onStatusChanged(AdminPaymentStatus.pending)),
-              _chip('Failed', state.selectedStatus == AdminPaymentStatus.failed,
-                  () => onStatusChanged(AdminPaymentStatus.failed)),
-            ],
-          ),
-          const SizedBox(height: OpenVtsSpacing.sm),
-          _chips(
-            'Payment Mode',
-            [
-              _chip(
-                  'All', state.selectedMode == null, () => onModeChanged(null)),
-              ...AdminPaymentMode.values.map((mode) => _chip(mode.label,
-                  state.selectedMode == mode, () => onModeChanged(mode))),
-            ],
-          ),
-          const SizedBox(height: OpenVtsSpacing.sm),
-          _chips(
-            'Date Range',
-            [
-              _chip(
-                  'This Month',
-                  state.rangePreset == AdminPaymentsRangePreset.thisMonth,
-                  () =>
-                      onRangePresetChanged(AdminPaymentsRangePreset.thisMonth)),
-              _chip(
-                  'Last 30 Days',
-                  state.rangePreset == AdminPaymentsRangePreset.last30,
-                  () => onRangePresetChanged(AdminPaymentsRangePreset.last30)),
-              _chip(
-                  'This Year',
-                  state.rangePreset == AdminPaymentsRangePreset.thisYear,
-                  () =>
-                      onRangePresetChanged(AdminPaymentsRangePreset.thisYear)),
-              _chip(
-                  'Custom',
-                  state.rangePreset == AdminPaymentsRangePreset.custom,
-                  () => onRangePresetChanged(AdminPaymentsRangePreset.custom)),
-            ],
-          ),
-          if (state.rangePreset == AdminPaymentsRangePreset.custom) ...[
+          if (widget.state.rangePreset == AdminPaymentsRangePreset.custom) ...[
             const SizedBox(height: OpenVtsSpacing.sm),
             OpenVtsDateTimeRangeField(
               label: 'Custom Range',
-              title: 'Choose Date Range',
               value: OpenVtsDateTimeRange(
-                  start: state.customFrom, end: state.customTo),
-              firstDate: DateTime(2020),
-              lastDate: DateTime.now(),
+                start: widget.state.customFrom,
+                end: widget.state.customTo,
+              ),
               onChanged: (range) =>
-                  onCustomRangeChanged(range.start, range.end),
+                  widget.onCustomRangeChanged(range.start, range.end),
+              title: 'Choose Date Range',
             ),
           ],
-          const SizedBox(height: OpenVtsSpacing.md),
-          Row(
+          const SizedBox(height: OpenVtsSpacing.sm),
+          const _SectionLabel(text: 'Status'),
+          const SizedBox(height: OpenVtsSpacing.xs),
+          Wrap(
+            spacing: OpenVtsSpacing.xs,
+            runSpacing: OpenVtsSpacing.xs,
             children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: state.hasActiveFilters ? onClear : null,
-                  icon: const Icon(Icons.restart_alt_rounded, size: 16),
-                  label: const Text('Clear'),
-                  style: OutlinedButton.styleFrom(
-                    minimumSize: const Size.fromHeight(44),
-                    side: const BorderSide(color: OpenVtsColors.border),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(OpenVtsRadius.md),
-                    ),
-                  ),
-                ),
+              _CompactChoiceChip(
+                label: 'All',
+                selected: widget.state.selectedStatus == null,
+                onTap: () => widget.onStatusChanged(null),
               ),
-              const SizedBox(width: OpenVtsSpacing.sm),
-              Expanded(
-                child: FilledButton.icon(
-                  onPressed: onApply,
-                  icon: const Icon(Icons.check_circle_outline_rounded, size: 16),
-                  label: const Text('Apply Filters'),
-                  style: FilledButton.styleFrom(
-                    minimumSize: const Size.fromHeight(44),
-                    backgroundColor: OpenVtsColors.brandInk,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(OpenVtsRadius.md),
-                    ),
-                  ),
-                ),
+              _CompactChoiceChip(
+                label: 'Success',
+                selected:
+                    widget.state.selectedStatus == AdminPaymentStatus.success,
+                onTap: () => widget.onStatusChanged(AdminPaymentStatus.success),
+              ),
+              _CompactChoiceChip(
+                label: 'Pending',
+                selected:
+                    widget.state.selectedStatus == AdminPaymentStatus.pending,
+                onTap: () => widget.onStatusChanged(AdminPaymentStatus.pending),
+              ),
+              _CompactChoiceChip(
+                label: 'Failed',
+                selected:
+                    widget.state.selectedStatus == AdminPaymentStatus.failed,
+                onTap: () => widget.onStatusChanged(AdminPaymentStatus.failed),
               ),
             ],
           ),
+          const SizedBox(height: OpenVtsSpacing.sm),
+          TextButton.icon(
+            onPressed: () {
+              setState(() {
+                _showAdvancedFilters = !showAdvancedFilters;
+              });
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: OpenVtsColors.textSecondary,
+              minimumSize: const Size(44, 44),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: OpenVtsSpacing.xs),
+            ),
+            icon: Icon(
+              showAdvancedFilters
+                  ? Icons.expand_less_rounded
+                  : Icons.tune_rounded,
+              size: 16,
+            ),
+            label: Text(
+              showAdvancedFilters
+                  ? 'Hide payment filters'
+                  : 'Show payment filters',
+              style: OpenVtsTypography.meta.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          if (showAdvancedFilters) ...[
+            const SizedBox(height: OpenVtsSpacing.xs),
+            const _SectionLabel(text: 'User'),
+            const SizedBox(height: OpenVtsSpacing.xs),
+            Wrap(
+              spacing: OpenVtsSpacing.xs,
+              runSpacing: OpenVtsSpacing.xs,
+              children: [
+                _CompactChoiceChip(
+                  label: 'All Users',
+                  selected: widget.state.selectedUserId == null,
+                  onTap: () => widget.onUserChanged(null),
+                ),
+                ...widget.state.users.map((user) => _CompactChoiceChip(
+                      label: _getUserLabel(user),
+                      selected: widget.state.selectedUserId == user.id,
+                      onTap: () => widget.onUserChanged(user.id),
+                    )),
+              ],
+            ),
+            const SizedBox(height: OpenVtsSpacing.sm),
+            const _SectionLabel(text: 'Payment Mode'),
+            const SizedBox(height: OpenVtsSpacing.xs),
+            Wrap(
+              spacing: OpenVtsSpacing.xs,
+              runSpacing: OpenVtsSpacing.xs,
+              children: [
+                _CompactChoiceChip(
+                  label: 'All',
+                  selected: widget.state.selectedMode == null,
+                  onTap: () => widget.onModeChanged(null),
+                ),
+                _CompactChoiceChip(
+                  label: 'Cash',
+                  selected: widget.state.selectedMode == AdminPaymentMode.cash,
+                  onTap: () => widget.onModeChanged(AdminPaymentMode.cash),
+                ),
+                _CompactChoiceChip(
+                  label: 'UPI',
+                  selected: widget.state.selectedMode == AdminPaymentMode.upi,
+                  onTap: () => widget.onModeChanged(AdminPaymentMode.upi),
+                ),
+                _CompactChoiceChip(
+                  label: 'Bank Transfer',
+                  selected: widget.state.selectedMode ==
+                      AdminPaymentMode.bankTransfer,
+                  onTap: () =>
+                      widget.onModeChanged(AdminPaymentMode.bankTransfer),
+                ),
+                _CompactChoiceChip(
+                  label: 'Card',
+                  selected: widget.state.selectedMode == AdminPaymentMode.card,
+                  onTap: () => widget.onModeChanged(AdminPaymentMode.card),
+                ),
+                _CompactChoiceChip(
+                  label: 'Wallet',
+                  selected:
+                      widget.state.selectedMode == AdminPaymentMode.wallet,
+                  onTap: () => widget.onModeChanged(AdminPaymentMode.wallet),
+                ),
+                _CompactChoiceChip(
+                  label: 'Razorpay',
+                  selected:
+                      widget.state.selectedMode == AdminPaymentMode.razorpay,
+                  onTap: () => widget.onModeChanged(AdminPaymentMode.razorpay),
+                ),
+                _CompactChoiceChip(
+                  label: 'Stripe',
+                  selected:
+                      widget.state.selectedMode == AdminPaymentMode.stripe,
+                  onTap: () => widget.onModeChanged(AdminPaymentMode.stripe),
+                ),
+                _CompactChoiceChip(
+                  label: 'Other',
+                  selected: widget.state.selectedMode == AdminPaymentMode.other,
+                  onTap: () => widget.onModeChanged(AdminPaymentMode.other),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );
   }
 
-  Widget _userLabel(AdminUserListItem user) {
+  void _handleClear() {
+    widget.onClear();
+    widget.onApply();
+    setState(() {
+      _showAdvancedFilters = false;
+    });
+  }
+
+  String _getUserLabel(AdminUserListItem user) {
     final username = user.username.trim();
     final text = username.isEmpty ? user.name : '${user.name} (@$username)';
-    return Text(text, maxLines: 1, overflow: TextOverflow.ellipsis);
+    return text;
   }
+}
 
-  Widget _chips(String title, List<Widget> children) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(title, style: OpenVtsTypography.label),
-        const SizedBox(height: OpenVtsSpacing.xs),
-        Wrap(
-            spacing: OpenVtsSpacing.xs,
-            runSpacing: OpenVtsSpacing.xs,
-            children: children),
-      ],
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.grey[300] : OpenVtsColors.textSecondary;
+
+    return Text(
+      text,
+      style: OpenVtsTypography.meta.copyWith(
+        color: textColor,
+        fontWeight: FontWeight.w700,
+      ),
     );
   }
+}
 
-  Widget _chip(String label, bool selected, VoidCallback onTap) {
+class _CompactChoiceChip extends StatelessWidget {
+  const _CompactChoiceChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final backgroundColor = selected
+        ? (isDark ? Colors.black : OpenVtsColors.white)
+        : Colors.transparent;
+    final textColor = isDark ? Colors.white : OpenVtsColors.brandInk;
+    final borderColor = isDark ? Colors.white : OpenVtsColors.border;
+
     return Material(
-      color: Colors.transparent,
+      color: backgroundColor,
+      borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
       child: InkWell(
         borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
         onTap: onTap,
         child: Container(
-          constraints: const BoxConstraints(minHeight: 46, minWidth: 88),
+          constraints: const BoxConstraints(minHeight: 34),
           padding: const EdgeInsets.symmetric(
-            horizontal: OpenVtsSpacing.md,
+            horizontal: OpenVtsSpacing.sm,
             vertical: OpenVtsSpacing.xs,
           ),
-          decoration: BoxDecoration(
-            color:
-                selected ? OpenVtsColors.brandInk : OpenVtsColors.surfaceElevated,
-            borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
-            border: Border.all(
-              color: selected ? OpenVtsColors.brandInk : OpenVtsColors.border,
+          decoration: selected
+              ? BoxDecoration(
+                  borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
+                  border: Border.all(color: borderColor, width: 1),
+                )
+              : null,
+          child: Text(
+            label,
+            style: OpenVtsTypography.meta.copyWith(
+              color: textColor,
+              fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
             ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (selected) ...[
-                const Icon(
-                  Icons.check_circle_outline_rounded,
-                  size: 14,
-                  color: OpenVtsColors.white,
-                ),
-                const SizedBox(width: OpenVtsSpacing.xxs),
-              ],
-              Text(
-                label,
-                style: OpenVtsTypography.meta.copyWith(
-                  color: selected
-                      ? OpenVtsColors.white
-                      : OpenVtsColors.textPrimary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
           ),
         ),
       ),

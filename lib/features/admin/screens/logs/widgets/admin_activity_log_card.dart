@@ -25,41 +25,89 @@ class AdminActivityLogCard extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: OpenVtsCard(
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(item.humanAction,
-              style: OpenVtsTypography.label
-                  .copyWith(fontWeight: FontWeight.w700)),
-          const SizedBox(height: OpenVtsSpacing.xxs),
-          Text(item.action,
-              style: OpenVtsTypography.meta
-                  .copyWith(color: OpenVtsColors.textSecondary)),
-          const SizedBox(height: OpenVtsSpacing.xs),
-          Text(
-              'Entity: ${item.entity}${item.entityId.isEmpty ? '' : ' • ${item.entityId}'}',
-              style: OpenVtsTypography.meta),
-          const SizedBox(height: OpenVtsSpacing.xxs),
-          Text(
-              'By: ${item.actorDisplay}${item.userLoginType.isEmpty ? '' : ' • ${item.userLoginType}'}',
-              style: OpenVtsTypography.meta),
-          if (item.ip.isNotEmpty ||
-              item.browser.isNotEmpty ||
-              item.platform.isNotEmpty) ...[
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(item.humanAction,
+                style: OpenVtsTypography.label
+                    .copyWith(fontWeight: FontWeight.w700)),
             const SizedBox(height: OpenVtsSpacing.xxs),
-            Text(
-                'IP: ${item.ip.isEmpty ? '-' : item.ip}  •  ${item.browser.isEmpty ? '-' : item.browser}  •  ${item.platform.isEmpty ? '-' : item.platform}',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+            Text(item.action,
                 style: OpenVtsTypography.meta
                     .copyWith(color: OpenVtsColors.textSecondary)),
-          ],
-          const SizedBox(height: OpenVtsSpacing.xxs),
-          Text(
-              item.createdAt == null
+            const SizedBox(height: OpenVtsSpacing.xs),
+            if (item.entity.isNotEmpty)
+              _InfoRow(
+                icon: Icons.category_outlined,
+                label: 'Entity',
+                value:
+                    '${item.entity}${item.entityId.isEmpty ? '' : ' • ${item.entityId}'}',
+              ),
+            _InfoRow(
+              icon: Icons.person_outline,
+              label: 'By',
+              value:
+                  '${item.actorDisplay}${item.userLoginType.isEmpty ? '' : ' • ${item.userLoginType}'}',
+            ),
+            if (item.ip.isNotEmpty ||
+                item.browser.isNotEmpty ||
+                item.platform.isNotEmpty)
+              _InfoRow(
+                icon: Icons.devices_outlined,
+                label: 'Device',
+                value:
+                    '${item.ip.isEmpty ? '-' : item.ip} • ${item.browser.isEmpty ? '-' : item.browser}',
+              ),
+            _InfoRow(
+              icon: Icons.schedule_outlined,
+              label: '',
+              value: item.createdAt == null
                   ? '-'
                   : _fmt.formatDateTime(item.createdAt!.toLocal()),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _InfoRow extends StatelessWidget {
+  const _InfoRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: OpenVtsSpacing.xxs),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Icon(icon, size: 14, color: OpenVtsColors.textSecondary),
+          const SizedBox(width: OpenVtsSpacing.xs),
+          if (label.isNotEmpty) ...[
+            Text('$label: ',
+                style: OpenVtsTypography.meta.copyWith(
+                    color: OpenVtsColors.textSecondary,
+                    fontWeight: FontWeight.w500)),
+          ],
+          Expanded(
+            child: Text(
+              value.trim().isEmpty ? '—' : value.trim(),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: OpenVtsTypography.meta
-                  .copyWith(color: OpenVtsColors.textSecondary)),
-        ]),
+                  .copyWith(color: OpenVtsColors.textSecondary),
+            ),
+          ),
+        ],
       ),
     );
   }

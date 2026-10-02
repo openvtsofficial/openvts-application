@@ -159,11 +159,13 @@ class SuperadminPaymentsService {
     }
 
     if (normalizedAmount.length > _maxAmountLength) {
-      throw ArgumentError('Amount must be $_maxAmountLength characters or less.');
+      throw ArgumentError(
+          'Amount must be $_maxAmountLength characters or less.');
     }
 
     if (!_amountPattern.hasMatch(normalizedAmount)) {
-      throw ArgumentError('Amount must be a valid decimal with up to 2 places.');
+      throw ArgumentError(
+          'Amount must be a valid decimal with up to 2 places.');
     }
 
     final parsedAmount = num.tryParse(normalizedAmount);

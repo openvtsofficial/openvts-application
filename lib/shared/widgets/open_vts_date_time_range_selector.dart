@@ -75,6 +75,7 @@ class OpenVtsDateTimeRangeField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     final displayValue = _formatRangeLabel(value);
 
     return Column(
@@ -88,10 +89,10 @@ class OpenVtsDateTimeRangeField extends StatelessWidget {
           child: InputDecorator(
             decoration: InputDecoration(
               enabled: enabled,
-              suffixIcon: const Icon(
+              suffixIcon: Icon(
                 Icons.calendar_month_outlined,
                 size: 18,
-                color: OpenVtsColors.textTertiary,
+                color: scheme.onSurfaceVariant,
               ),
             ),
             child: Text(
@@ -100,8 +101,8 @@ class OpenVtsDateTimeRangeField extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: OpenVtsTypography.body.copyWith(
                 color: displayValue == null
-                    ? OpenVtsColors.textTertiary
-                    : OpenVtsColors.textPrimary,
+                    ? scheme.onSurfaceVariant
+                    : scheme.onSurface,
               ),
             ),
           ),
@@ -218,27 +219,33 @@ class OpenVtsDateTimeRangeSelector extends StatefulWidget {
                   alignment: Alignment.bottomCenter,
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 560),
-                    child: DecoratedBox(
-                      decoration: const BoxDecoration(
-                        color: OpenVtsColors.surfaceElevated,
-                        borderRadius: BorderRadius.vertical(
-                          top: Radius.circular(OpenVtsRadius.lg),
-                        ),
-                      ),
-                      child: OpenVtsDateTimeRangeSelector(
-                        initialValue: initialValue,
-                        dateTimeEnabled: dateTimeEnabled,
-                        firstDate: firstDate,
-                        lastDate: lastDate,
-                        title: title,
-                        now: now,
-                        scrollController: scrollController,
-                        onApply: (range) => Navigator.of(context).pop(range),
-                        onClear: () => Navigator.of(context).pop(
-                          const OpenVtsDateTimeRange.empty(),
-                        ),
-                        onCancel: () => Navigator.of(context).pop(),
-                      ),
+                    child: Builder(
+                      builder: (builderContext) {
+                        final scheme = Theme.of(builderContext).colorScheme;
+                        return DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: scheme.surface,
+                            borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(OpenVtsRadius.lg),
+                            ),
+                          ),
+                          child: OpenVtsDateTimeRangeSelector(
+                            initialValue: initialValue,
+                            dateTimeEnabled: dateTimeEnabled,
+                            firstDate: firstDate,
+                            lastDate: lastDate,
+                            title: title,
+                            now: now,
+                            scrollController: scrollController,
+                            onApply: (range) =>
+                                Navigator.of(context).pop(range),
+                            onClear: () => Navigator.of(context).pop(
+                              const OpenVtsDateTimeRange.empty(),
+                            ),
+                            onCancel: () => Navigator.of(context).pop(),
+                          ),
+                        );
+                      },
                     ),
                   ),
                 );
@@ -446,31 +453,32 @@ class _OpenVtsDateTimeRangeSelectorState
       context: context,
       initialTime: initialTime,
       helpText: helpText,
-      builder: (context, child) {
-        final baseTheme = Theme.of(context);
+      builder: (builderContext, child) {
+        final baseTheme = Theme.of(builderContext);
+        final scheme = baseTheme.colorScheme;
         return Theme(
           data: baseTheme.copyWith(
-            colorScheme: baseTheme.colorScheme.copyWith(
-              primary: OpenVtsColors.brandInk,
-              onPrimary: OpenVtsColors.white,
-              surface: OpenVtsColors.surfaceElevated,
-              onSurface: OpenVtsColors.textPrimary,
+            colorScheme: scheme.copyWith(
+              primary: scheme.onSurface,
+              onPrimary: scheme.surface,
+              surface: scheme.surface,
+              onSurface: scheme.onSurface,
             ),
             timePickerTheme: TimePickerThemeData(
-              backgroundColor: OpenVtsColors.surfaceElevated,
-              dialBackgroundColor: OpenVtsColors.surface,
+              backgroundColor: scheme.surface,
+              dialBackgroundColor: scheme.surfaceContainer,
               hourMinuteShape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(OpenVtsRadius.md),
-                side: const BorderSide(color: OpenVtsColors.border),
+                side: BorderSide(color: scheme.outlineVariant),
               ),
               dayPeriodShape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(OpenVtsRadius.md),
-                side: const BorderSide(color: OpenVtsColors.border),
+                side: BorderSide(color: scheme.outlineVariant),
               ),
-              dayPeriodColor: OpenVtsColors.surface,
-              dayPeriodTextColor: OpenVtsColors.textPrimary,
+              dayPeriodColor: scheme.surfaceContainer,
+              dayPeriodTextColor: scheme.onSurface,
               helpTextStyle: OpenVtsTypography.label.copyWith(
-                color: OpenVtsColors.textSecondary,
+                color: scheme.onSurfaceVariant,
               ),
             ),
           ),
@@ -596,6 +604,7 @@ class _SelectorHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     final iconSize = compact ? 18.0 : 22.0;
     final actionSize = compact ? 36.0 : 44.0;
 
@@ -614,7 +623,7 @@ class _SelectorHeader extends StatelessWidget {
               title,
               textAlign: TextAlign.center,
               style: OpenVtsTypography.titleSmall.copyWith(
-                color: OpenVtsColors.textPrimary,
+                color: scheme.onSurface,
                 fontWeight: FontWeight.w700,
                 fontSize: compact ? 14 : null,
               ),
@@ -627,8 +636,8 @@ class _SelectorHeader extends StatelessWidget {
               onPressed: onClose,
               icon: Icon(Icons.close_rounded, size: iconSize),
               style: IconButton.styleFrom(
-                backgroundColor: OpenVtsColors.surface,
-                foregroundColor: OpenVtsColors.textPrimary,
+                backgroundColor: scheme.surfaceContainer,
+                foregroundColor: scheme.onSurface,
               ),
             ),
           ),
@@ -654,20 +663,37 @@ class _PresetGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (compact) {
-      return SizedBox(
+      final isDark = Theme.of(context).brightness == Brightness.dark;
+      final outerBackgroundColor = isDark ? Colors.black : Colors.white;
+      final outerBorderColor =
+          isDark ? Colors.white : Colors.black.withValues(alpha: 0.2);
+
+      return Container(
         height: 38,
-        child: ListView.separated(
-          scrollDirection: Axis.horizontal,
-          itemCount: presets.length,
-          separatorBuilder: (_, __) => const SizedBox(width: OpenVtsSpacing.xs),
-          itemBuilder: (context, index) {
-            final preset = presets[index];
-            return _PresetCompactChip(
-              preset: preset,
-              isSelected: preset.type == selectedPreset,
-              onTap: () => onSelected(preset),
-            );
-          },
+        decoration: BoxDecoration(
+          color: outerBackgroundColor,
+          border: Border.all(color: outerBorderColor, width: 1),
+          borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: presets.length,
+            separatorBuilder: (_, __) => Container(
+              width: 1,
+              height: 32,
+              color: outerBorderColor,
+            ),
+            itemBuilder: (builderContext, index) {
+              final preset = presets[index];
+              return _PresetCompactChip(
+                preset: preset,
+                isSelected: preset.type == selectedPreset,
+                onTap: () => onSelected(preset),
+              );
+            },
+          ),
         ),
       );
     }
@@ -675,7 +701,7 @@ class _PresetGrid extends StatelessWidget {
     const spacing = OpenVtsSpacing.xs;
 
     return LayoutBuilder(
-      builder: (context, constraints) {
+      builder: (layoutContext, constraints) {
         final columns = constraints.maxWidth >= 520
             ? 6
             : constraints.maxWidth >= 420
@@ -720,11 +746,13 @@ class _PresetTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final foregroundColor =
-        isSelected ? OpenVtsColors.white : OpenVtsColors.textPrimary;
+    final scheme = Theme.of(context).colorScheme;
+    final foregroundColor = isSelected ? scheme.surface : scheme.onSurface;
+    final backgroundColor = isSelected ? scheme.onSurface : scheme.surface;
+    final borderColor = isSelected ? scheme.onSurface : scheme.outlineVariant;
 
     return Material(
-      color: isSelected ? OpenVtsColors.brandInk : OpenVtsColors.white,
+      color: backgroundColor,
       borderRadius: BorderRadius.circular(OpenVtsRadius.md),
       child: InkWell(
         borderRadius: BorderRadius.circular(OpenVtsRadius.md),
@@ -737,9 +765,7 @@ class _PresetTile extends StatelessWidget {
           ),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(OpenVtsRadius.md),
-            border: Border.all(
-              color: isSelected ? OpenVtsColors.brandInk : OpenVtsColors.border,
-            ),
+            border: Border.all(color: borderColor),
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -781,36 +807,41 @@ class _PresetCompactChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final foregroundColor =
-        isSelected ? OpenVtsColors.white : OpenVtsColors.textPrimary;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final backgroundColor = isSelected
+        ? (isDark ? Colors.black : Colors.white)
+        : Colors.transparent;
+    final textColor = isDark ? Colors.white : Colors.black;
+    final borderColor =
+        isDark ? Colors.white : Colors.black.withValues(alpha: 0.2);
 
     return Material(
-      color: isSelected ? OpenVtsColors.brandInk : OpenVtsColors.white,
-      borderRadius: BorderRadius.circular(OpenVtsRadius.button),
+      color: backgroundColor,
+      borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
       child: InkWell(
-        borderRadius: BorderRadius.circular(OpenVtsRadius.button),
+        borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
         onTap: onTap,
         child: Container(
           padding: const EdgeInsets.symmetric(
-            horizontal: OpenVtsSpacing.xs,
-            vertical: OpenVtsSpacing.xxs,
+            horizontal: OpenVtsSpacing.sm,
+            vertical: OpenVtsSpacing.xs,
           ),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(OpenVtsRadius.button),
-            border: Border.all(
-              color: isSelected ? OpenVtsColors.brandInk : OpenVtsColors.border,
-            ),
-          ),
+          decoration: isSelected
+              ? BoxDecoration(
+                  borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
+                  border: Border.all(color: borderColor, width: 1),
+                )
+              : null,
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(preset.icon, size: 14, color: foregroundColor),
-              const SizedBox(width: 6),
+              Icon(preset.icon, size: 16, color: textColor),
+              const SizedBox(width: OpenVtsSpacing.xxs),
               Text(
                 preset.label,
                 style: OpenVtsTypography.meta.copyWith(
-                  color: foregroundColor,
-                  fontWeight: FontWeight.w600,
+                  color: textColor,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
                 ),
               ),
             ],
@@ -857,14 +888,15 @@ class _MonthCalendar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     final days = _daysForMonth(focusedMonth);
 
     return Container(
       padding: EdgeInsets.all(compact ? OpenVtsSpacing.xs : OpenVtsSpacing.md),
       decoration: BoxDecoration(
-        color: OpenVtsColors.white,
+        color: scheme.surface,
         borderRadius: BorderRadius.circular(OpenVtsRadius.md),
-        border: Border.all(color: OpenVtsColors.border),
+        border: Border.all(color: scheme.outlineVariant),
       ),
       child: Column(
         children: [
@@ -881,7 +913,7 @@ class _MonthCalendar extends StatelessWidget {
                   _monthFormat.format(focusedMonth),
                   textAlign: TextAlign.center,
                   style: OpenVtsTypography.titleSmall.copyWith(
-                    color: OpenVtsColors.textPrimary,
+                    color: scheme.onSurface,
                     fontSize: compact ? 14 : null,
                   ),
                 ),
@@ -903,11 +935,11 @@ class _MonthCalendar extends StatelessWidget {
               crossAxisCount: 7,
               mainAxisExtent: compact ? 22 : 28,
             ),
-            itemBuilder: (context, index) => Center(
+            itemBuilder: (calendarContext, index) => Center(
               child: Text(
                 _weekdays[index],
                 style: OpenVtsTypography.meta.copyWith(
-                  color: OpenVtsColors.textTertiary,
+                  color: scheme.onSurfaceVariant,
                   fontWeight: FontWeight.w600,
                   fontSize: compact ? 11 : null,
                 ),
@@ -975,6 +1007,7 @@ class _CalendarNavButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     final dimension = compact ? 32.0 : 40.0;
 
     return SizedBox.square(
@@ -984,10 +1017,10 @@ class _CalendarNavButton extends StatelessWidget {
         onPressed: onPressed,
         icon: Icon(icon, size: compact ? 18 : 22),
         style: IconButton.styleFrom(
-          backgroundColor: OpenVtsColors.white,
-          foregroundColor: OpenVtsColors.textPrimary,
-          disabledForegroundColor: OpenVtsColors.textTertiary,
-          side: const BorderSide(color: OpenVtsColors.border),
+          backgroundColor: scheme.surfaceContainer,
+          foregroundColor: scheme.onSurface,
+          disabledForegroundColor: scheme.onSurfaceVariant,
+          side: BorderSide(color: scheme.outlineVariant),
         ),
       ),
     );
@@ -1015,11 +1048,12 @@ class _CalendarDayCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     final dayColor = isSelected
-        ? OpenVtsColors.white
+        ? scheme.surface
         : isDisabled || isOutsideMonth
-            ? OpenVtsColors.textTertiary
-            : OpenVtsColors.textPrimary;
+            ? scheme.onSurfaceVariant
+            : scheme.onSurface;
 
     return InkWell(
       borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
@@ -1028,7 +1062,7 @@ class _CalendarDayCell extends StatelessWidget {
         margin: EdgeInsets.symmetric(vertical: compact ? 1 : 3),
         decoration: BoxDecoration(
           color: isInRange && !isDisabled
-              ? OpenVtsColors.surface
+              ? scheme.surfaceContainer
               : Colors.transparent,
           borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
         ),
@@ -1038,7 +1072,7 @@ class _CalendarDayCell extends StatelessWidget {
           height: compact ? 28 : 36,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: isSelected ? OpenVtsColors.brandInk : Colors.transparent,
+            color: isSelected ? scheme.onSurface : Colors.transparent,
             borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
           ),
           child: Text(
@@ -1070,6 +1104,7 @@ class _SelectedRangeSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     final start = range.start;
     final end = range.end;
 
@@ -1088,9 +1123,9 @@ class _SelectedRangeSummary extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.all(OpenVtsSpacing.xs),
         decoration: BoxDecoration(
-          color: OpenVtsColors.white,
+          color: scheme.surface,
           borderRadius: BorderRadius.circular(OpenVtsRadius.md),
-          border: Border.all(color: OpenVtsColors.border),
+          border: Border.all(color: scheme.outlineVariant),
         ),
         child: Row(
           children: [
@@ -1117,9 +1152,9 @@ class _SelectedRangeSummary extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(compact ? OpenVtsSpacing.sm : OpenVtsSpacing.md),
       decoration: BoxDecoration(
-        color: OpenVtsColors.white,
+        color: scheme.surface,
         borderRadius: BorderRadius.circular(OpenVtsRadius.md),
-        border: Border.all(color: OpenVtsColors.border),
+        border: Border.all(color: scheme.outlineVariant),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1127,7 +1162,7 @@ class _SelectedRangeSummary extends StatelessWidget {
           Text(
             'Selected Range',
             style: OpenVtsTypography.label.copyWith(
-              color: OpenVtsColors.textSecondary,
+              color: scheme.onSurfaceVariant,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -1170,13 +1205,15 @@ class _RangeSummaryValue extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: compact ? OpenVtsSpacing.xs : OpenVtsSpacing.sm,
         vertical: compact ? OpenVtsSpacing.xxs : OpenVtsSpacing.sm,
       ),
       decoration: BoxDecoration(
-        color: OpenVtsColors.surface,
+        color: scheme.surfaceContainer,
         borderRadius: BorderRadius.circular(OpenVtsRadius.md),
       ),
       child: Column(
@@ -1185,7 +1222,7 @@ class _RangeSummaryValue extends StatelessWidget {
           Text(
             label,
             style: OpenVtsTypography.meta.copyWith(
-              color: OpenVtsColors.textTertiary,
+              color: scheme.onSurfaceVariant,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -1195,7 +1232,7 @@ class _RangeSummaryValue extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: OpenVtsTypography.label.copyWith(
-              color: OpenVtsColors.textPrimary,
+              color: scheme.onSurface,
               fontSize: compact ? 10 : null,
               fontWeight: FontWeight.w600,
             ),
@@ -1313,6 +1350,8 @@ class _TimePickerField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -1324,9 +1363,9 @@ class _TimePickerField extends StatelessWidget {
             vertical: compact ? OpenVtsSpacing.xs : OpenVtsSpacing.md,
           ),
           decoration: BoxDecoration(
-            color: OpenVtsColors.white,
+            color: scheme.surface,
             borderRadius: BorderRadius.circular(OpenVtsRadius.md),
-            border: Border.all(color: OpenVtsColors.border),
+            border: Border.all(color: scheme.outlineVariant),
           ),
           child: Row(
             children: [
@@ -1337,7 +1376,7 @@ class _TimePickerField extends StatelessWidget {
                     Text(
                       label,
                       style: OpenVtsTypography.label.copyWith(
-                        color: OpenVtsColors.textSecondary,
+                        color: scheme.onSurfaceVariant,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -1345,7 +1384,7 @@ class _TimePickerField extends StatelessWidget {
                     Text(
                       value,
                       style: OpenVtsTypography.titleSmall.copyWith(
-                        color: OpenVtsColors.textPrimary,
+                        color: scheme.onSurface,
                         fontWeight: FontWeight.w700,
                         fontSize: compact ? 15 : null,
                       ),
@@ -1357,7 +1396,7 @@ class _TimePickerField extends StatelessWidget {
               Icon(
                 Icons.schedule_rounded,
                 size: compact ? 18 : 20,
-                color: OpenVtsColors.textSecondary,
+                color: scheme.onSurfaceVariant,
               ),
             ],
           ),
@@ -1384,10 +1423,12 @@ class _SelectorActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
     return DecoratedBox(
-      decoration: const BoxDecoration(
-        color: OpenVtsColors.surfaceElevated,
-        border: Border(top: BorderSide(color: OpenVtsColors.border)),
+      decoration: BoxDecoration(
+        color: scheme.surface,
+        border: Border(top: BorderSide(color: scheme.outlineVariant)),
       ),
       child: Padding(
         padding: EdgeInsets.fromLTRB(

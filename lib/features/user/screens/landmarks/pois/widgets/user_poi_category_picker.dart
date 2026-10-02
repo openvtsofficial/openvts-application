@@ -72,7 +72,7 @@ class _UserPoiCategoryPickerState extends State<UserPoiCategoryPicker> {
         Text(
           widget.label,
           style: OpenVtsTypography.label.copyWith(
-            color: OpenVtsColors.textPrimary,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         const SizedBox(height: 6),
@@ -113,7 +113,7 @@ class _UserPoiCategoryPickerState extends State<UserPoiCategoryPicker> {
               isDense: true,
               hintText: 'Custom category (e.g. "vendor")',
               hintStyle: OpenVtsTypography.body.copyWith(
-                color: OpenVtsColors.textTertiary,
+                color: Theme.of(context).colorScheme.outline,
               ),
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: OpenVtsSpacing.sm,
@@ -165,10 +165,10 @@ class _CategoryChip extends StatelessWidget {
         duration: const Duration(milliseconds: 120),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: selected ? OpenVtsColors.brandInk : OpenVtsColors.surface,
+          color: OpenVtsColors.brandInk,
           borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
           border: Border.all(
-            color: selected ? OpenVtsColors.brandInk : OpenVtsColors.border,
+            color: selected ? OpenVtsColors.white : OpenVtsColors.brandInk,
           ),
         ),
         child: Row(
@@ -177,14 +177,13 @@ class _CategoryChip extends StatelessWidget {
             Icon(
               icon,
               size: 13,
-              color: selected ? OpenVtsColors.white : OpenVtsColors.textPrimary,
+              color: OpenVtsColors.white,
             ),
             const SizedBox(width: 4),
             Text(
               label,
               style: OpenVtsTypography.meta.copyWith(
-                color:
-                    selected ? OpenVtsColors.white : OpenVtsColors.textPrimary,
+                color: OpenVtsColors.white,
                 fontWeight: FontWeight.w600,
               ),
             ),

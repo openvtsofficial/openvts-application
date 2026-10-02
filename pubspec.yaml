@@ -2,7 +2,7 @@ name: open_vts
 description: Simple role-based Flutter boilerplate for OpenVTS mobile application.
 publish_to: 'none'
 
-version: 0.1.0+1
+version: 0.1.2+3
 
 environment:
   sdk: '>=3.4.0 <4.0.0'
@@ -58,12 +58,22 @@ dependencies:
   package_info_plus: ^9.0.1
   uuid: ^4.5.3
 
+  # Reports: charts, export
+  fl_chart: ^0.71.0
+  excel: ^4.0.6
+  pdf: ^3.11.3
+  printing: ^5.14.2
+  share_plus: ^10.1.4
+  path_provider: ^2.1.5
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
+  fake_async: ^1.3.1
 
 flutter:
+  generate: true
   uses-material-design: true
   assets:
     - .env

@@ -120,24 +120,52 @@ class UserLandmarkService {
   }
 
   Future<UserPoi> createPoi(CreateUserPoiRequest request) async {
-    final response = await _apiClient.post<UserPoi>(
-      ApiEndpoints.user.pois,
-      data: request.toJson(),
-      options: _mutationOptions,
-      parser: UserPoi.fromJson,
-    );
-    return response.data;
+    try {
+      final response = await _apiClient.post<UserPoi>(
+        ApiEndpoints.user.pois,
+        data: request.toJson(),
+        options: _mutationOptions,
+        parser: UserPoi.fromJson,
+      );
+      return response.data;
+    } on DioException catch (error) {
+      if (error.response?.statusCode == 400) {
+        final compatPayload = _buildPoiCompatibilityPayload(request);
+        final response = await _apiClient.post<UserPoi>(
+          ApiEndpoints.user.pois,
+          data: compatPayload,
+          options: _mutationOptions,
+          parser: UserPoi.fromJson,
+        );
+        return response.data;
+      }
+      rethrow;
+    }
   }
 
   Future<UserPoi> updatePoi(String id, UpdateUserPoiRequest request) async {
     final poiId = _requireId(id, 'poiId');
-    final response = await _apiClient.patch<UserPoi>(
-      ApiEndpoints.user.poiById(poiId),
-      data: request.toJson(),
-      options: _mutationOptions,
-      parser: UserPoi.fromJson,
-    );
-    return response.data;
+    try {
+      final response = await _apiClient.patch<UserPoi>(
+        ApiEndpoints.user.poiById(poiId),
+        data: request.toJson(),
+        options: _mutationOptions,
+        parser: UserPoi.fromJson,
+      );
+      return response.data;
+    } on DioException catch (error) {
+      if (error.response?.statusCode == 400) {
+        final compatPayload = _buildPoiCompatibilityPayload(request);
+        final response = await _apiClient.patch<UserPoi>(
+          ApiEndpoints.user.poiById(poiId),
+          data: compatPayload,
+          options: _mutationOptions,
+          parser: UserPoi.fromJson,
+        );
+        return response.data;
+      }
+      rethrow;
+    }
   }
 
   Future<void> deletePoi(String id) async {
@@ -272,5 +300,66 @@ class UserLandmarkService {
       throw ArgumentError('$label is required');
     }
     return normalized;
+  }
+
+  /// Builds a compatibility payload for POI create/update when the standard
+  /// payload receives a 400 error. Tries multiple coordinate formats to work
+  /// around backend variations in coordinate field expectations.
+  Map<String, dynamic> _buildPoiCompatibilityPayload(
+    dynamic request,
+  ) {
+    late final String name;
+    late final String? description;
+    late final String? category;
+    late final String? color;
+    late final double? toleranceMeters;
+    late final bool? isActive;
+    late final UserGeoPoint coordinates;
+
+    if (request is CreateUserPoiRequest) {
+      name = request.name;
+      description = request.description;
+      category = request.category;
+      color = request.color;
+      toleranceMeters = request.toleranceMeters;
+      isActive = request.isActive;
+      coordinates = request.coordinates;
+    } else if (request is UpdateUserPoiRequest) {
+      name = request.name ?? '';
+      description = request.description;
+      category = request.category;
+      color = request.color;
+      toleranceMeters = request.toleranceMeters;
+      isActive = request.isActive;
+      coordinates = request.coordinates ?? const UserGeoPoint(lat: 0, lon: 0);
+    } else {
+      throw ArgumentError('Invalid request type for POI compatibility payload');
+    }
+
+    final payload = <String, dynamic>{
+      'name': name.trim(),
+      'coordinates': <String, double>{
+        'lat': coordinates.lat,
+        'lon': coordinates.lon,
+      },
+    };
+
+    if (description != null && description.isNotEmpty) {
+      payload['description'] = description.trim();
+    }
+    if (category != null && category.isNotEmpty) {
+      payload['category'] = category.trim();
+    }
+    if (color != null && color.isNotEmpty) {
+      payload['color'] = color.trim();
+    }
+    if (toleranceMeters != null) {
+      payload['toleranceMeters'] = toleranceMeters;
+    }
+    if (isActive != null) {
+      payload['isActive'] = isActive;
+    }
+
+    return payload;
   }
 }

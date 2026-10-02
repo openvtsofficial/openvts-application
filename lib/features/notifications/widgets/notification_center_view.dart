@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/open_vts_colors.dart';
 import '../../../core/theme/open_vts_radius.dart';
 import '../../../core/theme/open_vts_spacing.dart';
 import '../../../core/theme/open_vts_typography.dart';
 import '../../../core/utils/date_time_formatter.dart';
-import '../../../shared/widgets/open_vts_card.dart';
 import '../../../shared/widgets/open_vts_empty_state.dart';
 import '../../../shared/widgets/open_vts_error_view.dart';
 import '../../../shared/widgets/open_vts_loader.dart';
@@ -36,6 +36,7 @@ class NotificationCenterView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     if (state.isInitialLoading && !state.hasItems) {
       return const OpenVtsLoader();
@@ -67,7 +68,7 @@ class NotificationCenterView extends StatelessWidget {
           child: Text(
             state.errorMessage!,
             style: OpenVtsTypography.meta.copyWith(
-              color: theme.colorScheme.error,
+              color: isDark ? OpenVtsColors.white : theme.colorScheme.error,
             ),
           ),
         ),
@@ -118,9 +119,12 @@ class NotificationCenterView extends StatelessWidget {
       },
       child: RefreshIndicator(
         onRefresh: onRefresh,
-        child: ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          children: children,
+        child: Container(
+          color: isDark ? Colors.black : theme.colorScheme.surface,
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            children: children,
+          ),
         ),
       ),
     );
@@ -146,15 +150,27 @@ class _InboxSummaryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final textPrimary = theme.colorScheme.onSurface;
-    final secondaryColor = textPrimary.withValues(alpha: isDark ? 0.72 : 0.62);
-    final borderColor = textPrimary.withValues(alpha: isDark ? 0.16 : 0.10);
+    final headingColor =
+        isDark ? OpenVtsColors.white : theme.colorScheme.onSurface;
+    final secondaryColor = isDark
+        ? OpenVtsColors.white.withValues(alpha: 0.7)
+        : theme.colorScheme.onSurface.withValues(alpha: 0.62);
+    final borderColor = isDark
+        ? OpenVtsColors.white
+        : theme.colorScheme.onSurface.withValues(alpha: 0.10);
     final accentColor = theme.colorScheme.primary;
     final unreadLabel = unreadCount == 1
         ? '1 unread notification needs attention.'
         : '$unreadCount unread notifications need attention.';
 
-    return OpenVtsCard(
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? Colors.black : theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(OpenVtsRadius.lg),
+        border: Border.all(
+          color: borderColor,
+        ),
+      ),
       padding: const EdgeInsets.all(OpenVtsSpacing.sm),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -166,7 +182,10 @@ class _InboxSummaryCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Inbox', style: OpenVtsTypography.titleSmall),
+                    Text('Inbox',
+                        style: OpenVtsTypography.titleSmall.copyWith(
+                          color: headingColor,
+                        )),
                     const SizedBox(height: OpenVtsSpacing.xxs),
                     Text(
                       unreadLabel,
@@ -177,6 +196,7 @@ class _InboxSummaryCard extends StatelessWidget {
                   ],
                 ),
               ),
+              const SizedBox.shrink(),
               _NotificationStatusPill(
                 label: unreadCount == 0 ? 'All read' : '$unreadCount unread',
                 textColor: unreadCount == 0 ? secondaryColor : accentColor,
@@ -236,10 +256,11 @@ class _NotificationFilterPill extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final textPrimary = theme.colorScheme.onSurface;
-    final borderColor = textPrimary.withValues(alpha: isDark ? 0.18 : 0.10);
-    final backgroundColor = textPrimary.withValues(alpha: selected ? 0 : 0.03);
-    final accentColor = theme.colorScheme.primary;
+    final backgroundColor = selected
+        ? (isDark ? Colors.black : OpenVtsColors.white)
+        : Colors.transparent;
+    final textColor = isDark ? Colors.white : OpenVtsColors.brandInk;
+    final borderColor = isDark ? Colors.white : OpenVtsColors.border;
 
     return Material(
       color: Colors.transparent,
@@ -247,25 +268,24 @@ class _NotificationFilterPill extends StatelessWidget {
         borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
         onTap: onTap,
         child: Container(
+          constraints: const BoxConstraints(minHeight: 34),
           padding: const EdgeInsets.symmetric(
             horizontal: OpenVtsSpacing.sm,
-            vertical: OpenVtsSpacing.xxs,
+            vertical: OpenVtsSpacing.xs,
           ),
           decoration: BoxDecoration(
-            color: selected ? accentColor : backgroundColor,
+            color: backgroundColor,
             borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
             border: Border.all(
-              color: selected ? accentColor : borderColor,
+              color: borderColor,
             ),
           ),
           child: Text(
             label,
             style: OpenVtsTypography.meta.copyWith(
               height: 1,
-              fontWeight: FontWeight.w600,
-              color: selected
-                  ? theme.colorScheme.onPrimary
-                  : textPrimary.withValues(alpha: isDark ? 0.88 : 0.82),
+              fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+              color: textColor,
             ),
           ),
         ),
@@ -289,135 +309,147 @@ class _NotificationListItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final textPrimary = theme.colorScheme.onSurface;
-    final secondaryColor = textPrimary.withValues(alpha: isDark ? 0.72 : 0.62);
-    final borderColor = textPrimary.withValues(alpha: isDark ? 0.18 : 0.10);
+    final headingColor =
+        isDark ? OpenVtsColors.white : theme.colorScheme.onSurface;
+    final secondaryColor = isDark
+        ? OpenVtsColors.white.withValues(alpha: 0.7)
+        : theme.colorScheme.onSurface.withValues(alpha: 0.62);
+    final borderColor = isDark
+        ? OpenVtsColors.white
+        : theme.colorScheme.onSurface.withValues(alpha: 0.10);
     final accentColor = theme.colorScheme.primary;
     final metaParts = <String>[
-      if (notification.contextLabel != null && notification.contextLabel!.isNotEmpty)
+      if (notification.contextLabel != null &&
+          notification.contextLabel!.isNotEmpty)
         notification.contextLabel!,
       if (notification.createdAt != null)
         formatter.formatDateTime(notification.createdAt!.toLocal()),
     ];
 
-    return OpenVtsCard(
-      padding: EdgeInsets.zero,
-      child: Container(
-        decoration: BoxDecoration(
-          border: Border(
-            left: BorderSide(
-              color: notification.isRead
-                  ? Colors.transparent
-                  : accentColor.withValues(alpha: 0.92),
-              width: 2,
-            ),
-          ),
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? Colors.black : theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(OpenVtsRadius.lg),
+        border: Border.all(
+          color: borderColor,
         ),
-        padding: const EdgeInsets.all(OpenVtsSpacing.sm),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: textPrimary.withValues(alpha: 0.04),
-                    borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-                    border: Border.all(color: borderColor),
-                  ),
-                  child: Icon(
-                    _notificationIcon(notification),
-                    size: 16,
-                    color: textPrimary.withValues(alpha: 0.82),
+      ),
+      padding: const EdgeInsets.all(OpenVtsSpacing.sm),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? Colors.black
+                      : theme.colorScheme.onSurface.withValues(alpha: 0.04),
+                  borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
+                  border: Border.all(
+                    color: isDark
+                        ? OpenVtsColors.white
+                        : (isDark ? OpenVtsColors.white : OpenVtsColors.border),
                   ),
                 ),
-                const SizedBox(width: OpenVtsSpacing.sm),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          if (!notification.isRead)
-                            Container(
-                              width: 6,
-                              height: 6,
-                              margin: const EdgeInsets.only(right: OpenVtsSpacing.xs),
-                              decoration: BoxDecoration(
-                                color: accentColor,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                          Expanded(
-                            child: Text(
-                              notification.title,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: OpenVtsTypography.label.copyWith(
-                                fontWeight: notification.isRead
-                                    ? FontWeight.w500
-                                    : FontWeight.w700,
-                                color: textPrimary,
-                              ),
+                child: Icon(
+                  _notificationIcon(notification),
+                  size: 16,
+                  color: isDark
+                      ? OpenVtsColors.white
+                      : theme.colorScheme.onSurface.withValues(alpha: 0.82),
+                ),
+              ),
+              const SizedBox(width: OpenVtsSpacing.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        if (!notification.isRead)
+                          Container(
+                            width: 6,
+                            height: 6,
+                            margin:
+                                const EdgeInsets.only(right: OpenVtsSpacing.xs),
+                            decoration: BoxDecoration(
+                              color: accentColor,
+                              shape: BoxShape.circle,
                             ),
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: OpenVtsSpacing.xxs),
-                      Text(
-                        notification.message,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: OpenVtsTypography.body.copyWith(
-                          color: secondaryColor,
+                        Expanded(
+                          child: Text(
+                            notification.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: OpenVtsTypography.label.copyWith(
+                              fontWeight: notification.isRead
+                                  ? FontWeight.w500
+                                  : FontWeight.w700,
+                              color: headingColor,
+                            ),
+                          ),
                         ),
+                      ],
+                    ),
+                    const SizedBox(height: OpenVtsSpacing.xxs),
+                    Text(
+                      notification.message,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: OpenVtsTypography.body.copyWith(
+                        color: secondaryColor,
                       ),
-                    ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: OpenVtsSpacing.sm),
+              if (onMarkAsRead != null)
+                _NotificationActionPill(
+                  label: 'Mark read',
+                  onTap: onMarkAsRead!,
+                )
+              else
+                _NotificationStatusPill(
+                  label: 'Read',
+                  textColor: secondaryColor,
+                  borderColor: borderColor,
+                  backgroundColor: Colors.transparent,
+                ),
+            ],
+          ),
+          const SizedBox(height: OpenVtsSpacing.xs),
+          Wrap(
+            spacing: OpenVtsSpacing.xs,
+            runSpacing: 6,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              if (notification.category != null &&
+                  notification.category!.isNotEmpty)
+                _NotificationStatusPill(
+                  label: notification.category!,
+                  textColor: secondaryColor,
+                  borderColor: borderColor,
+                  backgroundColor: isDark
+                      ? Colors.black
+                      : theme.colorScheme.onSurface.withValues(alpha: 0.03),
+                ),
+              if (metaParts.isNotEmpty)
+                Text(
+                  metaParts.join(' • '),
+                  style: OpenVtsTypography.meta.copyWith(
+                    color: secondaryColor,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
-                const SizedBox(width: OpenVtsSpacing.sm),
-                if (onMarkAsRead != null)
-                  _NotificationActionPill(
-                    label: 'Mark read',
-                    onTap: onMarkAsRead!,
-                  )
-                else
-                  _NotificationStatusPill(
-                    label: 'Read',
-                    textColor: secondaryColor,
-                    borderColor: borderColor,
-                    backgroundColor: Colors.transparent,
-                  ),
-              ],
-            ),
-            const SizedBox(height: OpenVtsSpacing.xs),
-            Wrap(
-              spacing: OpenVtsSpacing.xs,
-              runSpacing: 6,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                if (notification.category != null && notification.category!.isNotEmpty)
-                  _NotificationStatusPill(
-                    label: notification.category!,
-                    textColor: secondaryColor,
-                    borderColor: borderColor,
-                    backgroundColor: textPrimary.withValues(alpha: 0.03),
-                  ),
-                if (metaParts.isNotEmpty)
-                  Text(
-                    metaParts.join(' • '),
-                    style: OpenVtsTypography.meta.copyWith(
-                      color: secondaryColor,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-              ],
-            ),
-          ],
-        ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -473,9 +505,6 @@ class _NotificationActionPill extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final textPrimary = theme.colorScheme.onSurface;
-    final borderColor = textPrimary.withValues(alpha: isDark ? 0.18 : 0.10);
-    final backgroundColor = theme.colorScheme.primary.withValues(alpha: 0.06);
 
     return Material(
       color: Colors.transparent,
@@ -488,14 +517,24 @@ class _NotificationActionPill extends StatelessWidget {
             vertical: OpenVtsSpacing.xxs,
           ),
           decoration: BoxDecoration(
-            color: onTap == null ? Colors.transparent : backgroundColor,
+            color: onTap == null
+                ? Colors.transparent
+                : (isDark
+                    ? Colors.black
+                    : theme.colorScheme.primary.withValues(alpha: 0.06)),
             borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
-            border: Border.all(color: borderColor),
+            border: Border.all(
+              color: isDark ? OpenVtsColors.white : OpenVtsColors.border,
+            ),
           ),
           child: Text(
             label,
             style: OpenVtsTypography.meta.copyWith(
-              color: textPrimary.withValues(alpha: onTap == null ? 0.45 : 0.78),
+              color: isDark
+                  ? OpenVtsColors.white
+                  : (onTap == null
+                      ? theme.colorScheme.onSurface.withValues(alpha: 0.45)
+                      : theme.colorScheme.onSurface.withValues(alpha: 0.78)),
               fontWeight: FontWeight.w600,
               height: 1,
             ),
@@ -516,7 +555,9 @@ IconData _notificationIcon(AppNotification notification) {
     return Icons.shield_outlined;
   }
 
-  if (key.contains('vehicle') || key.contains('speed') || key.contains('idle')) {
+  if (key.contains('vehicle') ||
+      key.contains('speed') ||
+      key.contains('idle')) {
     return Icons.directions_car_outlined;
   }
 
@@ -524,7 +565,9 @@ IconData _notificationIcon(AppNotification notification) {
     return Icons.build_outlined;
   }
 
-  if (key.contains('connect') || key.contains('telemetry') || key.contains('network')) {
+  if (key.contains('connect') ||
+      key.contains('telemetry') ||
+      key.contains('network')) {
     return Icons.wifi_tethering_off_rounded;
   }
 

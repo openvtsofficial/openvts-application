@@ -221,6 +221,9 @@ class _MapNorthResetButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Tooltip(
       message: 'Reset north',
       child: Material(
@@ -233,10 +236,12 @@ class _MapNorthResetButton extends StatelessWidget {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: const Color(0xFF141118),
+              color: isDark ? scheme.surface : const Color(0xFF141118),
               shape: BoxShape.circle,
               border: Border.all(
-                color: Colors.white.withValues(alpha: 0.16),
+                color: isDark
+                    ? scheme.outline
+                    : Colors.white.withValues(alpha: 0.16),
               ),
               boxShadow: [
                 BoxShadow(
@@ -246,10 +251,10 @@ class _MapNorthResetButton extends StatelessWidget {
                 ),
               ],
             ),
-            child: const Icon(
+            child: Icon(
               Icons.navigation_rounded,
               size: 20,
-              color: Colors.white,
+              color: isDark ? scheme.onSurface : Colors.white,
             ),
           ),
         ),
@@ -266,6 +271,8 @@ class _MapSideIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -275,9 +282,9 @@ class _MapSideIconButton extends StatelessWidget {
           width: 48,
           height: 48,
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.94),
+            color: scheme.surface,
             shape: BoxShape.circle,
-            border: Border.all(color: Colors.black.withValues(alpha: 0.08)),
+            border: Border.all(color: scheme.outlineVariant),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.1),
@@ -289,7 +296,7 @@ class _MapSideIconButton extends StatelessWidget {
           child: Icon(
             icon,
             size: 22,
-            color: Colors.black.withValues(alpha: 0.78),
+            color: scheme.onSurface,
           ),
         ),
       ),
@@ -385,6 +392,7 @@ class _MapLayerDrawerState extends State<_MapLayerDrawer> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     final primaryOptions = _primaryMapLayerOptions;
     final detailOptions = _detailMapLayerOptions;
 
@@ -395,12 +403,12 @@ class _MapLayerDrawerState extends State<_MapLayerDrawer> {
         children: [
           Row(
             children: [
-              const Text(
+              Text(
                 'Map type',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF141118),
+                  color: scheme.onSurface,
                 ),
               ),
               const Spacer(),
@@ -430,14 +438,14 @@ class _MapLayerDrawerState extends State<_MapLayerDrawer> {
             ],
           ),
           const SizedBox(height: 14),
-          Divider(color: Colors.black.withValues(alpha: 0.08), height: 1),
+          Divider(color: scheme.outlineVariant, height: 1),
           const SizedBox(height: 16),
-          const Text(
+          Text(
             'Map details',
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF141118),
+              color: scheme.onSurface,
             ),
           ),
           const SizedBox(height: 12),
@@ -481,9 +489,8 @@ class _MapLayerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final labelColor = isSelected
-        ? const Color(0xFF1293A6)
-        : Colors.black.withValues(alpha: 0.78);
+    final scheme = Theme.of(context).colorScheme;
+    final labelColor = isSelected ? const Color(0xFF1293A6) : scheme.onSurface;
 
     return InkWell(
       onTap: onTap,
@@ -502,7 +509,7 @@ class _MapLayerCard extends StatelessWidget {
                 border: Border.all(
                   color: isSelected
                       ? const Color(0xFF1293A6)
-                      : Colors.black.withValues(alpha: 0.08),
+                      : scheme.outlineVariant,
                   width: isSelected ? 2 : 1,
                 ),
               ),
@@ -1146,13 +1153,18 @@ class _MapSettingTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    // In dark mode use black background, in light mode use onSurface (dark)
+    final iconBgColor = isDark ? const Color(0xFF1A1A1A) : scheme.onSurface;
+
     return Row(
       children: [
         Container(
           width: 34,
           height: 34,
           decoration: BoxDecoration(
-            color: const Color(0xFF141118),
+            color: iconBgColor,
             borderRadius: BorderRadius.circular(10),
           ),
           child: Icon(data.icon, size: 18, color: Colors.white),
@@ -1164,10 +1176,10 @@ class _MapSettingTile extends StatelessWidget {
             children: [
               Text(
                 data.title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF141118),
+                  color: scheme.onSurface,
                 ),
               ),
               const SizedBox(height: 2),
@@ -1176,7 +1188,7 @@ class _MapSettingTile extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w500,
-                  color: Colors.black.withValues(alpha: 0.48),
+                  color: scheme.onSurfaceVariant,
                   height: 1.25,
                 ),
               ),
@@ -1189,10 +1201,10 @@ class _MapSettingTile extends StatelessWidget {
           child: Switch(
             value: data.value,
             onChanged: data.onChanged,
-            activeThumbColor: Colors.white,
-            activeTrackColor: const Color(0xFF141118),
-            inactiveThumbColor: Colors.white,
-            inactiveTrackColor: const Color(0xFFD6D8DE),
+            activeThumbColor: scheme.surface,
+            activeTrackColor: scheme.onSurface,
+            inactiveThumbColor: scheme.outlineVariant.withValues(alpha: 0.5),
+            inactiveTrackColor: scheme.outlineVariant,
             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
         ),
@@ -1293,13 +1305,18 @@ class _MapBottomDrawerState extends State<_MapBottomDrawer>
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: scheme.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
+            color: isDark
+                ? Colors.black.withValues(alpha: 0.3)
+                : Colors.black.withValues(alpha: 0.08),
             blurRadius: 18,
             offset: const Offset(0, -4),
           ),
@@ -1322,7 +1339,7 @@ class _MapBottomDrawerState extends State<_MapBottomDrawer>
                     width: 40,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.08),
+                      color: scheme.outlineVariant,
                       borderRadius: BorderRadius.circular(999),
                     ),
                   ),
@@ -1343,12 +1360,12 @@ class _MapBottomDrawerState extends State<_MapBottomDrawer>
               controller: _tabController,
               onTap: _selectTab,
               isScrollable: false,
-              labelColor: const Color(0xFF141118),
-              unselectedLabelColor: Colors.black.withValues(alpha: 0.5),
-              indicatorColor: const Color(0xFF141118),
+              labelColor: scheme.onSurface,
+              unselectedLabelColor: scheme.onSurfaceVariant,
+              indicatorColor: scheme.onSurface,
               indicatorSize: TabBarIndicatorSize.tab,
               indicatorWeight: 2,
-              dividerColor: Colors.black.withValues(alpha: 0.06),
+              dividerColor: scheme.outlineVariant,
               labelPadding: EdgeInsets.zero,
               labelStyle: const TextStyle(
                 fontSize: 12,
@@ -1393,4 +1410,3 @@ class _MapBottomDrawerState extends State<_MapBottomDrawer>
     };
   }
 }
-

@@ -54,12 +54,12 @@ class AdminPaymentTransactionCard extends StatelessWidget {
           _row('Type', item.paymentType.isEmpty ? '-' : item.paymentType),
           _row('Reference', item.reference.isEmpty ? '-' : item.reference),
           _row('Provider', item.provider.isEmpty ? '-' : item.provider),
-          _row('User', item.toUser?.displayName ?? '-'),
+          _row('User', item.fromUser?.displayName ?? '-'),
           _row(
               'Vehicle',
-              item.vehicle['name']?.toString().trim().isNotEmpty == true
-                  ? item.vehicle['name'].toString()
-                  : (item.vehicle['plateNumber']?.toString() ?? '-')),
+              item.vehicleDisplayName.trim().isEmpty
+                  ? '-'
+                  : item.vehicleDisplayName),
           _row('Recorded By', item.recordedBy?.displayName ?? '-'),
         ],
       ),
@@ -68,14 +68,19 @@ class AdminPaymentTransactionCard extends StatelessWidget {
 
   Widget _row(String label, String value) {
     final text = value.trim().isEmpty ? '-' : value.trim();
-    return Padding(
-      padding: const EdgeInsets.only(top: OpenVtsSpacing.xxs),
-      child: Text(
-        '$label: $text',
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style:
-            OpenVtsTypography.meta.copyWith(color: OpenVtsColors.textSecondary),
+    return Builder(
+      builder: (context) => Padding(
+        padding: const EdgeInsets.only(top: OpenVtsSpacing.xxs),
+        child: Text(
+          '$label: $text',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: OpenVtsTypography.meta.copyWith(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? OpenVtsColors.darkTextSecondary
+                : OpenVtsColors.textSecondary,
+          ),
+        ),
       ),
     );
   }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
@@ -8,9 +9,7 @@ import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../../../shared/widgets/open_vts_status_chip.dart';
 import '../../../models/user_transactions_model.dart';
 
-const DateTimeFormatter _dateTimeFormatter = DateTimeFormatter();
-
-class UserTransactionCard extends StatelessWidget {
+class UserTransactionCard extends ConsumerWidget {
   const UserTransactionCard({
     required this.transaction,
     required this.counterpartyName,
@@ -23,9 +22,17 @@ class UserTransactionCard extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
-    final referenceProviderLine = _referenceProviderLine(transaction);
-    final vehiclePlanLine = _vehiclePlanLine(transaction);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final dateTimeFormatter = ref.watch(appDateFormatterProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = isDark ? Colors.white : OpenVtsColors.textPrimary;
+    final secondaryColor =
+        isDark ? OpenVtsColors.darkTextSecondary : OpenVtsColors.textSecondary;
+    final tertiaryColor =
+        isDark ? OpenVtsColors.darkTextTertiary : OpenVtsColors.textTertiary;
+
+    final detailsList =
+        _buildDetailsList(context, transaction, dateTimeFormatter);
 
     return OpenVtsCard(
       onTap: onTap,
@@ -46,6 +53,7 @@ class UserTransactionCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: OpenVtsTypography.label.copyWith(
                         fontWeight: FontWeight.w700,
+                        color: primaryColor,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -55,7 +63,7 @@ class UserTransactionCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: OpenVtsTypography.meta.copyWith(
-                        color: OpenVtsColors.textSecondary,
+                        color: secondaryColor,
                       ),
                     ),
                   ],
@@ -74,48 +82,53 @@ class UserTransactionCard extends StatelessWidget {
                     _amountLabel(transaction),
                     style: OpenVtsTypography.numeric.copyWith(
                       fontSize: 18,
-                      color: OpenVtsColors.textPrimary,
+                      color: primaryColor,
                     ),
                   ),
                 ],
               ),
             ],
           ),
-          if (referenceProviderLine != null) ...[
-            const SizedBox(height: 6),
-            Text(
-              referenceProviderLine,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: OpenVtsTypography.meta.copyWith(
-                color: OpenVtsColors.textSecondary,
-              ),
-            ),
+          if (detailsList.isNotEmpty) ...[
+            const SizedBox(height: OpenVtsSpacing.sm),
+            ...List.generate(detailsList.length, (index) {
+              final detail = detailsList[index];
+              return Column(
+                children: [
+                  _detailRow(
+                    label: detail['label'],
+                    value: detail['value'],
+                    color: detail['color'],
+                  ),
+                  if (index < detailsList.length - 1) const SizedBox(height: 6),
+                ],
+              );
+            }),
           ],
           const SizedBox(height: 6),
           Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.schedule_outlined,
                 size: 14,
-                color: OpenVtsColors.textTertiary,
+                color: tertiaryColor,
               ),
               const SizedBox(width: 4),
               Expanded(
                 child: Text(
-                  _metaLine(transaction, vehiclePlanLine),
+                  _dateLabel(transaction, dateTimeFormatter),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: OpenVtsTypography.meta.copyWith(
-                    color: OpenVtsColors.textTertiary,
+                    color: tertiaryColor,
                   ),
                 ),
               ),
               const SizedBox(width: OpenVtsSpacing.xs),
-              const Icon(
+              Icon(
                 Icons.chevron_right_rounded,
                 size: 16,
-                color: OpenVtsColors.textTertiary,
+                color: tertiaryColor,
               ),
             ],
           ),
@@ -160,94 +173,13 @@ class UserTransactionCard extends StatelessWidget {
     return _titleCaseWords(rawValue);
   }
 
-  String _metaLine(UserTransaction item, String? vehiclePlanLine) {
-    final parts = <String>[_dateLabel(item)];
-    if (vehiclePlanLine != null) {
-      parts.add(vehiclePlanLine);
-    }
-
-    final recordedBy = _recordedByLabel(item);
-    if (recordedBy != null) {
-      parts.add('By $recordedBy');
-    }
-
-    return parts.join(' | ');
-  }
-
-  String? _recordedByLabel(UserTransaction item) {
-    final displayName = item.recordedBy?.displayName.trim() ?? '';
-    if (displayName.isNotEmpty && displayName != '-') {
-      return displayName;
-    }
-
-    final username = item.recordedBy?.username.trim() ?? '';
-    if (username.isNotEmpty) {
-      return '@$username';
-    }
-
-    final id = item.recordedById;
-    if (id != null && id > 0) {
-      return 'User #$id';
-    }
-
-    return null;
-  }
-
-  String _dateLabel(UserTransaction item) {
+  String _dateLabel(UserTransaction item, dynamic formatter) {
     if (item.createdAt != null) {
-      return _dateTimeFormatter.formatDateTime(item.createdAt!.toLocal());
+      return formatter.formatDateTime(item.createdAt!.toLocal());
     }
 
     final fallback = item.createdAtRaw.trim();
     return fallback.isEmpty ? '-' : fallback;
-  }
-
-  String? _referenceProviderLine(UserTransaction item) {
-    final parts = <String>[];
-
-    final reference = item.reference.trim();
-    if (reference.isNotEmpty) {
-      parts.add('Ref: $reference');
-    }
-
-    final provider = item.provider.trim();
-    final providerRef = item.providerRef.trim();
-    if (provider.isNotEmpty || providerRef.isNotEmpty) {
-      final providerValue =
-          [provider, providerRef].where((value) => value.isNotEmpty).join(' ');
-      parts.add('Provider: $providerValue');
-    }
-
-    if (parts.isEmpty) {
-      return null;
-    }
-
-    return parts.join(' | ');
-  }
-
-  String? _vehiclePlanLine(UserTransaction item) {
-    final vehicleParts = <String>[];
-    final vehicleName = item.vehicle?.name.trim() ?? '';
-    final plate = item.vehicle?.plateNumber.trim() ?? '';
-    final planName = (item.plan?.name.trim().isNotEmpty ?? false)
-        ? item.plan!.name.trim()
-        : (item.vehicle?.plan?.name.trim() ?? '');
-
-    if (vehicleName.isNotEmpty) {
-      vehicleParts.add(vehicleName);
-    }
-    if (plate.isNotEmpty) {
-      vehicleParts.add(plate);
-    }
-    if (planName.isNotEmpty) {
-      vehicleParts.add(planName);
-    }
-
-    if (vehicleParts.isEmpty) {
-      return null;
-    }
-
-    return vehicleParts.join(' | ');
   }
 
   String _titleCaseWords(String value) {
@@ -266,5 +198,84 @@ class UserTransactionCard extends StatelessWidget {
       }
       return '${lower[0].toUpperCase()}${lower.substring(1)}';
     }).join(' ');
+  }
+
+  List<Map<String, dynamic>> _buildDetailsList(
+    BuildContext context,
+    UserTransaction item,
+    dynamic formatter,
+  ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final secondaryColor =
+        isDark ? OpenVtsColors.darkTextSecondary : OpenVtsColors.textSecondary;
+
+    final details = <Map<String, dynamic>>[];
+
+    final reference = item.reference.trim();
+    if (reference.isNotEmpty) {
+      details.add({
+        'label': 'Reference',
+        'value': reference,
+        'color': secondaryColor,
+      });
+    }
+
+    final provider = item.provider.trim();
+    final providerRef = item.providerRef.trim();
+    if (provider.isNotEmpty || providerRef.isNotEmpty) {
+      final providerValue =
+          [provider, providerRef].where((v) => v.isNotEmpty).join(' ');
+      details.add({
+        'label': 'Provider',
+        'value': providerValue,
+        'color': secondaryColor,
+      });
+    }
+
+    final vehicleName = item.vehicle?.name.trim() ?? '';
+    if (vehicleName.isNotEmpty) {
+      details.add({
+        'label': 'Vehicle',
+        'value': vehicleName,
+        'color': secondaryColor,
+      });
+    }
+
+    final plate = item.vehicle?.plateNumber.trim() ?? '';
+    if (plate.isNotEmpty) {
+      details.add({
+        'label': 'Plate',
+        'value': plate,
+        'color': secondaryColor,
+      });
+    }
+
+    final plan = item.plan ?? item.vehicle?.plan;
+    final planName = plan?.name.trim() ?? '';
+    if (planName.isNotEmpty) {
+      details.add({
+        'label': 'Plan',
+        'value': planName,
+        'color': secondaryColor,
+      });
+    }
+
+    return details;
+  }
+
+  Widget _detailRow({
+    required String label,
+    required String value,
+    required Color color,
+  }) {
+    final display = value.trim().isEmpty ? '-' : value.trim();
+    return Text(
+      '$label: $display',
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: OpenVtsTypography.meta.copyWith(
+        color: color,
+      ),
+    );
   }
 }

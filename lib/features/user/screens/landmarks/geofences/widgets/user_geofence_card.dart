@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../../core/theme/open_vts_radius.dart';
@@ -13,7 +14,7 @@ import '../../../../models/user_landmark_model.dart';
 /// dot, description preview, geometry meta (radius / tolerance / point count),
 /// updated date, and edit/delete actions. Tapping the card body invokes
 /// [onSelect].
-class UserGeofenceCard extends StatelessWidget {
+class UserGeofenceCard extends ConsumerWidget {
   const UserGeofenceCard({
     super.key,
     required this.geofence,
@@ -31,10 +32,9 @@ class UserGeofenceCard extends StatelessWidget {
   final VoidCallback onDelete;
   final bool isDeleting;
 
-  static const DateTimeFormatter _formatter = DateTimeFormatter();
-
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final formatter = ref.watch(appDateFormatterProvider);
     final color = _parseHex(geofence.color);
     final inactive = !geofence.isActive;
 
@@ -69,7 +69,7 @@ class UserGeofenceCard extends StatelessWidget {
                                   ? 'Untitled geofence'
                                   : geofence.name,
                               style: OpenVtsTypography.titleSmall.copyWith(
-                                color: OpenVtsColors.textPrimary,
+                                color: Theme.of(context).colorScheme.onSurface,
                                 fontWeight: FontWeight.w600,
                               ),
                               maxLines: 1,
@@ -115,7 +115,7 @@ class UserGeofenceCard extends StatelessWidget {
                     Text(
                       geofence.description.trim(),
                       style: OpenVtsTypography.meta.copyWith(
-                        color: OpenVtsColors.textSecondary,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                         height: 1.35,
                       ),
                       maxLines: 2,
@@ -129,7 +129,8 @@ class UserGeofenceCard extends StatelessWidget {
                         child: Text(
                           _geometrySummary(geofence),
                           style: OpenVtsTypography.meta.copyWith(
-                            color: OpenVtsColors.textSecondary,
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -138,9 +139,9 @@ class UserGeofenceCard extends StatelessWidget {
                       if (geofence.updatedAt != null) ...[
                         const SizedBox(width: OpenVtsSpacing.sm),
                         Text(
-                          _formatter.formatDate(geofence.updatedAt!),
+                          formatter.formatDate(geofence.updatedAt!),
                           style: OpenVtsTypography.meta.copyWith(
-                            color: OpenVtsColors.textTertiary,
+                            color: Theme.of(context).colorScheme.outline,
                           ),
                         ),
                       ],
@@ -211,9 +212,9 @@ class UserGeofenceCard extends StatelessWidget {
 
   static Color _parseHex(String value) {
     final cleaned = value.replaceAll('#', '').trim();
-    if (cleaned.length != 6) return OpenVtsColors.textTertiary;
+    if (cleaned.length != 6) return OpenVtsColors.brandInk;
     final parsed = int.tryParse('FF$cleaned', radix: 16);
-    if (parsed == null) return OpenVtsColors.textTertiary;
+    if (parsed == null) return OpenVtsColors.brandInk;
     return Color(parsed);
   }
 }
@@ -254,8 +255,9 @@ class _RowAction extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final disabled = onTap == null;
-    final color =
-        destructive ? OpenVtsColors.error : OpenVtsColors.textSecondary;
+    final color = destructive
+        ? OpenVtsColors.error
+        : Theme.of(context).colorScheme.onSurfaceVariant;
     return Tooltip(
       message: tooltip,
       child: InkResponse(
@@ -266,7 +268,7 @@ class _RowAction extends StatelessWidget {
           child: Icon(
             icon,
             size: 18,
-            color: disabled ? OpenVtsColors.textTertiary : color,
+            color: disabled ? Theme.of(context).colorScheme.outline : color,
           ),
         ),
       ),

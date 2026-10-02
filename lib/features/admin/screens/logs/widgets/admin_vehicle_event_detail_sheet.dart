@@ -95,8 +95,8 @@ class AdminVehicleEventDetailSheet extends ConsumerWidget {
   Widget _row(String label, String value) {
     return Padding(
       padding: const EdgeInsets.only(bottom: OpenVtsSpacing.xs),
-      child: RichText(
-        text: TextSpan(
+      child: Text.rich(
+        TextSpan(
           style: OpenVtsTypography.body.copyWith(fontSize: 13),
           children: [
             TextSpan(text: '$label: ', style: OpenVtsTypography.label),

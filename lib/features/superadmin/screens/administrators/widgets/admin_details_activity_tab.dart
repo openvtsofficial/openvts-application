@@ -4,8 +4,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
-
 import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
@@ -16,6 +14,7 @@ import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../../../shared/widgets/open_vts_date_time_range_selector.dart';
 import '../../../../../shared/widgets/open_vts_error_view.dart';
 import '../../../controllers/superadmin_providers.dart';
+import '../../../models/superadmin_activity_filter.dart';
 import '../../../models/superadmin_admin_details_model.dart';
 
 class AdminDetailsActivityTab extends ConsumerStatefulWidget {
@@ -34,12 +33,12 @@ class _AdminDetailsActivityTabState
   Timer? _searchDebounce;
 
   static const List<_ActionGroup> _groups = [
-    _ActionGroup('All', ''),
-    _ActionGroup('Security', 'AUTH'),
-    _ActionGroup('Settings', 'SETTINGS'),
-    _ActionGroup('Billing', 'PAYMENT'),
-    _ActionGroup('Vehicles', 'VEHICLE'),
-    _ActionGroup('Drivers', 'DRIVER'),
+    _ActionGroup('All', SuperadminActivityCategory.all),
+    _ActionGroup('Security', SuperadminActivityCategory.security),
+    _ActionGroup('Settings', SuperadminActivityCategory.settings),
+    _ActionGroup('Billing', SuperadminActivityCategory.billing),
+    _ActionGroup('Vehicles', SuperadminActivityCategory.vehicles),
+    _ActionGroup('Drivers', SuperadminActivityCategory.drivers),
   ];
 
   @override
@@ -80,6 +79,7 @@ class _AdminDetailsActivityTabState
   }
 
   void _onActionPrefixChanged(String prefix) {
+    _searchDebounce?.cancel();
     final controller = ref.read(
       superadminAdminDetailsControllerProvider(widget.adminId).notifier,
     );
@@ -99,14 +99,23 @@ class _AdminDetailsActivityTabState
       title: 'Activity date range',
     );
     if (result == null) return;
+    _searchDebounce?.cancel();
     final controller = ref.read(
       superadminAdminDetailsControllerProvider(widget.adminId).notifier,
     );
-    controller.setActivityDateRange(from: result.start, to: result.end);
+    final valid = controller.setActivityDateRange(
+      from: result.start,
+      to: result.end,
+    );
+    if (!valid) {
+      ToastHelper.showError('Start time must be before end time.');
+      return;
+    }
     controller.loadActivity();
   }
 
   void _onClearDateRange() {
+    _searchDebounce?.cancel();
     final controller = ref.read(
       superadminAdminDetailsControllerProvider(widget.adminId).notifier,
     );
@@ -115,6 +124,7 @@ class _AdminDetailsActivityTabState
   }
 
   void _onResetFilters() {
+    _searchDebounce?.cancel();
     final controller = ref.read(
       superadminAdminDetailsControllerProvider(widget.adminId).notifier,
     );
@@ -126,10 +136,12 @@ class _AdminDetailsActivityTabState
   }
 
   void _openDetailSheet(SuperadminAdminActivityLog log) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: OpenVtsColors.surfaceElevated,
+      backgroundColor:
+          isDark ? OpenVtsColors.darkSurface : OpenVtsColors.surfaceElevated,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -213,22 +225,7 @@ class _AdminDetailsActivityTabState
             ),
           )
         else if (state.activityLogs.isEmpty)
-          OpenVtsCard(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: OpenVtsSpacing.lg),
-              child: Center(
-                child: Text(
-                  hasAnyFilter
-                      ? 'No activity matches your filters.'
-                      : 'No activity recorded yet.',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: OpenVtsColors.textSecondary,
-                  ),
-                ),
-              ),
-            ),
-          )
+          _ActivityEmptyState(prefix: state.activityActionPrefix)
         else
           Column(
             children: [
@@ -257,9 +254,10 @@ class _AdminDetailsActivityTabState
 }
 
 class _ActionGroup {
-  const _ActionGroup(this.label, this.prefix);
+  const _ActionGroup(this.label, this.category);
   final String label;
-  final String prefix;
+  final SuperadminActivityCategory category;
+  String get prefix => category.value;
 }
 
 // ---------------------------------------------------------------------------
@@ -274,25 +272,32 @@ class _SearchField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final onSurfaceVariant = theme.colorScheme.onSurfaceVariant;
+    final onSurface = theme.colorScheme.onSurface;
+    final surface = theme.colorScheme.surface;
+    final outlineVariant = theme.colorScheme.outlineVariant;
+    final primary = theme.colorScheme.primary;
+
     return TextField(
       controller: controller,
       onChanged: onChanged,
-      style: const TextStyle(fontSize: 13),
+      style: TextStyle(fontSize: 13, color: onSurface),
       decoration: InputDecoration(
         hintText: 'Search activity…',
-        prefixIcon: const Icon(
+        prefixIcon: Icon(
           Icons.search,
           size: 18,
-          color: OpenVtsColors.textTertiary,
+          color: onSurfaceVariant,
         ),
         suffixIcon: controller.text.isEmpty
             ? null
             : IconButton(
                 splashRadius: 16,
                 iconSize: 16,
-                icon: const Icon(
+                icon: Icon(
                   Icons.close,
-                  color: OpenVtsColors.textTertiary,
+                  color: onSurfaceVariant,
                 ),
                 onPressed: () {
                   controller.clear();
@@ -305,22 +310,22 @@ class _SearchField extends StatelessWidget {
           vertical: 10,
         ),
         filled: true,
-        fillColor: OpenVtsColors.surface,
-        hintStyle: const TextStyle(
+        fillColor: surface,
+        hintStyle: TextStyle(
           fontSize: 13,
-          color: OpenVtsColors.textTertiary,
+          color: onSurfaceVariant,
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(OpenVtsRadius.md),
-          borderSide: const BorderSide(color: OpenVtsColors.border),
+          borderSide: BorderSide(color: outlineVariant),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(OpenVtsRadius.md),
-          borderSide: const BorderSide(color: OpenVtsColors.border),
+          borderSide: BorderSide(color: outlineVariant),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(OpenVtsRadius.md),
-          borderSide: const BorderSide(color: OpenVtsColors.brandInk),
+          borderSide: BorderSide(color: primary),
         ),
       ),
     );
@@ -341,7 +346,7 @@ class _GroupChips extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 32,
+      height: 36,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: groups.length,
@@ -349,31 +354,39 @@ class _GroupChips extends StatelessWidget {
         itemBuilder: (_, index) {
           final g = groups[index];
           final isActive = g.prefix == selected;
+          final theme = Theme.of(context);
+          final primary = theme.colorScheme.primary;
+          final surface = theme.colorScheme.surface;
+          final outlineVariant = theme.colorScheme.outlineVariant;
+          final onSurfaceVariant = theme.colorScheme.onSurfaceVariant;
+          final onPrimary = theme.colorScheme.onPrimary;
+
           return InkWell(
             borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
             onTap: () => onChanged(g.prefix),
             child: Container(
+              constraints: const BoxConstraints(minHeight: 36),
+              alignment: Alignment.center,
               padding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 6,
+                horizontal: 14,
+                vertical: 8,
               ),
               decoration: BoxDecoration(
-                color:
-                    isActive ? OpenVtsColors.brandInk : OpenVtsColors.surface,
+                color: isActive ? primary : surface,
                 borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
                 border: Border.all(
-                  color:
-                      isActive ? OpenVtsColors.brandInk : OpenVtsColors.border,
+                  color: isActive ? primary : outlineVariant,
                 ),
               ),
               child: Text(
                 g.label,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
-                  color: isActive
-                      ? OpenVtsColors.white
-                      : OpenVtsColors.textSecondary,
+                  color: isActive ? onPrimary : onSurfaceVariant,
                 ),
               ),
             ),
@@ -416,39 +429,47 @@ class _DateRangeRow extends StatelessWidget {
           child: InkWell(
             borderRadius: BorderRadius.circular(OpenVtsRadius.md),
             onTap: onPick,
-            child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 10,
-              ),
-              decoration: BoxDecoration(
-                color: OpenVtsColors.surface,
-                borderRadius: BorderRadius.circular(OpenVtsRadius.md),
-                border: Border.all(color: OpenVtsColors.border),
-              ),
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.calendar_month_outlined,
-                    size: 16,
-                    color: OpenVtsColors.textSecondary,
+            child: Builder(
+              builder: (ctx) {
+                final theme = Theme.of(ctx);
+                final surface = theme.colorScheme.surface;
+                final outlineVariant = theme.colorScheme.outlineVariant;
+                final onSurfaceVariant = theme.colorScheme.onSurfaceVariant;
+                final onSurface = theme.colorScheme.onSurface;
+
+                return Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
                   ),
-                  const SizedBox(width: OpenVtsSpacing.xs),
-                  Expanded(
-                    child: Text(
-                      label ?? 'Select date range',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: label == null
-                            ? OpenVtsColors.textTertiary
-                            : OpenVtsColors.textPrimary,
+                  decoration: BoxDecoration(
+                    color: surface,
+                    borderRadius: BorderRadius.circular(OpenVtsRadius.md),
+                    border: Border.all(color: outlineVariant),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.calendar_month_outlined,
+                        size: 16,
+                        color: onSurfaceVariant,
                       ),
-                    ),
+                      const SizedBox(width: OpenVtsSpacing.xs),
+                      Expanded(
+                        child: Text(
+                          label ?? 'Select date range',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: label == null ? onSurfaceVariant : onSurface,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                );
+              },
             ),
           ),
         ),
@@ -491,6 +512,12 @@ class _ActivityCard extends StatelessWidget {
         : (log.user?.email.isNotEmpty == true ? log.user!.email : null);
     final platformLine = _platformLine(log);
 
+    final theme = Theme.of(context);
+    final surface = theme.colorScheme.surface;
+    final outlineVariant = theme.colorScheme.outlineVariant;
+    final onSurfaceVariant = theme.colorScheme.onSurfaceVariant;
+    final onSurface = theme.colorScheme.onSurface;
+
     return OpenVtsCard(
       onTap: onTap,
       padding: const EdgeInsets.symmetric(
@@ -504,15 +531,15 @@ class _ActivityCard extends StatelessWidget {
             width: 32,
             height: 32,
             decoration: BoxDecoration(
-              color: OpenVtsColors.surface,
+              color: surface,
               borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-              border: Border.all(color: OpenVtsColors.border),
+              border: Border.all(color: outlineVariant),
             ),
             alignment: Alignment.center,
             child: Icon(
               icon,
               size: 16,
-              color: OpenVtsColors.textSecondary,
+              color: onSurfaceVariant,
             ),
           ),
           const SizedBox(width: OpenVtsSpacing.sm),
@@ -527,10 +554,10 @@ class _ActivityCard extends StatelessWidget {
                         action,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
-                          color: OpenVtsColors.textPrimary,
+                          color: onSurface,
                         ),
                       ),
                     ),
@@ -538,9 +565,9 @@ class _ActivityCard extends StatelessWidget {
                       const SizedBox(width: OpenVtsSpacing.xs),
                       Text(
                         timeLabel,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11,
-                          color: OpenVtsColors.textTertiary,
+                          color: onSurfaceVariant,
                         ),
                       ),
                     ],
@@ -552,9 +579,9 @@ class _ActivityCard extends StatelessWidget {
                     entityLabel,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
-                      color: OpenVtsColors.textSecondary,
+                      color: onSurfaceVariant,
                     ),
                   ),
                 ],
@@ -562,10 +589,10 @@ class _ActivityCard extends StatelessWidget {
                   const SizedBox(height: 2),
                   Row(
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.person_outline,
                         size: 12,
-                        color: OpenVtsColors.textTertiary,
+                        color: onSurfaceVariant,
                       ),
                       const SizedBox(width: 4),
                       Expanded(
@@ -573,9 +600,9 @@ class _ActivityCard extends StatelessWidget {
                           performedBy,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 11,
-                            color: OpenVtsColors.textTertiary,
+                            color: onSurfaceVariant,
                           ),
                         ),
                       ),
@@ -588,9 +615,9 @@ class _ActivityCard extends StatelessWidget {
                     platformLine,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 11,
-                      color: OpenVtsColors.textTertiary,
+                      color: onSurfaceVariant,
                     ),
                   ),
                 ],
@@ -615,6 +642,7 @@ class _ActivityDetailSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const formatter = DateTimeFormatter();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final timeLabel = log.createdAt != null
         ? formatter.formatDateTime(log.createdAt!.toLocal())
         : null;
@@ -648,7 +676,9 @@ class _ActivityDetailSheet extends StatelessWidget {
                   width: 36,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: OpenVtsColors.border,
+                    color: isDark
+                        ? OpenVtsColors.darkBorder
+                        : OpenVtsColors.border,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -660,15 +690,21 @@ class _ActivityDetailSheet extends StatelessWidget {
                     width: 36,
                     height: 36,
                     decoration: BoxDecoration(
-                      color: OpenVtsColors.surface,
+                      color: isDark
+                          ? OpenVtsColors.darkSurfaceElevated
+                          : OpenVtsColors.surface,
                       borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-                      border: Border.all(color: OpenVtsColors.border),
+                      border: Border.all(
+                        color: isDark
+                            ? OpenVtsColors.darkBorder
+                            : OpenVtsColors.border,
+                      ),
                     ),
                     alignment: Alignment.center,
                     child: Icon(
                       _iconForAction(log.action),
                       size: 18,
-                      color: OpenVtsColors.textSecondary,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ),
                   const SizedBox(width: OpenVtsSpacing.sm),
@@ -678,19 +714,21 @@ class _ActivityDetailSheet extends StatelessWidget {
                       children: [
                         Text(
                           _humanizeAction(log.action),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
-                            color: OpenVtsColors.textPrimary,
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
                         ),
                         if (timeLabel != null) ...[
                           const SizedBox(height: 2),
                           Text(
                             timeLabel,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 12,
-                              color: OpenVtsColors.textSecondary,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
                             ),
                           ),
                         ],
@@ -700,7 +738,9 @@ class _ActivityDetailSheet extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: OpenVtsSpacing.md),
-              const Divider(height: 1, color: OpenVtsColors.border),
+              Divider(
+                  height: 1,
+                  color: Theme.of(context).colorScheme.outlineVariant),
               Expanded(
                 child: ListView(
                   controller: scrollController,
@@ -726,12 +766,14 @@ class _ActivityDetailSheet extends StatelessWidget {
                       const SizedBox(height: OpenVtsSpacing.md),
                       Row(
                         children: [
-                          const Text(
+                          Text(
                             'Metadata',
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
-                              color: OpenVtsColors.textSecondary,
+                              color: isDark
+                                  ? OpenVtsColors.darkTextSecondary
+                                  : OpenVtsColors.textSecondary,
                             ),
                           ),
                           const Spacer(),
@@ -749,7 +791,9 @@ class _ActivityDetailSheet extends StatelessWidget {
                             icon: const Icon(Icons.copy, size: 14),
                             label: const Text('Copy'),
                             style: TextButton.styleFrom(
-                              foregroundColor: OpenVtsColors.textSecondary,
+                              foregroundColor: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
                               padding:
                                   const EdgeInsets.symmetric(horizontal: 8),
                               minimumSize: const Size(0, 28),
@@ -764,17 +808,19 @@ class _ActivityDetailSheet extends StatelessWidget {
                         width: double.infinity,
                         padding: const EdgeInsets.all(OpenVtsSpacing.sm),
                         decoration: BoxDecoration(
-                          color: OpenVtsColors.surface,
+                          color: Theme.of(context).colorScheme.surface,
                           borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-                          border: Border.all(color: OpenVtsColors.border),
+                          border: Border.all(
+                              color:
+                                  Theme.of(context).colorScheme.outlineVariant),
                         ),
                         child: SelectableText(
                           metaJson,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontFamily: 'monospace',
                             fontSize: 11,
                             height: 1.4,
-                            color: OpenVtsColors.textPrimary,
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
                         ),
                       ),
@@ -807,18 +853,18 @@ class _DetailRow extends StatelessWidget {
             width: 108,
             child: Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
-                color: OpenVtsColors.textTertiary,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
           ),
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
-                color: OpenVtsColors.textPrimary,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
           ),
@@ -831,6 +877,107 @@ class _DetailRow extends StatelessWidget {
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+class _ActivityEmptyState extends StatelessWidget {
+  const _ActivityEmptyState({required this.prefix});
+
+  final String prefix;
+
+  @override
+  Widget build(BuildContext context) {
+    final (:icon, :title, :subtitle) = _contentForPrefix(prefix);
+
+    return OpenVtsCard(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          vertical: OpenVtsSpacing.lg,
+          horizontal: OpenVtsSpacing.md,
+        ),
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 28, color: OpenVtsColors.textTertiary),
+              const SizedBox(height: OpenVtsSpacing.sm),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: OpenVtsColors.textSecondary,
+                ),
+              ),
+              if (subtitle != null) ...[
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: OpenVtsColors.textTertiary,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  static ({IconData icon, String title, String? subtitle}) _contentForPrefix(
+    String prefix,
+  ) {
+    switch (prefix) {
+      case 'ADMIN.AUTH':
+        return (
+          icon: Icons.shield_outlined,
+          title: 'No security activity found.',
+          subtitle:
+              'Login, password, or account status changes will appear here.',
+        );
+      case '@SETTINGS':
+        return (
+          icon: Icons.settings_outlined,
+          title: 'No settings activity found.',
+          subtitle:
+              'Profile, company, or configuration changes will appear here.',
+        );
+      case '@BILLING':
+        return (
+          icon: Icons.account_balance_wallet_outlined,
+          title: 'No billing activity found.',
+          subtitle: 'Credit, payment, or billing updates will appear here.',
+        );
+      case 'ADMIN.VEHICLE':
+        return (
+          icon: Icons.directions_car_outlined,
+          title: 'No vehicle activity found.',
+          subtitle: 'Vehicle assignment or vehicle updates will appear here.',
+        );
+      case 'ADMIN.DRIVER':
+        return (
+          icon: Icons.person_outline,
+          title: 'No driver activity found.',
+          subtitle: 'Driver creation or driver updates will appear here.',
+        );
+      default:
+        if (prefix.isNotEmpty) {
+          return (
+            icon: Icons.search_off_outlined,
+            title: 'No activity matches your filters.',
+            subtitle: null,
+          );
+        }
+        return (
+          icon: Icons.history_outlined,
+          title: 'No activity recorded yet.',
+          subtitle: null,
+        );
+    }
+  }
+}
 
 String _humanizeAction(String action) {
   if (action.trim().isEmpty) return 'Activity';
@@ -918,5 +1065,5 @@ String? _formatRelative(DateTime? value) {
   if (diff.inDays < 7 && diff.inDays >= 0) {
     return '${diff.inDays}d ago';
   }
-  return DateFormat('dd MMM yyyy').format(value.toLocal());
+  return const DateTimeFormatter().formatDate(value.toLocal());
 }

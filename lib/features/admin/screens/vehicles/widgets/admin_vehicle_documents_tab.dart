@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../../core/theme/open_vts_spacing.dart';
+import '../../../../../core/utils/date_time_formatter.dart';
 import '../../../../../shared/widgets/open_vts_bottom_sheet.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../../../shared/widgets/open_vts_empty_state.dart';
 import '../../../../../shared/widgets/open_vts_loader.dart';
 import '../../../models/admin_vehicle_model.dart';
+import '../../../utils/vehicle_document_url_resolver.dart';
 import 'admin_vehicle_document_sheet.dart';
 
-class AdminVehicleDocumentsTab extends StatelessWidget {
+class AdminVehicleDocumentsTab extends ConsumerWidget {
   const AdminVehicleDocumentsTab({
     super.key,
     required this.vehicleId,
@@ -44,7 +47,8 @@ class AdminVehicleDocumentsTab extends StatelessWidget {
   final Future<void> Function(String docId) onDelete;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final formatter = ref.watch(appDateFormatterProvider);
     return Column(
       children: [
         OpenVtsCard(
@@ -78,10 +82,10 @@ class AdminVehicleDocumentsTab extends StatelessWidget {
                     const SizedBox(height: OpenVtsSpacing.xxs),
                     Text('Document type: ${_safe(doc.docTypeName)}'),
                     Text('File: ${_safe(doc.fileName)}'),
-                    Text('Expiry: ${_date(doc.expiryAt)}'),
+                    Text('Expiry: ${formatter.formatDate(doc.expiryAt)}'),
                     Text('Visibility: ${doc.isVisible ? 'Visible' : 'Hidden'}'),
                     Text('Tags: ${_safe(doc.tags)}'),
-                    Text('Created: ${_date(doc.createdAt)}'),
+                    Text('Created: ${formatter.formatDate(doc.createdAt)}'),
                     const SizedBox(height: OpenVtsSpacing.sm),
                     Wrap(
                       spacing: OpenVtsSpacing.xs,
@@ -167,7 +171,11 @@ class AdminVehicleDocumentsTab extends StatelessWidget {
   }
 
   Future<void> _openFile(BuildContext context, AdminVehicleDocument doc) async {
-    final uri = _resolveFileUri(doc.url, apiBaseUrl);
+    final uri = VehicleDocumentUrlResolver.resolve(
+      url: doc.url,
+      filePath: doc.filePath,
+      apiBaseUrl: apiBaseUrl,
+    );
     if (uri == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Document URL is unavailable.')),
@@ -183,22 +191,5 @@ class AdminVehicleDocumentsTab extends StatelessWidget {
     }
   }
 
-  Uri? _resolveFileUri(String filePath, String baseUrl) {
-    final path = filePath.trim();
-    if (path.isEmpty) return null;
-    if (path.startsWith('http://') || path.startsWith('https://')) {
-      return Uri.tryParse(path);
-    }
-    final base = baseUrl.trim().replaceAll(RegExp(r'/+$'), '');
-    final relative = path.startsWith('/') ? path : '/$path';
-    return Uri.tryParse('$base$relative');
-  }
-
   String _safe(String value) => value.trim().isEmpty ? '-' : value.trim();
-
-  String _date(DateTime? value) {
-    if (value == null) return '-';
-    final local = value.toLocal();
-    return '${local.year.toString().padLeft(4, '0')}-${local.month.toString().padLeft(2, '0')}-${local.day.toString().padLeft(2, '0')}';
-  }
 }

@@ -18,13 +18,16 @@ class OpenVtsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final card = Container(
       width: double.infinity,
       padding: padding,
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(OpenVtsRadius.lg),
-        border: Border.all(color: OpenVtsColors.border),
+        border: Border.all(
+          color: isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border,
+        ),
       ),
       child: child,
     );

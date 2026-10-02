@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:open_vts/core/theme/open_vts_colors.dart';
 import 'package:open_vts/core/theme/open_vts_radius.dart';
 import 'package:open_vts/core/theme/open_vts_spacing.dart';
 import 'package:open_vts/core/theme/open_vts_typography.dart';
@@ -17,6 +16,7 @@ class OpenVtsSupportEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(OpenVtsSpacing.lg),
@@ -27,14 +27,14 @@ class OpenVtsSupportEmptyState extends StatelessWidget {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: OpenVtsColors.surface,
-                border: Border.all(color: OpenVtsColors.border),
+                color: colorScheme.surface,
+                border: Border.all(color: colorScheme.outline),
                 borderRadius: BorderRadius.circular(OpenVtsRadius.md),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.support_agent_rounded,
                 size: 20,
-                color: OpenVtsColors.textSecondary,
+                color: colorScheme.onSurfaceVariant,
               ),
             ),
             const SizedBox(height: OpenVtsSpacing.sm),
@@ -50,7 +50,7 @@ class OpenVtsSupportEmptyState extends StatelessWidget {
                   : 'Create a ticket and the team will follow up here.',
               textAlign: TextAlign.center,
               style: OpenVtsTypography.body.copyWith(
-                color: OpenVtsColors.textSecondary,
+                color: colorScheme.onSurfaceVariant,
               ),
             ),
             if (!hasActiveFilters) ...[

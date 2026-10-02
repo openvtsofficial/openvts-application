@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/api/api_exception.dart';
 import '../models/admin_driver_details_model.dart';
 import '../models/admin_driver_details_state.dart';
+import '../services/admin_driver_timestamp_storage.dart';
 import '../services/admin_drivers_service.dart';
 
 class AdminDriverDetailsController
@@ -56,10 +57,29 @@ class AdminDriverDetailsController
     try {
       final driver = await _service.getDriverById(_driverId);
       _loadedTabs.add(AdminDriverDetailsTab.profile);
+
+      // Resolve effective updatedAt: server → persisted → createdAt.
+      final persisted =
+          await AdminDriverTimestampStorage.readUpdatedAt(_driverId);
+      final effective = resolveDriverEffectiveUpdatedAt(
+        serverUpdatedAt: driver.updatedAt,
+        persistedUpdatedAt: persisted,
+        createdAt: driver.createdAt,
+      );
+
+      // If the server returned a real updatedAt, keep it in sync with storage.
+      if (driver.updatedAt != null) {
+        unawaited(AdminDriverTimestampStorage.persistUpdatedAt(
+          _driverId,
+          driver.updatedAt!,
+        ));
+      }
+
       state = state.copyWith(
         driver: driver,
         isLoadingDriver: false,
         isRefreshingDriver: false,
+        profileUpdatedAt: effective,
       );
     } catch (error) {
       state = state.copyWith(
@@ -75,11 +95,23 @@ class AdminDriverDetailsController
   Future<bool> updateProfile(AdminDriverUpdateRequest request) async {
     state = state.copyWith(isSavingProfile: true, sectionErrorMessage: null);
     try {
+      // Capture edit time before the await so it reflects the moment of success.
+      final editTime = DateTime.now().toUtc();
       final driver = await _service.updateDriver(
         id: _driverId,
         request: request,
       );
-      state = state.copyWith(driver: driver, isSavingProfile: false);
+      // Prefer any server-supplied timestamp; otherwise use the local edit time.
+      final effectiveUpdatedAt = driver.updatedAt ?? editTime;
+      unawaited(AdminDriverTimestampStorage.persistUpdatedAt(
+        _driverId,
+        effectiveUpdatedAt,
+      ));
+      state = state.copyWith(
+        driver: driver,
+        isSavingProfile: false,
+        profileUpdatedAt: effectiveUpdatedAt.toLocal(),
+      );
       return true;
     } catch (error) {
       state = state.copyWith(
@@ -126,6 +158,7 @@ class AdminDriverDetailsController
     state = state.copyWith(isDeletingDriver: true, sectionErrorMessage: null);
     try {
       await _service.deleteDriver(_driverId);
+      unawaited(AdminDriverTimestampStorage.clearUpdatedAt(_driverId));
       state = state.copyWith(isDeletingDriver: false);
       return true;
     } catch (error) {

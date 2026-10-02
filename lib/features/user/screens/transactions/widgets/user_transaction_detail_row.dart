@@ -22,6 +22,13 @@ class UserTransactionDetailRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final labelColor =
+        isDark ? OpenVtsColors.darkTextTertiary : OpenVtsColors.textTertiary;
+    final valueColor = isDark ? Colors.white : OpenVtsColors.textPrimary;
+    final iconColor =
+        isDark ? OpenVtsColors.darkTextSecondary : OpenVtsColors.textSecondary;
+
     return Row(
       crossAxisAlignment:
           multiline ? CrossAxisAlignment.start : CrossAxisAlignment.center,
@@ -31,7 +38,7 @@ class UserTransactionDetailRow extends StatelessWidget {
           child: Text(
             label,
             style: OpenVtsTypography.meta.copyWith(
-              color: OpenVtsColors.textTertiary,
+              color: labelColor,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -43,7 +50,7 @@ class UserTransactionDetailRow extends StatelessWidget {
             maxLines: multiline ? null : 2,
             overflow: multiline ? TextOverflow.visible : TextOverflow.ellipsis,
             style: OpenVtsTypography.body.copyWith(
-              color: OpenVtsColors.textPrimary,
+              color: valueColor,
             ),
           ),
         ),
@@ -56,7 +63,7 @@ class UserTransactionDetailRow extends StatelessWidget {
             visualDensity: VisualDensity.compact,
             onPressed: onCopy,
             icon: const Icon(Icons.content_copy_rounded, size: 16),
-            color: OpenVtsColors.textSecondary,
+            color: iconColor,
           ),
         ],
       ],

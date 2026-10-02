@@ -58,8 +58,8 @@ class AdminLogsService {
     String? userId,
     String? source,
     String? severity,
-    bool? isRead,
     String? q,
+    bool? isRead,
     bool dedupe = true,
   }) async {
     final response = await _apiClient.get<dynamic>(

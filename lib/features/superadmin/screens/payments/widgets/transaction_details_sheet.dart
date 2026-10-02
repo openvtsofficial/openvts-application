@@ -36,8 +36,8 @@ class TransactionDetailsSheet extends StatelessWidget {
       maxChildSize: 0.96,
       builder: (context, scrollController) {
         return DecoratedBox(
-          decoration: const BoxDecoration(
-            color: Colors.white,
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.vertical(
               top: Radius.circular(OpenVtsRadius.xl),
             ),
@@ -50,7 +50,7 @@ class TransactionDetailsSheet extends StatelessWidget {
                   width: 44,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: OpenVtsColors.border,
+                    color: Theme.of(context).colorScheme.outlineVariant,
                     borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
                   ),
                 ),
@@ -65,7 +65,7 @@ class TransactionDetailsSheet extends StatelessWidget {
                       child: Text(
                         'Transaction Details',
                         style: OpenVtsTypography.titleSmall.copyWith(
-                          color: OpenVtsColors.textPrimary,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                     ),
@@ -80,7 +80,10 @@ class TransactionDetailsSheet extends StatelessWidget {
                   ],
                 ),
               ),
-              const Divider(height: 1, color: OpenVtsColors.divider),
+              Divider(
+                height: 1,
+                color: Theme.of(context).colorScheme.outlineVariant,
+              ),
               Expanded(
                 child: ListView(
                   controller: scrollController,
@@ -95,7 +98,7 @@ class TransactionDetailsSheet extends StatelessWidget {
                               headerAmount,
                               style: OpenVtsTypography.numeric.copyWith(
                                 fontSize: 26,
-                                color: OpenVtsColors.textPrimary,
+                                color: Theme.of(context).colorScheme.onSurface,
                               ),
                             ),
                           ),
@@ -321,26 +324,20 @@ class _StatusChip extends StatelessWidget {
       SuperadminTransactionStatus.failed => 'Failed',
     };
 
-    final borderColor = switch (status) {
-      SuperadminTransactionStatus.failed =>
-        OpenVtsColors.textSecondary.withValues(alpha: 0.38),
-      SuperadminTransactionStatus.pending =>
-        OpenVtsColors.textSecondary.withValues(alpha: 0.38),
-      SuperadminTransactionStatus.success =>
-        OpenVtsColors.textSecondary.withValues(alpha: 0.38),
-    };
+    final scheme = Theme.of(context).colorScheme;
+    final borderColor = scheme.outlineVariant;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: OpenVtsColors.surface,
+        color: scheme.surfaceContainer,
         borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
         border: Border.all(color: borderColor),
       ),
       child: Text(
         label,
         style: OpenVtsTypography.meta.copyWith(
-          color: OpenVtsColors.textPrimary,
+          color: Theme.of(context).colorScheme.onSurface,
           fontWeight: FontWeight.w600,
         ),
       ),
@@ -366,7 +363,7 @@ class _DetailsSection extends StatelessWidget {
           Text(
             title,
             style: OpenVtsTypography.label.copyWith(
-              color: OpenVtsColors.textSecondary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
           const SizedBox(height: OpenVtsSpacing.xs),
@@ -375,10 +372,10 @@ class _DetailsSection extends StatelessWidget {
             return Column(
               children: [
                 if (index > 0)
-                  const Divider(
+                  Divider(
                     height: 1,
                     thickness: 0.5,
-                    color: OpenVtsColors.divider,
+                    color: Theme.of(context).colorScheme.outlineVariant,
                   ),
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 9),
@@ -407,7 +404,7 @@ class _MetaSection extends StatelessWidget {
           Text(
             'Metadata',
             style: OpenVtsTypography.label.copyWith(
-              color: OpenVtsColors.textSecondary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
           const SizedBox(height: OpenVtsSpacing.xs),
@@ -415,9 +412,10 @@ class _MetaSection extends StatelessWidget {
             width: double.infinity,
             constraints: const BoxConstraints(maxHeight: 220),
             decoration: BoxDecoration(
-              color: OpenVtsColors.surface,
+              color: Theme.of(context).colorScheme.surfaceContainer,
               borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-              border: Border.all(color: OpenVtsColors.border),
+              border: Border.all(
+                  color: Theme.of(context).colorScheme.outlineVariant),
             ),
             child: Scrollbar(
               thumbVisibility: false,
@@ -428,7 +426,7 @@ class _MetaSection extends StatelessWidget {
                   child: SelectableText(
                     _prettyJson(meta),
                     style: OpenVtsTypography.meta.copyWith(
-                      color: OpenVtsColors.textPrimary,
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontFamily: 'Courier New',
                       height: 1.4,
                     ),
@@ -467,7 +465,7 @@ class _DetailRow extends StatelessWidget {
           child: Text(
             row.label,
             style: OpenVtsTypography.meta.copyWith(
-              color: OpenVtsColors.textTertiary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
         ),
@@ -479,7 +477,7 @@ class _DetailRow extends StatelessWidget {
             overflow:
                 row.multiline ? TextOverflow.visible : TextOverflow.ellipsis,
             style: OpenVtsTypography.body.copyWith(
-              color: OpenVtsColors.textPrimary,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
         ),
@@ -488,7 +486,7 @@ class _DetailRow extends StatelessWidget {
           IconButton(
             onPressed: row.onCopy,
             icon: const Icon(Icons.content_copy_rounded, size: 18),
-            color: OpenVtsColors.textSecondary,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
             tooltip: 'Copy',
             constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
             padding: EdgeInsets.zero,

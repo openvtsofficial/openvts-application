@@ -3,7 +3,6 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
@@ -159,9 +158,10 @@ class _FleetSegmentedBar extends StatelessWidget {
       return Container(
         height: 16,
         decoration: BoxDecoration(
-          color: OpenVtsColors.surface,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
-          border: Border.all(color: OpenVtsColors.border),
+          border:
+              Border.all(color: Theme.of(context).colorScheme.outlineVariant),
         ),
       );
     }
@@ -198,9 +198,9 @@ class _FleetStatusChip extends StatelessWidget {
         vertical: 5,
       ),
       decoration: BoxDecoration(
-        color: OpenVtsColors.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
-        border: Border.all(color: OpenVtsColors.border),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -217,7 +217,7 @@ class _FleetStatusChip extends StatelessWidget {
           Text(
             '${segment.label} ${userDashboardFormatNumber(segment.value)}',
             style: OpenVtsTypography.meta.copyWith(
-              color: OpenVtsColors.textSecondary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               fontSize: 10.5,
               fontWeight: FontWeight.w800,
             ),
@@ -226,7 +226,7 @@ class _FleetStatusChip extends StatelessWidget {
           Text(
             '${userDashboardFormatDecimal(percent)}%',
             style: OpenVtsTypography.meta.copyWith(
-              color: OpenVtsColors.textTertiary,
+              color: Theme.of(context).colorScheme.outline,
               fontSize: 10.5,
               fontWeight: FontWeight.w700,
             ),
@@ -271,9 +271,9 @@ class _SkeletonBlock extends StatelessWidget {
     return Container(
       height: height,
       decoration: BoxDecoration(
-        color: OpenVtsColors.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(OpenVtsRadius.md),
-        border: Border.all(color: OpenVtsColors.border),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
     );
   }

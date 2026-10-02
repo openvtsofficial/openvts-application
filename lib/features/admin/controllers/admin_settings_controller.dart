@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/api/api_exception.dart';
 import '../models/admin_settings_model.dart';
 import '../models/admin_settings_state.dart';
 import '../services/admin_settings_service.dart';
@@ -141,6 +142,7 @@ class AdminSettingsController extends StateNotifier<AdminSettingsState> {
   }
 
   Future<bool> requestEmailOtp() async {
+    if (state.isRequestingEmailOtp) return false;
     state =
         state.copyWith(isRequestingEmailOtp: true, sectionErrorMessage: null);
     try {
@@ -169,6 +171,7 @@ class AdminSettingsController extends StateNotifier<AdminSettingsState> {
   }
 
   Future<bool> requestWhatsAppOtp() async {
+    if (state.isRequestingWhatsAppOtp) return false;
     state = state.copyWith(
       isRequestingWhatsAppOtp: true,
       sectionErrorMessage: null,
@@ -348,6 +351,10 @@ class AdminSettingsController extends StateNotifier<AdminSettingsState> {
   }
 
   String _toErrorMessage(Object error) {
+    if (error is ApiException) {
+      final message = error.message.trim();
+      return message.isNotEmpty ? message : 'Request failed';
+    }
     if (error is DioException) {
       final data = error.response?.data;
       if (data is Map<String, dynamic>) {

@@ -6,6 +6,7 @@ import '../../../../core/router/route_paths.dart';
 import '../../../../core/theme/open_vts_colors.dart';
 import '../../../../core/theme/open_vts_radius.dart';
 import '../../../../core/theme/open_vts_spacing.dart';
+import '../../../../core/theme/open_vts_typography.dart';
 import '../../../../shared/widgets/open_vts_empty_state.dart';
 import '../../../../shared/widgets/open_vts_error_view.dart';
 import '../../../../shared/widgets/open_vts_list_page_header.dart';
@@ -15,6 +16,8 @@ import '../../controllers/admin_drivers_controller.dart';
 import '../../controllers/admin_providers.dart';
 import '../../models/admin_drivers_model.dart';
 import '../../models/admin_drivers_state.dart';
+import '../../models/admin_users_model.dart';
+import '../../utils/location_label_resolver.dart';
 import 'widgets/admin_driver_card.dart';
 import 'widgets/admin_driver_create_sheet.dart';
 
@@ -60,12 +63,27 @@ class AdminDriversScreen extends ConsumerWidget {
                   onCreate: () => _showCreateDriverSheet(context),
                   onOpenFilters: () => _showFilterSheet(context, ref),
                   onOpenSort: () => _showSortSheet(context, ref),
-                  onOpenDetails: (driver) => context.push(
-                    RoutePaths.adminDriverDetailsPath(driver.id),
-                    extra: driver,
+                  onOpenDetails: (driver) => _openDriverDetails(
+                    context,
+                    driver,
+                    ref.read(adminDriversControllerProvider.notifier),
                   ),
                 ),
     );
+  }
+
+  Future<void> _openDriverDetails(
+    BuildContext context,
+    AdminDriverListItem driver,
+    AdminDriversController controller,
+  ) async {
+    await context.push(
+      RoutePaths.adminDriverDetailsPath(driver.id),
+      extra: driver,
+    );
+    if (context.mounted) {
+      await controller.refresh();
+    }
   }
 
   Future<void> _showCreateDriverSheet(BuildContext context) {
@@ -82,10 +100,19 @@ class AdminDriversScreen extends ConsumerWidget {
     final controller = ref.read(adminDriversControllerProvider.notifier);
     final state = ref.read(adminDriversControllerProvider);
 
+    // Ensure country options are cached (no-op if already loaded).
+    await ref
+        .read(adminUsersControllerProvider.notifier)
+        .ensureCountryOptionsLoaded();
+    final cachedCountryOptions =
+        ref.read(adminUsersControllerProvider).countryOptions;
+
+    if (!context.mounted) return;
+
     var selectedStatus = state.statusFilter;
     var selectedVerified = state.verifiedFilter;
     var selectedCountry = state.countryFilter;
-    final countryCodes = _countryCodes(state.drivers);
+    final countryOptions = _countryOptions(state.drivers, cachedCountryOptions);
 
     await showModalBottomSheet<void>(
       context: context,
@@ -105,19 +132,17 @@ class AdminDriversScreen extends ConsumerWidget {
               sections: [
                 OpenVtsListPageOptionsSection(
                   label: 'Status',
-                  child: Wrap(
-                    spacing: OpenVtsSpacing.xs,
-                    runSpacing: OpenVtsSpacing.xs,
+                  child: _PillSegmentedControl(
                     children: AdminDriverStatusFilter.values
                         .map(
-                          (option) => OpenVtsListPageChoiceChip(
+                          (option) => _PillSegment(
                             label: switch (option) {
                               AdminDriverStatusFilter.all => 'All',
                               AdminDriverStatusFilter.active => 'Active',
                               AdminDriverStatusFilter.inactive => 'Inactive',
                             },
                             selected: selectedStatus == option,
-                            onSelected: () =>
+                            onTap: () =>
                                 setSheetState(() => selectedStatus = option),
                           ),
                         )
@@ -126,12 +151,10 @@ class AdminDriversScreen extends ConsumerWidget {
                 ),
                 OpenVtsListPageOptionsSection(
                   label: 'Verification',
-                  child: Wrap(
-                    spacing: OpenVtsSpacing.xs,
-                    runSpacing: OpenVtsSpacing.xs,
+                  child: _PillSegmentedControl(
                     children: AdminDriverVerifiedFilter.values
                         .map(
-                          (option) => OpenVtsListPageChoiceChip(
+                          (option) => _PillSegment(
                             label: switch (option) {
                               AdminDriverVerifiedFilter.all => 'All',
                               AdminDriverVerifiedFilter.verified => 'Verified',
@@ -139,7 +162,7 @@ class AdminDriversScreen extends ConsumerWidget {
                                 'Unverified',
                             },
                             selected: selectedVerified == option,
-                            onSelected: () =>
+                            onTap: () =>
                                 setSheetState(() => selectedVerified = option),
                           ),
                         )
@@ -152,18 +175,19 @@ class AdminDriversScreen extends ConsumerWidget {
                     spacing: OpenVtsSpacing.xs,
                     runSpacing: OpenVtsSpacing.xs,
                     children: [
-                      OpenVtsListPageChoiceChip(
+                      _PillSegment(
                         label: 'All Countries',
                         selected: selectedCountry == null,
-                        onSelected: () =>
+                        onTap: () =>
                             setSheetState(() => selectedCountry = null),
                       ),
-                      for (final code in countryCodes)
-                        OpenVtsListPageChoiceChip(
-                          label: code,
-                          selected: selectedCountry == code,
-                          onSelected: () =>
-                              setSheetState(() => selectedCountry = code),
+                      for (final option in countryOptions)
+                        _PillSegment(
+                          label: option.label,
+                          selected: selectedCountry == option.value,
+                          onTap: () => setSheetState(
+                            () => selectedCountry = option.value,
+                          ),
                         ),
                     ],
                   ),
@@ -237,19 +261,24 @@ class AdminDriversScreen extends ConsumerWidget {
     );
   }
 
-  List<String> _countryCodes(List<AdminDriverListItem> drivers) {
+  List<AdminUserCountryOption> _countryOptions(
+    List<AdminDriverListItem> drivers,
+    List<AdminUserCountryOption> cachedOptions,
+  ) {
     final codes = <String>{
       for (final driver in drivers)
         if (driver.countryCode.trim().isNotEmpty &&
             driver.countryCode.trim() != '-')
           driver.countryCode.trim().toUpperCase(),
-    }.toList()
-      ..sort();
-    return codes;
+    };
+    return LocationLabelResolver.resolvedCountryOptions(
+      codes,
+      apiOptions: cachedOptions,
+    );
   }
 }
 
-class _DriversBody extends StatelessWidget {
+class _DriversBody extends ConsumerWidget {
   const _DriversBody({
     required this.state,
     required this.controller,
@@ -267,7 +296,7 @@ class _DriversBody extends StatelessWidget {
   final void Function(AdminDriverListItem) onOpenDetails;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final filteredCount = state.filteredCount;
     final visible = state.visibleDrivers;
 
@@ -275,8 +304,7 @@ class _DriversBody extends StatelessWidget {
       children: [
         OpenVtsListPageHeaderCard(
           icon: Icons.badge_outlined,
-          countLabel:
-              '$filteredCount Driver${filteredCount == 1 ? '' : 's'}',
+          countLabel: '$filteredCount Driver${filteredCount == 1 ? '' : 's'}',
           createLabel: 'Add Driver',
           onCreate: onCreate,
           isCreateLoading: state.isCreating,
@@ -334,9 +362,22 @@ class _DriversBody extends StatelessWidget {
                       }
 
                       final driver = visible[index];
+                      final isUpdatingStatus =
+                          state.updatingDriverIds.contains(driver.id);
                       return AdminDriverCard(
                         driver: driver,
                         onTap: () => onOpenDetails(driver),
+                        isUpdatingStatus: isUpdatingStatus,
+                        onStatusChanged: isUpdatingStatus
+                            ? null
+                            : (nextValue) {
+                                _onDriverStatusChanged(
+                                  context,
+                                  driver.id,
+                                  nextValue,
+                                  ref,
+                                );
+                              },
                       );
                     },
                   ),
@@ -344,6 +385,29 @@ class _DriversBody extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  Future<void> _onDriverStatusChanged(
+    BuildContext context,
+    String driverId,
+    bool nextValue,
+    WidgetRef ref,
+  ) async {
+    try {
+      await controller.updateDriverStatus(driverId, nextValue);
+    } catch (_) {
+      if (context.mounted) {
+        final errorMsg =
+            ref.read(adminDriversControllerProvider).errorMessage ??
+                'Unable to update driver status.';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMsg),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 }
 
@@ -361,13 +425,15 @@ class _InlineErrorBanner extends StatelessWidget {
         vertical: OpenVtsSpacing.sm,
       ),
       decoration: BoxDecoration(
-        color: OpenVtsColors.error.withValues(alpha: 0.08),
+        color: Theme.of(context).colorScheme.error.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(OpenVtsRadius.md),
-        border: Border.all(color: OpenVtsColors.error.withValues(alpha: 0.2)),
+        border: Border.all(
+            color: Theme.of(context).colorScheme.error.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
-          const Icon(Icons.error_outline_rounded, color: OpenVtsColors.error),
+          Icon(Icons.error_outline_rounded,
+              color: Theme.of(context).colorScheme.error),
           const SizedBox(width: OpenVtsSpacing.sm),
           Expanded(
             child: Text(
@@ -378,6 +444,84 @@ class _InlineErrorBanner extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _PillSegmentedControl extends StatelessWidget {
+  const _PillSegmentedControl({
+    required this.children,
+  });
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final backgroundColor = isDark ? Colors.black : OpenVtsColors.white;
+    final borderColor = isDark ? Colors.white : OpenVtsColors.border;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
+        border: Border.all(color: borderColor, width: 1),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: children,
+      ),
+    );
+  }
+}
+
+class _PillSegment extends StatelessWidget {
+  const _PillSegment({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final backgroundColor = selected
+        ? (isDark ? Colors.black : OpenVtsColors.white)
+        : Colors.transparent;
+    final textColor = isDark ? Colors.white : OpenVtsColors.brandInk;
+    final borderColor = isDark ? Colors.white : OpenVtsColors.border;
+
+    return Material(
+      color: backgroundColor,
+      borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 34),
+          padding: const EdgeInsets.symmetric(
+            horizontal: OpenVtsSpacing.sm,
+            vertical: OpenVtsSpacing.xs,
+          ),
+          decoration: selected
+              ? BoxDecoration(
+                  borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
+                  border: Border.all(color: borderColor, width: 1),
+                )
+              : null,
+          child: Text(
+            label,
+            style: OpenVtsTypography.label.copyWith(
+              color: textColor,
+              fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+            ),
+          ),
+        ),
       ),
     );
   }

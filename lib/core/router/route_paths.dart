@@ -49,7 +49,6 @@ class RoutePaths {
       '/admin/drivers/$driverId';
   static const adminTeam = '/admin/team';
   static const adminInventory = '/admin/inventory';
-  static const adminTransactions = '/admin/transactions';
   static const adminPayments = '/admin/payments';
   static const adminSupport = '/admin/support';
   static const adminSupportCreate = '/admin/support/create';
@@ -60,6 +59,7 @@ class RoutePaths {
   static const adminReports = '/admin/reports';
   static const adminProfile = '/admin/profile';
   static const adminSettings = '/admin/settings';
+  static const adminRoles = '/admin/roles';
 
   static const userHome = '/user';
   static const userDashboard = '/user/dashboard';
@@ -71,6 +71,11 @@ class RoutePaths {
       '/user/vehicles/$vehicleId';
 
   static const userHistory = '/user/history';
+  static const userReports = '/user/reports';
+  static const userReportWorkspace = '/user/reports/:reportKey';
+
+  static String userReportWorkspacePath(String reportKey) =>
+      '/user/reports/$reportKey';
   static const userLandmarksStudio = '/user/landmarks-studio';
   static const userLandmarkGeofences = '/user/landmarks-studio/geofences';
   static const userLandmarkPois = '/user/landmarks-studio/pois';
@@ -85,7 +90,6 @@ class RoutePaths {
   static const userPoiEditor = '/user/landmarks-studio/pois/editor';
   static const userRouteEditor = '/user/landmarks-studio/routes/editor';
   static const userTrackLinks = '/user/track-links';
-  static const userRouteOptimisation = '/user/route-optimisation';
   static const userSupport = '/user/support';
   static const userSupportCreate = '/user/support/create';
   static const userTransactions = '/user/transactions';

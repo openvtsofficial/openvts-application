@@ -51,8 +51,9 @@ class NotificationCenterState {
       items: items ?? this.items,
       unreadCount: unreadCount ?? this.unreadCount,
       hasMore: hasMore ?? this.hasMore,
-      nextBeforeId:
-          identical(nextBeforeId, _unset) ? this.nextBeforeId : nextBeforeId as int?,
+      nextBeforeId: identical(nextBeforeId, _unset)
+          ? this.nextBeforeId
+          : nextBeforeId as int?,
       errorMessage: identical(errorMessage, _unset)
           ? this.errorMessage
           : errorMessage as String?,

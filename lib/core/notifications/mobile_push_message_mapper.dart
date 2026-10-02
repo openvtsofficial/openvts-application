@@ -16,6 +16,9 @@ class MobilePushMessage {
     this.vehicleId,
     this.vehicleImei,
     this.createdAt,
+    this.campaignId,
+    this.source,
+    this.severity,
   });
 
   final String? id;
@@ -30,6 +33,9 @@ class MobilePushMessage {
   final String? vehicleId;
   final String? vehicleImei;
   final DateTime? createdAt;
+  final String? campaignId;
+  final String? source;
+  final String? severity;
 
   int get localNotificationId {
     final parsed = int.tryParse(notificationId ?? id ?? messageId ?? '');
@@ -61,6 +67,9 @@ class MobilePushMessage {
       if (vehicleId != null) 'vehicleId': vehicleId,
       if (vehicleImei != null) 'vehicleImei': vehicleImei,
       if (createdAt != null) 'createdAt': createdAt!.toUtc().toIso8601String(),
+      if (campaignId != null) 'campaignId': campaignId,
+      if (source != null) 'source': source,
+      if (severity != null) 'severity': severity,
     };
   }
 
@@ -98,6 +107,25 @@ class MobilePushMessage {
       createdAt: _asDateTime(json['createdAt']) ??
           _asDateTime(data['createdAt']) ??
           _asDateTime(data['created_at']),
+      campaignId: _firstNonEmpty([
+        json['campaignId'],
+        data['campaignId'],
+        data['campaign_id'],
+        data['notifyCampaignId'],
+        data['notify_campaign_id'],
+      ]),
+      source: _firstNonEmpty([
+        json['source'],
+        data['source'],
+        data['notificationSource'],
+        data['notification_source'],
+      ]),
+      severity: _firstNonEmpty([
+        json['severity'],
+        data['severity'],
+        data['level'],
+        data['priority'],
+      ]),
     );
   }
 }
@@ -144,7 +172,6 @@ class MobilePushMessageMapper {
       ]),
       category: _firstNonEmpty([
         data['category'],
-        data['source'],
         data['notificationType'],
         data['notification_type'],
       ]),
@@ -153,6 +180,8 @@ class MobilePushMessageMapper {
         data['notification_id'],
         data['readId'],
         data['read_id'],
+        data['userNotificationLogId'],
+        data['user_notification_log_id'],
         data['id'],
       ]),
       route: _firstNonEmpty([
@@ -174,6 +203,22 @@ class MobilePushMessageMapper {
         data['imei'],
       ]),
       createdAt: createdAt,
+      campaignId: _firstNonEmpty([
+        data['campaignId'],
+        data['campaign_id'],
+        data['notifyCampaignId'],
+        data['notify_campaign_id'],
+      ]),
+      source: _firstNonEmpty([
+        data['source'],
+        data['notificationSource'],
+        data['notification_source'],
+      ]),
+      severity: _firstNonEmpty([
+        data['severity'],
+        data['level'],
+        data['priority'],
+      ]),
     );
   }
 

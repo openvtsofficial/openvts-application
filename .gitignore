@@ -11,6 +11,7 @@
 
 .idea/
 .vscode/
+.claude/worktrees/
 
 .dart_tool/
 .flutter-plugins
@@ -32,3 +33,6 @@ app.*.symbols
 # generated Firebase config files as the source of truth.
 android/app/google-services.json
 ios/Runner/GoogleService-Info.plist
+
+#patch files
+*.patch

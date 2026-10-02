@@ -27,14 +27,19 @@ enum LiveMapNotificationSubscribeMode {
 
   /// Subscribe explicitly with the list of vehicle IMEIs the user can see.
   imeis,
+
+  /// Demo notifications are REST-backed and intentionally have no socket.
+  disabled,
 }
 
 /// How the live map should subscribe to live telemetry updates.
 enum LiveMapTelemetrySubscribeMode {
-  /// Telemetry stream does not require an explicit subscribe message
-  /// (e.g. superadmin connects to the global firehose).
-  none,
+  /// Subscribe to the bounded, coalesced superadmin telemetry stream.
+  superadminScope,
 
   /// Subscribe explicitly with the list of vehicle IMEIs.
   imeis,
+
+  /// Subscribe to the isolated public demo telemetry simulator.
+  demoScope,
 }

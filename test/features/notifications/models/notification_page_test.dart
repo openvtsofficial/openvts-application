@@ -3,6 +3,21 @@ import 'package:open_vts/features/notifications/models/app_notification.dart';
 import 'package:open_vts/features/notifications/models/notification_page.dart';
 
 void main() {
+  test('preserves unread counts and cursor inside the backend envelope', () {
+    final page = NotificationPage.fromDynamic({
+      'action': true,
+      'data': {
+        'items': [{'id': 12, 'title': 'Alert'}],
+        'unreadCount': 9,
+        'nextCursor': 12,
+        'hasMore': true,
+      },
+    }, requestedLimit: 30);
+    expect(page.unreadCount, 9);
+    expect(page.nextBeforeId, 12);
+    expect(page.hasMore, isTrue);
+  });
+
   test('parses nested notifications, counts, and cursor metadata', () {
     final page = NotificationPage.fromDynamic(
       {

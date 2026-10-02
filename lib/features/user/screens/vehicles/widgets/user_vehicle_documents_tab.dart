@@ -18,8 +18,6 @@ import '../../../models/user_vehicle_model.dart';
 import '../../../models/user_vehicle_state.dart';
 import 'user_vehicle_document_sheet.dart';
 
-const DateTimeFormatter _dateFormatter = DateTimeFormatter();
-
 class UserVehicleDocumentsTabView extends ConsumerWidget {
   const UserVehicleDocumentsTabView({required this.provider, super.key});
 
@@ -31,6 +29,7 @@ class UserVehicleDocumentsTabView extends ConsumerWidget {
     final state = ref.watch(provider);
     final controller = ref.read(provider.notifier);
     final baseUrl = ref.watch(apiBaseUrlProvider);
+    final formatter = ref.watch(appDateFormatterProvider);
     final isInitialLoading =
         state.isLoadingDocuments && state.documents.isEmpty;
 
@@ -68,6 +67,7 @@ class UserVehicleDocumentsTabView extends ConsumerWidget {
           for (final document in state.documents) ...[
             _DocumentCard(
               document: document,
+              formatter: formatter,
               isBusy: state.isUpdatingDocument || state.isDeletingDocument,
               onView: () => _openDocument(context, baseUrl, document),
               onEdit: () => _showDocumentSheet(context, document),
@@ -193,16 +193,16 @@ class _SummaryCard extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.description_outlined,
                       size: 17,
-                      color: OpenVtsColors.textSecondary,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                     const SizedBox(width: OpenVtsSpacing.xs),
                     Text(
                       'Documents',
                       style: OpenVtsTypography.label.copyWith(
-                        color: OpenVtsColors.textPrimary,
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
@@ -220,7 +220,7 @@ class _SummaryCard extends StatelessWidget {
                 Text(
                   '$documentCount files - $typeCount vehicle types',
                   style: OpenVtsTypography.meta.copyWith(
-                    color: OpenVtsColors.textSecondary,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -228,16 +228,12 @@ class _SummaryCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: OpenVtsSpacing.sm),
-          SizedBox(
-            width: 150,
+          OpenVtsButton(
+            label: 'Upload Document',
             height: 34,
-            child: OpenVtsButton(
-              label: 'Upload Document',
-              height: 34,
-              isLoading: isUploading,
-              trailingIcon: Icons.upload_file_rounded,
-              onPressed: onUpload,
-            ),
+            isLoading: isUploading,
+            trailingIcon: Icons.upload_file_rounded,
+            onPressed: onUpload,
           ),
         ],
       ),
@@ -248,6 +244,7 @@ class _SummaryCard extends StatelessWidget {
 class _DocumentCard extends StatelessWidget {
   const _DocumentCard({
     required this.document,
+    required this.formatter,
     required this.isBusy,
     required this.onView,
     required this.onEdit,
@@ -255,6 +252,7 @@ class _DocumentCard extends StatelessWidget {
   });
 
   final UserVehicleDocument document;
+  final AppDateFormatter formatter;
   final bool isBusy;
   final VoidCallback onView;
   final VoidCallback onEdit;
@@ -285,7 +283,7 @@ class _DocumentCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: OpenVtsTypography.label.copyWith(
-                        color: OpenVtsColors.textPrimary,
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontSize: 13,
                         fontWeight: FontWeight.w800,
                       ),
@@ -296,7 +294,7 @@ class _DocumentCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: OpenVtsTypography.meta.copyWith(
-                        color: OpenVtsColors.textSecondary,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -371,7 +369,7 @@ class _DocumentCard extends StatelessWidget {
                 icon: Icons.event_outlined,
                 label: document.expiryAt == null
                     ? 'No expiry'
-                    : 'Expiry ${_dateText(document.expiryAt)}',
+                    : 'Expiry ${_dateText(document.expiryAt, formatter)}',
               ),
               _MetaPill(
                 icon: document.isVisible
@@ -379,12 +377,12 @@ class _DocumentCard extends StatelessWidget {
                     : Icons.visibility_off_outlined,
                 label: document.isVisible ? 'Visible' : 'Hidden',
                 color: document.isVisible
-                    ? OpenVtsColors.brandInk
-                    : OpenVtsColors.textTertiary,
+                    ? Theme.of(context).colorScheme.onSurface
+                    : Theme.of(context).colorScheme.onSurfaceVariant,
               ),
               _MetaPill(
                 icon: Icons.calendar_today_outlined,
-                label: 'Created ${_dateText(document.createdAt)}',
+                label: 'Created ${_dateText(document.createdAt, formatter)}',
               ),
               for (final tag in document.tags.take(4))
                 _MetaPill(icon: Icons.label_outline_rounded, label: tag),
@@ -445,7 +443,7 @@ class _LoadingCard extends StatelessWidget {
           Text(
             label,
             style: OpenVtsTypography.meta.copyWith(
-              color: OpenVtsColors.textSecondary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -539,14 +537,14 @@ class _ExtensionBadge extends StatelessWidget {
       height: 40,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: OpenVtsColors.surface,
+        color: Theme.of(context).colorScheme.surfaceContainer,
         borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-        border: Border.all(color: OpenVtsColors.border),
+        border: Border.all(color: _softBorderColor(context)),
       ),
       child: Text(
         label.length > 4 ? label.substring(0, 4) : label,
         style: OpenVtsTypography.meta.copyWith(
-          color: OpenVtsColors.textPrimary,
+          color: Theme.of(context).colorScheme.onSurface,
           fontSize: 10,
           fontWeight: FontWeight.w800,
         ),
@@ -565,7 +563,7 @@ class _InfoLine extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 14, color: OpenVtsColors.textTertiary),
+        Icon(icon, size: 14, color: Theme.of(context).colorScheme.outline),
         const SizedBox(width: OpenVtsSpacing.xs),
         Expanded(
           child: Text(
@@ -573,7 +571,7 @@ class _InfoLine extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: OpenVtsTypography.meta.copyWith(
-              color: OpenVtsColors.textSecondary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -587,27 +585,29 @@ class _MetaPill extends StatelessWidget {
   const _MetaPill({
     required this.icon,
     required this.label,
-    this.color = OpenVtsColors.textSecondary,
+    this.color,
   });
 
   final IconData icon;
   final String label;
-  final Color color;
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
+    final effectiveColor =
+        color ?? Theme.of(context).colorScheme.onSurfaceVariant;
     return Container(
       constraints: const BoxConstraints(maxWidth: 260),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.06),
+        color: effectiveColor.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
-        border: Border.all(color: color.withValues(alpha: 0.18)),
+        border: Border.all(color: effectiveColor.withValues(alpha: 0.18)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12, color: color),
+          Icon(icon, size: 12, color: effectiveColor),
           const SizedBox(width: 4),
           Flexible(
             child: Text(
@@ -615,7 +615,7 @@ class _MetaPill extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: OpenVtsTypography.meta.copyWith(
-                color: color,
+                color: effectiveColor,
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
               ),
@@ -640,8 +640,9 @@ class _MenuRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color =
-        isDestructive ? OpenVtsColors.error : OpenVtsColors.textPrimary;
+    final color = isDestructive
+        ? OpenVtsColors.error
+        : Theme.of(context).colorScheme.onSurface;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -712,13 +713,19 @@ String _extensionFromName(String value) {
   return normalized.substring(dot + 1);
 }
 
-String _dateText(DateTime? value) {
+String _dateText(DateTime? value, AppDateFormatter formatter) {
   if (value == null) return '-';
-  return _dateFormatter.formatDate(value.toLocal());
+  return formatter.formatDate(value);
 }
 
 String _display(String value) {
   final normalized = value.trim();
   if (normalized.isEmpty || normalized == '-') return '-';
   return normalized;
+}
+
+Color _softBorderColor(BuildContext context) {
+  return Theme.of(context).brightness == Brightness.dark
+      ? OpenVtsColors.darkBorder
+      : OpenVtsColors.border;
 }

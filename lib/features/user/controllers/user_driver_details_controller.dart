@@ -44,9 +44,11 @@ class UserDriverDetailsController
       final vehicles = results[1] as List<UserDriverVehicleMini>;
       final documentTypes = results[2] as List<UserDriverDocumentType>;
 
+      final enrichedDriver = _enrichDriverWithVehicleList(driver, vehicles);
+
       state = state.copyWith(
-        driver: driver,
-        availableVehicles: _filterAvailableVehicles(vehicles, driver),
+        driver: enrichedDriver,
+        availableVehicles: _filterAvailableVehicles(vehicles, enrichedDriver),
         documentTypes: documentTypes,
         isLoading: false,
       );
@@ -87,9 +89,11 @@ class UserDriverDetailsController
       final driver = results[0] as UserDriver;
       final vehicles = results[1] as List<UserDriverVehicleMini>;
 
+      final enrichedDriver = _enrichDriverWithVehicleList(driver, vehicles);
+
       state = state.copyWith(
-        driver: driver,
-        availableVehicles: _filterAvailableVehicles(vehicles, driver),
+        driver: enrichedDriver,
+        availableVehicles: _filterAvailableVehicles(vehicles, enrichedDriver),
         isLoading: false,
       );
 
@@ -409,9 +413,11 @@ class UserDriverDetailsController
     final driver = results[0] as UserDriver;
     final vehicles = results[1] as List<UserDriverVehicleMini>;
 
+    final enrichedDriver = _enrichDriverWithVehicleList(driver, vehicles);
+
     state = state.copyWith(
-      driver: driver,
-      availableVehicles: _filterAvailableVehicles(vehicles, driver),
+      driver: enrichedDriver,
+      availableVehicles: _filterAvailableVehicles(vehicles, enrichedDriver),
     );
 
     if (refreshLogs) {
@@ -431,6 +437,68 @@ class UserDriverDetailsController
     return vehicles
         .where((vehicle) => vehicle.id.trim() != assignedVehicleId)
         .toList(growable: false);
+  }
+
+  /// Enriches the driver's assigned vehicle with fields that the
+  /// GET /user/drivers/{id} endpoint omits (e.g. imei, vin) by merging in
+  /// the matching item from the GET /user/vehicles list.
+  ///
+  /// Matching uses the canonical vehicle ID only — never name or plate.
+  /// Existing non-empty values from the driver details response are kept;
+  /// only empty fields are backfilled from the vehicles list.
+  /// If no matching vehicle is found the driver is returned unchanged.
+  UserDriver _enrichDriverWithVehicleList(
+    UserDriver driver,
+    List<UserDriverVehicleMini> vehicles,
+  ) {
+    final assignment = driver.vehicleAssignment;
+    if (assignment == null) {
+      return driver;
+    }
+
+    final assignedId = assignment.vehicleId.trim().isNotEmpty
+        ? assignment.vehicleId.trim()
+        : assignment.vehicle?.id.trim() ?? '';
+
+    if (assignedId.isEmpty) {
+      return driver;
+    }
+
+    UserDriverVehicleMini? rich;
+    for (final v in vehicles) {
+      if (v.id.trim() == assignedId) {
+        rich = v;
+        break;
+      }
+    }
+
+    if (rich == null) {
+      return driver;
+    }
+
+    final current = assignment.vehicle;
+
+    final enrichedVehicle = UserDriverVehicleMini(
+      id: assignedId,
+      name: _firstNonEmpty(current?.name, rich.name),
+      plateNumber: _firstNonEmpty(current?.plateNumber, rich.plateNumber),
+      imei: _firstNonEmpty(current?.imei, rich.imei),
+      vin: _firstNonEmpty(current?.vin, rich.vin),
+      vehicleType: _firstNonEmpty(current?.vehicleType, rich.vehicleType),
+      createdAt: current?.createdAt ?? rich.createdAt,
+    );
+
+    final enrichedAssignment = assignment.copyWith(vehicle: enrichedVehicle);
+    return driver.copyWith(vehicleAssignment: enrichedAssignment);
+  }
+
+  /// Returns [a] when non-empty, otherwise [b].
+  static String _firstNonEmpty(String? a, String? b) {
+    final normalizedA = a?.trim() ?? '';
+    if (normalizedA.isNotEmpty) {
+      return normalizedA;
+    }
+    return b?.trim() ?? '';
   }
 
   String _errorMessage(Object error) {

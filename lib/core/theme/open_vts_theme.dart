@@ -81,6 +81,24 @@ class OpenVtsTheme {
           color: OpenVtsColors.darkTextPrimary,
         ),
       ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: OpenVtsColors.darkSurface,
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(OpenVtsRadius.md),
+          borderSide: const BorderSide(color: OpenVtsColors.darkBorder),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(OpenVtsRadius.md),
+          borderSide: const BorderSide(color: OpenVtsColors.darkBorder),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(OpenVtsRadius.md),
+          borderSide: const BorderSide(color: OpenVtsColors.white),
+        ),
+      ),
     );
   }
 }

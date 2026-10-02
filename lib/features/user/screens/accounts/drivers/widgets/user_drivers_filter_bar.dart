@@ -39,7 +39,9 @@ class UserDriversFilterBar extends StatelessWidget {
                 child: Text(
                   '${state.filteredDrivers.length} of ${state.drivers.length} drivers',
                   style: OpenVtsTypography.label.copyWith(
-                    color: OpenVtsColors.textPrimary,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.white
+                        : OpenVtsColors.textPrimary,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -139,10 +141,13 @@ class _FilterMenuButton<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final backgroundColor =
-        highlighted ? OpenVtsColors.brandInk : OpenVtsColors.white;
-    final foregroundColor =
-        highlighted ? OpenVtsColors.white : OpenVtsColors.textPrimary;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final backgroundColor = highlighted
+        ? OpenVtsColors.brandInk
+        : (isDark ? Colors.black : OpenVtsColors.border);
+    final foregroundColor = highlighted
+        ? OpenVtsColors.white
+        : (isDark ? OpenVtsColors.white : OpenVtsColors.textPrimary);
 
     return PopupMenuButton<T>(
       tooltip: title,

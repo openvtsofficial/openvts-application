@@ -5,8 +5,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../../shared/helpers/phone_helper.dart';
 import '../../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../../shared/widgets/open_vts_button.dart';
+import '../../../../../../shared/widgets/open_vts_searchable_dropdown.dart';
 import '../../../../../../shared/widgets/open_vts_text_field.dart';
 import '../../../../controllers/user_providers.dart';
 import '../../../../models/user_driver_model.dart';
@@ -48,6 +50,8 @@ class _UserDriverCreateSheetState extends ConsumerState<UserDriverCreateSheet> {
   var _isLoadingReferences = true;
   var _isLoadingStates = false;
   var _isLoadingCities = false;
+  var _statesLoadFailed = false;
+  var _citiesLoadFailed = false;
   var _obscurePassword = true;
 
   @override
@@ -155,15 +159,19 @@ class _UserDriverCreateSheetState extends ConsumerState<UserDriverCreateSheet> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           SizedBox(
-                            width: 132,
-                            child: _DropdownField(
-                              label: 'Mobile Prefix',
+                            width: 140,
+                            child: OpenVtsSearchableDropdown<String>(
+                              label: 'Prefix',
+                              options: _mobilePrefixSearchOptions,
                               value: _mobilePrefix,
                               hintText: '+91',
-                              prefixIcon: Icons.phone_android_rounded,
+                              searchHintText: 'Search code or country',
+                              leadingIcon: Icons.phone_android_rounded,
                               isLoading: _isLoadingReferences,
-                              options: _mobilePrefixOptions,
-                              validator: _requiredDropdown,
+                              enabled: !_isLoadingReferences,
+                              required: true,
+                              validator: (_) =>
+                                  _requiredDropdown(_mobilePrefix),
                               onChanged: (value) {
                                 setState(() => _mobilePrefix = value);
                               },
@@ -197,43 +205,63 @@ class _UserDriverCreateSheetState extends ConsumerState<UserDriverCreateSheet> {
                         subtitle: 'Address and geography details.',
                       ),
                       const SizedBox(height: OpenVtsSpacing.sm),
-                      _DropdownField(
+                      OpenVtsSearchableDropdown<String>(
                         label: 'Country',
+                        options: _countrySearchOptions,
                         value: _countryCode,
                         hintText: 'Select country',
-                        prefixIcon: Icons.public_rounded,
+                        searchHintText: 'Search country name or code',
+                        leadingIcon: Icons.public_rounded,
                         isLoading: _isLoadingReferences,
-                        options: _countryOptions,
-                        validator: _requiredDropdown,
-                        onChanged: _onCountryChanged,
+                        enabled: !_isLoadingReferences,
+                        required: true,
+                        validator: (_) => _requiredDropdown(_countryCode),
+                        onChanged: (value) => _onCountryChanged(value),
                       ),
                       const SizedBox(height: OpenVtsSpacing.sm),
-                      _DropdownField(
+                      OpenVtsSearchableDropdown<String>(
                         label: 'State (optional)',
+                        options: _stateSearchOptions,
                         value: _stateCode,
                         hintText: _countryCode == null
                             ? 'Select country first'
                             : 'Select state',
-                        prefixIcon: Icons.map_outlined,
+                        searchHintText: 'Search state name or code',
+                        emptyMessage: 'No states available for this country',
+                        leadingIcon: Icons.map_outlined,
                         isLoading: _isLoadingStates,
-                        options: _stateOptions,
-                        onChanged:
-                            _countryCode == null ? null : _onStateChanged,
+                        enabled: _countryCode != null &&
+                            !_isLoadingStates &&
+                            !_statesLoadFailed,
+                        onChanged: (value) => _onStateChanged(value),
                       ),
+                      if (_statesLoadFailed && _countryCode != null)
+                        _RetryRow(
+                          message: 'Failed to load states',
+                          onRetry: () => _loadStates(_countryCode),
+                        ),
                       const SizedBox(height: OpenVtsSpacing.sm),
-                      _DropdownField(
+                      OpenVtsSearchableDropdown<String>(
                         label: 'City (optional)',
+                        options: _citySearchOptions,
                         value: _city,
                         hintText: _stateCode == null
                             ? 'Select state first'
                             : 'Select city',
-                        prefixIcon: Icons.location_city_rounded,
+                        searchHintText: 'Search city',
+                        emptyMessage: 'No cities available for this state',
+                        leadingIcon: Icons.location_city_rounded,
                         isLoading: _isLoadingCities,
-                        options: _cityOptions,
-                        onChanged: _stateCode == null
-                            ? null
-                            : (value) => setState(() => _city = value),
+                        enabled: _stateCode != null &&
+                            !_isLoadingCities &&
+                            !_citiesLoadFailed,
+                        onChanged: (value) => setState(() => _city = value),
                       ),
+                      if (_citiesLoadFailed && _stateCode != null)
+                        _RetryRow(
+                          message: 'Failed to load cities',
+                          onRetry: () => _loadCities(_countryCode, _stateCode),
+                        ),
                       const SizedBox(height: OpenVtsSpacing.sm),
                       OpenVtsTextField(
                         label: 'Address (optional)',
@@ -306,45 +334,50 @@ class _UserDriverCreateSheetState extends ConsumerState<UserDriverCreateSheet> {
     );
   }
 
-  List<_DropdownOption> get _mobilePrefixOptions {
+  List<OpenVtsDropdownOption<String>> get _mobilePrefixSearchOptions {
     return _mobilePrefixes
         .map(
-          (item) => _DropdownOption(
+          (item) => OpenVtsDropdownOption<String>(
             value: item.value,
-            label: item.label,
+            label: item.value,
+            subtitle: item.countryCode.isNotEmpty ? item.countryCode : null,
+            searchText: '${item.value} ${item.countryCode} ${item.label}',
           ),
         )
         .toList(growable: false);
   }
 
-  List<_DropdownOption> get _countryOptions {
+  List<OpenVtsDropdownOption<String>> get _countrySearchOptions {
     return _countries
         .map(
-          (item) => _DropdownOption(
+          (item) => OpenVtsDropdownOption<String>(
             value: item.value,
             label: item.label,
+            searchText: '${item.value} ${item.label}',
           ),
         )
         .toList(growable: false);
   }
 
-  List<_DropdownOption> get _stateOptions {
+  List<OpenVtsDropdownOption<String>> get _stateSearchOptions {
     return _states
         .map(
-          (item) => _DropdownOption(
+          (item) => OpenVtsDropdownOption<String>(
             value: item.value,
             label: item.label,
+            searchText: '${item.value} ${item.label}',
           ),
         )
         .toList(growable: false);
   }
 
-  List<_DropdownOption> get _cityOptions {
+  List<OpenVtsDropdownOption<String>> get _citySearchOptions {
     return _cities
         .map(
-          (item) => _DropdownOption(
+          (item) => OpenVtsDropdownOption<String>(
             value: item.value,
             label: item.label,
+            searchText: item.label,
           ),
         )
         .toList(growable: false);
@@ -392,6 +425,8 @@ class _UserDriverCreateSheetState extends ConsumerState<UserDriverCreateSheet> {
       _city = null;
       _states = const <UserDriverStateOption>[];
       _cities = const <UserDriverCityOption>[];
+      _statesLoadFailed = false;
+      _citiesLoadFailed = false;
     });
 
     await _loadStates(value);
@@ -406,6 +441,7 @@ class _UserDriverCreateSheetState extends ConsumerState<UserDriverCreateSheet> {
       _stateCode = value;
       _city = null;
       _cities = const <UserDriverCityOption>[];
+      _citiesLoadFailed = false;
     });
 
     await _loadCities(_countryCode, value);
@@ -417,7 +453,10 @@ class _UserDriverCreateSheetState extends ConsumerState<UserDriverCreateSheet> {
       return;
     }
 
-    setState(() => _isLoadingStates = true);
+    setState(() {
+      _isLoadingStates = true;
+      _statesLoadFailed = false;
+    });
     try {
       final states = await ref
           .read(userDriversControllerProvider.notifier)
@@ -436,7 +475,10 @@ class _UserDriverCreateSheetState extends ConsumerState<UserDriverCreateSheet> {
         return;
       }
 
-      setState(() => _isLoadingStates = false);
+      setState(() {
+        _isLoadingStates = false;
+        _statesLoadFailed = true;
+      });
       ToastHelper.showError('Unable to load states.', context: context);
     }
   }
@@ -451,7 +493,10 @@ class _UserDriverCreateSheetState extends ConsumerState<UserDriverCreateSheet> {
       return;
     }
 
-    setState(() => _isLoadingCities = true);
+    setState(() {
+      _isLoadingCities = true;
+      _citiesLoadFailed = false;
+    });
     try {
       final cities = await ref
           .read(userDriversControllerProvider.notifier)
@@ -472,7 +517,10 @@ class _UserDriverCreateSheetState extends ConsumerState<UserDriverCreateSheet> {
         return;
       }
 
-      setState(() => _isLoadingCities = false);
+      setState(() {
+        _isLoadingCities = false;
+        _citiesLoadFailed = true;
+      });
       ToastHelper.showError('Unable to load cities.', context: context);
     }
   }
@@ -482,10 +530,15 @@ class _UserDriverCreateSheetState extends ConsumerState<UserDriverCreateSheet> {
       return;
     }
 
+    final normalized = normalizePhoneParts(
+      dialCode: _mobilePrefix ?? '',
+      mobile: _mobileController.text,
+    );
+
     final request = CreateUserDriverRequest(
       name: _nameController.text.trim(),
-      mobilePrefix: (_mobilePrefix ?? '').trim(),
-      mobile: _mobileController.text.trim(),
+      mobilePrefix: normalized.dialCode,
+      mobile: normalized.nationalNumber,
       email: _optionalValue(_emailController.text),
       username: _usernameController.text.trim(),
       password: _passwordController.text,
@@ -614,7 +667,7 @@ class _SectionHeader extends StatelessWidget {
         Text(
           title,
           style: OpenVtsTypography.label.copyWith(
-            color: OpenVtsColors.textSecondary,
+            color: Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.w800,
           ),
         ),
@@ -622,7 +675,7 @@ class _SectionHeader extends StatelessWidget {
         Text(
           subtitle,
           style: OpenVtsTypography.meta.copyWith(
-            color: OpenVtsColors.textTertiary,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),
       ],
@@ -630,139 +683,39 @@ class _SectionHeader extends StatelessWidget {
   }
 }
 
-class _DropdownOption {
-  const _DropdownOption({
-    required this.value,
-    required this.label,
-    this.isFallback = false,
-  });
+class _RetryRow extends StatelessWidget {
+  const _RetryRow({required this.message, required this.onRetry});
 
-  final String value;
-  final String label;
-  final bool isFallback;
-}
-
-class _DropdownField extends StatelessWidget {
-  const _DropdownField({
-    required this.label,
-    required this.value,
-    required this.options,
-    required this.onChanged,
-    this.hintText,
-    this.prefixIcon,
-    this.validator,
-    this.isLoading = false,
-  });
-
-  final String label;
-  final String? value;
-  final List<_DropdownOption> options;
-  final ValueChanged<String?>? onChanged;
-  final String? hintText;
-  final IconData? prefixIcon;
-  final String? Function(String?)? validator;
-  final bool isLoading;
+  final String message;
+  final VoidCallback onRetry;
 
   @override
   Widget build(BuildContext context) {
-    final normalizedValue = _normalize(value);
-    final menuItems = _menuItems(normalizedValue);
-    final safeValue = menuItems.any((item) => item.value == normalizedValue)
-        ? normalizedValue
-        : null;
-    final optionSignature = menuItems.map((item) => item.value ?? '').join('|');
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: OpenVtsTypography.label),
-        const SizedBox(height: OpenVtsSpacing.xs),
-        DropdownButtonFormField<String>(
-          key: ValueKey('$label:${safeValue ?? ''}:$optionSignature'),
-          initialValue: safeValue,
-          isExpanded: true,
-          items: menuItems,
-          onChanged: isLoading ? null : onChanged,
-          validator: validator,
-          decoration: InputDecoration(
-            hintText: hintText,
-            prefixIcon: prefixIcon == null
-                ? null
-                : Icon(
-                    prefixIcon,
-                    size: 20,
-                    color: OpenVtsColors.textSecondary,
-                  ),
-            suffixIcon: isLoading
-                ? const Padding(
-                    padding: EdgeInsets.all(14),
-                    child: SizedBox(
-                      height: 16,
-                      width: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                  )
-                : null,
-          ),
-        ),
-      ],
-    );
-  }
-
-  List<DropdownMenuItem<String>> _menuItems(String? normalizedValue) {
-    final distinctOptions = <_DropdownOption>[];
-    final seen = <String>{};
-
-    for (final option in options) {
-      final optionValue = option.value.trim();
-      if (optionValue.isEmpty || seen.contains(optionValue)) {
-        continue;
-      }
-      seen.add(optionValue);
-      distinctOptions.add(
-        _DropdownOption(
-          value: optionValue,
-          label: option.label.trim().isEmpty ? optionValue : option.label,
-          isFallback: option.isFallback,
-        ),
-      );
-    }
-
-    if (normalizedValue != null && !seen.contains(normalizedValue)) {
-      distinctOptions.insert(
-        0,
-        _DropdownOption(
-          value: normalizedValue,
-          label: '$normalizedValue (current)',
-          isFallback: true,
-        ),
-      );
-    }
-
-    return distinctOptions
-        .map(
-          (option) => DropdownMenuItem<String>(
-            value: option.value,
-            enabled: !option.isFallback,
+    return Padding(
+      padding: const EdgeInsets.only(top: OpenVtsSpacing.xs),
+      child: Row(
+        children: [
+          const Icon(Icons.error_outline, size: 14, color: OpenVtsColors.error),
+          const SizedBox(width: OpenVtsSpacing.xs),
+          Expanded(
             child: Text(
-              option.label,
-              overflow: TextOverflow.ellipsis,
-              style: OpenVtsTypography.body.copyWith(
-                color: option.isFallback
-                    ? OpenVtsColors.textTertiary
-                    : OpenVtsColors.textPrimary,
+              message,
+              style:
+                  OpenVtsTypography.meta.copyWith(color: OpenVtsColors.error),
+            ),
+          ),
+          GestureDetector(
+            onTap: onRetry,
+            child: Text(
+              'Retry',
+              style: OpenVtsTypography.meta.copyWith(
+                color: OpenVtsColors.info,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ),
-        )
-        .toList(growable: false);
-  }
-
-  String? _normalize(String? raw) {
-    final normalized = raw?.trim();
-    if (normalized == null || normalized.isEmpty) {
-      return null;
-    }
-    return normalized;
+        ],
+      ),
+    );
   }
 }

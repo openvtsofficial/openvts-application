@@ -16,7 +16,12 @@ import '../../../controllers/admin_providers.dart';
 import '../../../controllers/admin_user_details_controller.dart';
 import '../../../models/admin_user_details_model.dart';
 import '../../../models/admin_users_model.dart' as admin_users;
+import '../../../utils/location_label_resolver.dart';
 import 'admin_user_form_fields.dart';
+
+// =============================================================================
+// Profile tab
+// =============================================================================
 
 class AdminUserProfileTab extends ConsumerWidget {
   const AdminUserProfileTab({
@@ -37,6 +42,9 @@ class AdminUserProfileTab extends ConsumerWidget {
       details: state.user,
       fallback: initialUser,
       userId: userId,
+      effectiveIsActive: state.effectiveIsActive,
+      resolvedVehicleCount: state.resolvedVehicleCount,
+      resolvedLastLogin: state.resolvedLastLogin,
     );
 
     if (state.isLoadingProfile && !profile.hasKnownData) {
@@ -50,6 +58,10 @@ class AdminUserProfileTab extends ConsumerWidget {
       );
     }
 
+    final isBusy = state.isSavingProfile ||
+        state.isChangingPassword ||
+        state.isSavingCompany;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -57,32 +69,37 @@ class AdminUserProfileTab extends ConsumerWidget {
           _InlineError(message: state.sectionErrorMessage!),
           const SizedBox(height: OpenVtsSpacing.sm),
         ],
-        _IdentityCard(
+        _AccountCard(
           profile: profile,
           isUpdatingStatus: state.isUpdatingStatus,
-          onStatusChanged: (isActive) => _updateStatus(
-            context,
-            controller,
-            isActive,
+          isBusy: isBusy,
+          onToggleStatus: (next) => _updateStatus(context, controller, next),
+        ),
+        const SizedBox(height: OpenVtsSpacing.sm),
+        if (_hasCompanyContent(profile))
+          _CompanyCard(
+            profile: profile,
+            isBusy: isBusy,
+            onEditCompany: () => _openEditCompany(context, ref),
           ),
+        if (_hasCompanyContent(profile))
+          const SizedBox(height: OpenVtsSpacing.sm),
+        const SizedBox(height: OpenVtsSpacing.xs),
+        _BottomActions(
+          isBusy: isBusy,
+          onEditProfile: () => _openEditProfile(context, ref),
+          onChangePassword: () => _openChangePassword(context, ref),
         ),
-        const SizedBox(height: OpenVtsSpacing.sm),
-        _CompanyCard(
-          profile: profile,
-        ),
-        const SizedBox(height: OpenVtsSpacing.sm),
-        _LocationCard(profile: profile),
-        const SizedBox(height: OpenVtsSpacing.sm),
-        _StatsCard(
-          profile: profile,
-          linkedVehiclesCount: state.linkedVehicles.length,
-        ),
-        const SizedBox(height: OpenVtsSpacing.sm),
-        if (_hasRenderableSocialLinks(profile.socialLinks)) ...[
-          _SocialLinksCard(socialLinks: profile.socialLinks),
-        ],
+        const SizedBox(height: OpenVtsSpacing.lg),
       ],
     );
+  }
+
+  bool _hasCompanyContent(_ProfileSnapshot profile) {
+    return profile.companyName.trim().isNotEmpty ||
+        profile.websiteUrl.trim().isNotEmpty ||
+        profile.customDomain.trim().isNotEmpty ||
+        _hasRenderableSocialLinks(profile.socialLinks);
   }
 
   bool _hasRenderableSocialLinks(Map<String, String> links) {
@@ -100,22 +117,85 @@ class AdminUserProfileTab extends ConsumerWidget {
     bool isActive,
   ) async {
     final ok = await controller.updateStatus(isActive);
-    if (!context.mounted) {
-      return;
-    }
+    if (!context.mounted) return;
     if (ok) {
       ToastHelper.showSuccess(
         isActive ? 'User activated.' : 'User deactivated.',
         context: context,
       );
     } else {
-      ToastHelper.showError(
-        'Unable to update status.',
-        context: context,
-      );
+      ToastHelper.showError('Unable to update status.', context: context);
     }
   }
+
+  Future<void> _openEditProfile(BuildContext context, WidgetRef ref) async {
+    final provider = adminUserDetailsControllerProvider(userId);
+    final controller = ref.read(provider.notifier);
+    final state = ref.read(provider);
+    await showAdminUserEditProfileSheet(
+      context: context,
+      ref: ref,
+      userId: userId,
+      details: state.user,
+      fallback: initialUser,
+      controller: controller,
+    );
+  }
+
+  Future<void> _openChangePassword(BuildContext context, WidgetRef ref) async {
+    final provider = adminUserDetailsControllerProvider(userId);
+    await OpenVtsBottomSheet.show<void>(
+      context: context,
+      title: 'Change Password',
+      initialChildSize: 0.46,
+      minChildSize: 0.36,
+      maxChildSize: 0.72,
+      child: Consumer(
+        builder: (sheetContext, ref, child) {
+          final state = ref.watch(provider);
+          return _PasswordSheet(
+            isSubmitting: state.isChangingPassword,
+            errorMessage: state.sectionErrorMessage,
+            onSubmit: (password) async {
+              final ok =
+                  await ref.read(provider.notifier).updatePassword(password);
+              if (!sheetContext.mounted) return;
+              if (ok) {
+                Navigator.of(sheetContext).pop();
+                if (!context.mounted) return;
+                ToastHelper.showSuccess('Password updated.', context: context);
+              } else {
+                ToastHelper.showError(
+                  ref.read(provider).sectionErrorMessage ??
+                      'Unable to update password.',
+                  context: sheetContext,
+                );
+              }
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> _openEditCompany(BuildContext context, WidgetRef ref) async {
+    final provider = adminUserDetailsControllerProvider(userId);
+    final controller = ref.read(provider.notifier);
+    final state = ref.read(provider);
+    await showAdminUserEditCompanySheet(
+      context: context,
+      ref: ref,
+      userId: userId,
+      details: state.user,
+      fallback: initialUser,
+      controller: controller,
+    );
+  }
 }
+
+// =============================================================================
+// Public helpers for external edit sheet access
+// =============================================================================
 
 Future<void> showAdminUserEditProfileSheet({
   required BuildContext context,
@@ -125,10 +205,14 @@ Future<void> showAdminUserEditProfileSheet({
   required admin_users.AdminUserListItem? fallback,
   required AdminUserDetailsController controller,
 }) {
+  final state = ref.read(adminUserDetailsControllerProvider(userId));
   final profile = _ProfileSnapshot.resolve(
     details: details,
     fallback: fallback,
     userId: userId,
+    effectiveIsActive: state.effectiveIsActive,
+    resolvedVehicleCount: state.resolvedVehicleCount,
+    resolvedLastLogin: state.resolvedLastLogin,
   );
   return _showAdminUserEditProfileSheetWithProfile(
     context: context,
@@ -156,9 +240,7 @@ Future<void> _showAdminUserEditProfileSheetWithProfile({
       profile: profile,
       onSubmit: (request) async {
         final ok = await controller.updateProfile(request);
-        if (!context.mounted) {
-          return false;
-        }
+        if (!context.mounted) return false;
         if (ok) {
           ToastHelper.showSuccess('Profile updated.', context: context);
         } else {
@@ -184,10 +266,14 @@ Future<void> showAdminUserEditCompanySheet({
   required admin_users.AdminUserListItem? fallback,
   required AdminUserDetailsController controller,
 }) {
+  final state = ref.read(adminUserDetailsControllerProvider(userId));
   final profile = _ProfileSnapshot.resolve(
     details: details,
     fallback: fallback,
     userId: userId,
+    effectiveIsActive: state.effectiveIsActive,
+    resolvedVehicleCount: state.resolvedVehicleCount,
+    resolvedLastLogin: state.resolvedLastLogin,
   );
   return _showAdminUserEditCompanySheetWithProfile(
     context: context,
@@ -214,14 +300,10 @@ Future<void> _showAdminUserEditCompanySheetWithProfile({
     child: _CompanySheet(
       initialCompany: profile.company,
       fallbackName: profile.companyName,
-      loadCompany: () {
-        return controller.getCompanyDetails();
-      },
+      loadCompany: () => controller.getCompanyDetails(),
       onSubmit: (request) async {
         final ok = await controller.updateCompany(request);
-        if (!context.mounted) {
-          return false;
-        }
+        if (!context.mounted) return false;
         if (ok) {
           ToastHelper.showSuccess('Company updated.', context: context);
         } else {
@@ -239,8 +321,350 @@ Future<void> _showAdminUserEditCompanySheetWithProfile({
   );
 }
 
+// =============================================================================
+// 1. Account card — avatar + identity + location + timestamps
+// =============================================================================
+
+class _AccountCard extends StatelessWidget {
+  const _AccountCard({
+    required this.profile,
+    required this.isUpdatingStatus,
+    required this.isBusy,
+    required this.onToggleStatus,
+  });
+
+  final _ProfileSnapshot profile;
+  final bool isUpdatingStatus;
+  final bool isBusy;
+  final ValueChanged<bool> onToggleStatus;
+
+  @override
+  Widget build(BuildContext context) {
+    const fmt = DateTimeFormatter();
+    final lastLogin = profile.updatedAt != null
+        ? fmt.formatDate(profile.updatedAt!)
+        : 'Never';
+    final created =
+        profile.createdAt != null ? fmt.formatDate(profile.createdAt!) : '—';
+
+    return _SectionCard(
+      title: 'ACCOUNT',
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(bottom: OpenVtsSpacing.xs),
+          child: Row(
+            children: [
+              _Avatar(name: profile.displayName),
+              const SizedBox(width: OpenVtsSpacing.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      profile.displayName,
+                      style: OpenVtsTypography.label.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      profile.usernameLabel,
+                      style: OpenVtsTypography.meta.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        fontSize: 11,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: OpenVtsSpacing.xs),
+              if (isUpdatingStatus)
+                const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              else
+                SizedBox(
+                  width: 44,
+                  height: 44,
+                  child: Switch.adaptive(
+                    value: profile.isActive,
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    onChanged: isBusy ? null : onToggleStatus,
+                  ),
+                ),
+            ],
+          ),
+        ),
+        _InfoRow(
+          label: 'Address',
+          value: profile.address,
+          icon: Icons.home_outlined,
+        ),
+        _InfoRow(
+          label: 'Country',
+          value: _resolveCountryLabel(profile),
+          icon: Icons.public_outlined,
+        ),
+        _InfoRow(
+          label: 'State',
+          value: _resolveStateLabel(profile),
+          icon: Icons.map_outlined,
+        ),
+        _InfoRow(
+          label: 'City',
+          value: profile.city,
+          icon: Icons.location_city_outlined,
+        ),
+        _InfoRow(
+          label: 'Pincode',
+          value: profile.pincode,
+          icon: Icons.local_post_office_outlined,
+        ),
+        Padding(
+          padding: const EdgeInsets.only(top: OpenVtsSpacing.xs),
+          child: Row(
+            children: [
+              Expanded(
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.event_outlined,
+                      size: 14,
+                      color: Theme.of(context).colorScheme.outline,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Created: ',
+                      style: OpenVtsTypography.meta.copyWith(
+                        color: Theme.of(context).colorScheme.outline,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    Flexible(
+                      child: Text(
+                        created,
+                        style: OpenVtsTypography.label.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: OpenVtsSpacing.xs),
+              Expanded(
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.login_outlined,
+                      size: 14,
+                      color: Theme.of(context).colorScheme.outline,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Last login: ',
+                      style: OpenVtsTypography.meta.copyWith(
+                        color: Theme.of(context).colorScheme.outline,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    Flexible(
+                      child: Text(
+                        lastLogin,
+                        style: OpenVtsTypography.label.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// =============================================================================
+// 2. Company card — with edit icon top-right
+// =============================================================================
+
+class _CompanyCard extends StatelessWidget {
+  const _CompanyCard({
+    required this.profile,
+    required this.isBusy,
+    required this.onEditCompany,
+  });
+
+  final _ProfileSnapshot profile;
+  final bool isBusy;
+  final VoidCallback onEditCompany;
+
+  static const _kSocialKeys = <String>[
+    'facebook',
+    'twitter',
+    'linkedin',
+    'instagram',
+    'youtube',
+    'github',
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return _SectionCard(
+      title: 'COMPANY',
+      trailing: SizedBox(
+        width: 32,
+        height: 32,
+        child: IconButton(
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+          icon: Icon(
+            Icons.edit_outlined,
+            size: 16,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+          tooltip: 'Edit company',
+          onPressed: isBusy ? null : onEditCompany,
+        ),
+      ),
+      children: [
+        _InfoRow(
+          label: 'Company',
+          value: profile.companyName,
+          icon: Icons.business_outlined,
+        ),
+        _InfoRow(
+          label: 'Website',
+          value: profile.websiteUrl,
+          icon: Icons.language_outlined,
+        ),
+        _InfoRow(
+          label: 'Domain',
+          value: profile.customDomain,
+          icon: Icons.dns_outlined,
+        ),
+        _InfoRow(
+          label: 'Brand color',
+          value: profile.primaryColor,
+          icon: Icons.palette_outlined,
+          trailing: profile.primaryColor.trim().isNotEmpty
+              ? Padding(
+                  padding: const EdgeInsets.only(left: 6),
+                  child: Container(
+                    width: 14,
+                    height: 14,
+                    decoration: BoxDecoration(
+                      color: _colorFromName(profile.primaryColor),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Theme.of(context).colorScheme.outlineVariant,
+                      ),
+                    ),
+                  ),
+                )
+              : null,
+        ),
+        for (final k in _kSocialKeys)
+          if (profile.socialLinks[k]?.trim().isNotEmpty ?? false)
+            _InfoRow(
+              label: _socialLabel(k),
+              value: profile.socialLinks[k]!.trim(),
+              icon: Icons.link_rounded,
+            ),
+      ],
+    );
+  }
+
+  static String _socialLabel(String key) {
+    switch (key) {
+      case 'facebook':
+        return 'Facebook';
+      case 'twitter':
+        return 'Twitter';
+      case 'linkedin':
+        return 'LinkedIn';
+      case 'instagram':
+        return 'Instagram';
+      case 'youtube':
+        return 'YouTube';
+      case 'github':
+        return 'GitHub';
+      default:
+        return key;
+    }
+  }
+}
+
+// =============================================================================
+// 3. Bottom action buttons
+// =============================================================================
+
+class _BottomActions extends StatelessWidget {
+  const _BottomActions({
+    required this.isBusy,
+    required this.onEditProfile,
+    required this.onChangePassword,
+  });
+
+  final bool isBusy;
+  final VoidCallback onEditProfile;
+  final VoidCallback onChangePassword;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: OpenVtsButton(
+            label: 'Edit Profile',
+            variant: OpenVtsButtonVariant.secondary,
+            onPressed: isBusy ? null : onEditProfile,
+          ),
+        ),
+        const SizedBox(width: OpenVtsSpacing.sm),
+        Expanded(
+          child: OpenVtsButton(
+            label: 'Change Password',
+            variant: OpenVtsButtonVariant.secondary,
+            onPressed: isBusy ? null : onChangePassword,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// =============================================================================
+// Shared display components
+// =============================================================================
+
 class _SectionCard extends StatelessWidget {
-  const _SectionCard({required this.title, required this.children, this.trailing});
+  const _SectionCard({
+    required this.title,
+    required this.children,
+    this.trailing,
+  });
 
   final String title;
   final List<Widget> children;
@@ -263,10 +687,10 @@ class _SectionCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
-                    color: OpenVtsColors.textTertiary,
+                    color: Theme.of(context).colorScheme.outline,
                     letterSpacing: 0.4,
                   ),
                 ),
@@ -284,242 +708,40 @@ class _SectionCard extends StatelessWidget {
   }
 }
 
-class _IdentityCard extends StatelessWidget {
-  const _IdentityCard({
-    required this.profile,
-    required this.isUpdatingStatus,
-    required this.onStatusChanged,
-  });
-
-  final _ProfileSnapshot profile;
-  final bool isUpdatingStatus;
-  final ValueChanged<bool> onStatusChanged;
+class _Avatar extends StatelessWidget {
+  const _Avatar({required this.name});
+  final String name;
 
   @override
   Widget build(BuildContext context) {
-    return _SectionCard(
-      title: 'IDENTITY',
-      trailing: _StatusBadge(isActive: profile.isActive),
-      children: [
-        _InfoRow(label: 'Name', value: profile.displayName, icon: Icons.person_outline_rounded),
-        _InfoRow(label: 'Username', value: profile.usernameLabel, icon: Icons.alternate_email_rounded),
-        _InfoRow(label: 'Email', value: profile.email, icon: Icons.mail_outline_rounded),
-        _InfoRow(label: 'Phone', value: profile.phone, icon: Icons.call_outlined),
-        _InfoRow(
-          label: 'Email verified',
-          valueWidget: _StatusPill(
-            label: profile.isEmailVerified ? 'Verified' : 'Unverified',
-            icon: profile.isEmailVerified
-                ? Icons.verified_outlined
-                : Icons.gpp_maybe_rounded,
-            color: profile.isEmailVerified
-                ? OpenVtsColors.success
-                : OpenVtsColors.warning,
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.only(top: OpenVtsSpacing.xs),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Account status',
-                  style: OpenVtsTypography.meta.copyWith(
-                    color: OpenVtsColors.textTertiary,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-              if (isUpdatingStatus)
-                const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              else
-                Switch.adaptive(
-                  value: profile.isActive,
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  onChanged: onStatusChanged,
-                ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _CompanyCard extends StatelessWidget {
-  const _CompanyCard({required this.profile});
-
-  final _ProfileSnapshot profile;
-
-  @override
-  Widget build(BuildContext context) {
-    return _SectionCard(
-      title: 'COMPANY',
-      children: [
-        _InfoRow(label: 'Company', value: profile.companyName, icon: Icons.business_outlined),
-        _InfoRow(label: 'Domain', value: profile.customDomain, icon: Icons.dns_outlined),
-        _InfoRow(label: 'Website', value: profile.websiteUrl, icon: Icons.language_outlined),
-        _InfoRow(
-          label: 'Brand color',
-          value: profile.primaryColor,
-          icon: Icons.palette_outlined,
-          trailing: profile.primaryColor.trim().isNotEmpty
-              ? Padding(
-                  padding: const EdgeInsets.only(left: 6),
-                  child: Container(
-                    width: 14,
-                    height: 14,
-                    decoration: BoxDecoration(
-                      color: _colorFromName(profile.primaryColor),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: OpenVtsColors.border),
-                    ),
-                  ),
-                )
-              : null,
-        ),
-      ],
-    );
-  }
-}
-
-class _LocationCard extends StatelessWidget {
-  const _LocationCard({required this.profile});
-
-  final _ProfileSnapshot profile;
-
-  @override
-  Widget build(BuildContext context) {
-    return _SectionCard(
-      title: 'LOCATION',
-      children: [
-        _InfoRow(label: 'Address', value: profile.address, icon: Icons.home_outlined),
-        _InfoRow(label: 'City', value: profile.city, icon: Icons.location_city_outlined),
-        _InfoRow(label: 'State', value: profile.stateCode, icon: Icons.map_outlined),
-        _InfoRow(label: 'Country', value: profile.countryCode, icon: Icons.public_outlined),
-        _InfoRow(label: 'Pincode', value: profile.pincode, icon: Icons.local_post_office_outlined),
-        _InfoRow(label: 'Full address', value: profile.address, icon: Icons.place_outlined),
-      ],
-    );
-  }
-}
-
-class _StatsCard extends StatelessWidget {
-  const _StatsCard({required this.profile, required this.linkedVehiclesCount});
-
-  final _ProfileSnapshot profile;
-  final int linkedVehiclesCount;
-
-  @override
-  Widget build(BuildContext context) {
-    final vehicles = profile.vehicleCount ?? linkedVehiclesCount;
-    return _SectionCard(
-      title: 'STATS / TIMELINE',
-      children: [
-        _InfoRow(label: 'Vehicles', value: vehicles.toString(), icon: Icons.directions_car_outlined),
-        _InfoRow(label: 'Created', value: _dateText(profile.createdAt), icon: Icons.event_outlined),
-        _InfoRow(label: 'Updated', value: _dateText(profile.updatedAt), icon: Icons.update_rounded),
-      ],
-    );
-  }
-}
-
-class _SocialLinksCard extends StatelessWidget {
-  const _SocialLinksCard({required this.socialLinks});
-
-  final Map<String, String> socialLinks;
-
-  @override
-  Widget build(BuildContext context) {
-    final rows = <Widget>[];
-    for (final entry in socialLinks.entries) {
-      final value = entry.value.trim();
-      if (value.isEmpty) {
-        continue;
-      }
-      rows.add(
-        _InfoRow(
-          label: _titleCase(entry.key),
-          value: value,
-          icon: Icons.link_rounded,
-        ),
-      );
-    }
-    return _SectionCard(title: 'SOCIAL', children: rows);
-  }
-}
-
-class _StatusBadge extends StatelessWidget {
-  const _StatusBadge({required this.isActive});
-
-  final bool isActive;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = isActive ? OpenVtsColors.success : OpenVtsColors.textTertiary;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      width: 44,
+      height: 44,
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
-        border: Border.all(color: color.withValues(alpha: 0.25)),
+        color: OpenVtsColors.brandInk,
+        borderRadius: BorderRadius.circular(OpenVtsRadius.md),
       ),
+      alignment: Alignment.center,
       child: Text(
-        isActive ? 'Active' : 'Inactive',
-        style: TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.w600,
-          color: color,
+        _initials(name),
+        style: OpenVtsTypography.label.copyWith(
+          color: Colors.white,
+          fontWeight: FontWeight.w700,
         ),
       ),
     );
   }
-}
 
-class _StatusPill extends StatelessWidget {
-  const _StatusPill({
-    required this.label,
-    required this.icon,
-    required this.color,
-  });
-
-  final String label;
-  final IconData icon;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.06),
-          borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
-          border: Border.all(color: color.withValues(alpha: 0.22)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 11, color: color),
-            const SizedBox(width: 4),
-            Text(
-              label,
-              style: OpenVtsTypography.meta.copyWith(
-                color: color,
-                fontSize: 11,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+  static String _initials(String value) {
+    final parts =
+        value.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
+    if (parts.isEmpty) return 'OV';
+    if (parts.length == 1) {
+      return parts.first
+          .substring(0, parts.first.length.clamp(1, 2))
+          .toUpperCase();
+    }
+    return (parts.first[0] + parts.last[0]).toUpperCase();
   }
 }
 
@@ -554,7 +776,7 @@ class _InfoRow extends StatelessWidget {
             child: Text(
               label,
               style: OpenVtsTypography.meta.copyWith(
-                color: OpenVtsColors.textTertiary,
+                color: Theme.of(context).colorScheme.outline,
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
               ),
@@ -566,7 +788,7 @@ class _InfoRow extends StatelessWidget {
                 Text(
                   _displayValue(value ?? ''),
                   style: OpenVtsTypography.label.copyWith(
-                    color: OpenVtsColors.textPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                   ),
@@ -641,7 +863,7 @@ class _SectionErrorCard extends StatelessWidget {
               Text(
                 'Unable to load profile',
                 style: OpenVtsTypography.label.copyWith(
-                  color: OpenVtsColors.textPrimary,
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontWeight: FontWeight.w800,
                 ),
               ),
@@ -691,10 +913,7 @@ class _ProfileSkeletonCard extends StatelessWidget {
 }
 
 class _SkeletonBox extends StatelessWidget {
-  const _SkeletonBox({
-    required this.width,
-    required this.height,
-  });
+  const _SkeletonBox({required this.width, required this.height});
 
   final double width;
   final double height;
@@ -711,6 +930,10 @@ class _SkeletonBox extends StatelessWidget {
     );
   }
 }
+
+// =============================================================================
+// Edit profile sheet
+// =============================================================================
 
 class _EditProfileSheet extends ConsumerStatefulWidget {
   const _EditProfileSheet({
@@ -762,7 +985,8 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
     _mobilePrefix = _blankToNull(profile.mobilePrefix);
     _countryCode = _blankToNull(profile.countryCode)?.toUpperCase();
     _stateCode = _blankToNull(profile.stateCode)?.toUpperCase();
-    _city = _blankToNull(profile.city);
+    // Use city name if available, fall back to cityId
+    _city = _blankToNull(profile.city) ?? _blankToNull(profile.cityId);
     _loadInitialReferences();
   }
 
@@ -813,47 +1037,25 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
                     ),
                     const SizedBox(height: OpenVtsSpacing.sm),
                     OpenVtsTextField(
-                      label: 'Email',
+                      label: 'Email (optional)',
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
                       textInputAction: TextInputAction.next,
                       prefixIcon: Icons.mail_outline_rounded,
-                      validator: Validators.email,
+                      validator: Validators.adminEmailOptional,
                     ),
                     const SizedBox(height: OpenVtsSpacing.sm),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SizedBox(
-                          width: 124,
-                          child: AdminUserDropdownField(
-                            label: 'Mobile Prefix',
-                            value: _mobilePrefix,
-                            options: _mobilePrefixOptions,
-                            hintText: '+91',
-                            prefixIcon: Icons.phone_android_rounded,
-                            isLoading: _isLoadingReferences,
-                            validator: requiredDropdown,
-                            onChanged: (value) {
-                              setState(() => _mobilePrefix = value);
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: OpenVtsSpacing.sm),
-                        Expanded(
-                          child: OpenVtsTextField(
-                            label: 'Mobile Number',
-                            controller: _mobileNumberController,
-                            keyboardType: TextInputType.phone,
-                            textInputAction: TextInputAction.next,
-                            prefixIcon: Icons.phone_rounded,
-                            validator: (value) => Validators.required(
-                              value,
-                              fieldName: 'Mobile number',
-                            ),
-                          ),
-                        ),
-                      ],
+                    AdminUserPrefixPhoneRow(
+                      prefixValue: _mobilePrefix,
+                      prefixOptions: _mobilePrefixOptions,
+                      isLoading: _isLoadingReferences,
+                      onPrefixChanged: (value) =>
+                          setState(() => _mobilePrefix = value),
+                      phoneController: _mobileNumberController,
+                      phoneValidator: (value) => Validators.required(
+                        value,
+                        fieldName: 'Mobile number',
+                      ),
                     ),
                     const SizedBox(height: OpenVtsSpacing.sm),
                     OpenVtsTextField(
@@ -908,28 +1110,29 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
                       prefixIcon: Icons.public_rounded,
                       isLoading: _isLoadingReferences,
                       validator: requiredDropdown,
+                      searchable: true,
                       onChanged: _onCountryChanged,
                     ),
                     const SizedBox(height: OpenVtsSpacing.sm),
                     AdminUserDropdownField(
-                      label: 'State',
+                      label: 'State (optional)',
                       value: _stateCode,
                       options: _stateOptions,
                       hintText: 'Select state',
                       prefixIcon: Icons.map_outlined,
                       isLoading: _isLoadingStates,
-                      validator: requiredDropdown,
+                      searchable: true,
                       onChanged: _countryCode == null ? null : _onStateChanged,
                     ),
                     const SizedBox(height: OpenVtsSpacing.sm),
                     AdminUserDropdownField(
-                      label: 'City',
+                      label: 'City (optional)',
                       value: _city,
                       options: _cityOptions,
                       hintText: 'Select city',
                       prefixIcon: Icons.location_city_rounded,
                       isLoading: _isLoadingCities,
-                      validator: requiredDropdown,
+                      searchable: true,
                       onChanged: _stateCode == null
                           ? null
                           : (value) => setState(() => _city = value),
@@ -960,46 +1163,56 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
 
   List<AdminUserDropdownOption> get _mobilePrefixOptions {
     return _mobilePrefixes
-        .map(
-          (item) => AdminUserDropdownOption(
-            value: item.value,
-            label: item.label,
-          ),
-        )
+        .map((item) =>
+            AdminUserDropdownOption(value: item.value, label: item.label))
         .toList(growable: false);
   }
 
   List<AdminUserDropdownOption> get _countryOptions {
-    return _countries
-        .map(
-          (item) => AdminUserDropdownOption(
-            value: item.value,
-            label: item.label,
-          ),
-        )
-        .toList(growable: false);
+    final options = _countries
+        .map((item) =>
+            AdminUserDropdownOption(value: item.value, label: item.label))
+        .toList(growable: true);
+    // Inject current country if not in list
+    if (_countryCode != null && !options.any((o) => o.value == _countryCode)) {
+      options.insert(
+        0,
+        AdminUserDropdownOption(
+            value: _countryCode!, label: '$_countryCode (current)'),
+      );
+    }
+    return options;
   }
 
   List<AdminUserDropdownOption> get _stateOptions {
-    return _states
-        .map(
-          (item) => AdminUserDropdownOption(
-            value: item.value,
-            label: item.label,
-          ),
-        )
-        .toList(growable: false);
+    final options = _states
+        .map((item) =>
+            AdminUserDropdownOption(value: item.value, label: item.label))
+        .toList(growable: true);
+    // Inject current state if not in list
+    if (_stateCode != null && !options.any((o) => o.value == _stateCode)) {
+      options.insert(
+        0,
+        AdminUserDropdownOption(
+            value: _stateCode!, label: '$_stateCode (current)'),
+      );
+    }
+    return options;
   }
 
   List<AdminUserDropdownOption> get _cityOptions {
-    return _cities
-        .map(
-          (item) => AdminUserDropdownOption(
-            value: item.value,
-            label: item.label,
-          ),
-        )
-        .toList(growable: false);
+    final options = _cities
+        .map((item) =>
+            AdminUserDropdownOption(value: item.value, label: item.label))
+        .toList(growable: true);
+    // Inject current city if not in list
+    if (_city != null && !options.any((o) => o.value == _city)) {
+      options.insert(
+        0,
+        AdminUserDropdownOption(value: _city!, label: '$_city (current)'),
+      );
+    }
+    return options;
   }
 
   Future<void> _loadInitialReferences() async {
@@ -1010,9 +1223,7 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
       final countries = await countriesFuture;
       final prefixes = await prefixesFuture;
 
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
 
       setState(() {
         _countries = countries;
@@ -1023,18 +1234,14 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
       await _loadStates(_countryCode, clearSelection: false);
       await _loadCities(_countryCode, _stateCode, clearSelection: false);
     } catch (_) {
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
       setState(() => _isLoadingReferences = false);
       ToastHelper.showError('Unable to load form options.', context: context);
     }
   }
 
   Future<void> _onCountryChanged(String? value) async {
-    if (value == _countryCode) {
-      return;
-    }
+    if (value == _countryCode) return;
     setState(() {
       _countryCode = value;
       _stateCode = null;
@@ -1046,9 +1253,7 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
   }
 
   Future<void> _onStateChanged(String? value) async {
-    if (value == _stateCode) {
-      return;
-    }
+    if (value == _stateCode) return;
     setState(() {
       _stateCode = value;
       _city = null;
@@ -1062,29 +1267,21 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
     required bool clearSelection,
   }) async {
     final requestedCountry = countryCode?.trim().toUpperCase();
-    if (requestedCountry == null || requestedCountry.isEmpty) {
-      return;
-    }
+    if (requestedCountry == null || requestedCountry.isEmpty) return;
 
     setState(() => _isLoadingStates = true);
     try {
       final states = await ref
           .read(adminUsersControllerProvider.notifier)
           .getStates(requestedCountry);
-      if (!mounted || _countryCode?.toUpperCase() != requestedCountry) {
-        return;
-      }
+      if (!mounted || _countryCode?.toUpperCase() != requestedCountry) return;
       setState(() {
         _states = states;
-        if (clearSelection) {
-          _stateCode = null;
-        }
+        if (clearSelection) _stateCode = null;
         _isLoadingStates = false;
       });
     } catch (_) {
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
       setState(() => _isLoadingStates = false);
       ToastHelper.showError('Unable to load states.', context: context);
     }
@@ -1116,24 +1313,18 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
       }
       setState(() {
         _cities = cities;
-        if (clearSelection) {
-          _city = null;
-        }
+        if (clearSelection) _city = null;
         _isLoadingCities = false;
       });
     } catch (_) {
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
       setState(() => _isLoadingCities = false);
       ToastHelper.showError('Unable to load cities.', context: context);
     }
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
+    if (!_formKey.currentState!.validate()) return;
     setState(() => _isSubmitting = true);
     final ok = await widget.onSubmit(
       AdminUpdateUserDetailsRequest(
@@ -1150,9 +1341,7 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
         pincode: _pincodeController.text,
       ),
     );
-    if (!mounted) {
-      return;
-    }
+    if (!mounted) return;
     setState(() => _isSubmitting = false);
     if (ok) {
       Navigator.of(context).pop();
@@ -1168,10 +1357,20 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
   }
 }
 
-class _PasswordSheet extends StatefulWidget {
-  const _PasswordSheet({required this.onSubmit});
+// =============================================================================
+// Password sheet
+// =============================================================================
 
-  final Future<bool> Function(String password) onSubmit;
+class _PasswordSheet extends StatefulWidget {
+  const _PasswordSheet({
+    required this.isSubmitting,
+    required this.errorMessage,
+    required this.onSubmit,
+  });
+
+  final bool isSubmitting;
+  final String? errorMessage;
+  final Future<void> Function(String password) onSubmit;
 
   @override
   State<_PasswordSheet> createState() => _PasswordSheetState();
@@ -1183,7 +1382,6 @@ class _PasswordSheetState extends State<_PasswordSheet> {
   final _confirmController = TextEditingController();
   var _obscurePassword = true;
   var _obscureConfirm = true;
-  var _isSubmitting = false;
 
   @override
   void dispose() {
@@ -1241,12 +1439,22 @@ class _PasswordSheetState extends State<_PasswordSheet> {
             ),
             validator: _confirmValidator,
           ),
+          if (widget.errorMessage != null) ...[
+            const SizedBox(height: OpenVtsSpacing.sm),
+            Text(
+              widget.errorMessage!,
+              style: OpenVtsTypography.meta.copyWith(
+                color: OpenVtsColors.error,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
           const SizedBox(height: OpenVtsSpacing.lg),
           OpenVtsButton(
             label: 'Update Password',
             height: 40,
-            isLoading: _isSubmitting,
-            onPressed: _isSubmitting ? null : _submit,
+            isLoading: widget.isSubmitting,
+            onPressed: widget.isSubmitting ? null : _submit,
             trailingIcon: Icons.check_rounded,
           ),
         ],
@@ -1255,42 +1463,30 @@ class _PasswordSheetState extends State<_PasswordSheet> {
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
-    setState(() => _isSubmitting = true);
-    final ok = await widget.onSubmit(_passwordController.text.trim());
-    if (!mounted) {
-      return;
-    }
-    setState(() => _isSubmitting = false);
-    if (ok) {
-      Navigator.of(context).pop();
-    }
+    if (!_formKey.currentState!.validate()) return;
+    await widget.onSubmit(_passwordController.text.trim());
   }
 
   String? _passwordValidator(String? value) {
     final normalized = value?.trim() ?? '';
-    if (normalized.isEmpty) {
-      return 'Required';
-    }
-    if (normalized.length < 8) {
-      return 'Use at least 8 characters';
-    }
+    if (normalized.isEmpty) return 'Required';
+    if (normalized.length < 8) return 'Use at least 8 characters';
     return null;
   }
 
   String? _confirmValidator(String? value) {
     final normalized = value?.trim() ?? '';
-    if (normalized.isEmpty) {
-      return 'Required';
-    }
+    if (normalized.isEmpty) return 'Required';
     if (normalized != _passwordController.text.trim()) {
       return 'Passwords do not match';
     }
     return null;
   }
 }
+
+// =============================================================================
+// Company edit sheet
+// =============================================================================
 
 class _CompanySheet extends StatefulWidget {
   const _CompanySheet({
@@ -1335,19 +1531,23 @@ class _CompanySheetState extends State<_CompanySheet> {
     _nameController = TextEditingController(
       text: _initialText(company?.name ?? widget.fallbackName),
     );
+    // All fields are initialized independently - website does not block domain/color
     _websiteController = TextEditingController(
       text: _initialText(company?.websiteUrl),
     );
     _customDomainController = TextEditingController(
       text: _initialText(company?.customDomain),
     );
-    _primaryColor = _normalizePrimaryColorOption(company?.primaryColor);
+    // Default to Black if no color set
+    _primaryColor =
+        _normalizePrimaryColorOption(company?.primaryColor) ?? 'Black';
     _socialControllers = <String, TextEditingController>{
       for (final socialKey in _socialKeys)
         socialKey: TextEditingController(
           text: _initialText(company?.socialLinks[socialKey]),
         ),
     };
+    // Load full company details only if company has ID but missing fields
     if (_shouldLoadCompany(company)) {
       _loadCompany();
     }
@@ -1461,9 +1661,7 @@ class _CompanySheetState extends State<_CompanySheet> {
 
   List<AdminUserDropdownOption> get _primaryColorOptions {
     return AdminUpdateUserCompanyRequest.allowedPrimaryColors
-        .map(
-          (color) => AdminUserDropdownOption(value: color, label: color),
-        )
+        .map((color) => AdminUserDropdownOption(value: color, label: color))
         .toList(growable: false);
   }
 
@@ -1471,17 +1669,11 @@ class _CompanySheetState extends State<_CompanySheet> {
     setState(() => _isLoadingCompany = true);
     try {
       final company = await widget.loadCompany();
-      if (!mounted) {
-        return;
-      }
-      if (company != null) {
-        _applyCompany(company);
-      }
+      if (!mounted) return;
+      if (company != null) _applyCompany(company);
       setState(() => _isLoadingCompany = false);
     } catch (_) {
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
       setState(() => _isLoadingCompany = false);
       ToastHelper.showError('Unable to load company details.',
           context: context);
@@ -1490,19 +1682,21 @@ class _CompanySheetState extends State<_CompanySheet> {
 
   void _applyCompany(AdminUserCompany company) {
     _nameController.text = _initialText(company.name);
+    // Apply all fields independently - website is NOT required for domain/color
     _websiteController.text = _initialText(company.websiteUrl);
     _customDomainController.text = _initialText(company.customDomain);
-    _primaryColor = _normalizePrimaryColorOption(company.primaryColor);
+    // Always set primaryColor, default to Black if not provided
+    _primaryColor =
+        _normalizePrimaryColorOption(company.primaryColor) ?? 'Black';
     for (final socialKey in _socialKeys) {
       _socialControllers[socialKey]?.text =
           _initialText(company.socialLinks[socialKey]);
     }
+    setState(() {}); // Ensure UI updates with all applied values
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
+    if (!_formKey.currentState!.validate()) return;
     setState(() => _isSubmitting = true);
     final socialLinks = <String, String>{};
     for (final entry in _socialControllers.entries) {
@@ -1521,15 +1715,17 @@ class _CompanySheetState extends State<_CompanySheet> {
         socialLinks: socialLinks,
       ),
     );
-    if (!mounted) {
-      return;
-    }
+    if (!mounted) return;
     setState(() => _isSubmitting = false);
     if (ok) {
       Navigator.of(context).pop();
     }
   }
 }
+
+// =============================================================================
+// Sheet actions
+// =============================================================================
 
 class _SheetActions extends StatelessWidget {
   const _SheetActions({
@@ -1574,6 +1770,10 @@ class _SheetActions extends StatelessWidget {
   }
 }
 
+// =============================================================================
+// Profile snapshot
+// =============================================================================
+
 class _ProfileSnapshot {
   const _ProfileSnapshot({
     required this.id,
@@ -1593,8 +1793,11 @@ class _ProfileSnapshot {
     required this.socialLinks,
     required this.address,
     required this.countryCode,
+    required this.countryName,
     required this.stateCode,
+    required this.stateName,
     required this.city,
+    required this.cityId,
     required this.pincode,
     required this.createdAt,
     required this.updatedAt,
@@ -1618,8 +1821,11 @@ class _ProfileSnapshot {
   final Map<String, String> socialLinks;
   final String address;
   final String countryCode;
+  final String countryName;
   final String stateCode;
+  final String stateName;
   final String city;
+  final String cityId;
   final String pincode;
   final DateTime? createdAt;
   final DateTime? updatedAt;
@@ -1629,22 +1835,14 @@ class _ProfileSnapshot {
       name.isNotEmpty || username.isNotEmpty || email.isNotEmpty;
 
   String get displayName {
-    if (name.trim().isNotEmpty) {
-      return name.trim();
-    }
-    if (username.trim().isNotEmpty) {
-      return username.trim();
-    }
-    if (email.trim().isNotEmpty) {
-      return email.trim();
-    }
+    if (name.trim().isNotEmpty) return name.trim();
+    if (username.trim().isNotEmpty) return username.trim();
+    if (email.trim().isNotEmpty) return email.trim();
     return 'User';
   }
 
   String get usernameLabel {
-    if (username.trim().isNotEmpty) {
-      return '@${username.trim()}';
-    }
+    if (username.trim().isNotEmpty) return '@${username.trim()}';
     return '-';
   }
 
@@ -1652,6 +1850,9 @@ class _ProfileSnapshot {
     required AdminUserDetails? details,
     required admin_users.AdminUserListItem? fallback,
     required String userId,
+    required bool effectiveIsActive,
+    required int? resolvedVehicleCount,
+    required DateTime? resolvedLastLogin,
   }) {
     if (details != null) {
       final address = details.address;
@@ -1667,7 +1868,7 @@ class _ProfileSnapshot {
         mobileNumber: details.mobileNumber,
         phone: details.mobileDisplay,
         isEmailVerified: details.isEmailVerified,
-        isActive: details.isActive,
+        isActive: effectiveIsActive,
         companyName: company?.name ?? details.organization,
         company: company,
         websiteUrl: company?.websiteUrl ?? '',
@@ -1681,12 +1882,15 @@ class _ProfileSnapshot {
         ]),
         countryCode:
             _firstNonEmpty([details.countryCode, address?.countryCode]),
+        countryName: address?.countryName ?? '',
         stateCode: address?.stateCode ?? '',
-        city: address?.cityName ?? '',
+        stateName: address?.stateName ?? '',
+        city: _firstNonEmpty([address?.cityName, address?.cityId]),
+        cityId: address?.cityId ?? '',
         pincode: address?.pincode ?? '',
         createdAt: details.createdAt,
-        updatedAt: details.updatedAt,
-        vehicleCount: details.vehicleCount,
+        updatedAt: resolvedLastLogin ?? details.updatedAt,
+        vehicleCount: resolvedVehicleCount ?? details.vehicleCount,
       );
     }
 
@@ -1701,7 +1905,7 @@ class _ProfileSnapshot {
         mobileNumber: fallback.mobileNumber,
         phone: fallback.mobileDisplay,
         isEmailVerified: fallback.isEmailVerified,
-        isActive: fallback.isActive,
+        isActive: effectiveIsActive,
         companyName: fallback.companyName,
         company: company,
         websiteUrl: '',
@@ -1710,12 +1914,15 @@ class _ProfileSnapshot {
         socialLinks: const <String, String>{},
         address: fallback.location,
         countryCode: fallback.countryCode,
+        countryName: '',
         stateCode: fallback.stateCode,
+        stateName: '',
         city: fallback.city,
+        cityId: '',
         pincode: fallback.pincode,
         createdAt: fallback.createdAt,
-        updatedAt: fallback.updatedAt,
-        vehicleCount: fallback.vehicleCount,
+        updatedAt: resolvedLastLogin ?? fallback.updatedAt,
+        vehicleCount: resolvedVehicleCount ?? fallback.vehicleCount,
       );
     }
 
@@ -1728,7 +1935,7 @@ class _ProfileSnapshot {
       mobileNumber: '',
       phone: '',
       isEmailVerified: false,
-      isActive: false,
+      isActive: effectiveIsActive,
       companyName: '',
       company: null,
       websiteUrl: '',
@@ -1737,21 +1944,26 @@ class _ProfileSnapshot {
       socialLinks: const <String, String>{},
       address: '',
       countryCode: '',
+      countryName: '',
       stateCode: '',
+      stateName: '',
       city: '',
+      cityId: '',
       pincode: '',
       createdAt: null,
-      updatedAt: null,
-      vehicleCount: null,
+      updatedAt: resolvedLastLogin,
+      vehicleCount: resolvedVehicleCount,
     );
   }
 }
 
+// =============================================================================
+// Helpers
+// =============================================================================
+
 AdminUserCompany? _companyFromName(String name) {
   final normalized = name.trim();
-  if (normalized.isEmpty || normalized == '-') {
-    return null;
-  }
+  if (normalized.isEmpty || normalized == '-') return null;
   return AdminUserCompany(
     id: '',
     name: normalized,
@@ -1766,28 +1978,57 @@ AdminUserCompany? _companyFromName(String name) {
 }
 
 bool _shouldLoadCompany(AdminUserCompany? company) {
-  if (company == null) {
-    return true;
+  if (company == null) return true;
+  // Load company details if the company has an ID but critical fields are missing
+  // Website is NOT required to load other fields (domain, color, socials)
+  if (company.id.isNotEmpty && company.name.isNotEmpty) {
+    // If we have a real company but missing important fields, fetch full details
+    return company.customDomain.isEmpty &&
+        company.primaryColor.isEmpty &&
+        company.socialLinks.isEmpty;
   }
-  return company.websiteUrl.isEmpty &&
-      company.customDomain.isEmpty &&
-      company.primaryColor.isEmpty &&
-      company.socialLinks.isEmpty;
+  // If only a fallback company name (no ID), don't load
+  return false;
 }
 
 String _displayValue(String value) {
   final normalized = value.trim();
-  if (normalized.isEmpty || normalized == '-') {
-    return '-';
-  }
+  if (normalized.isEmpty || normalized == '-') return '—';
   return normalized;
+}
+
+/// Returns the best available country label for a profile snapshot.
+/// Priority: countryName > resolved name from LocationData > countryCode > '—'
+String _resolveCountryLabel(_ProfileSnapshot profile) {
+  final name = profile.countryName.trim();
+  if (name.isNotEmpty) return name;
+
+  final code = profile.countryCode.trim();
+  if (code.isEmpty) return '—';
+
+  final resolved = LocationLabelResolver.resolveCountry(code);
+  return resolved.isNotEmpty ? resolved : code;
+}
+
+/// Returns the best available state label for a profile snapshot.
+/// Priority: stateName > resolved name from LocationData > stateCode > '—'
+String _resolveStateLabel(_ProfileSnapshot profile) {
+  final name = profile.stateName.trim();
+  if (name.isNotEmpty) return name;
+
+  final stateCode = profile.stateCode.trim();
+  if (stateCode.isEmpty) return '—';
+
+  final resolved = LocationLabelResolver.resolveState(
+    profile.countryCode,
+    stateCode,
+  );
+  return resolved.isNotEmpty ? resolved : stateCode;
 }
 
 String _initialText(String? value) {
   final normalized = value?.trim() ?? '';
-  if (normalized.isEmpty || normalized == '-') {
-    return '';
-  }
+  if (normalized.isEmpty || normalized == '-') return '';
   return normalized;
 }
 
@@ -1802,25 +2043,14 @@ String? _blankToNull(String? value) {
 String _firstNonEmpty(List<String?> values) {
   for (final value in values) {
     final normalized = value?.trim() ?? '';
-    if (normalized.isNotEmpty && normalized != '-') {
-      return normalized;
-    }
+    if (normalized.isNotEmpty && normalized != '-') return normalized;
   }
   return '';
 }
 
-String _dateText(DateTime? value) {
-  if (value == null) {
-    return '-';
-  }
-  return const DateTimeFormatter().formatDate(value.toLocal());
-}
-
 String _titleCase(String value) {
   final normalized = value.trim();
-  if (normalized.isEmpty) {
-    return normalized;
-  }
+  if (normalized.isEmpty) return normalized;
   return '${normalized[0].toUpperCase()}${normalized.substring(1)}';
 }
 
@@ -1845,9 +2075,7 @@ Color _colorFromName(String name) {
 
 String _normalizeUrl(String value) {
   final normalized = value.trim();
-  if (normalized.isEmpty) {
-    return '';
-  }
+  if (normalized.isEmpty) return '';
   final lower = normalized.toLowerCase();
   if (lower.startsWith('http://') || lower.startsWith('https://')) {
     return normalized;
@@ -1857,9 +2085,7 @@ String _normalizeUrl(String value) {
 
 String _hostnameOnly(String value) {
   final normalized = value.trim();
-  if (normalized.isEmpty) {
-    return '';
-  }
+  if (normalized.isEmpty) return '';
   final candidate =
       normalized.contains('://') ? normalized : 'https://$normalized';
   final uri = Uri.tryParse(candidate);
@@ -1872,9 +2098,7 @@ String _hostnameOnly(String value) {
 String? _normalizePrimaryColorOption(String? value) {
   final normalized = value?.trim() ?? '';
   for (final color in AdminUpdateUserCompanyRequest.allowedPrimaryColors) {
-    if (color.toLowerCase() == normalized.toLowerCase()) {
-      return color;
-    }
+    if (color.toLowerCase() == normalized.toLowerCase()) return color;
   }
   return 'Black';
 }

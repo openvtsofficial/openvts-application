@@ -7,9 +7,11 @@ import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../core/utils/date_time_formatter.dart';
 import '../../../../../shared/widgets/open_vts_date_time_range_selector.dart';
 import '../../../controllers/user_providers.dart';
 import '../../../models/user_dashboard_model.dart';
+import 'user_dashboard_vehicle_selector.dart';
 import 'user_dashboard_widget_card.dart';
 
 class UserSensorHistoryWidget extends ConsumerStatefulWidget {
@@ -139,10 +141,11 @@ class _UserSensorHistoryWidgetState
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (data.vehicles.isNotEmpty) ...[
-          _VehicleSelector(
+          UserDashboardVehicleSelector(
             vehicles: data.vehicles,
             value: data.selectedVehicleId,
             onChanged: _changeVehicle,
+            includeAll: false,
           ),
           const SizedBox(height: OpenVtsSpacing.sm),
         ],
@@ -247,59 +250,6 @@ class _UserSensorHistoryWidgetState
   }
 }
 
-class _VehicleSelector extends StatelessWidget {
-  const _VehicleSelector({
-    required this.vehicles,
-    required this.value,
-    required this.onChanged,
-  });
-
-  final List<UserDashboardVehicleOption> vehicles;
-  final String? value;
-  final ValueChanged<String?> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return DropdownButtonFormField<String>(
-      key: ValueKey(value),
-      initialValue: value,
-      isExpanded: true,
-      decoration: InputDecoration(
-        labelText: 'Vehicle',
-        isDense: true,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: OpenVtsSpacing.sm,
-          vertical: OpenVtsSpacing.xs,
-        ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(OpenVtsRadius.md),
-          borderSide: const BorderSide(color: OpenVtsColors.border),
-        ),
-      ),
-      items: [
-        for (final vehicle in vehicles)
-          DropdownMenuItem<String>(
-            value: vehicle.id,
-            child: Text(
-              _label(vehicle),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-      ],
-      onChanged: onChanged,
-    );
-  }
-
-  static String _label(UserDashboardVehicleOption vehicle) {
-    final plate = vehicle.plateNumber?.trim();
-    if (plate != null && plate.isNotEmpty) {
-      return '${vehicle.name} - $plate';
-    }
-    return vehicle.name;
-  }
-}
-
 class _SensorSelector extends StatelessWidget {
   const _SensorSelector({
     required this.sensors,
@@ -326,7 +276,8 @@ class _SensorSelector extends StatelessWidget {
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(OpenVtsRadius.md),
-          borderSide: const BorderSide(color: OpenVtsColors.border),
+          borderSide:
+              BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
         ),
       ),
       items: [
@@ -369,9 +320,9 @@ class _SensorSummary extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(OpenVtsSpacing.sm),
       decoration: BoxDecoration(
-        color: OpenVtsColors.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(OpenVtsRadius.md),
-        border: Border.all(color: OpenVtsColors.border),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
       child: Row(
         children: [
@@ -379,14 +330,15 @@ class _SensorSummary extends StatelessWidget {
             width: 30,
             height: 30,
             decoration: BoxDecoration(
-              color: OpenVtsColors.surfaceElevated,
+              color: Theme.of(context).colorScheme.surfaceContainerHigh,
               borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-              border: Border.all(color: OpenVtsColors.border),
+              border: Border.all(
+                  color: Theme.of(context).colorScheme.outlineVariant),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.sensors_rounded,
               size: 16,
-              color: OpenVtsColors.textSecondary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
           const SizedBox(width: OpenVtsSpacing.sm),
@@ -399,7 +351,7 @@ class _SensorSummary extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: OpenVtsTypography.label.copyWith(
-                    color: OpenVtsColors.textPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -409,7 +361,7 @@ class _SensorSummary extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: OpenVtsTypography.meta.copyWith(
-                    color: OpenVtsColors.textSecondary,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -463,18 +415,24 @@ class _SensorStatsGrid extends StatelessWidget {
   }
 }
 
-class _SensorHistoryChart extends StatelessWidget {
+class _SensorHistoryChart extends ConsumerWidget {
   const _SensorHistoryChart({required this.points, required this.unit});
 
   final List<UserDashboardSensorHistoryPoint> points;
   final String unit;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final formatter = ref.watch(appDateFormatterProvider);
     return SizedBox(
       height: 172,
       child: CustomPaint(
-        painter: _SensorHistoryChartPainter(points: points, unit: unit),
+        painter: _SensorHistoryChartPainter(
+          points: points,
+          unit: unit,
+          formatter: formatter,
+          gridColor: Theme.of(context).colorScheme.outlineVariant,
+        ),
         size: Size.infinite,
       ),
     );
@@ -482,10 +440,17 @@ class _SensorHistoryChart extends StatelessWidget {
 }
 
 class _SensorHistoryChartPainter extends CustomPainter {
-  const _SensorHistoryChartPainter({required this.points, required this.unit});
+  const _SensorHistoryChartPainter({
+    required this.points,
+    required this.unit,
+    required this.formatter,
+    required this.gridColor,
+  });
 
   final List<UserDashboardSensorHistoryPoint> points;
   final String unit;
+  final AppDateFormatter formatter;
+  final Color gridColor;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -515,7 +480,7 @@ class _SensorHistoryChartPainter extends CustomPainter {
         : 1;
 
     final gridPaint = Paint()
-      ..color = OpenVtsColors.border
+      ..color = gridColor
       ..strokeWidth = 1;
     for (var line = 0; line < 4; line++) {
       final y = top + chartHeight * line / 3;
@@ -589,7 +554,7 @@ class _SensorHistoryChartPainter extends CustomPainter {
     if (validPoints.first.t != null) {
       _paintLabel(
         canvas,
-        userDashboardFormatShortTime(validPoints.first.t),
+        userDashboardFormatShortTime(validPoints.first.t, formatter: formatter),
         Offset(left, top + chartHeight + 8),
         alignment: TextAlign.left,
       );
@@ -597,7 +562,7 @@ class _SensorHistoryChartPainter extends CustomPainter {
     if (validPoints.last.t != null) {
       _paintLabel(
         canvas,
-        userDashboardFormatShortTime(validPoints.last.t),
+        userDashboardFormatShortTime(validPoints.last.t, formatter: formatter),
         Offset(size.width - right, top + chartHeight + 8),
         alignment: TextAlign.right,
       );
@@ -657,7 +622,9 @@ class _SensorHistoryChartPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _SensorHistoryChartPainter oldDelegate) {
-    return oldDelegate.points != points || oldDelegate.unit != unit;
+    return oldDelegate.points != points ||
+        oldDelegate.unit != unit ||
+        oldDelegate.formatter != formatter;
   }
 }
 

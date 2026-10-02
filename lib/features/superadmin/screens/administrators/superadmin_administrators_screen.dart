@@ -15,6 +15,7 @@ import '../../../../shared/widgets/open_vts_empty_state.dart';
 import '../../../../shared/widgets/open_vts_error_view.dart';
 import '../../../../shared/widgets/open_vts_loader.dart';
 import '../../../../shared/widgets/open_vts_page_scaffold.dart';
+import '../../../admin/utils/location_label_resolver.dart';
 import '../../../auth/controllers/auth_controller.dart';
 import '../../../auth/models/current_user.dart';
 import '../../../auth/models/login_response.dart';
@@ -515,9 +516,8 @@ class _PrimaryCreateButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final background =
-        isDark ? OpenVtsColors.surfaceElevated : OpenVtsColors.brandInk;
-    final foreground = isDark ? OpenVtsColors.brandInk : OpenVtsColors.white;
+    final background = isDark ? Colors.black : OpenVtsColors.brandInk;
+    final foreground = Colors.white;
 
     return ElevatedButton.icon(
       onPressed: onPressed,
@@ -533,6 +533,9 @@ class _PrimaryCreateButton extends StatelessWidget {
         ),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(OpenVtsRadius.md),
+          side: isDark
+              ? const BorderSide(color: Colors.white, width: 1)
+              : BorderSide.none,
         ),
         textStyle: OpenVtsTypography.label.copyWith(
           fontWeight: FontWeight.w600,
@@ -679,7 +682,11 @@ class _SearchInput extends StatelessWidget {
             textAlignVertical: TextAlignVertical.center,
             cursorColor: _primaryInkColor(context),
             cursorWidth: 1.4,
-            style: _baseStyle.copyWith(color: OpenVtsColors.textPrimary),
+            style: _baseStyle.copyWith(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? OpenVtsColors.darkTextPrimary
+                  : OpenVtsColors.textPrimary,
+            ),
             strutStyle: const StrutStyle(
               fontFamily: OpenVtsTypography.primaryFontFamily,
               fontFamilyFallback: OpenVtsTypography.fontFallback,
@@ -695,18 +702,22 @@ class _SearchInput extends StatelessWidget {
               isCollapsed: false,
               hintText: 'Search by name, email\u2026',
               hintStyle: _baseStyle.copyWith(
-                color: OpenVtsColors.textTertiary,
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? OpenVtsColors.darkTextSecondary.withValues(alpha: 0.6)
+                    : OpenVtsColors.textTertiary,
                 fontWeight: FontWeight.w400,
               ),
-              prefixIcon: const Padding(
-                padding: EdgeInsetsDirectional.only(
+              prefixIcon: Padding(
+                padding: const EdgeInsetsDirectional.only(
                   start: OpenVtsSpacing.sm,
                   end: OpenVtsSpacing.xs,
                 ),
                 child: Icon(
                   Icons.search_rounded,
                   size: 18,
-                  color: OpenVtsColors.textSecondary,
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? OpenVtsColors.darkTextSecondary
+                      : OpenVtsColors.textSecondary,
                 ),
               ),
               prefixIconConstraints: const BoxConstraints(
@@ -731,10 +742,12 @@ class _SearchInput extends StatelessWidget {
                           minHeight: 28,
                         ),
                         splashRadius: 16,
-                        icon: const Icon(
+                        icon: Icon(
                           Icons.close_rounded,
                           size: 16,
-                          color: OpenVtsColors.textSecondary,
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? OpenVtsColors.darkTextSecondary
+                              : OpenVtsColors.textSecondary,
                         ),
                       ),
                     ),
@@ -851,12 +864,14 @@ class _RecordsPerPageDropdown extends StatelessWidget {
         child: DropdownButton<int>(
           value: value,
           isDense: true,
-          icon: const Padding(
-            padding: EdgeInsetsDirectional.only(start: 2),
+          icon: Padding(
+            padding: const EdgeInsetsDirectional.only(start: 2),
             child: Icon(
               Icons.keyboard_arrow_down_rounded,
               size: 16,
-              color: OpenVtsColors.textSecondary,
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? OpenVtsColors.darkTextSecondary
+                  : OpenVtsColors.textSecondary,
             ),
           ),
           style: OpenVtsTypography.label.copyWith(
@@ -987,7 +1002,9 @@ class _CardHeader extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: OpenVtsTypography.label.copyWith(
-                  color: OpenVtsColors.textSecondary,
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? OpenVtsColors.darkTextSecondary
+                      : OpenVtsColors.textSecondary,
                 ),
               ),
             ],
@@ -1071,15 +1088,12 @@ class _StatusToggle extends StatelessWidget {
 
     return Tooltip(
       message: isActive ? 'Deactivate administrator' : 'Activate administrator',
-      child: Transform.scale(
-        scale: 0.85,
-        child: Switch(
+      child: SizedBox(
+        width: 44,
+        height: 44,
+        child: Switch.adaptive(
           value: isActive,
           onChanged: isBusy ? null : onChanged,
-          activeThumbColor: OpenVtsColors.white,
-          activeTrackColor: _primaryInkColor(context),
-          inactiveThumbColor: OpenVtsColors.white,
-          inactiveTrackColor: _softBorderColor(context),
           materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
         ),
       ),
@@ -1174,10 +1188,12 @@ class _CardMenu extends StatelessWidget {
         ),
       ],
       enabled: !isBusy,
-      icon: const Icon(
+      icon: Icon(
         Icons.more_vert_rounded,
         size: 18,
-        color: OpenVtsColors.textSecondary,
+        color: Theme.of(context).brightness == Brightness.dark
+            ? OpenVtsColors.darkTextSecondary
+            : OpenVtsColors.textSecondary,
       ),
       padding: EdgeInsets.zero,
       splashRadius: 18,
@@ -1203,9 +1219,7 @@ class _CardInfoGrid extends StatelessWidget {
     final phoneValue = administrator.phoneDisplay;
     final companyValue = _displayValue(administrator.companyName);
     final countryValue = _displayValue(
-      administrator.countryCode.trim().isNotEmpty
-          ? administrator.countryCode.trim().toUpperCase()
-          : administrator.countryName,
+      _resolveAdminCountryLabel(administrator),
     );
 
     return LayoutBuilder(
@@ -1303,7 +1317,9 @@ class _InfoRow extends StatelessWidget {
         Icon(
           icon,
           size: 16,
-          color: OpenVtsColors.textSecondary,
+          color: Theme.of(context).brightness == Brightness.dark
+              ? OpenVtsColors.darkTextSecondary
+              : OpenVtsColors.textSecondary,
         ),
         const SizedBox(width: OpenVtsSpacing.xs),
         Expanded(
@@ -1312,7 +1328,9 @@ class _InfoRow extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: OpenVtsTypography.label.copyWith(
-              color: OpenVtsColors.textPrimary,
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? OpenVtsColors.darkTextPrimary
+                  : OpenVtsColors.textPrimary,
               height: 1.4,
             ),
           ),
@@ -1441,7 +1459,9 @@ class _MetricCell extends StatelessWidget {
               Icon(
                 icon,
                 size: 14,
-                color: OpenVtsColors.textSecondary,
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? OpenVtsColors.darkTextSecondary
+                    : OpenVtsColors.textSecondary,
               ),
               const SizedBox(width: OpenVtsSpacing.xxs + 2),
               Flexible(
@@ -1450,7 +1470,9 @@ class _MetricCell extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: OpenVtsTypography.meta.copyWith(
-                    color: OpenVtsColors.textSecondary,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? OpenVtsColors.darkTextSecondary
+                        : OpenVtsColors.textSecondary,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -1506,7 +1528,9 @@ class _PaginationFooter extends StatelessWidget {
           Text(
             'Showing $showingCount of $totalCount',
             style: OpenVtsTypography.meta.copyWith(
-              color: OpenVtsColors.textSecondary,
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? OpenVtsColors.darkTextSecondary
+                  : OpenVtsColors.textSecondary,
             ),
           ),
           if (pageCount > 1) ...[
@@ -1572,7 +1596,9 @@ class _PageButton extends StatelessWidget {
             size: 18,
             color: enabled
                 ? _primaryInkColor(context)
-                : OpenVtsColors.textTertiary,
+                : (Theme.of(context).brightness == Brightness.dark
+                    ? OpenVtsColors.darkTextSecondary.withValues(alpha: 0.5)
+                    : OpenVtsColors.textTertiary),
           ),
         ),
       ),
@@ -1621,7 +1647,7 @@ class _OptionsSheet extends StatelessWidget {
                 width: 40,
                 margin: const EdgeInsets.only(bottom: OpenVtsSpacing.sm),
                 decoration: BoxDecoration(
-                  color: OpenVtsColors.border,
+                  color: Theme.of(context).colorScheme.outlineVariant,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -1633,12 +1659,17 @@ class _OptionsSheet extends StatelessWidget {
                     title,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w700,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                   ),
                 ),
                 IconButton(
                   onPressed: () => Navigator.of(context).maybePop(),
-                  icon: const Icon(Icons.close_rounded, size: 20),
+                  icon: Icon(
+                    Icons.close_rounded,
+                    size: 20,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
                   tooltip: 'Close',
                 ),
               ],
@@ -1648,7 +1679,7 @@ class _OptionsSheet extends StatelessWidget {
               Text(
                 section.label,
                 style: OpenVtsTypography.label.copyWith(
-                  color: OpenVtsColors.textSecondary,
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -1707,36 +1738,38 @@ class _ChoiceChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final background =
-        selected ? _primaryInkColor(context) : _softSurfaceColor(context);
-    final foreground = selected
-        ? Theme.of(context).colorScheme.surface
-        : _primaryInkColor(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final backgroundColor =
+        selected ? (isDark ? Colors.black : Colors.white) : Colors.transparent;
+    final textColor = isDark ? Colors.white : Colors.black;
+    final borderColor =
+        isDark ? Colors.white : Colors.black.withValues(alpha: 0.2);
 
     return Material(
-      color: background,
+      color: backgroundColor,
       borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
       child: InkWell(
         onTap: onSelected,
         borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
         child: Container(
+          constraints: const BoxConstraints(minHeight: 34),
           padding: const EdgeInsets.symmetric(
-            horizontal: OpenVtsSpacing.md,
+            horizontal: OpenVtsSpacing.sm,
             vertical: OpenVtsSpacing.xs,
           ),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
             border: Border.all(
               color: selected
-                  ? _primaryInkColor(context)
-                  : _softBorderColor(context),
+                  ? (isDark ? Colors.white : Colors.black)
+                  : borderColor,
             ),
           ),
           child: Text(
             label,
             style: OpenVtsTypography.label.copyWith(
-              color: foreground,
-              fontWeight: FontWeight.w600,
+              color: textColor,
+              fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
             ),
           ),
         ),
@@ -1774,8 +1807,8 @@ class _RadioRow extends StatelessWidget {
                   : Icons.radio_button_off_rounded,
               size: 18,
               color: selected
-                  ? _primaryInkColor(context)
-                  : OpenVtsColors.textTertiary,
+                  ? Theme.of(context).colorScheme.primary
+                  : Theme.of(context).colorScheme.onSurfaceVariant,
             ),
             const SizedBox(width: OpenVtsSpacing.sm),
             Expanded(
@@ -1783,7 +1816,7 @@ class _RadioRow extends StatelessWidget {
                 label,
                 style: OpenVtsTypography.label.copyWith(
                   fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                  color: _primaryInkColor(context),
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
             ),
@@ -1864,4 +1897,12 @@ Color _primaryInkColor(BuildContext context) {
 String _displayValue(String value) {
   final normalized = value.trim();
   return normalized.isEmpty ? '\u2014' : normalized;
+}
+
+String _resolveAdminCountryLabel(SuperadminAdministrator administrator) {
+  final name = administrator.countryName.trim();
+  if (name.isNotEmpty) return name;
+  final code = administrator.countryCode.trim();
+  if (code.isEmpty) return '';
+  return LocationLabelResolver.resolveCountry(code);
 }

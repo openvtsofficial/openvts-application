@@ -380,6 +380,76 @@ class UserLandmarkGeometryEditorController
     state = state.copyWith(selectedVertexIndex: index);
   }
 
+  /// Called once at drag-start: pushes a history snapshot and selects the
+  /// vertex so undo restores the pre-drag position.
+  void beginVertexDrag(int index) {
+    if (index < 0 || index >= state.points.length) return;
+    _pushHistory();
+    state = state.copyWith(selectedVertexIndex: index);
+  }
+
+  /// Updates a vertex coordinate in-place during an active drag WITHOUT
+  /// pushing a history entry. Use [beginVertexDrag] at drag-start (which
+  /// pushes the history entry) and [updatePoint] only for discrete edits.
+  void moveVertexSilently(int index, UserGeoPoint point) {
+    if (index < 0 || index >= state.points.length) return;
+    if (!_isFinitePoint(point)) return;
+    final next = <UserGeoPoint>[...state.points];
+    next[index] = point;
+    state = state.copyWith(points: next, isDirty: true, validationError: null);
+  }
+
+  /// Called once at drag-end to commit the final coordinate. Identical to
+  /// [moveVertexSilently] but semantically marks the drag as complete.
+  void endVertexDrag(int index, UserGeoPoint point) {
+    if (index < 0 || index >= state.points.length) return;
+    if (!_isFinitePoint(point)) return;
+    final next = <UserGeoPoint>[...state.points];
+    next[index] = point;
+    state = state.copyWith(
+      points: next,
+      isDirty: true,
+      validationError: null,
+      selectedVertexIndex: index,
+    );
+  }
+
+  /// Moves the circle center in-place during a drag WITHOUT pushing history.
+  void moveCircleCenterSilently(UserGeoPoint point) {
+    if (!_isFinitePoint(point)) return;
+    state = state.copyWith(circleCenter: point, isDirty: true);
+  }
+
+  /// Called once at circle-center drag-start: pushes a history snapshot.
+  void beginCircleCenterDrag() {
+    _pushHistory();
+  }
+
+  /// Commits the final circle center after a drag completes.
+  void endCircleCenterDrag(UserGeoPoint center) {
+    if (!_isFinitePoint(center)) return;
+    state = state.copyWith(circleCenter: center, isDirty: true);
+  }
+
+  /// Called once at rectangle-corner drag-start: pushes a history snapshot.
+  void beginRectangleDrag() {
+    _pushHistory();
+  }
+
+  /// Updates both rectangle corners in-place during a drag WITHOUT history.
+  /// [cornerA] is the dragged corner; [cornerB] is the diagonally opposite
+  /// (fixed) corner. The [rectangleCorners] getter re-derives all four corners
+  /// by sorting min/max, so argument order does not matter.
+  void moveRectangleSilently(UserGeoPoint cornerA, UserGeoPoint cornerB) {
+    if (!_isFinitePoint(cornerA) || !_isFinitePoint(cornerB)) return;
+    state = state.copyWith(
+      rectangleStart: cornerA,
+      rectangleEnd: cornerB,
+      isDirty: true,
+      validationError: null,
+    );
+  }
+
   /// Nudges the currently selected vertex by the given north/east meter
   /// offsets. Positive north moves toward higher latitude; positive east
   /// moves toward higher longitude.

@@ -11,6 +11,7 @@ import '../../../../../shared/widgets/open_vts_empty_state.dart';
 import '../../../../../shared/widgets/open_vts_error_view.dart';
 import '../../../../../shared/widgets/open_vts_loader.dart';
 import '../../../../../shared/widgets/open_vts_search_field.dart';
+import '../../../../../shared/widgets/open_vts_searchable_dropdown.dart';
 import '../../../controllers/admin_providers.dart';
 import '../../../models/admin_logs_model.dart';
 import '../widgets/admin_logs_filter_widgets.dart';
@@ -49,11 +50,14 @@ class _AdminVehicleLogsPanelState extends ConsumerState<AdminVehicleLogsPanel> {
       );
     }
 
+    final filteredLogs =
+        _applyVehicleReadFilter(state.vehicleLogs, state.vehicleReadFilter);
+
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
       children: [
         OpenVtsSearchField(
-          hintText: 'Search vehicle event logs...',
+          hintText: 'Search vehicle events...',
           onChanged: (v) {
             controller.setVehicleFilters(search: v);
             _debounce?.cancel();
@@ -63,36 +67,26 @@ class _AdminVehicleLogsPanelState extends ConsumerState<AdminVehicleLogsPanel> {
           },
         ),
         const SizedBox(height: OpenVtsSpacing.sm),
-        DropdownButtonFormField<String?>(
-          initialValue: state.vehicleVehicleId,
-          decoration: const InputDecoration(labelText: 'Vehicle'),
-          items: [
-            const DropdownMenuItem<String?>(
-                value: null, child: Text('All vehicles')),
-            ...state.options.vehicles.map((v) => DropdownMenuItem<String?>(
-                  value: v.id,
-                  child: Text(v.displayName, overflow: TextOverflow.ellipsis),
-                )),
-          ],
+        AdminVehicleLogsVehicleDropdown(
+          value: state.vehicleVehicleId,
+          vehicles: state.options.vehicles,
           onChanged: (v) {
-            controller.setVehicleFilters(vehicleId: v);
+            controller.setVehicleFilters(
+              vehicleId: v,
+              clearVehicleId: v == null,
+            );
             unawaited(controller.loadVehicleLogs());
           },
         ),
         const SizedBox(height: OpenVtsSpacing.sm),
-        DropdownButtonFormField<String?>(
-          initialValue: state.vehicleUserId,
-          decoration: const InputDecoration(labelText: 'Recipient/User'),
-          items: [
-            const DropdownMenuItem<String?>(
-                value: null, child: Text('All users')),
-            ...state.options.users.map((u) => DropdownMenuItem<String?>(
-                  value: u.uid,
-                  child: Text(u.displayName, overflow: TextOverflow.ellipsis),
-                )),
-          ],
+        AdminVehicleRecipientUserDropdown(
+          value: state.vehicleUserId,
+          users: state.options.users,
           onChanged: (v) {
-            controller.setVehicleFilters(userId: v);
+            controller.setVehicleFilters(
+              userId: v,
+              clearUserId: v == null,
+            );
             unawaited(controller.loadVehicleLogs());
           },
         ),
@@ -119,19 +113,19 @@ class _AdminVehicleLogsPanelState extends ConsumerState<AdminVehicleLogsPanel> {
           children: [
             _chip('All', state.vehicleSeverity.isEmpty, () {
               controller.setVehicleFilters(severity: '');
-              controller.loadVehicleLogs();
+              unawaited(controller.loadVehicleLogs());
             }),
             _chip('INFO', state.vehicleSeverity == 'INFO', () {
               controller.setVehicleFilters(severity: 'INFO');
-              controller.loadVehicleLogs();
+              unawaited(controller.loadVehicleLogs());
             }),
             _chip('WARNING', state.vehicleSeverity == 'WARNING', () {
               controller.setVehicleFilters(severity: 'WARNING');
-              controller.loadVehicleLogs();
+              unawaited(controller.loadVehicleLogs());
             }),
             _chip('CRITICAL', state.vehicleSeverity == 'CRITICAL', () {
               controller.setVehicleFilters(severity: 'CRITICAL');
-              controller.loadVehicleLogs();
+              unawaited(controller.loadVehicleLogs());
             }),
           ],
         ),
@@ -143,16 +137,16 @@ class _AdminVehicleLogsPanelState extends ConsumerState<AdminVehicleLogsPanel> {
             _chip('All Read States',
                 state.vehicleReadFilter == AdminReadFilter.all, () {
               controller.setVehicleFilters(readFilter: AdminReadFilter.all);
-              controller.loadVehicleLogs();
+              unawaited(controller.loadVehicleLogs());
             }),
             _chip('Read', state.vehicleReadFilter == AdminReadFilter.read, () {
               controller.setVehicleFilters(readFilter: AdminReadFilter.read);
-              controller.loadVehicleLogs();
+              unawaited(controller.loadVehicleLogs());
             }),
             _chip('Unread', state.vehicleReadFilter == AdminReadFilter.unread,
                 () {
               controller.setVehicleFilters(readFilter: AdminReadFilter.unread);
-              controller.loadVehicleLogs();
+              unawaited(controller.loadVehicleLogs());
             }),
           ],
         ),
@@ -184,13 +178,13 @@ class _AdminVehicleLogsPanelState extends ConsumerState<AdminVehicleLogsPanel> {
           },
         ),
         const SizedBox(height: OpenVtsSpacing.sm),
-        if (state.vehicleLogs.isEmpty)
-          const OpenVtsEmptyState(
-            title: 'No vehicle logs found',
+        if (filteredLogs.isEmpty)
+          OpenVtsEmptyState(
+            title: _emptyStateTitle(state.vehicleReadFilter),
             message: 'Try changing filters or search query.',
           )
         else ...[
-          for (final item in state.vehicleLogs) ...[
+          for (final item in filteredLogs) ...[
             AdminVehicleEventLogCard(
               item: item,
               onTap: () => OpenVtsBottomSheet.show<void>(
@@ -203,7 +197,7 @@ class _AdminVehicleLogsPanelState extends ConsumerState<AdminVehicleLogsPanel> {
                     AdminVehicleEventDetailSheet(id: item.id, fallback: item),
               ),
             ),
-            if (item != state.vehicleLogs.last)
+            if (item != filteredLogs.last)
               const SizedBox(height: OpenVtsSpacing.sm),
           ],
           if ((state.vehicleNextCursorId ?? '').isNotEmpty) ...[
@@ -225,5 +219,117 @@ class _AdminVehicleLogsPanelState extends ConsumerState<AdminVehicleLogsPanel> {
 
   Widget _chip(String label, bool selected, VoidCallback onTap) {
     return AdminFilterChip(label: label, selected: selected, onTap: onTap);
+  }
+
+  String _emptyStateTitle(AdminReadFilter readFilter) {
+    switch (readFilter) {
+      case AdminReadFilter.all:
+        return 'No vehicle events found';
+      case AdminReadFilter.read:
+        return 'No read vehicle events found';
+      case AdminReadFilter.unread:
+        return 'No unread vehicle events found';
+    }
+  }
+
+  bool _isVehicleLogRead(AdminVehicleEventLogItem item) {
+    return item.isRead;
+  }
+
+  List<AdminVehicleEventLogItem> _applyVehicleReadFilter(
+    List<AdminVehicleEventLogItem> items,
+    AdminReadFilter filter,
+  ) {
+    switch (filter) {
+      case AdminReadFilter.all:
+        return items;
+      case AdminReadFilter.read:
+        return items.where((item) => _isVehicleLogRead(item)).toList();
+      case AdminReadFilter.unread:
+        return items.where((item) => !_isVehicleLogRead(item)).toList();
+    }
+  }
+}
+
+class AdminVehicleLogsVehicleDropdown extends StatelessWidget {
+  const AdminVehicleLogsVehicleDropdown({
+    required this.value,
+    required this.vehicles,
+    required this.onChanged,
+    super.key,
+  });
+
+  final String? value;
+  final List<AdminLogsVehicleOption> vehicles;
+  final ValueChanged<String?> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return OpenVtsSearchableDropdown<String>(
+      label: 'Vehicle',
+      value: value,
+      hintText: 'All vehicles',
+      searchHintText: 'Search vehicles...',
+      options: vehicles
+          .map(
+            (vehicle) => OpenVtsDropdownOption<String>(
+              value: vehicle.id,
+              label: vehicle.displayName,
+              subtitle: vehicle.imei.trim().isEmpty ? null : vehicle.imei,
+              searchText: [
+                vehicle.displayName,
+                vehicle.id,
+                vehicle.name,
+                vehicle.plateNumber,
+                vehicle.imei,
+              ].join(' '),
+            ),
+          )
+          .toList(growable: false),
+      onChanged: onChanged,
+    );
+  }
+}
+
+class AdminVehicleRecipientUserDropdown extends StatelessWidget {
+  const AdminVehicleRecipientUserDropdown({
+    required this.value,
+    required this.users,
+    required this.onChanged,
+    super.key,
+  });
+
+  final String? value;
+  final List<AdminLogsUserOption> users;
+  final ValueChanged<String?> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return OpenVtsSearchableDropdown<String>(
+      label: 'Recipient/User',
+      value: value,
+      hintText: 'All users',
+      searchHintText: 'Search users...',
+      options: users
+          .map(
+            (user) => OpenVtsDropdownOption<String>(
+              value: user.uid,
+              label: user.displayName,
+              subtitle: [
+                user.username.trim(),
+                user.loginType.trim(),
+              ].where((part) => part.isNotEmpty).join(' • '),
+              searchText: [
+                user.displayName,
+                user.uid,
+                user.name,
+                user.username,
+                user.loginType,
+              ].join(' '),
+            ),
+          )
+          .toList(growable: false),
+      onChanged: onChanged,
+    );
   }
 }
