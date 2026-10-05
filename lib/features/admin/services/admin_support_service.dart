@@ -5,6 +5,7 @@ import 'package:http_parser/http_parser.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/api/api_endpoints.dart';
 import '../../../core/api/api_options.dart';
+import '../../../shared/models/user_role.dart';
 import '../models/admin_support_model.dart';
 import '../models/admin_users_model.dart';
 
@@ -48,6 +49,7 @@ class AdminSupportService {
   );
 
   final ApiClient _apiClient;
+  bool get _isTeam => _apiClient.activeRole == UserRole.team;
 
   Future<List<AdminSupportTicketListItem>> getUserTickets({
     String? refreshKey,
@@ -67,9 +69,9 @@ class AdminSupportService {
       options: _readOptions,
       parser: (json) => json,
     );
-    final list = AdminSupportTicketListItem.listFromJson(response.data)
-        .toList(growable: true)
-      ..sort(AdminSupportTicketListItem.compareInboxOrder);
+    final list = AdminSupportTicketListItem.listFromJson(response.data).toList(
+      growable: true,
+    )..sort(AdminSupportTicketListItem.compareInboxOrder);
     return list;
   }
 
@@ -89,14 +91,16 @@ class AdminSupportService {
       options: _readOptions,
       parser: (json) => json,
     );
-    final list = AdminSupportTicketListItem.listFromJson(response.data)
-        .toList(growable: true)
-      ..sort(AdminSupportTicketListItem.compareInboxOrder);
+    final list = AdminSupportTicketListItem.listFromJson(response.data).toList(
+      growable: true,
+    )..sort(AdminSupportTicketListItem.compareInboxOrder);
     return list;
   }
 
-  Future<AdminSupportTicketDetails> getUserTicketById(String id,
-      {String? refreshKey}) async {
+  Future<AdminSupportTicketDetails> getUserTicketById(
+    String id, {
+    String? refreshKey,
+  }) async {
     final response = await _apiClient.get<dynamic>(
       ApiEndpoints.admin.ticketById(id),
       queryParameters: <String, dynamic>{
@@ -109,8 +113,10 @@ class AdminSupportService {
     return AdminSupportTicketDetails.fromJson(response.data);
   }
 
-  Future<AdminSupportTicketDetails> getMyTicketById(String id,
-      {String? refreshKey}) async {
+  Future<AdminSupportTicketDetails> getMyTicketById(
+    String id, {
+    String? refreshKey,
+  }) async {
     final response = await _apiClient.get<dynamic>(
       ApiEndpoints.admin.myTicketById(id),
       queryParameters: <String, dynamic>{
@@ -123,8 +129,10 @@ class AdminSupportService {
     return AdminSupportTicketDetails.fromJson(response.data);
   }
 
-  Future<void> updateUserTicketStatus(
-      {required String id, required AdminSupportTicketStatus status}) async {
+  Future<void> updateUserTicketStatus({
+    required String id,
+    required AdminSupportTicketStatus status,
+  }) async {
     await _apiClient.patch<void>(
       ApiEndpoints.admin.ticketStatus(id),
       data: <String, dynamic>{'status': status.apiValue},
@@ -133,8 +141,10 @@ class AdminSupportService {
     );
   }
 
-  Future<void> updateMyTicketStatus(
-      {required String id, required AdminSupportTicketStatus status}) async {
+  Future<void> updateMyTicketStatus({
+    required String id,
+    required AdminSupportTicketStatus status,
+  }) async {
     await _apiClient.patch<void>(
       ApiEndpoints.admin.myTicketStatus(id),
       data: <String, dynamic>{'status': status.apiValue},
@@ -144,7 +154,8 @@ class AdminSupportService {
   }
 
   Future<AdminSupportTicketCreatedResult> createUserTicket(
-      AdminSupportCreateTicketRequest request) async {
+    AdminSupportCreateTicketRequest request,
+  ) async {
     final fromUserId = request.fromUserId?.trim() ?? '';
     if (fromUserId.isEmpty) {
       throw ArgumentError('User is required.');
@@ -179,7 +190,8 @@ class AdminSupportService {
   }
 
   Future<AdminSupportTicketCreatedResult> createMyTicket(
-      AdminSupportCreateTicketRequest request) async {
+    AdminSupportCreateTicketRequest request,
+  ) async {
     _validateTitle(request.title);
     _validateMessage(request.message);
     _validateAttachments(request.attachments);
@@ -257,7 +269,7 @@ class AdminSupportService {
 
   Future<List<AdminSupportUserMini>> getUsers({String? refreshKey}) async {
     final response = await _apiClient.get<dynamic>(
-      ApiEndpoints.admin.users,
+      _isTeam ? TeamContextEndpoints.supportUsers : ApiEndpoints.admin.users,
       queryParameters: <String, dynamic>{
         if (refreshKey != null && refreshKey.trim().isNotEmpty)
           'rk': refreshKey.trim(),
@@ -266,9 +278,9 @@ class AdminSupportService {
       parser: (json) => json,
     );
 
-    return AdminUserListItem.listFromJson(response.data)
-        .map(AdminSupportUserMini.fromAdminUser)
-        .toList(growable: false);
+    return AdminUserListItem.listFromJson(
+      response.data,
+    ).map(AdminSupportUserMini.fromAdminUser).toList(growable: false);
   }
 
   void _validateTitle(String titleRaw) {
@@ -278,7 +290,8 @@ class AdminSupportService {
     }
     if (title.length < minTitleLength || title.length > maxTitleLength) {
       throw ArgumentError(
-          'Title must be between $minTitleLength and $maxTitleLength characters.');
+        'Title must be between $minTitleLength and $maxTitleLength characters.',
+      );
     }
     if (!_alphaNum.hasMatch(title)) {
       throw ArgumentError('Title must contain at least one letter or number.');
@@ -293,11 +306,13 @@ class AdminSupportService {
     if (message.length < minMessageLength ||
         message.length > maxMessageLength) {
       throw ArgumentError(
-          'Message must be between $minMessageLength and $maxMessageLength characters.');
+        'Message must be between $minMessageLength and $maxMessageLength characters.',
+      );
     }
     if (!_alphaNum.hasMatch(message)) {
       throw ArgumentError(
-          'Message must contain at least one letter or number.');
+        'Message must contain at least one letter or number.',
+      );
     }
   }
 
@@ -322,13 +337,15 @@ class AdminSupportService {
   }
 
   Future<List<MultipartFile>> _toMultipartFiles(
-      List<PlatformFile> files) async {
+    List<PlatformFile> files,
+  ) async {
     if (files.isEmpty) return const <MultipartFile>[];
     final out = <MultipartFile>[];
 
     for (final file in files) {
-      final fileName =
-          file.name.trim().isEmpty ? 'attachment' : file.name.trim();
+      final fileName = file.name.trim().isEmpty
+          ? 'attachment'
+          : file.name.trim();
       final contentType = _contentTypeForExtension(_extension(fileName));
 
       if (file.bytes != null) {

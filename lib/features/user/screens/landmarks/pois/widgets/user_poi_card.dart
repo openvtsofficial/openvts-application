@@ -6,6 +6,7 @@ import '../../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../../core/utils/date_time_formatter.dart';
+import '../../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../../shared/widgets/open_vts_card.dart';
 import '../../../../../../shared/widgets/open_vts_status_chip.dart';
 import '../../../../models/user_landmark_model.dart';
@@ -70,15 +71,15 @@ class UserPoiCard extends ConsumerWidget {
                                 Expanded(
                                   child: Text(
                                     poi.name.isEmpty
-                                        ? 'Untitled POI'
+                                        ? context.mobileText('Untitled POI')
                                         : poi.name,
-                                    style:
-                                        OpenVtsTypography.titleSmall.copyWith(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurface,
-                                      fontWeight: FontWeight.w600,
-                                    ),
+                                    style: OpenVtsTypography.titleSmall
+                                        .copyWith(
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.onSurface,
+                                          fontWeight: FontWeight.w600,
+                                        ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
@@ -92,11 +93,16 @@ class UserPoiCard extends ConsumerWidget {
                               crossAxisAlignment: WrapCrossAlignment.center,
                               children: [
                                 OpenVtsStatusChip(
-                                  label: labelForUserPoiCategory(poi.category),
+                                  label: labelForUserPoiCategory(
+                                    poi.category,
+                                    context: context,
+                                  ),
                                   type: OpenVtsStatusType.neutral,
                                 ),
                                 OpenVtsStatusChip(
-                                  label: poi.isActive ? 'Active' : 'Inactive',
+                                  label: poi.isActive
+                                      ? context.mobileText('Active')
+                                      : context.mobileText('Inactive'),
                                   type: poi.isActive
                                       ? OpenVtsStatusType.success
                                       : OpenVtsStatusType.neutral,
@@ -108,12 +114,12 @@ class UserPoiCard extends ConsumerWidget {
                       ),
                       _RowAction(
                         icon: Icons.edit_outlined,
-                        tooltip: 'Edit',
+                        tooltip: context.mobileText('Edit'),
                         onTap: onEdit,
                       ),
                       _RowAction(
                         icon: Icons.delete_outline,
-                        tooltip: 'Delete',
+                        tooltip: context.mobileText('Delete'),
                         onTap: isDeleting ? null : onDelete,
                         destructive: true,
                       ),
@@ -138,8 +144,9 @@ class UserPoiCard extends ConsumerWidget {
                         child: Text(
                           _metaSummary(poi),
                           style: OpenVtsTypography.meta.copyWith(
-                            color:
-                                Theme.of(context).colorScheme.onSurfaceVariant,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,

@@ -45,26 +45,17 @@ void main() {
     await tester.tap(trigger);
     await tester.pumpAndSettle();
 
-    final results = find.byType(ListView);
+    final results = find.byType(SliverList);
     expect(
-      find.descendant(
-        of: results,
-        matching: find.text('INR - Indian Rupee'),
-      ),
+      find.descendant(of: results, matching: find.text('INR - Indian Rupee')),
       findsOneWidget,
     );
     expect(
-      find.descendant(
-        of: results,
-        matching: find.text('USD - US Dollar'),
-      ),
+      find.descendant(of: results, matching: find.text('USD - US Dollar')),
       findsOneWidget,
     );
     expect(
-      find.descendant(
-        of: results,
-        matching: find.text('EUR - Euro'),
-      ),
+      find.descendant(of: results, matching: find.text('EUR - Euro')),
       findsOneWidget,
     );
 
@@ -85,8 +76,11 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(draftCurrency, 'USD');
-    expect(existingPlan.currency, 'INR',
-        reason: 'selection changes draft only');
+    expect(
+      existingPlan.currency,
+      'INR',
+      reason: 'selection changes draft only',
+    );
 
     final update = AdminPlanMutationRequest(
       name: existingPlan.name,

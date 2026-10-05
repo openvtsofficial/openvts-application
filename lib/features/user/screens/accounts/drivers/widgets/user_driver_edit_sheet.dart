@@ -5,6 +5,7 @@ import '../../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../../core/utils/validators.dart';
+import '../../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../../shared/helpers/phone_helper.dart';
 import '../../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../../shared/widgets/open_vts_button.dart';
@@ -22,8 +23,11 @@ class UserDriverEditSheet extends ConsumerStatefulWidget {
     super.key,
   });
 
-  final AutoDisposeStateNotifierProvider<UserDriverDetailsController,
-      UserDriverDetailsState> provider;
+  final AutoDisposeStateNotifierProvider<
+    UserDriverDetailsController,
+    UserDriverDetailsState
+  >
+  provider;
   final UserDriver driver;
 
   @override
@@ -111,9 +115,9 @@ class _UserDriverEditSheetState extends ConsumerState<UserDriverEditSheet> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   OpenVtsTextField(
-                    label: 'Name',
+                    label: context.mobileText('Name'),
                     controller: _nameController,
-                    hintText: 'Driver name',
+                    hintText: context.mobileText('Driver name'),
                     prefixIcon: Icons.badge_outlined,
                     textInputAction: TextInputAction.next,
                     validator: Validators.driverName,
@@ -125,7 +129,7 @@ class _UserDriverEditSheetState extends ConsumerState<UserDriverEditSheet> {
                       SizedBox(
                         width: 140,
                         child: OpenVtsSearchableDropdown<String>(
-                          label: 'Prefix',
+                          label: context.mobileText('Prefix'),
                           options: _mobilePrefixSearchOptions,
                           value: _mobilePrefix.isEmpty ? null : _mobilePrefix,
                           hintText: '+91',
@@ -143,9 +147,9 @@ class _UserDriverEditSheetState extends ConsumerState<UserDriverEditSheet> {
                       const SizedBox(width: OpenVtsSpacing.sm),
                       Expanded(
                         child: OpenVtsTextField(
-                          label: 'Mobile',
+                          label: context.mobileText('Mobile'),
                           controller: _mobileController,
-                          hintText: '7 to 15 digits',
+                          hintText: context.mobileText('7 to 15 digits'),
                           keyboardType: TextInputType.phone,
                           textInputAction: TextInputAction.next,
                           prefixIcon: Icons.phone_outlined,
@@ -156,9 +160,9 @@ class _UserDriverEditSheetState extends ConsumerState<UserDriverEditSheet> {
                   ),
                   const SizedBox(height: OpenVtsSpacing.sm),
                   OpenVtsTextField(
-                    label: 'Email',
+                    label: context.mobileText('Email'),
                     controller: _emailController,
-                    hintText: 'Optional email',
+                    hintText: context.mobileText('Optional email'),
                     keyboardType: TextInputType.emailAddress,
                     textInputAction: TextInputAction.next,
                     prefixIcon: Icons.mail_outline_rounded,
@@ -166,24 +170,27 @@ class _UserDriverEditSheetState extends ConsumerState<UserDriverEditSheet> {
                   ),
                   const SizedBox(height: OpenVtsSpacing.sm),
                   OpenVtsTextField(
-                    label: 'Username',
+                    label: context.mobileText('Username'),
                     controller: _usernameController,
-                    hintText: 'Username',
+                    hintText: context.mobileText('Username'),
                     textInputAction: TextInputAction.next,
                     prefixIcon: Icons.alternate_email_rounded,
                     validator: Validators.driverUsername,
                   ),
                   const SizedBox(height: OpenVtsSpacing.sm),
                   OpenVtsTextField(
-                    label: 'Password (optional)',
+                    label: context.mobileText('Password (optional)'),
                     controller: _passwordController,
-                    hintText: 'Leave blank to keep current password',
+                    hintText: context.mobileText(
+                      'Leave blank to keep current password',
+                    ),
                     obscureText: _obscurePassword,
                     textInputAction: TextInputAction.next,
                     prefixIcon: Icons.lock_outline_rounded,
                     suffixIcon: IconButton(
-                      tooltip:
-                          _obscurePassword ? 'Show password' : 'Hide password',
+                      tooltip: _obscurePassword
+                          ? context.mobileText('Show password')
+                          : context.mobileText('Hide password'),
                       onPressed: () {
                         setState(() => _obscurePassword = !_obscurePassword);
                       },
@@ -197,10 +204,10 @@ class _UserDriverEditSheetState extends ConsumerState<UserDriverEditSheet> {
                   ),
                   const SizedBox(height: OpenVtsSpacing.sm),
                   OpenVtsSearchableDropdown<String>(
-                    label: 'Country',
+                    label: context.mobileText('Country'),
                     options: _countrySearchOptions,
                     value: _countryCode.isEmpty ? null : _countryCode,
-                    hintText: 'Select country',
+                    hintText: context.mobileText('Select country'),
                     leadingIcon: Icons.public_rounded,
                     isLoading: _isLoadingReferences,
                     enabled: !_isLoadingReferences,
@@ -210,42 +217,48 @@ class _UserDriverEditSheetState extends ConsumerState<UserDriverEditSheet> {
                   ),
                   if (_referenceLoadFailed)
                     _RetryRow(
-                      message: 'Failed to load countries',
+                      message: context.mobileText('Failed to load countries'),
                       onRetry: _loadReferenceData,
                     ),
                   const SizedBox(height: OpenVtsSpacing.sm),
                   OpenVtsSearchableDropdown<String>(
-                    label: 'State',
+                    label: context.mobileText('State'),
                     options: _stateSearchOptions,
                     value: _stateCode,
                     hintText: _countryCode.isEmpty
-                        ? 'Select country first'
-                        : 'Select state',
-                    emptyMessage: 'No states available for this country',
+                        ? context.mobileText('Select country first')
+                        : context.mobileText('Select state'),
+                    emptyMessage: context.mobileText(
+                      'No states available for this country',
+                    ),
                     leadingIcon: Icons.map_outlined,
                     isLoading: _isLoadingStates,
-                    enabled: _countryCode.isNotEmpty &&
+                    enabled:
+                        _countryCode.isNotEmpty &&
                         !_isLoadingStates &&
                         !_statesLoadFailed,
                     onChanged: _onStateChanged,
                   ),
                   if (_statesLoadFailed && _countryCode.isNotEmpty)
                     _RetryRow(
-                      message: 'Failed to load states',
+                      message: context.mobileText('Failed to load states'),
                       onRetry: () => _loadStates(_countryCode),
                     ),
                   const SizedBox(height: OpenVtsSpacing.sm),
                   OpenVtsSearchableDropdown<String>(
-                    label: 'City',
+                    label: context.mobileText('City'),
                     options: _citySearchOptions,
                     value: _city,
                     hintText: _stateCode == null || _stateCode!.isEmpty
-                        ? 'Select state first'
-                        : 'Select city',
-                    emptyMessage: 'No cities available for this state',
+                        ? context.mobileText('Select state first')
+                        : context.mobileText('Select city'),
+                    emptyMessage: context.mobileText(
+                      'No cities available for this state',
+                    ),
                     leadingIcon: Icons.location_city_outlined,
                     isLoading: _isLoadingCities,
-                    enabled: _stateCode != null &&
+                    enabled:
+                        _stateCode != null &&
                         _stateCode!.isNotEmpty &&
                         !_isLoadingCities &&
                         !_citiesLoadFailed,
@@ -255,23 +268,23 @@ class _UserDriverEditSheetState extends ConsumerState<UserDriverEditSheet> {
                       _stateCode != null &&
                       _stateCode!.isNotEmpty)
                     _RetryRow(
-                      message: 'Failed to load cities',
+                      message: context.mobileText('Failed to load cities'),
                       onRetry: () => _loadCities(_countryCode, _stateCode),
                     ),
                   const SizedBox(height: OpenVtsSpacing.sm),
                   OpenVtsTextField(
-                    label: 'Address',
+                    label: context.mobileText('Address'),
                     controller: _addressController,
-                    hintText: 'Address',
+                    hintText: context.mobileText('Address'),
                     textInputAction: TextInputAction.next,
                     prefixIcon: Icons.home_outlined,
                     validator: Validators.driverAddressOptional,
                   ),
                   const SizedBox(height: OpenVtsSpacing.sm),
                   OpenVtsTextField(
-                    label: 'Pincode',
+                    label: context.mobileText('Pincode'),
                     controller: _pincodeController,
-                    hintText: 'Postal code',
+                    hintText: context.mobileText('Postal code'),
                     textInputAction: TextInputAction.done,
                     prefixIcon: Icons.pin_drop_outlined,
                     validator: Validators.driverPincodeOptional,
@@ -290,17 +303,18 @@ class _UserDriverEditSheetState extends ConsumerState<UserDriverEditSheet> {
               children: [
                 Expanded(
                   child: OpenVtsButton(
-                    label: 'Cancel',
+                    label: context.mobileText('Cancel'),
                     height: 40,
                     variant: OpenVtsButtonVariant.secondary,
-                    onPressed:
-                        isSubmitting ? null : () => Navigator.of(context).pop(),
+                    onPressed: isSubmitting
+                        ? null
+                        : () => Navigator.of(context).pop(),
                   ),
                 ),
                 const SizedBox(width: OpenVtsSpacing.sm),
                 Expanded(
                   child: OpenVtsButton(
-                    label: 'Save',
+                    label: context.mobileText('Save'),
                     height: 40,
                     trailingIcon: Icons.check_rounded,
                     isLoading: isSubmitting,
@@ -332,7 +346,9 @@ class _UserDriverEditSheetState extends ConsumerState<UserDriverEditSheet> {
       return [
         OpenVtsDropdownOption<String>(
           value: _mobilePrefix,
-          label: '$_mobilePrefix (current)',
+          label: context.mobileText("{value1} (current)", {
+            'value1': (_mobilePrefix).toString(),
+          }),
           searchText: _mobilePrefix,
         ),
         ...options,
@@ -343,11 +359,13 @@ class _UserDriverEditSheetState extends ConsumerState<UserDriverEditSheet> {
 
   List<OpenVtsDropdownOption<String>> get _countrySearchOptions {
     final options = _countries
-        .map((item) => OpenVtsDropdownOption<String>(
-              value: item.value,
-              label: item.label,
-              searchText: item.value,
-            ))
+        .map(
+          (item) => OpenVtsDropdownOption<String>(
+            value: item.value,
+            label: item.label,
+            searchText: item.value,
+          ),
+        )
         .toList(growable: false);
 
     if (_countryCode.isNotEmpty &&
@@ -355,7 +373,9 @@ class _UserDriverEditSheetState extends ConsumerState<UserDriverEditSheet> {
       return [
         OpenVtsDropdownOption<String>(
           value: _countryCode,
-          label: '$_countryCode (current)',
+          label: context.mobileText("{value1} (current)", {
+            'value1': (_countryCode).toString(),
+          }),
           searchText: _countryCode,
         ),
         ...options,
@@ -366,11 +386,13 @@ class _UserDriverEditSheetState extends ConsumerState<UserDriverEditSheet> {
 
   List<OpenVtsDropdownOption<String>> get _stateSearchOptions {
     final options = _states
-        .map((item) => OpenVtsDropdownOption<String>(
-              value: item.value,
-              label: item.label,
-              searchText: item.value,
-            ))
+        .map(
+          (item) => OpenVtsDropdownOption<String>(
+            value: item.value,
+            label: item.label,
+            searchText: item.value,
+          ),
+        )
         .toList(growable: false);
 
     if (_stateCode != null &&
@@ -379,7 +401,9 @@ class _UserDriverEditSheetState extends ConsumerState<UserDriverEditSheet> {
       return [
         OpenVtsDropdownOption<String>(
           value: _stateCode!,
-          label: '$_stateCode (current)',
+          label: context.mobileText("{value1} (current)", {
+            'value1': (_stateCode).toString(),
+          }),
           searchText: _stateCode,
         ),
         ...options,
@@ -390,11 +414,13 @@ class _UserDriverEditSheetState extends ConsumerState<UserDriverEditSheet> {
 
   List<OpenVtsDropdownOption<String>> get _citySearchOptions {
     final options = _cities
-        .map((item) => OpenVtsDropdownOption<String>(
-              value: item.value,
-              label: item.label,
-              searchText: item.value,
-            ))
+        .map(
+          (item) => OpenVtsDropdownOption<String>(
+            value: item.value,
+            label: item.label,
+            searchText: item.value,
+          ),
+        )
         .toList(growable: false);
 
     if (_city != null &&
@@ -403,7 +429,9 @@ class _UserDriverEditSheetState extends ConsumerState<UserDriverEditSheet> {
       return [
         OpenVtsDropdownOption<String>(
           value: _city!,
-          label: '$_city (current)',
+          label: context.mobileText("{value1} (current)", {
+            'value1': (_city).toString(),
+          }),
           searchText: _city,
         ),
         ...options,
@@ -454,7 +482,10 @@ class _UserDriverEditSheetState extends ConsumerState<UserDriverEditSheet> {
         _isLoadingReferences = false;
         _referenceLoadFailed = true;
       });
-      ToastHelper.showError('Unable to load form options.', context: context);
+      ToastHelper.showError(
+        context.mobileText('Unable to load form options.'),
+        context: context,
+      );
     }
   }
 
@@ -530,7 +561,10 @@ class _UserDriverEditSheetState extends ConsumerState<UserDriverEditSheet> {
         _isLoadingStates = false;
         _statesLoadFailed = true;
       });
-      ToastHelper.showError('Unable to load states.', context: context);
+      ToastHelper.showError(
+        context.mobileText('Unable to load states.'),
+        context: context,
+      );
     }
   }
 
@@ -570,7 +604,10 @@ class _UserDriverEditSheetState extends ConsumerState<UserDriverEditSheet> {
         _isLoadingCities = false;
         _citiesLoadFailed = true;
       });
-      ToastHelper.showError('Unable to load cities.', context: context);
+      ToastHelper.showError(
+        context.mobileText('Unable to load cities.'),
+        context: context,
+      );
     }
   }
 
@@ -592,7 +629,9 @@ class _UserDriverEditSheetState extends ConsumerState<UserDriverEditSheet> {
       mobile: normalized.nationalNumber,
       email: _optionalValue(_emailController.text),
       username: _usernameController.text.trim(),
-      password: _optionalValue(_passwordController.text),
+      password: _passwordController.text.isEmpty
+          ? null
+          : _passwordController.text,
       countryCode: _countryCode.trim(),
       stateCode: _optionalValue(_stateCode),
       city: _optionalValue(_city),
@@ -606,7 +645,10 @@ class _UserDriverEditSheetState extends ConsumerState<UserDriverEditSheet> {
     }
 
     if (ok) {
-      ToastHelper.showSuccess('Driver updated.', context: context);
+      ToastHelper.showSuccess(
+        context.mobileText('Driver updated.'),
+        context: context,
+      );
       Navigator.of(context).pop(true);
       return;
     }
@@ -619,6 +661,12 @@ class _UserDriverEditSheetState extends ConsumerState<UserDriverEditSheet> {
 
   String? _optionalPasswordValidator(String? value) {
     final normalized = value?.trim() ?? '';
+    if (!Validators.isPrintableAscii(normalized)) {
+      return 'Password must contain ASCII characters only';
+    }
+    if (normalized.length > 100) {
+      return 'Password must be 100 characters or fewer';
+    }
     if (normalized.isEmpty) {
       return null;
     }
@@ -630,6 +678,9 @@ class _UserDriverEditSheetState extends ConsumerState<UserDriverEditSheet> {
 
   String? _optionalEmailValidator(String? value) {
     final normalized = value?.trim() ?? '';
+    if (!Validators.isPrintableAscii(normalized)) {
+      return 'Email must contain ASCII characters only';
+    }
     if (normalized.isEmpty) {
       return null;
     }
@@ -676,14 +727,15 @@ class _RetryRow extends StatelessWidget {
           Expanded(
             child: Text(
               message,
-              style:
-                  OpenVtsTypography.meta.copyWith(color: OpenVtsColors.error),
+              style: OpenVtsTypography.meta.copyWith(
+                color: OpenVtsColors.error,
+              ),
             ),
           ),
           GestureDetector(
             onTap: onRetry,
             child: Text(
-              'Retry',
+              context.mobileText('Retry'),
               style: OpenVtsTypography.meta.copyWith(
                 color: OpenVtsColors.info,
                 fontWeight: FontWeight.w600,

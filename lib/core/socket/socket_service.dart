@@ -1,7 +1,6 @@
 import 'package:socket_io_client/socket_io_client.dart' as io;
 
 import '../storage/token_storage.dart';
-import '../config/app_config.dart';
 
 typedef SocketEventHandler = void Function(dynamic data);
 
@@ -13,29 +12,11 @@ class SocketService {
 
   final TokenStorage _tokenStorage;
   final String _apiBaseUrl;
-  final Set<_IoSocketConnection> _connections = <_IoSocketConnection>{};
-  bool _disposed = false;
-
-  /// Closes every namespace opened for this configured server.
-  void dispose() {
-    if (_disposed) return;
-    _disposed = true;
-    for (final connection in _connections.toList(growable: false)) {
-      connection.disconnect();
-    }
-    _connections.clear();
-  }
 
   Future<SocketConnection> connect(
     String namespace, {
     bool authenticated = true,
   }) async {
-    if (_disposed) throw StateError('The socket service is closed.');
-    final sessionRevision = _tokenStorage.sessionRevision;
-    final validationError = AppConfig.validateApiBaseUrl(_apiBaseUrl);
-    if (validationError != null) {
-      throw ArgumentError(validationError);
-    }
     String? token;
     if (authenticated) {
       token = _tokenStorage.cachedActiveAccessToken;
@@ -43,13 +24,6 @@ class SocketService {
         await _tokenStorage.hydrateCache();
         token = _tokenStorage.cachedActiveAccessToken;
       }
-    }
-    if (_disposed || sessionRevision != _tokenStorage.sessionRevision) {
-      throw StateError('The socket session changed.');
-    }
-    final originatingSession = _tokenStorage.cachedActiveSession;
-    if (authenticated && (originatingSession == null || token == null)) {
-      throw StateError('Sign in before opening a live connection.');
     }
     final url = socketUrlForApiBase(_apiBaseUrl, namespace);
 
@@ -69,32 +43,13 @@ class SocketService {
         .setReconnectionDelayMax(2000)
         .setReconnectionAttempts(double.infinity)
         .build()
-      ..['reconnection'] = true
-      // A namespace must not reuse a manager retained by an old server/session.
-      ..['forceNew'] = true;
+      ..['reconnection'] = true;
 
     final socket = io.io(url, options);
-    late final _IoSocketConnection connection;
-    connection = _IoSocketConnection(socket, onClosed: () {
-      _connections.remove(connection);
-    });
-    _connections.add(connection);
-    // Token rotation is allowed only within the same explicit login/session.
-    // An old server's reconnect must never borrow another account's token.
+    // socket_io_client invokes a functional auth value for every connection,
+    // including reconnects. This keeps a long-lived map socket aligned with
+    // access-token refreshes without rebuilding the entire controller.
     socket.auth = (callback) {
-      final current = _tokenStorage.cachedActiveSession;
-      final sameSession = !authenticated ||
-          (sessionRevision == _tokenStorage.sessionRevision &&
-              originatingSession != null &&
-              current != null &&
-              _tokenStorage.cachedActiveAccessToken != null &&
-              current.user.id == originatingSession.user.id &&
-              current.user.effectiveBackendRole ==
-                  originatingSession.user.effectiveBackendRole);
-      if (_disposed || connection.isClosed || !sameSession) {
-        connection.disconnect();
-        return;
-      }
       callback(
         authenticated
             ? <String, dynamic>{
@@ -105,7 +60,7 @@ class SocketService {
     };
 
     socket.connect();
-    return connection;
+    return _IoSocketConnection(socket);
   }
 
   static String socketUrlForApiBase(String apiBaseUrl, String namespace) {
@@ -149,12 +104,9 @@ abstract class SocketConnection {
 }
 
 class _IoSocketConnection implements SocketConnection {
-  _IoSocketConnection(this._socket, {required void Function() onClosed})
-      : _onClosed = onClosed;
+  _IoSocketConnection(this._socket);
 
   final io.Socket _socket;
-  final void Function() _onClosed;
-  bool isClosed = false;
 
   @override
   bool get isConnected => _socket.connected;
@@ -202,10 +154,7 @@ class _IoSocketConnection implements SocketConnection {
 
   @override
   void disconnect() {
-    if (isClosed) return;
-    isClosed = true;
     _socket.disconnect();
     _socket.dispose();
-    _onClosed();
   }
 }

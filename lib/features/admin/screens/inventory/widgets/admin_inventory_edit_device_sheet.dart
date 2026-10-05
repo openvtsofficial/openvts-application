@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/theme/open_vts_spacing.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../shared/widgets/searchable_dropdown_field.dart';
@@ -56,15 +57,17 @@ class _AdminInventoryEditDeviceSheetState
                 const SizedBox(height: OpenVtsSpacing.sm),
               ],
               SearchableDropdownField<String>(
-                label: 'Device Type',
-                hintText: 'Select device type',
-                searchHint: 'Search device type…',
+                label: context.mobileText('Device Type'),
+                hintText: context.mobileText('Select device type'),
+                searchHint: context.mobileText('Search device type…'),
                 initialValue: _deviceTypeId,
                 items: _deviceTypes
-                    .map((item) => SearchableDropdownItem<String>(
-                          value: item.id,
-                          label: item.name,
-                        ))
+                    .map(
+                      (item) => SearchableDropdownItem<String>(
+                        value: item.id,
+                        label: item.name,
+                      ),
+                    )
                     .toList(growable: false),
                 enabled: !isSubmitting,
                 validator: (v) =>
@@ -73,15 +76,17 @@ class _AdminInventoryEditDeviceSheetState
               ),
               const SizedBox(height: OpenVtsSpacing.sm),
               SearchableDropdownField<String>(
-                label: 'SIM Number',
-                hintText: 'Select SIM',
-                searchHint: 'Search SIM number…',
+                label: context.mobileText('SIM Number'),
+                hintText: context.mobileText('Select SIM'),
+                searchHint: context.mobileText('Search SIM number…'),
                 initialValue: _simId,
                 items: _simCards
-                    .map((item) => SearchableDropdownItem<String>(
-                          value: item.id,
-                          label: item.simNumber,
-                        ))
+                    .map(
+                      (item) => SearchableDropdownItem<String>(
+                        value: item.id,
+                        label: item.simNumber,
+                      ),
+                    )
                     .toList(growable: false),
                 enabled: !isSubmitting,
                 onChanged: (v) => setState(() => _simId = v),
@@ -94,7 +99,9 @@ class _AdminInventoryEditDeviceSheetState
                   DropdownMenuItem(value: 'IN_USE', child: Text('IN_USE')),
                   DropdownMenuItem(value: 'IN_SCRAP', child: Text('IN_SCRAP')),
                 ],
-                decoration: const InputDecoration(labelText: 'Status'),
+                decoration: InputDecoration(
+                  labelText: context.mobileText('Status'),
+                ),
                 onChanged: isSubmitting
                     ? null
                     : (v) => setState(() => _status = v ?? 'IN_STOCK'),
@@ -103,9 +110,10 @@ class _AdminInventoryEditDeviceSheetState
               SwitchListTile.adaptive(
                 value: _isActive,
                 contentPadding: EdgeInsets.zero,
-                title: const Text('Active'),
-                onChanged:
-                    isSubmitting ? null : (v) => setState(() => _isActive = v),
+                title: Text(context.mobileText('Active')),
+                onChanged: isSubmitting
+                    ? null
+                    : (v) => setState(() => _isActive = v),
               ),
             ],
           ),
@@ -119,16 +127,17 @@ class _AdminInventoryEditDeviceSheetState
               children: [
                 Expanded(
                   child: OpenVtsButton(
-                    label: 'Cancel',
+                    label: context.mobileText('Cancel'),
                     variant: OpenVtsButtonVariant.secondary,
-                    onPressed:
-                        isSubmitting ? null : () => Navigator.of(context).pop(),
+                    onPressed: isSubmitting
+                        ? null
+                        : () => Navigator.of(context).pop(),
                   ),
                 ),
                 const SizedBox(width: OpenVtsSpacing.sm),
                 Expanded(
                   child: OpenVtsButton(
-                    label: 'Save',
+                    label: context.mobileText('Save'),
                     isLoading: isSubmitting,
                     onPressed: isSubmitting ? null : _submit,
                   ),
@@ -154,7 +163,9 @@ class _AdminInventoryEditDeviceSheetState
       final sims = [...(results[1] as List<AdminQuickSimCardOption>)];
       if (!sims.any((e) => e.id == '0')) {
         sims.insert(
-            0, const AdminQuickSimCardOption(id: '0', simNumber: 'Unassigned'));
+          0,
+          const AdminQuickSimCardOption(id: '0', simNumber: 'Unassigned'),
+        );
       }
       final currentSimId = widget.device.assignedSimId;
       final currentSimNum = widget.device.assignedSimNumber;
@@ -163,9 +174,9 @@ class _AdminInventoryEditDeviceSheetState
           !sims.any((e) => e.id == currentSimId) &&
           currentSimNum.trim().isNotEmpty) {
         sims.insert(
-            1,
-            AdminQuickSimCardOption(
-                id: currentSimId, simNumber: currentSimNum));
+          1,
+          AdminQuickSimCardOption(id: currentSimId, simNumber: currentSimNum),
+        );
       }
 
       setState(() {
@@ -189,20 +200,23 @@ class _AdminInventoryEditDeviceSheetState
       isActive: _isActive,
     );
 
-    final success =
-        await ref.read(adminInventoryControllerProvider.notifier).updateDevice(
-              id: widget.device.id,
-              request: req,
-            );
+    final success = await ref
+        .read(adminInventoryControllerProvider.notifier)
+        .updateDevice(id: widget.device.id, request: req);
 
     if (!mounted) return;
     if (success) {
       Navigator.of(context).pop();
-      ToastHelper.showSuccess('Device updated.', context: context);
+      ToastHelper.showSuccess(
+        context.mobileText('Device updated.'),
+        context: context,
+      );
       return;
     }
     final message = ref.read(adminInventoryControllerProvider).editErrorMessage;
-    ToastHelper.showError(message ?? 'Unable to update device.',
-        context: context);
+    ToastHelper.showError(
+      message ?? 'Unable to update device.',
+      context: context,
+    );
   }
 }

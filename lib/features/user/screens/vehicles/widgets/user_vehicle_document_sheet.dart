@@ -8,7 +8,9 @@ import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../core/utils/date_time_formatter.dart';
 import '../../../../../core/utils/validators.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
+import '../../../../../shared/helpers/validation_localizations.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../shared/widgets/open_vts_text_field.dart';
 import '../../../controllers/user_vehicle_details_controller.dart';
@@ -47,8 +49,11 @@ class UserVehicleDocumentSheet extends ConsumerStatefulWidget {
     super.key,
   });
 
-  final AutoDisposeStateNotifierProvider<UserVehicleDetailsController,
-      UserVehicleDetailsState> provider;
+  final AutoDisposeStateNotifierProvider<
+    UserVehicleDetailsController,
+    UserVehicleDetailsState
+  >
+  provider;
   final UserVehicleDocument? document;
 
   @override
@@ -103,8 +108,9 @@ class _UserVehicleDocumentSheetState
     final vehicleTypes = state.documentTypes
         .where((type) => type.docFor.isEmpty || type.isForVehicle)
         .toList(growable: false);
-    final isSubmitting =
-        _isEdit ? state.isUpdatingDocument : state.isUploadingDocument;
+    final isSubmitting = _isEdit
+        ? state.isUpdatingDocument
+        : state.isUploadingDocument;
 
     return Column(
       children: [
@@ -125,9 +131,9 @@ class _UserVehicleDocumentSheetState
                   ),
                   const SizedBox(height: OpenVtsSpacing.sm),
                   OpenVtsTextField(
-                    label: 'Title',
+                    label: context.mobileText('Title'),
                     controller: _titleController,
-                    hintText: 'Document title',
+                    hintText: context.mobileText('Document title'),
                     prefixIcon: Icons.title_rounded,
                     textInputAction: TextInputAction.next,
                     validator: Validators.documentTitle,
@@ -148,9 +154,9 @@ class _UserVehicleDocumentSheetState
                   ),
                   const SizedBox(height: OpenVtsSpacing.sm),
                   OpenVtsTextField(
-                    label: 'Tags',
+                    label: context.mobileText('Tags'),
                     controller: _tagsController,
-                    hintText: 'insurance, permit',
+                    hintText: context.mobileText('insurance, permit'),
                     prefixIcon: Icons.label_outline_rounded,
                     textInputAction: TextInputAction.next,
                   ),
@@ -161,18 +167,15 @@ class _UserVehicleDocumentSheetState
                       runSpacing: OpenVtsSpacing.xs,
                       children: [
                         for (final tag in _tags)
-                          _TagChip(
-                            label: tag,
-                            onDelete: () => _removeTag(tag),
-                          ),
+                          _TagChip(label: tag, onDelete: () => _removeTag(tag)),
                       ],
                     ),
                   ],
                   const SizedBox(height: OpenVtsSpacing.sm),
                   OpenVtsTextField(
-                    label: 'Description',
+                    label: context.mobileText('Description'),
                     controller: _descriptionController,
-                    hintText: 'Optional notes',
+                    hintText: context.mobileText('Optional notes'),
                     prefixIcon: Icons.notes_rounded,
                     maxLines: 3,
                   ),
@@ -199,17 +202,20 @@ class _UserVehicleDocumentSheetState
               children: [
                 Expanded(
                   child: OpenVtsButton(
-                    label: 'Cancel',
+                    label: context.mobileText('Cancel'),
                     height: 40,
                     variant: OpenVtsButtonVariant.secondary,
-                    onPressed:
-                        isSubmitting ? null : () => Navigator.of(context).pop(),
+                    onPressed: isSubmitting
+                        ? null
+                        : () => Navigator.of(context).pop(),
                   ),
                 ),
                 const SizedBox(width: OpenVtsSpacing.sm),
                 Expanded(
                   child: OpenVtsButton(
-                    label: _isEdit ? 'Save' : 'Upload',
+                    label: _isEdit
+                        ? context.mobileText('Save')
+                        : context.mobileText('Upload'),
                     height: 40,
                     isLoading: isSubmitting,
                     trailingIcon: _isEdit
@@ -252,17 +258,24 @@ class _UserVehicleDocumentSheetState
       final file = result.files.first;
       final extension = _extensionFromName(file.name).toLowerCase();
       if (_blockedDocumentExtensions.contains(extension)) {
-        ToastHelper.showError('This file type is not allowed.',
-            context: context);
+        ToastHelper.showError(
+          context.mobileText('This file type is not allowed.'),
+          context: context,
+        );
         return;
       }
       if (!_allowedDocumentExtensions.contains(extension)) {
-        ToastHelper.showError('Unsupported file type.', context: context);
+        ToastHelper.showError(
+          context.mobileText('Unsupported file type.'),
+          context: context,
+        );
         return;
       }
       if (file.size > _maxDocumentBytes) {
-        ToastHelper.showError('File must be 10MB or smaller.',
-            context: context);
+        ToastHelper.showError(
+          context.mobileText('File must be 10MB or smaller.'),
+          context: context,
+        );
         return;
       }
 
@@ -272,7 +285,10 @@ class _UserVehicleDocumentSheetState
       });
     } catch (_) {
       if (mounted) {
-        ToastHelper.showError('Could not pick file.', context: context);
+        ToastHelper.showError(
+          context.mobileText('Could not pick file.'),
+          context: context,
+        );
       }
     } finally {
       if (mounted) setState(() => _isPicking = false);
@@ -311,15 +327,14 @@ class _UserVehicleDocumentSheetState
     final document = widget.document;
     final ok = document == null
         ? await controller.uploadDocument(request)
-        : await controller.updateDocument(
-            docId: document.id,
-            request: request,
-          );
+        : await controller.updateDocument(docId: document.id, request: request);
     if (!mounted) return;
 
     if (ok) {
       ToastHelper.showSuccess(
-        document == null ? 'Document uploaded.' : 'Document updated.',
+        document == null
+            ? context.mobileText('Document uploaded.')
+            : context.mobileText('Document updated.'),
         context: context,
       );
       Navigator.of(context).pop();
@@ -355,14 +370,22 @@ class _DocumentTypeField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Document type', style: OpenVtsTypography.label),
+        Text(
+          context.mobileText('Document type'),
+          style: OpenVtsTypography.label,
+        ),
         const SizedBox(height: OpenVtsSpacing.xs),
         DropdownButtonFormField<String>(
           initialValue: hasValue ? value : null,
           isExpanded: true,
-          hint: Text(isLoading ? 'Loading vehicle types' : 'Select type'),
-          decoration:
-              const InputDecoration(prefixIcon: Icon(Icons.category_outlined)),
+          hint: Text(
+            isLoading
+                ? context.mobileText('Loading vehicle types')
+                : context.mobileText('Select type'),
+          ),
+          decoration: const InputDecoration(
+            prefixIcon: Icon(Icons.category_outlined),
+          ),
           items: types
               .map(
                 (type) => DropdownMenuItem<String>(
@@ -375,12 +398,7 @@ class _DocumentTypeField extends StatelessWidget {
                 ),
               )
               .toList(growable: false),
-          validator: (value) {
-            if (value == null || value.trim().isEmpty) {
-              return 'Document type is required.';
-            }
-            return null;
-          },
+          validator: context.localizedValidator((value) {if (value == null || value.trim().isEmpty) {return 'Document type is required.';} return null;}),
           onChanged: isLoading ? null : onChanged,
         ),
       ],
@@ -409,7 +427,7 @@ class _FilePickerField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('File', style: OpenVtsTypography.label),
+        Text(context.mobileText('File'), style: OpenVtsTypography.label),
         const SizedBox(height: OpenVtsSpacing.xs),
         Container(
           padding: const EdgeInsets.all(OpenVtsSpacing.sm),
@@ -432,7 +450,9 @@ class _FilePickerField extends StatelessWidget {
               const SizedBox(width: OpenVtsSpacing.xs),
               Expanded(
                 child: Text(
-                  currentName.isEmpty ? 'Choose a file' : currentName,
+                  currentName.isEmpty
+                      ? context.mobileText('Choose a file')
+                      : currentName,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: OpenVtsTypography.meta.copyWith(
@@ -457,7 +477,9 @@ class _FilePickerField extends StatelessWidget {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : Text(
-                        currentName.isEmpty ? 'Browse' : 'Replace',
+                        currentName.isEmpty
+                            ? context.mobileText('Browse')
+                            : context.mobileText('Replace'),
                         style: OpenVtsTypography.meta.copyWith(
                           fontWeight: FontWeight.w800,
                         ),
@@ -469,7 +491,7 @@ class _FilePickerField extends StatelessWidget {
         if (showError) ...[
           const SizedBox(height: 4),
           Text(
-            'File is required.',
+            context.mobileText('File is required.'),
             style: OpenVtsTypography.meta.copyWith(color: OpenVtsColors.error),
           ),
         ],
@@ -495,7 +517,7 @@ class _ExpiryField extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Expiry date', style: OpenVtsTypography.label),
+        Text(context.mobileText('Expiry date'), style: OpenVtsTypography.label),
         const SizedBox(height: OpenVtsSpacing.xs),
         InkWell(
           borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
@@ -509,7 +531,8 @@ class _ExpiryField extends ConsumerWidget {
               color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
               border: Border.all(
-                  color: Theme.of(context).colorScheme.outlineVariant),
+                color: Theme.of(context).colorScheme.outlineVariant,
+              ),
             ),
             child: Row(
               children: [
@@ -521,7 +544,9 @@ class _ExpiryField extends ConsumerWidget {
                 const SizedBox(width: OpenVtsSpacing.xs),
                 Expanded(
                   child: Text(
-                    value == null ? 'No expiry' : _dateText(value, formatter),
+                    value == null
+                        ? context.mobileText('No expiry')
+                        : _dateText(value, formatter),
                     style: OpenVtsTypography.meta.copyWith(
                       color: value == null
                           ? Theme.of(context).colorScheme.onSurfaceVariant
@@ -532,7 +557,7 @@ class _ExpiryField extends ConsumerWidget {
                 ),
                 if (value != null)
                   IconButton(
-                    tooltip: 'Clear expiry',
+                    tooltip: context.mobileText('Clear expiry'),
                     onPressed: onClear,
                     icon: const Icon(Icons.close_rounded, size: 17),
                     style: IconButton.styleFrom(
@@ -587,13 +612,15 @@ class _VisibilityToggle extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Visible',
+                  context.mobileText('Visible'),
                   style: OpenVtsTypography.label.copyWith(
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 Text(
-                  value ? 'Shown in vehicle documents' : 'Hidden from users',
+                  value
+                      ? context.mobileText('Shown in vehicle documents')
+                      : context.mobileText('Hidden from users'),
                   style: OpenVtsTypography.meta.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),

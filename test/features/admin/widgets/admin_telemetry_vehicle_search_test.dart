@@ -45,7 +45,7 @@ void main() {
     await tester.pumpAndSettle();
 
     final search = find.byType(TextField).last;
-    final results = find.byType(ListView);
+    final results = find.byType(SliverList);
     final deliveryVan = find.descendant(
       of: results,
       matching: find.text('Delivery Van (KA01AB1234)'),

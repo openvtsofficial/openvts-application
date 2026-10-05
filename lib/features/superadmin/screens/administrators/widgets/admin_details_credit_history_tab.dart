@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/utils/date_time_formatter.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
@@ -44,10 +45,12 @@ class _AdminDetailsCreditHistoryTabState
     final isLoading = ref.watch(provider.select((s) => s.isLoadingCredits));
     final hasLoaded = ref.watch(provider.select((s) => s.hasLoadedCreditLogs));
     final isUpdating = ref.watch(provider.select((s) => s.isUpdatingCredits));
-    final errorMessage =
-        ref.watch(provider.select((s) => s.creditsErrorMessage));
-    final currentCredits =
-        ref.watch(provider.select((s) => s.admin?.credits ?? 0));
+    final errorMessage = ref.watch(
+      provider.select((s) => s.creditsErrorMessage),
+    );
+    final currentCredits = ref.watch(
+      provider.select((s) => s.admin?.credits ?? 0),
+    );
 
     if (isLoading && !hasLoaded) {
       return const OpenVtsCard(
@@ -127,16 +130,15 @@ class _AdminDetailsCreditHistoryTabState
             padding: const EdgeInsets.only(bottom: OpenVtsSpacing.xs),
             child: Text(
               errorMessage,
-              style: TextStyle(
-                fontSize: 11,
-                color: scheme.error,
-              ),
+              style: TextStyle(fontSize: 11, color: scheme.error),
             ),
           ),
         if (creditLogs.isEmpty)
-          const _EmptyState(message: 'No credit history yet.')
+          _EmptyState(message: context.mobileText('No credit history yet.'))
         else if (filtered.isEmpty)
-          const _EmptyState(message: 'No matches for your search.')
+          _EmptyState(
+            message: context.mobileText('No matches for your search.'),
+          )
         else
           ListView.separated(
             shrinkWrap: true,
@@ -210,19 +212,21 @@ List<_CreditEntry> _applyFilter(List<_CreditEntry> entries, String query) {
   if (query.isEmpty) return entries;
   const fmt = DateTimeFormatter();
   final q = query.toLowerCase();
-  return entries.where((entry) {
-    final log = entry.log;
-    final date = log.createdAt != null
-        ? fmt.formatDateTime(log.createdAt!).toLowerCase()
-        : '';
-    final activityLabel = _activityDisplay(log.activity).toLowerCase();
-    return date.contains(q) ||
-        activityLabel.contains(q) ||
-        log.credits.toString().contains(q) ||
-        entry.balanceAfter.toString().contains(q) ||
-        log.vehicleId.toLowerCase().contains(q) ||
-        log.id.toLowerCase().contains(q);
-  }).toList(growable: false);
+  return entries
+      .where((entry) {
+        final log = entry.log;
+        final date = log.createdAt != null
+            ? fmt.formatDateTime(log.createdAt!).toLowerCase()
+            : '';
+        final activityLabel = _activityDisplay(log.activity).toLowerCase();
+        return date.contains(q) ||
+            activityLabel.contains(q) ||
+            log.credits.toString().contains(q) ||
+            entry.balanceAfter.toString().contains(q) ||
+            log.vehicleId.toLowerCase().contains(q) ||
+            log.id.toLowerCase().contains(q);
+      })
+      .toList(growable: false);
 }
 
 String _activityDisplay(SuperadminCreditActivity activity) {
@@ -259,7 +263,7 @@ class _SummaryGrid extends StatelessWidget {
       children: [
         Expanded(
           child: _SummaryTile(
-            label: 'Current credits',
+            label: context.mobileText('Current credits'),
             value: currentCredits.toString(),
             icon: Icons.account_balance_wallet_outlined,
           ),
@@ -267,7 +271,7 @@ class _SummaryGrid extends StatelessWidget {
         const SizedBox(width: OpenVtsSpacing.xs),
         Expanded(
           child: _SummaryTile(
-            label: 'Total logs',
+            label: context.mobileText('Total logs'),
             value: totalLogs.toString(),
             icon: Icons.receipt_long_outlined,
           ),
@@ -275,7 +279,7 @@ class _SummaryGrid extends StatelessWidget {
         const SizedBox(width: OpenVtsSpacing.xs),
         Expanded(
           child: _SummaryTile(
-            label: 'Added',
+            label: context.mobileText('Added'),
             value: addedCount.toString(),
             icon: Icons.add_circle_outline,
           ),
@@ -283,7 +287,7 @@ class _SummaryGrid extends StatelessWidget {
         const SizedBox(width: OpenVtsSpacing.xs),
         Expanded(
           child: _SummaryTile(
-            label: 'Deducted',
+            label: context.mobileText('Deducted'),
             value: deductedCount.toString(),
             icon: Icons.remove_circle_outline,
           ),
@@ -328,10 +332,7 @@ class _SummaryTile extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             label,
-            style: TextStyle(
-              fontSize: 10,
-              color: scheme.onSurfaceVariant,
-            ),
+            style: TextStyle(fontSize: 10, color: scheme.onSurfaceVariant),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -365,14 +366,14 @@ class _ActionRow extends StatelessWidget {
       children: [
         Expanded(
           child: OpenVtsButton(
-            label: 'Add credits',
+            label: context.mobileText('Add credits'),
             onPressed: isBusy ? null : onAdd,
           ),
         ),
         const SizedBox(width: OpenVtsSpacing.xs),
         Expanded(
           child: OpenVtsButton(
-            label: 'Deduct credits',
+            label: context.mobileText('Deduct credits'),
             variant: OpenVtsButtonVariant.secondary,
             onPressed: (!canDeduct || isBusy) ? null : onDeduct,
           ),
@@ -401,11 +402,10 @@ class _SearchField extends StatelessWidget {
       style: TextStyle(fontSize: 13, color: scheme.onSurface),
       decoration: InputDecoration(
         isDense: true,
-        hintText: 'Search by date, activity, credits, vehicle…',
-        hintStyle: TextStyle(
-          fontSize: 12,
-          color: scheme.onSurfaceVariant,
+        hintText: context.mobileText(
+          'Search by date, activity, credits, vehicle…',
         ),
+        hintStyle: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant),
         prefixIcon: Icon(
           Icons.search,
           size: 18,
@@ -448,12 +448,14 @@ class _CreditLogCard extends StatelessWidget {
     final log = entry.log;
     final isAdd = log.activity == SuperadminCreditActivity.assign;
     final activityLabel = _activityDisplay(log.activity);
-    final icon =
-        isAdd ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded;
+    final icon = isAdd
+        ? Icons.arrow_downward_rounded
+        : Icons.arrow_upward_rounded;
     final sign = isAdd ? '+' : '−';
     const fmt = DateTimeFormatter();
-    final dateLabel =
-        log.createdAt != null ? fmt.formatDateTime(log.createdAt!) : '—';
+    final dateLabel = log.createdAt != null
+        ? fmt.formatDateTime(log.createdAt!)
+        : '—';
     final scheme = Theme.of(context).colorScheme;
 
     return OpenVtsCard(
@@ -517,7 +519,9 @@ class _CreditLogCard extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      'Balance ${entry.balanceAfter}',
+                      context.mobileText("Balance {value1}", {
+                        'value1': (entry.balanceAfter).toString(),
+                      }),
                       style: TextStyle(
                         fontSize: 11,
                         color: scheme.onSurfaceVariant,
@@ -538,7 +542,9 @@ class _CreditLogCard extends StatelessWidget {
                       border: Border.all(color: scheme.outlineVariant),
                     ),
                     child: Text(
-                      'Vehicle ${log.vehicleId}',
+                      context.mobileText("Vehicle {value1}", {
+                        'value1': (log.vehicleId).toString(),
+                      }),
                       style: TextStyle(
                         fontSize: 10,
                         color: scheme.onSurfaceVariant,
@@ -572,10 +578,7 @@ class _EmptyState extends StatelessWidget {
       child: Center(
         child: Text(
           message,
-          style: TextStyle(
-            fontSize: 12,
-            color: scheme.onSurfaceVariant,
-          ),
+          style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant),
         ),
       ),
     );
@@ -643,7 +646,9 @@ class _AssignCreditsSheetState extends ConsumerState<_AssignCreditsSheet> {
     if (!mounted) return;
     if (ok) {
       ToastHelper.showSuccess(
-        _isAdd ? 'Credits added.' : 'Credits deducted.',
+        _isAdd
+            ? context.mobileText('Credits added.')
+            : context.mobileText('Credits deducted.'),
         context: context,
       );
       Navigator.of(context).maybePop();
@@ -657,9 +662,7 @@ class _AssignCreditsSheetState extends ConsumerState<_AssignCreditsSheet> {
   @override
   Widget build(BuildContext context) {
     final provider = superadminAdminDetailsControllerProvider(widget.adminId);
-    final isLoading = ref.watch(
-      provider.select((s) => s.isUpdatingCredits),
-    );
+    final isLoading = ref.watch(provider.select((s) => s.isUpdatingCredits));
     final viewInsets = MediaQuery.of(context).viewInsets;
 
     return Padding(
@@ -684,14 +687,14 @@ class _AssignCreditsSheetState extends ConsumerState<_AssignCreditsSheet> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       _InfoTile(
-                        label: 'Current credits',
+                        label: context.mobileText('Current credits'),
                         value: widget.currentCredits.toString(),
                       ),
                       const SizedBox(height: OpenVtsSpacing.sm),
                       OpenVtsTextField(
-                        label: 'Credits',
+                        label: context.mobileText('Credits'),
                         controller: _credits,
-                        hintText: 'Enter credit amount',
+                        hintText: context.mobileText('Enter credit amount'),
                         keyboardType: TextInputType.number,
                         textInputAction: TextInputAction.done,
                         validator: _validate,
@@ -741,10 +744,7 @@ class _InfoTile extends StatelessWidget {
           Expanded(
             child: Text(
               label,
-              style: TextStyle(
-                fontSize: 11,
-                color: scheme.onSurfaceVariant,
-              ),
+              style: TextStyle(fontSize: 11, color: scheme.onSurfaceVariant),
             ),
           ),
           Text(
@@ -803,10 +803,13 @@ class _CreditSheetHeader extends StatelessWidget {
                 ),
               ),
               IconButton(
-                icon: Icon(Icons.close_rounded,
-                    size: 20, color: scheme.onSurface),
+                icon: Icon(
+                  Icons.close_rounded,
+                  size: 20,
+                  color: scheme.onSurface,
+                ),
                 onPressed: () => Navigator.of(context).maybePop(),
-                tooltip: 'Close',
+                tooltip: context.mobileText('Close'),
               ),
             ],
           ),
@@ -848,7 +851,7 @@ class _CreditSheetFooter extends StatelessWidget {
         children: [
           Expanded(
             child: OpenVtsButton(
-              label: 'Cancel',
+              label: context.mobileText('Cancel'),
               variant: OpenVtsButtonVariant.secondary,
               onPressed: isLoading ? null : onCancel,
             ),

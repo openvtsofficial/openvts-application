@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:fl_chart/fl_chart.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,12 +10,13 @@ import '../../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../../core/utils/unit_formatter.dart';
+import '../../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../../shared/widgets/open_vts_map_layer_selector.dart';
 import '../../../../controllers/user_providers.dart';
 import '../../../../models/user_report_model.dart';
 import '../../../../models/user_report_state.dart';
 import '../../../../utils/user_report_format.dart';
-import '../../../../../../core/utils/unit_formatter.dart';
 import '../user_report_kpi_row.dart';
 import '../user_report_result_toolbar.dart';
 import '../user_report_row_details_sheet.dart';
@@ -25,11 +25,12 @@ import '../user_report_row_details_sheet.dart';
 const String kTimelineMapTileUserAgent = 'com.openvts.mobile';
 
 class UserTimelineReportResult extends ConsumerWidget {
-  const UserTimelineReportResult(
-      {required this.state,
-      required this.onLoadMore,
-      required this.onExport,
-      super.key});
+  const UserTimelineReportResult({
+    required this.state,
+    required this.onLoadMore,
+    required this.onExport,
+    super.key,
+  });
 
   final UserReportWorkspaceState state;
   final VoidCallback onLoadMore;
@@ -49,11 +50,18 @@ class UserTimelineReportResult extends ConsumerWidget {
 
     final kpis = [
       ReportKpi(
-          label: 'Running Duration', value: formatDurationSeconds(runDur)),
+        label: context.mobileText('Running Duration'),
+        value: formatDurationSeconds(runDur),
+      ),
       ReportKpi(
-          label: 'Stopped Duration', value: formatDurationSeconds(stopDur)),
-      ReportKpi(label: 'Movement Distance', value: uf.distance(dist)),
-      ReportKpi(label: 'Stop Count', value: '$stopCount'),
+        label: context.mobileText('Stopped Duration'),
+        value: formatDurationSeconds(stopDur),
+      ),
+      ReportKpi(
+        label: context.mobileText('Movement Distance'),
+        value: uf.distance(dist),
+      ),
+      ReportKpi(label: context.mobileText('Stop Count'), value: '$stopCount'),
     ];
 
     final total = runDur + stopDur;
@@ -101,50 +109,76 @@ class _RunStopDonut extends StatelessWidget {
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(OpenVtsRadius.lg),
         border: Border.all(
-            color: isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border),
+          color: isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Running vs Stopped',
-              style: OpenVtsTypography.label
-                  .copyWith(fontWeight: FontWeight.w600)),
+          Text(
+            context.mobileText('Running vs Stopped'),
+            style: OpenVtsTypography.label.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
           const SizedBox(height: OpenVtsSpacing.sm),
           SizedBox(
             height: 120,
-            child: Row(children: [
-              SizedBox(
+            child: Row(
+              children: [
+                SizedBox(
                   width: 120,
-                  child: PieChart(PieChartData(sections: [
-                    PieChartSectionData(
-                        value: runDur,
-                        color: OpenVtsColors.success,
-                        title: 'Run',
-                        radius: 42,
-                        titleStyle: OpenVtsTypography.meta
-                            .copyWith(fontSize: 9, color: OpenVtsColors.white)),
-                    PieChartSectionData(
-                        value: stopDur,
-                        color: OpenVtsColors.textSecondary,
-                        title: 'Stop',
-                        radius: 42,
-                        titleStyle: OpenVtsTypography.meta
-                            .copyWith(fontSize: 9, color: OpenVtsColors.white)),
-                  ], centerSpaceRadius: 24, sectionsSpace: 2))),
-              const SizedBox(width: OpenVtsSpacing.sm),
-              Column(
+                  child: PieChart(
+                    PieChartData(
+                      sections: [
+                        PieChartSectionData(
+                          value: runDur,
+                          color: OpenVtsColors.success,
+                          title: context.mobileText('Run'),
+                          radius: 42,
+                          titleStyle: OpenVtsTypography.meta.copyWith(
+                            fontSize: 9,
+                            color: OpenVtsColors.white,
+                          ),
+                        ),
+                        PieChartSectionData(
+                          value: stopDur,
+                          color: OpenVtsColors.textSecondary,
+                          title: context.mobileText('Stop'),
+                          radius: 42,
+                          titleStyle: OpenVtsTypography.meta.copyWith(
+                            fontSize: 9,
+                            color: OpenVtsColors.white,
+                          ),
+                        ),
+                      ],
+                      centerSpaceRadius: 24,
+                      sectionsSpace: 2,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: OpenVtsSpacing.sm),
+                Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _Legend(
-                        color: OpenVtsColors.success,
-                        label: 'Running: ${formatDurationSeconds(runDur)}'),
+                      color: OpenVtsColors.success,
+                      label: context.mobileText("Running: {value1}", {
+                        'value1': (formatDurationSeconds(runDur)).toString(),
+                      }),
+                    ),
                     const SizedBox(height: 4),
                     _Legend(
-                        color: OpenVtsColors.textSecondary,
-                        label: 'Stopped: ${formatDurationSeconds(stopDur)}'),
-                  ]),
-            ]),
+                      color: OpenVtsColors.textSecondary,
+                      label: context.mobileText("Stopped: {value1}", {
+                        'value1': (formatDurationSeconds(stopDur)).toString(),
+                      }),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -162,12 +196,17 @@ class _Badge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-          border: Border.all(color: color.withValues(alpha: 0.35))),
-      child: Text(label,
-          style: OpenVtsTypography.meta
-              .copyWith(color: color, fontWeight: FontWeight.w600)),
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
+        border: Border.all(color: color.withValues(alpha: 0.35)),
+      ),
+      child: Text(
+        label,
+        style: OpenVtsTypography.meta.copyWith(
+          color: color,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
     );
   }
 }
@@ -179,15 +218,21 @@ class _Legend extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(mainAxisSize: MainAxisSize.min, children: [
-      Container(
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
           width: 10,
           height: 10,
           decoration: BoxDecoration(
-              color: color, borderRadius: BorderRadius.circular(2))),
-      const SizedBox(width: 6),
-      Text(label, style: OpenVtsTypography.meta),
-    ]);
+            color: color,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(width: 6),
+        Text(label, style: OpenVtsTypography.meta),
+      ],
+    );
   }
 }
 
@@ -210,8 +255,9 @@ class _TimelineRowCardState extends ConsumerState<_TimelineRowCard> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final r = widget.row;
-    final stateColor =
-        r.isRunning ? OpenVtsColors.success : OpenVtsColors.textSecondary;
+    final stateColor = r.isRunning
+        ? OpenVtsColors.success
+        : OpenVtsColors.textSecondary;
     final stateLabel = r.isRunning ? 'Running' : 'Stopped';
     return Padding(
       padding: const EdgeInsets.only(bottom: OpenVtsSpacing.xs),
@@ -220,53 +266,75 @@ class _TimelineRowCardState extends ConsumerState<_TimelineRowCard> {
           color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(OpenVtsRadius.lg),
           border: Border.all(
-              color: isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border),
+            color: isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border,
+          ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             InkWell(
               borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(OpenVtsRadius.lg),
-                  topRight: Radius.circular(OpenVtsRadius.lg),
-                  bottomLeft: _mapExpanded
-                      ? Radius.zero
-                      : Radius.circular(OpenVtsRadius.lg),
-                  bottomRight: _mapExpanded
-                      ? Radius.zero
-                      : Radius.circular(OpenVtsRadius.lg)),
+                topLeft: const Radius.circular(OpenVtsRadius.lg),
+                topRight: const Radius.circular(OpenVtsRadius.lg),
+                bottomLeft: _mapExpanded
+                    ? Radius.zero
+                    : const Radius.circular(OpenVtsRadius.lg),
+                bottomRight: _mapExpanded
+                    ? Radius.zero
+                    : const Radius.circular(OpenVtsRadius.lg),
+              ),
               onTap: () => _showDetails(context),
               child: Padding(
                 padding: const EdgeInsets.all(OpenVtsSpacing.sm),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(children: [
-                      Expanded(
-                          child: Text(r.vehicleName,
-                              style: OpenVtsTypography.label
-                                  .copyWith(fontWeight: FontWeight.w700))),
-                      _Badge(label: stateLabel, color: stateColor),
-                    ]),
-                    const SizedBox(height: 4),
-                    Row(children: [
-                      const Icon(Icons.access_time_rounded,
-                          size: 13, color: OpenVtsColors.textSecondary),
-                      const SizedBox(width: 4),
-                      Expanded(
+                    Row(
+                      children: [
+                        Expanded(
                           child: Text(
-                              '${r.startedAt}${r.endedAt != null ? ' → ${r.endedAt}' : ''}',
-                              style: OpenVtsTypography.meta.copyWith(
-                                  color: OpenVtsColors.textSecondary))),
-                      Text(formatDurationSeconds(r.durationSeconds),
-                          style: OpenVtsTypography.meta
-                              .copyWith(color: OpenVtsColors.textSecondary)),
-                    ]),
+                            r.vehicleName,
+                            style: OpenVtsTypography.label.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        _Badge(label: stateLabel, color: stateColor),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.access_time_rounded,
+                          size: 13,
+                          color: OpenVtsColors.textSecondary,
+                        ),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            '${r.startedAt}${r.endedAt != null ? ' → ${r.endedAt}' : ''}',
+                            style: OpenVtsTypography.meta.copyWith(
+                              color: OpenVtsColors.textSecondary,
+                            ),
+                          ),
+                        ),
+                        Text(
+                          formatDurationSeconds(r.durationSeconds),
+                          style: OpenVtsTypography.meta.copyWith(
+                            color: OpenVtsColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
                     if (r.distanceKm != null && r.isRunning) ...[
                       const SizedBox(height: 2),
-                      Text(widget.uf.distance(r.distanceKm!),
-                          style: OpenVtsTypography.meta
-                              .copyWith(color: OpenVtsColors.textSecondary)),
+                      Text(
+                        widget.uf.distance(r.distanceKm!),
+                        style: OpenVtsTypography.meta.copyWith(
+                          color: OpenVtsColors.textSecondary,
+                        ),
+                      ),
                     ],
                     const SizedBox(height: OpenVtsSpacing.xs),
                     Row(
@@ -275,16 +343,21 @@ class _TimelineRowCardState extends ConsumerState<_TimelineRowCard> {
                         TextButton.icon(
                           onPressed: _toggleMap,
                           icon: Icon(
-                              _mapExpanded
-                                  ? Icons.map_rounded
-                                  : Icons.map_outlined,
-                              size: 14),
-                          label: Text(_mapExpanded ? 'Hide Map' : 'View Map',
-                              style: OpenVtsTypography.meta),
+                            _mapExpanded
+                                ? Icons.map_rounded
+                                : Icons.map_outlined,
+                            size: 14,
+                          ),
+                          label: Text(
+                            _mapExpanded
+                                ? context.mobileText('Hide Map')
+                                : context.mobileText('View Map'),
+                            style: OpenVtsTypography.meta,
+                          ),
                           style: TextButton.styleFrom(
-                              visualDensity: VisualDensity.compact,
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 8)),
+                            visualDensity: VisualDensity.compact,
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                          ),
                         ),
                       ],
                     ),
@@ -295,11 +368,12 @@ class _TimelineRowCardState extends ConsumerState<_TimelineRowCard> {
             if (_mapExpanded) ...[
               const Divider(height: 1),
               _MapSection(
-                  points: _points,
-                  loading: _loadingMap,
-                  error: _mapError,
-                  startLat: r.startLat,
-                  startLon: r.startLon),
+                points: _points,
+                loading: _loadingMap,
+                error: _mapError,
+                startLat: r.startLat,
+                startLon: r.startLon,
+              ),
             ],
           ],
         ),
@@ -339,63 +413,72 @@ class _TimelineRowCardState extends ConsumerState<_TimelineRowCard> {
     });
     try {
       final ctrl = ref.read(userReportControllerProvider);
-      final from = DateTime.tryParse(r.startedAt) ??
+      final from =
+          DateTime.tryParse(r.startedAt) ??
           DateTime.now().subtract(const Duration(hours: 1));
       final to = r.endedAt != null
           ? (DateTime.tryParse(r.endedAt!) ?? DateTime.now())
           : DateTime.now();
-      final points =
-          await ctrl.getTimelineMap(vehicleId: vehicleId, from: from, to: to);
-      if (mounted)
+      final points = await ctrl.getTimelineMap(
+        vehicleId: vehicleId,
+        from: from,
+        to: to,
+      );
+      if (mounted) {
         setState(() {
           _points = points;
           _loadingMap = false;
         });
+      }
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _loadingMap = false;
           _mapError = e.toString();
         });
+      }
     }
   }
 
   void _showDetails(BuildContext context) {
     final r = widget.row;
-    UserReportRowDetailsSheet.show(context,
-        title: '${r.vehicleName} — ${r.isRunning ? 'Running' : 'Stopped'}',
-        fields: [
-          ('Vehicle', r.vehicleName),
-          ('State', r.isRunning ? 'Running' : 'Stopped'),
-          if (r.date != null) ('Date', r.date!),
-          ('Start Time', r.startedAt),
-          if (r.endedAt != null) ('End Time', r.endedAt!),
-          ('Duration', formatDurationSeconds(r.durationSeconds)),
-          if (r.distanceKm != null)
-            ('Distance', '${r.distanceKm!.toStringAsFixed(2)} km'),
-          if (r.engineHoursSeconds != null)
-            ('Engine Hours', formatDurationSeconds(r.engineHoursSeconds!)),
-          if (r.maxSpeedKmh != null)
-            ('Max Speed', '${r.maxSpeedKmh!.toStringAsFixed(1)} km/h'),
-          if (r.avgSpeedKmh != null)
-            ('Avg Speed', '${r.avgSpeedKmh!.toStringAsFixed(1)} km/h'),
-          if (r.startAddress != null) ('Start Address', r.startAddress!),
-          if (r.endAddress != null) ('End Address', r.endAddress!),
-          if (r.startLat != null && r.startLon != null)
-            ('Start Location', formatCoordinate(r.startLat, r.startLon)),
-          if (r.endLat != null && r.endLon != null)
-            ('End Location', formatCoordinate(r.endLat, r.endLon)),
-        ]);
+    UserReportRowDetailsSheet.show(
+      context,
+      title: '${r.vehicleName} — ${r.isRunning ? 'Running' : 'Stopped'}',
+      fields: [
+        ('Vehicle', r.vehicleName),
+        ('State', r.isRunning ? 'Running' : 'Stopped'),
+        if (r.date != null) ('Date', r.date!),
+        ('Start Time', r.startedAt),
+        if (r.endedAt != null) ('End Time', r.endedAt!),
+        ('Duration', formatDurationSeconds(r.durationSeconds)),
+        if (r.distanceKm != null)
+          ('Distance', '${r.distanceKm!.toStringAsFixed(2)} km'),
+        if (r.engineHoursSeconds != null)
+          ('Engine Hours', formatDurationSeconds(r.engineHoursSeconds!)),
+        if (r.maxSpeedKmh != null)
+          ('Max Speed', '${r.maxSpeedKmh!.toStringAsFixed(1)} km/h'),
+        if (r.avgSpeedKmh != null)
+          ('Avg Speed', '${r.avgSpeedKmh!.toStringAsFixed(1)} km/h'),
+        if (r.startAddress != null) ('Start Address', r.startAddress!),
+        if (r.endAddress != null) ('End Address', r.endAddress!),
+        if (r.startLat != null && r.startLon != null)
+          ('Start Location', formatCoordinate(r.startLat, r.startLon)),
+        if (r.endLat != null && r.endLon != null)
+          ('End Location', formatCoordinate(r.endLat, r.endLon)),
+      ],
+    );
   }
 }
 
 class _MapSection extends StatefulWidget {
-  const _MapSection(
-      {required this.points,
-      required this.loading,
-      required this.error,
-      this.startLat,
-      this.startLon});
+  const _MapSection({
+    required this.points,
+    required this.loading,
+    required this.error,
+    this.startLat,
+    this.startLon,
+  });
   final List<UserTimelinePoint>? points;
   final bool loading;
   final String? error;
@@ -423,21 +506,28 @@ class _MapSectionState extends State<_MapSection> {
   Widget build(BuildContext context) {
     if (widget.loading) {
       return const SizedBox(
-          height: 200,
-          child: Center(child: CircularProgressIndicator(strokeWidth: 2)));
+        height: 200,
+        child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+      );
     }
     if (widget.error != null) {
       return Padding(
-          padding: const EdgeInsets.all(12),
-          child: Text(widget.error!,
-              style:
-                  OpenVtsTypography.meta.copyWith(color: OpenVtsColors.error)));
+        padding: const EdgeInsets.all(12),
+        child: Text(
+          widget.error!,
+          style: OpenVtsTypography.meta.copyWith(color: OpenVtsColors.error),
+        ),
+      );
     }
     if (widget.points == null) return const SizedBox.shrink();
     if (widget.points!.isEmpty) {
-      return const Padding(
-          padding: EdgeInsets.all(12),
-          child: Text('No valid GPS location', style: OpenVtsTypography.body));
+      return Padding(
+        padding: const EdgeInsets.all(12),
+        child: Text(
+          context.mobileText('No valid GPS location'),
+          style: OpenVtsTypography.body,
+        ),
+      );
     }
 
     final polyLatLngs = widget.points!
@@ -446,19 +536,26 @@ class _MapSectionState extends State<_MapSection> {
         .toList();
 
     if (polyLatLngs.isEmpty) {
-      return const Padding(
-          padding: EdgeInsets.all(12),
-          child: Text('No valid GPS location', style: OpenVtsTypography.body));
+      return Padding(
+        padding: const EdgeInsets.all(12),
+        child: Text(
+          context.mobileText('No valid GPS location'),
+          style: OpenVtsTypography.body,
+        ),
+      );
     }
 
     final center = polyLatLngs.length == 1
         ? polyLatLngs.first
-        : LatLng(widget.startLat ?? polyLatLngs.first.latitude,
-            widget.startLon ?? polyLatLngs.first.longitude);
+        : LatLng(
+            widget.startLat ?? polyLatLngs.first.latitude,
+            widget.startLon ?? polyLatLngs.first.longitude,
+          );
 
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(
-          bottom: Radius.circular(OpenVtsRadius.lg)),
+        bottom: Radius.circular(OpenVtsRadius.lg),
+      ),
       child: SizedBox(
         height: 280,
         child: Stack(
@@ -488,27 +585,40 @@ class _MapSectionState extends State<_MapSection> {
                   userAgentPackageName: kTimelineMapTileUserAgent,
                 ),
                 if (polyLatLngs.length > 1)
-                  PolylineLayer(polylines: [
-                    Polyline(
+                  PolylineLayer(
+                    polylines: [
+                      Polyline(
                         points: polyLatLngs,
                         strokeWidth: 3,
-                        color: OpenVtsColors.info)
-                  ]),
-                MarkerLayer(markers: [
-                  Marker(
+                        color: OpenVtsColors.info,
+                      ),
+                    ],
+                  ),
+                MarkerLayer(
+                  markers: [
+                    Marker(
                       point: polyLatLngs.first,
                       width: 20,
                       height: 20,
-                      child: const Icon(Icons.trip_origin_rounded,
-                          size: 20, color: OpenVtsColors.success)),
-                  if (polyLatLngs.length > 1)
-                    Marker(
+                      child: const Icon(
+                        Icons.trip_origin_rounded,
+                        size: 20,
+                        color: OpenVtsColors.success,
+                      ),
+                    ),
+                    if (polyLatLngs.length > 1)
+                      Marker(
                         point: polyLatLngs.last,
                         width: 20,
                         height: 20,
-                        child: const Icon(Icons.location_on_rounded,
-                            size: 20, color: OpenVtsColors.error)),
-                ]),
+                        child: const Icon(
+                          Icons.location_on_rounded,
+                          size: 20,
+                          color: OpenVtsColors.error,
+                        ),
+                      ),
+                  ],
+                ),
               ],
             ),
             Positioned(

@@ -31,9 +31,8 @@ Widget _app(AdminSettingsState state) {
   return ProviderScope(
     overrides: [
       adminSettingsControllerProvider.overrideWith(
-        (ref) => AdminSettingsController(
-          AdminSettingsService(ApiClient(Dio())),
-        ),
+        (ref) =>
+            AdminSettingsController(AdminSettingsService(ApiClient(Dio()))),
       ),
     ],
     child: MaterialApp(
@@ -58,7 +57,7 @@ Finder _languageDropdown() {
 
 Finder _visibleOption(String value) {
   return find.descendant(
-    of: find.byType(ListView).last,
+    of: find.byType(SliverList).last,
     matching: find.text(value),
   );
 }

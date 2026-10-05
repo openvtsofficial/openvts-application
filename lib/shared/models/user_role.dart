@@ -1,86 +1,58 @@
 import '../../core/router/route_paths.dart';
 
+/// The authenticated server role is never inferred from a route or username.
 enum UserRole {
   superadmin,
   admin,
-  user;
+  team,
+  user,
+  subuser,
+  driver,
+  unknown;
 
   static UserRole fromString(String? value) {
-    switch (value?.toLowerCase()) {
+    switch (value?.trim().toLowerCase()) {
       case 'superadmin':
       case 'super_admin':
-        return UserRole.superadmin;
+        return superadmin;
       case 'admin':
-        return UserRole.admin;
+        return admin;
+      case 'team':
+        return team;
       case 'user':
+        return user;
+      case 'subuser':
+      case 'sub_user':
+        return subuser;
+      case 'driver':
+        return driver;
       default:
-        return UserRole.user;
+        return unknown;
     }
   }
 
-  String get apiValue {
-    switch (this) {
-      case UserRole.superadmin:
-        return 'superadmin';
-      case UserRole.admin:
-        return 'admin';
-      case UserRole.user:
-        return 'user';
-    }
-  }
-
-  String get homePath {
-    switch (this) {
-      case UserRole.superadmin:
-        return RoutePaths.superadminHome;
-      case UserRole.admin:
-        return RoutePaths.adminHome;
-      case UserRole.user:
-        return RoutePaths.userHome;
-    }
-  }
-
-  String get profilePath {
-    switch (this) {
-      case UserRole.superadmin:
-        return RoutePaths.superadminProfile;
-      case UserRole.admin:
-        return RoutePaths.adminProfile;
-      case UserRole.user:
-        return RoutePaths.userProfile;
-    }
-  }
-
-  String get settingsPath {
-    switch (this) {
-      case UserRole.superadmin:
-        return RoutePaths.superadminSettings;
-      case UserRole.admin:
-        return RoutePaths.adminSettings;
-      case UserRole.user:
-        return RoutePaths.userSettings;
-    }
-  }
-
-  String get displayLabel {
-    switch (this) {
-      case UserRole.superadmin:
-        return 'Super Admin';
-      case UserRole.admin:
-        return 'Admin';
-      case UserRole.user:
-        return 'User';
-    }
-  }
-
-  String get routePrefix {
-    switch (this) {
-      case UserRole.superadmin:
-        return '/superadmin';
-      case UserRole.admin:
-        return '/admin';
-      case UserRole.user:
-        return '/user';
-    }
-  }
+  String get apiValue => name;
+  bool get isUserWorkspace => this == user || this == subuser;
+  bool get isAdminWorkspace => this == admin || this == team;
+  // Team and Subuser share mobile screen trees, but retain their API identity.
+  String get routePrefix => switch (this) {
+    superadmin => RoutePaths.superadminHome,
+    admin || team => RoutePaths.adminHome,
+    user || subuser => RoutePaths.userHome,
+    driver => RoutePaths.driverHome,
+    unknown => '/unsupported-role',
+  };
+  String get homePath => this == unknown ? RoutePaths.login : routePrefix;
+  String get profilePath => '$routePrefix/profile';
+  String get settingsPath => '$routePrefix/settings';
+  String get securityPath => '$settingsPath?tab=security';
+  String get displayLabel => switch (this) {
+    superadmin => 'Super Admin',
+    admin => 'Admin',
+    team => 'Team',
+    user => 'User',
+    subuser => 'Sub user',
+    driver => 'Driver',
+    unknown => 'Unsupported role',
+  };
 }

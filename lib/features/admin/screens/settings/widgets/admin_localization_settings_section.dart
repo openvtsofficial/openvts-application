@@ -7,6 +7,7 @@ import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../l10n/app_localizations.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
@@ -66,6 +67,17 @@ class _LocalizationSettingsSectionState
     if (loc == null) return;
     _language = loc.language.isNotEmpty ? loc.language : 'en';
     _direction = loc.layoutDirection;
+    if (ref.exists(appLocalizationPreferencesProvider)) {
+      final device = ref
+          .read(appLocalizationPreferencesProvider.notifier)
+          .languageOverride;
+      if (device != null) {
+        _language = device.languageCode;
+        _direction = device.isRtl
+            ? AdminLayoutDirection.rtl
+            : AdminLayoutDirection.ltr;
+      }
+    }
     _dateFormat = loc.dateFormat.isNotEmpty ? loc.dateFormat : 'YYYY-MM-DD';
     _use24Hour = loc.use24Hour;
     _theme = loc.theme;
@@ -134,15 +146,18 @@ class _LocalizationSettingsSectionState
         _theme = request.theme;
         _timezone = request.timezoneOffset;
         _units = request.units;
-        _latCtrl.text =
-            request.defaultLat == 0 ? '' : request.defaultLat.toString();
-        _lonCtrl.text =
-            request.defaultLon == 0 ? '' : request.defaultLon.toString();
+        _latCtrl.text = request.defaultLat == 0
+            ? ''
+            : request.defaultLat.toString();
+        _lonCtrl.text = request.defaultLon == 0
+            ? ''
+            : request.defaultLon.toString();
         _zoomCtrl.text = request.mapZoom.toString();
       });
 
-      final prefNotifier =
-          ref.read(appLocalizationPreferencesProvider.notifier);
+      final prefNotifier = ref.read(
+        appLocalizationPreferencesProvider.notifier,
+      );
       await prefNotifier.applyFromAdminSettings(
         language: request.language,
         dateFormat: request.dateFormat,
@@ -251,8 +266,10 @@ class _LocalizationSettingsSectionState
           const SizedBox(height: OpenVtsSpacing.sm),
           _GroupedCard(
             icon: Icons.translate_rounded,
-            title: 'Language & Direction',
-            subtitle: 'Interface language and text direction.',
+            title: context.mobileText('Language & Direction'),
+            subtitle: context.mobileText(
+              'Interface language and text direction.',
+            ),
             children: [
               _LanguageDropdown(
                 value: _language,
@@ -279,8 +296,10 @@ class _LocalizationSettingsSectionState
           const SizedBox(height: OpenVtsSpacing.sm),
           _GroupedCard(
             icon: Icons.event_note_rounded,
-            title: 'Date & Time',
-            subtitle: 'Date format, time style, and timezone.',
+            title: context.mobileText('Date & Time'),
+            subtitle: context.mobileText(
+              'Date format, time style, and timezone.',
+            ),
             children: [
               _DateFormatDropdown(
                 value: _dateFormat,
@@ -312,16 +331,19 @@ class _LocalizationSettingsSectionState
           const SizedBox(height: OpenVtsSpacing.sm),
           _GroupedCard(
             icon: Icons.tune_rounded,
-            title: 'Units & Theme',
-            subtitle: 'Distance units and app appearance.',
+            title: context.mobileText('Units & Theme'),
+            subtitle: context.mobileText('Distance units and app appearance.'),
             children: [
               _LabeledRow(
                 label: l10n.units,
                 child: _SegmentedControl<AdminUnits>(
                   value: _units,
-                  segments: const [
-                    _Seg(value: AdminUnits.km, label: 'KM'),
-                    _Seg(value: AdminUnits.miles, label: 'MILES'),
+                  segments: [
+                    _Seg(value: AdminUnits.km, label: context.mobileText('km')),
+                    _Seg(
+                      value: AdminUnits.miles,
+                      label: context.mobileText('Miles'),
+                    ),
                   ],
                   onChanged: (v) => setState(() => _units = v),
                 ),
@@ -344,15 +366,15 @@ class _LocalizationSettingsSectionState
           const SizedBox(height: OpenVtsSpacing.sm),
           _GroupedCard(
             icon: Icons.location_on_outlined,
-            title: 'Default Map Focus',
-            subtitle: 'Initial map center and zoom level.',
+            title: context.mobileText('Default Map Focus'),
+            subtitle: context.mobileText('Initial map center and zoom level.'),
             children: [
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
                     child: OpenVtsTextField(
-                      label: 'Latitude',
+                      label: context.mobileText('Latitude'),
                       controller: _latCtrl,
                       keyboardType: const TextInputType.numberWithOptions(
                         decimal: true,
@@ -372,7 +394,7 @@ class _LocalizationSettingsSectionState
                   const SizedBox(width: OpenVtsSpacing.sm),
                   Expanded(
                     child: OpenVtsTextField(
-                      label: 'Longitude',
+                      label: context.mobileText('Longitude'),
                       controller: _lonCtrl,
                       keyboardType: const TextInputType.numberWithOptions(
                         decimal: true,
@@ -393,7 +415,7 @@ class _LocalizationSettingsSectionState
               ),
               const SizedBox(height: OpenVtsSpacing.sm),
               OpenVtsTextField(
-                label: 'Zoom',
+                label: context.mobileText('Zoom'),
                 controller: _zoomCtrl,
                 keyboardType: TextInputType.number,
                 hintText: '10',
@@ -479,7 +501,7 @@ class _PreviewCard extends StatelessWidget {
               ),
               const SizedBox(width: 6),
               Text(
-                'PREVIEW',
+                context.mobileText('Preview'),
                 style: TextStyle(
                   fontFamily: OpenVtsTypography.primaryFontFamily,
                   fontSize: 10.5,
@@ -494,17 +516,11 @@ class _PreviewCard extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: _PreviewTile(
-                  label: l10n.date,
-                  value: dateString,
-                ),
+                child: _PreviewTile(label: l10n.date, value: dateString),
               ),
               const SizedBox(width: OpenVtsSpacing.xs),
               Expanded(
-                child: _PreviewTile(
-                  label: l10n.time,
-                  value: timeString,
-                ),
+                child: _PreviewTile(label: l10n.time, value: timeString),
               ),
             ],
           ),
@@ -512,15 +528,12 @@ class _PreviewCard extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: _PreviewTile(
-                  label: l10n.timezone,
-                  value: timezone,
-                ),
+                child: _PreviewTile(label: l10n.timezone, value: timezone),
               ),
               const SizedBox(width: OpenVtsSpacing.xs),
               Expanded(
                 child: _PreviewTile(
-                  label: 'Distance',
+                  label: context.mobileText('Distance'),
                   value: '1,234 $distanceLabel',
                 ),
               ),
@@ -558,10 +571,7 @@ class _PreviewTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 10,
-        vertical: 8,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
@@ -793,7 +803,7 @@ class _SegBtn extends StatelessWidget {
 
 class _LabeledRow extends StatelessWidget {
   const _LabeledRow({required this.label, this.child, this.trailing})
-      : assert(child != null || trailing != null);
+    : assert(child != null || trailing != null);
 
   final String label;
   final Widget? child;
@@ -849,8 +859,8 @@ class _PresetsRow extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Quick presets',
+        Text(
+          context.mobileText('Quick presets'),
           style: OpenVtsTypography.label,
         ),
         const SizedBox(height: OpenVtsSpacing.xs),
@@ -882,8 +892,9 @@ class _PresetChip extends StatelessWidget {
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
-          border:
-              Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+          border: Border.all(
+            color: Theme.of(context).colorScheme.outlineVariant,
+          ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -940,10 +951,14 @@ class _SectionHeader extends StatelessWidget {
               color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
               border: Border.all(
-                  color: Theme.of(context).colorScheme.outlineVariant),
+                color: Theme.of(context).colorScheme.outlineVariant,
+              ),
             ),
-            child: Icon(icon,
-                size: 16, color: Theme.of(context).colorScheme.onSurface),
+            child: Icon(
+              icon,
+              size: 16,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
           ),
           const SizedBox(width: OpenVtsSpacing.xs),
           Expanded(
@@ -1009,9 +1024,11 @@ class _GroupedCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(icon,
-                  size: 16,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant),
+              Icon(
+                icon,
+                size: 16,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Column(

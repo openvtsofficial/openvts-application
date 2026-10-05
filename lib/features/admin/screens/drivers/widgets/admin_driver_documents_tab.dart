@@ -8,6 +8,7 @@ import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../core/utils/date_time_formatter.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../../../shared/widgets/open_vts_empty_state.dart';
@@ -16,6 +17,7 @@ import '../../../../../shared/widgets/open_vts_loader.dart';
 import '../../../controllers/admin_driver_details_controller.dart';
 import '../../../models/admin_driver_details_model.dart';
 import '../../../models/admin_driver_details_state.dart';
+import '../../../widgets/admin_action_gate.dart';
 import 'admin_driver_document_sheet.dart';
 
 class AdminDriverDocumentsTab extends ConsumerWidget {
@@ -25,8 +27,11 @@ class AdminDriverDocumentsTab extends ConsumerWidget {
     super.key,
   });
 
-  final AutoDisposeStateNotifierProvider<AdminDriverDetailsController,
-      AdminDriverDetailsState> provider;
+  final AutoDisposeStateNotifierProvider<
+    AdminDriverDetailsController,
+    AdminDriverDetailsState
+  >
+  provider;
   final AdminDriverDetailsState state;
 
   @override
@@ -52,23 +57,26 @@ class AdminDriverDocumentsTab extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        OutlinedButton.icon(
-          onPressed: state.isUploadingDocument
-              ? null
-              : () => showDriverDocumentSheet(
+        AdminActionGate(
+          capability: 'drivers.update',
+          child: OutlinedButton.icon(
+            onPressed: state.isUploadingDocument
+                ? null
+                : () => showDriverDocumentSheet(
                     context: context,
                     provider: provider,
                     driverId: state.driverId,
                     documentTypes: state.documentTypes,
                   ),
-          icon: const Icon(Icons.upload_file_rounded, size: 16),
-          label: const Text('Upload Document'),
+            icon: const Icon(Icons.upload_file_rounded, size: 16),
+            label: Text(context.mobileText('Upload Document')),
+          ),
         ),
         const SizedBox(height: OpenVtsSpacing.sm),
         if (state.documents.isEmpty)
-          const OpenVtsEmptyState(
-            title: 'No driver documents',
-            message: 'Upload a document to get started.',
+          OpenVtsEmptyState(
+            title: context.mobileText('No driver documents'),
+            message: context.mobileText('Upload a document to get started.'),
           )
         else
           ...state.documents.map(
@@ -88,19 +96,23 @@ class AdminDriverDocumentsTab extends ConsumerWidget {
                   final yes = await showDialog<bool>(
                     context: context,
                     builder: (dCtx) => AlertDialog(
-                      title: const Text('Delete document'),
-                      content: Text('Delete ${doc.title}?'),
+                      title: Text(context.mobileText('Delete document')),
+                      content: Text(
+                        context.mobileText("Delete {value1}?", {
+                          'value1': (doc.title).toString(),
+                        }),
+                      ),
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.of(dCtx).pop(false),
-                          child: const Text('Cancel'),
+                          child: Text(context.mobileText('Cancel')),
                         ),
                         TextButton(
                           onPressed: () => Navigator.of(dCtx).pop(true),
                           style: TextButton.styleFrom(
                             foregroundColor: OpenVtsColors.error,
                           ),
-                          child: const Text('Delete'),
+                          child: Text(context.mobileText('Delete')),
                         ),
                       ],
                     ),
@@ -110,7 +122,7 @@ class AdminDriverDocumentsTab extends ConsumerWidget {
                   if (!context.mounted) return;
                   if (ok) {
                     ToastHelper.showSuccess(
-                      'Document deleted.',
+                      context.mobileText('Document deleted.'),
                       context: context,
                     );
                   } else {
@@ -133,7 +145,10 @@ class AdminDriverDocumentsTab extends ConsumerWidget {
         ? doc.fileUrl.trim()
         : doc.filePath.trim();
     if (path.isEmpty) {
-      ToastHelper.showError('No file available.', context: context);
+      ToastHelper.showError(
+        context.mobileText('No file available.'),
+        context: context,
+      );
       return;
     }
 
@@ -146,17 +161,23 @@ class AdminDriverDocumentsTab extends ConsumerWidget {
         mode: LaunchMode.externalApplication,
       );
       if (!ok && context.mounted) {
-        ToastHelper.showError('Unable to open file.', context: context);
+        ToastHelper.showError(
+          context.mobileText('Unable to open file.'),
+          context: context,
+        );
       }
     } catch (_) {
       if (context.mounted) {
-        ToastHelper.showError('Unable to open file.', context: context);
+        ToastHelper.showError(
+          context.mobileText('Unable to open file.'),
+          context: context,
+        );
       }
     }
   }
 }
 
-class _DocCard extends StatelessWidget {
+class _DocCard extends ConsumerWidget {
   const _DocCard({
     required this.doc,
     required this.onView,
@@ -170,7 +191,7 @@ class _DocCard extends StatelessWidget {
   final VoidCallback onDelete;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final f = const DateTimeFormatter();
     final onSurfaceVariant = Theme.of(context).colorScheme.onSurfaceVariant;
     // Show type name only when it differs from the title and is meaningful.
@@ -230,7 +251,7 @@ class _DocCard extends StatelessWidget {
                 ),
               ),
               PopupMenuButton<_DocAction>(
-                tooltip: 'Document actions',
+                tooltip: context.mobileText('Document actions'),
                 icon: Icon(
                   Icons.more_vert_rounded,
                   color: Theme.of(context).colorScheme.onSurface,
@@ -249,24 +270,31 @@ class _DocCard extends StatelessWidget {
                   }
                 },
                 itemBuilder: (context) => [
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: _DocAction.view,
                     child: _MenuRow(
-                        icon: Icons.download_rounded, label: 'View/Download'),
-                  ),
-                  const PopupMenuItem(
-                    value: _DocAction.edit,
-                    child: _MenuRow(icon: Icons.edit_outlined, label: 'Edit'),
-                  ),
-                  const PopupMenuDivider(height: 8),
-                  const PopupMenuItem(
-                    value: _DocAction.delete,
-                    child: _MenuRow(
-                      icon: Icons.delete_outline_rounded,
-                      label: 'Delete',
-                      isDestructive: true,
+                      icon: Icons.download_rounded,
+                      label: context.mobileText('View/Download'),
                     ),
                   ),
+                  if (adminCanPerform(ref, 'drivers.update'))
+                    PopupMenuItem(
+                      value: _DocAction.edit,
+                      child: _MenuRow(
+                        icon: Icons.edit_outlined,
+                        label: context.mobileText('Edit'),
+                      ),
+                    ),
+                  const PopupMenuDivider(height: 8),
+                  if (adminCanPerform(ref, 'drivers.update'))
+                    PopupMenuItem(
+                      value: _DocAction.delete,
+                      child: _MenuRow(
+                        icon: Icons.delete_outline_rounded,
+                        label: context.mobileText('Delete'),
+                        isDestructive: true,
+                      ),
+                    ),
                 ],
               ),
             ],
@@ -290,14 +318,18 @@ class _DocCard extends StatelessWidget {
               if (doc.expiryAt != null)
                 _MetaPill(
                   icon: Icons.event_busy_rounded,
-                  label: 'Exp: ${f.formatDate(doc.expiryAt!)}',
+                  label: context.mobileText("Exp: {value1}", {
+                    'value1': (f.formatDate(doc.expiryAt!)).toString(),
+                  }),
                   color: OpenVtsColors.warning,
                 ),
               _MetaPill(
                 icon: doc.isVisible
                     ? Icons.visibility_rounded
                     : Icons.visibility_off_rounded,
-                label: doc.isVisible ? 'Visible' : 'Hidden',
+                label: doc.isVisible
+                    ? context.mobileText('Visible')
+                    : context.mobileText('Hidden'),
                 color: onSurfaceVariant,
               ),
             ],
@@ -342,10 +374,7 @@ class _MenuRow extends StatelessWidget {
       children: [
         Icon(icon, size: 16, color: color),
         const SizedBox(width: OpenVtsSpacing.xs),
-        Text(
-          label,
-          style: OpenVtsTypography.label.copyWith(color: color),
-        ),
+        Text(label, style: OpenVtsTypography.label.copyWith(color: color)),
       ],
     );
   }

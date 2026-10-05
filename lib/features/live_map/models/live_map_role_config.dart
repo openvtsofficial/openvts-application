@@ -1,6 +1,9 @@
 import '../../../core/router/route_paths.dart';
 import '../../../core/storage/storage_keys.dart';
+import '../../../shared/models/user_role.dart';
+import '../../auth/models/current_user.dart';
 import 'live_map_role.dart';
+
 export 'live_map_role.dart';
 
 /// Role-aware configuration consumed by the shared live map engine.
@@ -298,6 +301,56 @@ class LiveMapRoleConfig {
       telemetrySubscribeMode: LiveMapTelemetrySubscribeMode.demoScope,
       visualSettingsStorageKey: StorageKeys.demoMapVisualSettings,
       mapLayerStorageKey: StorageKeys.demoMapLayerId,
+    );
+  }
+
+  /// Limit map controls to the fresh server permission snapshot.
+  /// The Team map is read-only, matching the web TeamMaps endpoint contract.
+  LiveMapRoleConfig forSession(CurrentUser? user) {
+    final isTeam = user?.role == UserRole.team;
+    final isUser = user?.role.isUserWorkspace == true;
+    final landmarksAllowed =
+        !isUser || user!.access.canFeature(user.role, 'landmarks');
+    final commandsAllowed =
+        !isTeam && (!isUser || user!.access.canFeature(user.role, 'vehicles'));
+    return LiveMapRoleConfig(
+      role: role,
+      title: title,
+      homeRoute: homeRoute,
+      telemetryNamespace: telemetryNamespace,
+      notificationNamespace: notificationNamespace,
+      socketAuthenticationRequired: socketAuthenticationRequired,
+      mapTelemetryEndpoint: mapTelemetryEndpoint,
+      mapEventsEndpoint: mapEventsEndpoint,
+      vehicleDetailsByImei: vehicleDetailsByImei,
+      vehicleLogsByImei: vehicleLogsByImei,
+      vehicleEventsByImei: vehicleEventsByImei,
+      vehicleHistoryByImei: vehicleHistoryByImei,
+      vehicleReplayByImei: vehicleReplayByImei,
+      vehicleSensorsByImei: vehicleSensorsByImei,
+      geofencesEndpoint: geofencesEndpoint,
+      poisEndpoint: poisEndpoint,
+      routesEndpoint: routesEndpoint,
+      customCommandsEndpoint: customCommandsEndpoint,
+      systemVariablesEndpoint: systemVariablesEndpoint,
+      sendCommandByImei: sendCommandByImei,
+      commandHistoryByImei: commandHistoryByImei,
+      commandStatusByCmdId: commandStatusByCmdId,
+      commandLogByCmdId: commandLogByCmdId,
+      userSendCommandBulkEndpoint: userSendCommandBulkEndpoint,
+      userCommandHistoryByVehicleId: userCommandHistoryByVehicleId,
+      notificationSubscribeMode: notificationSubscribeMode,
+      telemetrySubscribeMode: telemetrySubscribeMode,
+      visualSettingsStorageKey: visualSettingsStorageKey,
+      mapLayerStorageKey: mapLayerStorageKey,
+      vehicleTrailByImei: isTeam ? null : vehicleTrailByImei,
+      supportsGeofence: supportsGeofence && landmarksAllowed,
+      supportsPoi: supportsPoi && landmarksAllowed,
+      supportsRoute: supportsRoute && landmarksAllowed,
+      supportsCommands: supportsCommands && commandsAllowed,
+      commandSendMode: commandsAllowed
+          ? commandSendMode
+          : LiveMapCommandSendMode.disabled,
     );
   }
 

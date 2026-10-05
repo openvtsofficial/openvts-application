@@ -61,7 +61,7 @@ class _ReplayStopMarkerWidget extends StatelessWidget {
 
     return Semantics(
       button: true,
-      label: 'Stoppage marker',
+      label: context.mobileText('Stoppage marker'),
       child: MouseRegion(
         cursor: SystemMouseCursors.click,
         child: GestureDetector(
@@ -78,8 +78,8 @@ class _ReplayStopMarkerWidget extends StatelessWidget {
                   color: isSelected
                       ? scheme.onSurface
                       : isDark
-                          ? scheme.outlineVariant
-                          : Colors.white,
+                      ? scheme.outlineVariant
+                      : Colors.white,
                   width: 2,
                 ),
                 boxShadow: [
@@ -99,11 +99,7 @@ class _ReplayStopMarkerWidget extends StatelessWidget {
                     shape: BoxShape.circle,
                     border: Border.all(color: borderColor),
                   ),
-                  child: Icon(
-                    Icons.pause_rounded,
-                    size: 12,
-                    color: foreground,
-                  ),
+                  child: Icon(Icons.pause_rounded, size: 12, color: foreground),
                 ),
               ),
             ),
@@ -153,7 +149,7 @@ class _ReplayStopPopup extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Stoppage',
+                    context.mobileText('Stoppage'),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
@@ -165,21 +161,24 @@ class _ReplayStopPopup extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
                   _ReplayStopPopupRow(
-                    label: 'Duration',
+                    label: context.mobileText('Duration'),
                     value: _formatReplayStopDuration(stop.duration),
                   ),
                   const SizedBox(height: 3),
                   _ReplayStopPopupRow(
-                    label: 'Start',
+                    label: context.mobileText('Start'),
                     value: _formatReplayControlTime(stop.startTime),
                   ),
                   const SizedBox(height: 3),
                   _ReplayStopPopupRow(
-                    label: 'End',
+                    label: context.mobileText('End'),
                     value: _formatReplayControlTime(stop.endTime),
                   ),
                   const SizedBox(height: 3),
-                  _ReplayStopPopupRow(label: 'Lat/Lng', value: latLngText),
+                  _ReplayStopPopupRow(
+                    label: context.mobileText('Lat/Lng'),
+                    value: latLngText,
+                  ),
                 ],
               ),
             ),
@@ -202,7 +201,7 @@ class _ReplayStopPopup extends StatelessWidget {
                   size: 15,
                   color: scheme.onSurfaceVariant,
                 ),
-                tooltip: 'Close',
+                tooltip: context.mobileText('Close'),
               ),
             ),
           ),
@@ -327,8 +326,9 @@ class _ReplayInfoHud extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final displayName =
-        vehicleName?.trim().isNotEmpty == true ? vehicleName!.trim() : 'Replay';
+    final displayName = vehicleName?.trim().isNotEmpty == true
+        ? vehicleName!.trim()
+        : 'Replay';
     final scheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -396,7 +396,7 @@ class _ReplayInfoHud extends StatelessWidget {
                             Padding(
                               padding: const EdgeInsets.only(bottom: 1),
                               child: Text(
-                                'Trip',
+                                context.mobileText('Trip'),
                                 maxLines: 1,
                                 style: TextStyle(
                                   fontSize: 8,
@@ -439,7 +439,7 @@ class _ReplayInfoHud extends StatelessWidget {
                   Expanded(
                     flex: 6,
                     child: _ReplayHudStat(
-                      label: 'Odometer',
+                      label: context.mobileText('Odometer'),
                       value: _formatReplayOdometer(point.odometer),
                     ),
                   ),
@@ -454,7 +454,7 @@ class _ReplayInfoHud extends StatelessWidget {
                   Expanded(
                     flex: 5,
                     child: _ReplayHudStat(
-                      label: 'Engine Hours',
+                      label: context.mobileText('Engine Hours'),
                       value: _formatReplayHours(engineHours),
                     ),
                   ),
@@ -692,8 +692,8 @@ class _ReplayControlDrawer extends StatelessWidget {
     final clampedIndex = index < 0
         ? 0
         : index > maxIndex
-            ? maxIndex
-            : index;
+        ? maxIndex
+        : index;
     final sliderMax = math.max(1, maxIndex).toDouble();
     final canPlay = points.length > 1;
     final scheme = Theme.of(context).colorScheme;
@@ -755,8 +755,9 @@ class _ReplayControlDrawer extends StatelessWidget {
                       max: sliderMax,
                       divisions: maxIndex > 0 ? maxIndex : null,
                       value: clampedIndex.toDouble(),
-                      onChanged:
-                          canPlay ? (value) => onSeek(value.round()) : null,
+                      onChanged: canPlay
+                          ? (value) => onSeek(value.round())
+                          : null,
                     ),
                   ),
                   Padding(
@@ -806,7 +807,7 @@ class _ReplayControlDrawer extends StatelessWidget {
                     children: [
                       _ReplayControlIconButton(
                         icon: Icons.skip_previous_rounded,
-                        tooltip: 'Skip start',
+                        tooltip: context.mobileText('Skip start'),
                         onTap: canPlay ? onSkipStart : null,
                       ),
                       const SizedBox(width: 8),
@@ -814,14 +815,16 @@ class _ReplayControlDrawer extends StatelessWidget {
                         icon: isPlaying
                             ? Icons.pause_rounded
                             : Icons.play_arrow_rounded,
-                        tooltip: isPlaying ? 'Pause' : 'Play',
+                        tooltip: isPlaying
+                            ? context.mobileText('Pause')
+                            : context.mobileText('Play'),
                         filled: true,
                         onTap: canPlay ? onTogglePlayback : null,
                       ),
                       const SizedBox(width: 8),
                       _ReplayControlIconButton(
                         icon: Icons.skip_next_rounded,
-                        tooltip: 'Skip end',
+                        tooltip: context.mobileText('Skip end'),
                         onTap: canPlay ? onSkipEnd : null,
                       ),
                       const SizedBox(width: 10),
@@ -837,7 +840,7 @@ class _ReplayControlDrawer extends StatelessWidget {
                       const SizedBox(width: 8),
                       _ReplayControlIconButton(
                         icon: Icons.close_rounded,
-                        tooltip: 'Clear replay',
+                        tooltip: context.mobileText('Clear replay'),
                         onTap: onClear,
                       ),
                     ],
@@ -885,15 +888,15 @@ class _ReplayControlIconButton extends StatelessWidget {
               color: filled
                   ? scheme.onSurface
                   : isDark
-                      ? scheme.surface
-                      : const Color(0xFFFFFFFF),
+                  ? scheme.surface
+                  : const Color(0xFFFFFFFF),
               shape: BoxShape.circle,
               border: Border.all(
                 color: filled
                     ? scheme.onSurface.withValues(alpha: 0.12)
                     : isDark
-                        ? scheme.outlineVariant
-                        : const Color(0xFFE5E7EB),
+                    ? scheme.outlineVariant
+                    : const Color(0xFFE5E7EB),
               ),
               boxShadow: isEnabled
                   ? [
@@ -911,8 +914,8 @@ class _ReplayControlIconButton extends StatelessWidget {
               color: filled
                   ? scheme.surface
                   : isEnabled
-                      ? scheme.onSurface
-                      : scheme.outlineVariant,
+                  ? scheme.onSurface
+                  : scheme.outlineVariant,
             ),
           ),
         ),
@@ -933,7 +936,7 @@ class _ReplaySpeedSelector extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return PopupMenuButton<double>(
-      tooltip: 'Replay speed',
+      tooltip: context.mobileText('Replay speed'),
       onSelected: onChanged,
       color: isDark ? scheme.surface : Colors.white,
       itemBuilder: (context) => _replaySpeedOptions
@@ -954,7 +957,10 @@ class _ReplaySpeedSelector extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    '${option.label} ${option.value.toInt()}x',
+                    context.mobileText("{value1} {value2}x", {
+                      'value1': (context.mobileText(option.label)).toString(),
+                      'value2': (option.value.toInt()).toString(),
+                    }),
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
@@ -979,14 +985,10 @@ class _ReplaySpeedSelector extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.speed_rounded,
-              size: 15,
-              color: scheme.onSurfaceVariant,
-            ),
+            Icon(Icons.speed_rounded, size: 15, color: scheme.onSurfaceVariant),
             const SizedBox(width: 6),
             Text(
-              _replaySpeedLabel(speed),
+              _replaySpeedLabel(context, speed),
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w800,

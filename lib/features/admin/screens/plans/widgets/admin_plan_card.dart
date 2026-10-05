@@ -4,15 +4,12 @@ import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../core/utils/date_time_formatter.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../models/admin_plans_model.dart';
 
 class AdminPlanCard extends StatelessWidget {
-  const AdminPlanCard({
-    required this.plan,
-    required this.onEdit,
-    super.key,
-  });
+  const AdminPlanCard({required this.plan, required this.onEdit, super.key});
 
   final AdminPlan plan;
   final VoidCallback onEdit;
@@ -44,7 +41,7 @@ class AdminPlanCard extends StatelessWidget {
               TextButton.icon(
                 onPressed: onEdit,
                 icon: const Icon(Icons.edit_outlined, size: 16),
-                label: const Text('Edit'),
+                label: Text(context.mobileText('Edit')),
               ),
             ],
           ),
@@ -55,8 +52,9 @@ class AdminPlanCard extends StatelessWidget {
           ),
           _InfoRow(
             icon: Icons.schedule_rounded,
-            label:
-                plan.durationDays == null ? '-' : '${plan.durationDays} days',
+            label: plan.durationDays == null
+                ? '-'
+                : '${plan.durationDays} days',
           ),
           _InfoRow(
             icon: Icons.calendar_today_rounded,

@@ -4,6 +4,8 @@ import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
+import '../../../../../shared/helpers/validation_localizations.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../models/user_settings_model.dart';
 
@@ -42,12 +44,15 @@ class _UserCompanyEditSheetState extends State<UserCompanyEditSheet> {
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.company.name ?? '');
-    _websiteController =
-        TextEditingController(text: widget.company.websiteUrl ?? '');
-    _customDomainController =
-        TextEditingController(text: widget.company.customDomain ?? '');
-    _primaryColorController =
-        TextEditingController(text: widget.company.primaryColor ?? '');
+    _websiteController = TextEditingController(
+      text: widget.company.websiteUrl ?? '',
+    );
+    _customDomainController = TextEditingController(
+      text: widget.company.customDomain ?? '',
+    );
+    _primaryColorController = TextEditingController(
+      text: widget.company.primaryColor ?? '',
+    );
 
     final social = widget.company.socialLinks;
     _facebookController = TextEditingController(text: social?.facebook ?? '');
@@ -144,7 +149,7 @@ class _UserCompanyEditSheetState extends State<UserCompanyEditSheet> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Edit Company',
+                  context.mobileText('Edit company'),
                   style: OpenVtsTypography.label.copyWith(
                     color: Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.w700,
@@ -152,7 +157,9 @@ class _UserCompanyEditSheetState extends State<UserCompanyEditSheet> {
                 ),
                 const SizedBox(height: OpenVtsSpacing.xxs),
                 Text(
-                  'Update company identity and social links.',
+                  context.mobileText(
+                    'Update company identity and social links.',
+                  ),
                   style: OpenVtsTypography.meta.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
@@ -160,7 +167,7 @@ class _UserCompanyEditSheetState extends State<UserCompanyEditSheet> {
                 const SizedBox(height: OpenVtsSpacing.sm),
                 _textField(
                   controller: _nameController,
-                  label: 'Company Name',
+                  label: context.mobileText('Company name'),
                   validator: (value) {
                     if ((value ?? '').trim().isEmpty) {
                       return 'Company name is required.';
@@ -171,44 +178,61 @@ class _UserCompanyEditSheetState extends State<UserCompanyEditSheet> {
                 const SizedBox(height: OpenVtsSpacing.xs),
                 _textField(
                   controller: _websiteController,
-                  label: 'Website URL',
+                  label: context.mobileText('Website URL'),
                   hint: 'https://example.com',
                   validator: _optionalUrlValidator,
                 ),
                 const SizedBox(height: OpenVtsSpacing.xs),
                 _textField(
                   controller: _customDomainController,
-                  label: 'Custom Domain',
+                  label: context.mobileText('Custom domain'),
                   hint: 'https://brand.example.com',
                   validator: _optionalUrlValidator,
                 ),
                 const SizedBox(height: OpenVtsSpacing.xs),
                 _textField(
                   controller: _primaryColorController,
-                  label: 'Primary Color',
+                  label: context.mobileText('Primary color'),
                   hint: '#0F172A',
                 ),
                 const SizedBox(height: OpenVtsSpacing.sm),
                 Text(
-                  'Social Links',
+                  context.mobileText('Social Links'),
                   style: OpenVtsTypography.meta.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
                 const SizedBox(height: OpenVtsSpacing.xs),
-                _textField(controller: _facebookController, label: 'Facebook'),
-                const SizedBox(height: OpenVtsSpacing.xs),
-                _textField(controller: _twitterController, label: 'Twitter/X'),
-                const SizedBox(height: OpenVtsSpacing.xs),
-                _textField(controller: _linkedinController, label: 'LinkedIn'),
+                _textField(
+                  controller: _facebookController,
+                  label: context.mobileText('Facebook'),
+                ),
                 const SizedBox(height: OpenVtsSpacing.xs),
                 _textField(
-                    controller: _instagramController, label: 'Instagram'),
+                  controller: _twitterController,
+                  label: context.mobileText('Twitter/X'),
+                ),
                 const SizedBox(height: OpenVtsSpacing.xs),
-                _textField(controller: _youtubeController, label: 'YouTube'),
+                _textField(
+                  controller: _linkedinController,
+                  label: context.mobileText('LinkedIn'),
+                ),
                 const SizedBox(height: OpenVtsSpacing.xs),
-                _textField(controller: _githubController, label: 'GitHub'),
+                _textField(
+                  controller: _instagramController,
+                  label: context.mobileText('Instagram'),
+                ),
+                const SizedBox(height: OpenVtsSpacing.xs),
+                _textField(
+                  controller: _youtubeController,
+                  label: context.mobileText('YouTube'),
+                ),
+                const SizedBox(height: OpenVtsSpacing.xs),
+                _textField(
+                  controller: _githubController,
+                  label: context.mobileText('GitHub'),
+                ),
                 if (_errorText != null) ...[
                   const SizedBox(height: OpenVtsSpacing.xs),
                   Text(
@@ -224,7 +248,7 @@ class _UserCompanyEditSheetState extends State<UserCompanyEditSheet> {
                   children: [
                     Expanded(
                       child: OpenVtsButton(
-                        label: 'Cancel',
+                        label: context.mobileText('Cancel'),
                         variant: OpenVtsButtonVariant.secondary,
                         height: 44,
                         onPressed: _isSaving
@@ -235,7 +259,7 @@ class _UserCompanyEditSheetState extends State<UserCompanyEditSheet> {
                     const SizedBox(width: OpenVtsSpacing.xs),
                     Expanded(
                       child: OpenVtsButton(
-                        label: 'Save Company',
+                        label: context.mobileText('Save Company'),
                         height: 44,
                         isLoading: _isSaving,
                         onPressed: _isSaving ? null : _handleSave,
@@ -259,11 +283,8 @@ class _UserCompanyEditSheetState extends State<UserCompanyEditSheet> {
   }) {
     return TextFormField(
       controller: controller,
-      validator: validator,
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: hint,
-      ),
+      validator: context.localizedValidator(validator),
+      decoration: InputDecoration(labelText: label, hintText: hint),
     );
   }
 
@@ -281,8 +302,8 @@ class _UserCompanyEditSheetState extends State<UserCompanyEditSheet> {
   String? _normalizeUrl(String value) {
     final candidate =
         value.startsWith('http://') || value.startsWith('https://')
-            ? value
-            : 'https://$value';
+        ? value
+        : 'https://$value';
     final uri = Uri.tryParse(candidate);
     if (uri == null || uri.host.trim().isEmpty) {
       return null;

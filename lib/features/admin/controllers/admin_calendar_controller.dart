@@ -1,22 +1,28 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/access/workspace_scope_provider.dart';
 import '../../../core/providers/core_providers.dart';
 import '../models/admin_calendar_model.dart';
 import '../services/admin_calendar_service.dart';
 
 final _adminCalendarServiceProvider = Provider<AdminCalendarService>((ref) {
+  ref.watch(workspaceDataScopeProvider);
   return AdminCalendarService(ref.read(apiClientProvider));
 });
 
-final adminCalendarFiltersProvider =
-    StateProvider<List<String>>((ref) => ['users', 'vehicle', 'expiry']);
-final adminCalendarFocusedDateProvider =
-    StateProvider<DateTime>((ref) => DateTime.now());
-final adminCalendarSelectedDateProvider =
-    StateProvider<DateTime?>((ref) => DateTime.now());
+final adminCalendarFiltersProvider = StateProvider<List<String>>(
+  (ref) => ['users', 'vehicle', 'expiry'],
+);
+final adminCalendarFocusedDateProvider = StateProvider<DateTime>(
+  (ref) => DateTime.now(),
+);
+final adminCalendarSelectedDateProvider = StateProvider<DateTime?>(
+  (ref) => DateTime.now(),
+);
 
-final adminCalendarEventsProvider =
-    FutureProvider<List<AdminCalendarEvent>>((ref) async {
+final adminCalendarEventsProvider = FutureProvider<List<AdminCalendarEvent>>((
+  ref,
+) async {
   final service = ref.watch(_adminCalendarServiceProvider);
   final focusedDate = ref.watch(adminCalendarFocusedDateProvider);
   final filters = ref.watch(adminCalendarFiltersProvider);
@@ -38,45 +44,49 @@ final adminCalendarEventsProvider =
 });
 
 final adminCalendarDayDetailsProvider =
-    FutureProvider.family<List<AdminCalendarDayDetail>, DateTime>(
-        (ref, date) async {
-  final service = ref.watch(_adminCalendarServiceProvider);
-  final filters = ref.watch(adminCalendarFiltersProvider);
+    FutureProvider.family<List<AdminCalendarDayDetail>, DateTime>((
+      ref,
+      date,
+    ) async {
+      final service = ref.watch(_adminCalendarServiceProvider);
+      final filters = ref.watch(adminCalendarFiltersProvider);
 
-  final dateStr =
-      '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+      final dateStr =
+          '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
 
-  final result = await service.getDayDetails(dateStr, filters);
-  if (result.isSuccess) {
-    return result.data ?? [];
-  }
+      final result = await service.getDayDetails(dateStr, filters);
+      if (result.isSuccess) {
+        return result.data ?? [];
+      }
 
-  throw result.error ?? Exception('Failed to load calendar details');
-});
+      throw result.error ?? Exception('Failed to load calendar details');
+    });
 
 final adminCalendarUserDetailsProvider =
     FutureProvider.family<AdminCalendarLinkedDetail?, String>((ref, uid) async {
-  if (uid.trim().isEmpty) return null;
+      if (uid.trim().isEmpty) return null;
 
-  final service = ref.watch(_adminCalendarServiceProvider);
-  final result = await service.getUserDetails(uid);
-  if (result.isSuccess) {
-    return result.data;
-  }
+      final service = ref.watch(_adminCalendarServiceProvider);
+      final result = await service.getUserDetails(uid);
+      if (result.isSuccess) {
+        return result.data;
+      }
 
-  return null;
-});
+      return null;
+    });
 
 final adminCalendarVehicleDetailsProvider =
-    FutureProvider.family<AdminCalendarLinkedDetail?, String>(
-        (ref, vehicleId) async {
-  if (vehicleId.trim().isEmpty) return null;
+    FutureProvider.family<AdminCalendarLinkedDetail?, String>((
+      ref,
+      vehicleId,
+    ) async {
+      if (vehicleId.trim().isEmpty) return null;
 
-  final service = ref.watch(_adminCalendarServiceProvider);
-  final result = await service.getVehicleDetails(vehicleId);
-  if (result.isSuccess) {
-    return result.data;
-  }
+      final service = ref.watch(_adminCalendarServiceProvider);
+      final result = await service.getVehicleDetails(vehicleId);
+      if (result.isSuccess) {
+        return result.data;
+      }
 
-  return null;
-});
+      return null;
+    });

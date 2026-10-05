@@ -14,7 +14,10 @@ class SuperadminSupportService {
   static const int _maxAttachmentBytes = 5 * 1024 * 1024;
   static const int _maxTitleLength = 120;
   static const int _maxMessageLength = 5000;
-  static final RegExp _alphaNumericPattern = RegExp(r'[A-Za-z0-9]');
+  static final RegExp _alphaNumericPattern = RegExp(
+    r'[\p{L}\p{N}]',
+    unicode: true,
+  );
 
   static const Set<String> _allowedExtensions = <String>{
     'pdf',
@@ -85,9 +88,7 @@ class SuperadminSupportService {
 
     final response = await _apiClient.get<dynamic>(
       ApiEndpoints.superadmin.supportTicketById(id.toString()),
-      queryParameters: <String, dynamic>{
-        'rk': _resolveRefreshKey(refreshKey),
-      },
+      queryParameters: <String, dynamic>{'rk': _resolveRefreshKey(refreshKey)},
       options: _readOptions,
       parser: (json) => json,
     );
@@ -105,9 +106,7 @@ class SuperadminSupportService {
 
     await _apiClient.patch<void>(
       ApiEndpoints.superadmin.supportTicketStatus(id.toString()),
-      data: <String, dynamic>{
-        'status': status.apiValue,
-      },
+      data: <String, dynamic>{'status': status.apiValue},
       options: _mutationOptions,
       parser: (_) {},
     );
@@ -185,9 +184,7 @@ class SuperadminSupportService {
   }) async {
     final response = await _apiClient.get<dynamic>(
       ApiEndpoints.superadmin.adminList,
-      queryParameters: <String, dynamic>{
-        'rk': _resolveRefreshKey(refreshKey),
-      },
+      queryParameters: <String, dynamic>{'rk': _resolveRefreshKey(refreshKey)},
       options: _readOptions,
       parser: (json) => json,
     );
@@ -198,16 +195,18 @@ class SuperadminSupportService {
       return admins;
     }
 
-    return admins.where((admin) {
-      final haystack = [
-        admin.displayName,
-        admin.email,
-        admin.phone,
-        admin.uid.toString(),
-      ].join(' ').toLowerCase();
+    return admins
+        .where((admin) {
+          final haystack = [
+            admin.displayName,
+            admin.email,
+            admin.phone,
+            admin.uid.toString(),
+          ].join(' ').toLowerCase();
 
-      return haystack.contains(query);
-    }).toList(growable: false);
+          return haystack.contains(query);
+        })
+        .toList(growable: false);
   }
 
   Future<FormData> _buildCreateTicketFormData({
@@ -348,9 +347,7 @@ class SuperadminSupportService {
       }
 
       if (attachment.size > _maxAttachmentBytes) {
-        throw ArgumentError(
-          '"$fileName" exceeds the 5MB size limit.',
-        );
+        throw ArgumentError('"$fileName" exceeds the 5MB size limit.');
       }
     }
   }

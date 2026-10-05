@@ -6,15 +6,13 @@ import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../shared/widgets/open_vts_bottom_sheet.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 
 class UserShareTrackLinkQrSheet extends StatelessWidget {
-  const UserShareTrackLinkQrSheet({
-    required this.publicUrl,
-    super.key,
-  });
+  const UserShareTrackLinkQrSheet({required this.publicUrl, super.key});
 
   final String publicUrl;
 
@@ -24,7 +22,7 @@ class UserShareTrackLinkQrSheet extends StatelessWidget {
   }) {
     return OpenVtsBottomSheet.show<T>(
       context: context,
-      title: 'Track Link QR',
+      title: context.mobileText('Track Link QR'),
       initialChildSize: 0.58,
       minChildSize: 0.42,
       maxChildSize: 0.78,
@@ -81,7 +79,8 @@ class UserShareTrackLinkQrSheet extends StatelessWidget {
                 color: isDark ? Colors.black : OpenVtsColors.white,
                 borderRadius: BorderRadius.circular(OpenVtsRadius.lg),
                 border: Border.all(
-                    color: isDark ? OpenVtsColors.white : OpenVtsColors.border),
+                  color: isDark ? OpenVtsColors.white : OpenVtsColors.border,
+                ),
               ),
               child: Text(
                 publicUrl,
@@ -99,7 +98,7 @@ class UserShareTrackLinkQrSheet extends StatelessWidget {
           children: [
             Expanded(
               child: OpenVtsButton(
-                label: 'Copy',
+                label: context.mobileText('Copy'),
                 onPressed: () => _copyPublicUrl(context),
                 variant: OpenVtsButtonVariant.secondary,
                 trailingIcon: Icons.copy_rounded,
@@ -109,7 +108,7 @@ class UserShareTrackLinkQrSheet extends StatelessWidget {
             const SizedBox(width: OpenVtsSpacing.sm),
             Expanded(
               child: OpenVtsButton(
-                label: 'Open',
+                label: context.mobileText('Open'),
                 onPressed: () => _openPublicUrl(context),
                 trailingIcon: Icons.open_in_new_rounded,
                 height: 40,
@@ -124,13 +123,19 @@ class UserShareTrackLinkQrSheet extends StatelessWidget {
   Future<void> _copyPublicUrl(BuildContext context) async {
     await Clipboard.setData(ClipboardData(text: publicUrl));
     if (!context.mounted) return;
-    ToastHelper.showSuccess('Link copied.', context: context);
+    ToastHelper.showSuccess(
+      context.mobileText('Link copied.'),
+      context: context,
+    );
   }
 
   Future<void> _openPublicUrl(BuildContext context) async {
     final uri = Uri.tryParse(publicUrl);
     if (uri == null || !uri.hasScheme) {
-      ToastHelper.showError('Could not open link.', context: context);
+      ToastHelper.showError(
+        context.mobileText('Could not open link.'),
+        context: context,
+      );
       return;
     }
 
@@ -141,11 +146,17 @@ class UserShareTrackLinkQrSheet extends StatelessWidget {
       );
       if (!context.mounted) return;
       if (!launched) {
-        ToastHelper.showError('Could not open link.', context: context);
+        ToastHelper.showError(
+          context.mobileText('Could not open link.'),
+          context: context,
+        );
       }
     } catch (_) {
       if (!context.mounted) return;
-      ToastHelper.showError('Could not open link.', context: context);
+      ToastHelper.showError(
+        context.mobileText('Could not open link.'),
+        context: context,
+      );
     }
   }
 }

@@ -3,25 +3,25 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/route_paths.dart';
-import '../../../auth/controllers/auth_controller.dart';
-import '../../../../core/theme/open_vts_colors.dart';
 import '../../../../core/theme/open_vts_radius.dart';
 import '../../../../core/theme/open_vts_spacing.dart';
 import '../../../../core/theme/open_vts_typography.dart';
+import '../../../../shared/helpers/mobile_text.dart';
+import '../../../../shared/models/user_role.dart';
 import '../../../../shared/widgets/open_vts_button.dart';
 import '../../../../shared/widgets/open_vts_card.dart';
 import '../../../../shared/widgets/open_vts_page_scaffold.dart';
+import '../../../auth/controllers/auth_controller.dart';
 
 class UserAccountsScreen extends ConsumerWidget {
   const UserAccountsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isSubuser = ref.watch(
-      authControllerProvider.select((state) => state.user?.isSubuser == true),
-    );
+    final primary =
+        ref.watch(authControllerProvider).user?.role == UserRole.user;
     return OpenVtsPageScaffold(
-      title: 'Accounts',
+      title: context.mobileText('Accounts'),
       headerMode: OpenVtsPageHeaderMode.closeable,
       padding: const EdgeInsets.fromLTRB(
         OpenVtsSpacing.sm,
@@ -31,7 +31,7 @@ class UserAccountsScreen extends ConsumerWidget {
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {
-          final useTwoColumns = constraints.maxWidth >= 760;
+          final useTwoColumns = primary && constraints.maxWidth >= 760;
 
           return Align(
             alignment: Alignment.topCenter,
@@ -47,53 +47,54 @@ class UserAccountsScreen extends ConsumerWidget {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Expanded(
+                        Expanded(
                           child: _AccountsOptionCard(
                             icon: Icons.badge_outlined,
-                            title: 'Drivers',
-                            description:
-                                'Create drivers, manage assigned vehicles, documents, and driver activity.',
+                            title: context.mobileText('Drivers'),
+                            description: context.mobileText(
+                              'Create drivers, manage assigned vehicles, documents, and driver activity.',
+                            ),
                             ctaLabel: 'Open Drivers',
                             route: RoutePaths.userDrivers,
                           ),
                         ),
-                        if (!isSubuser) ...[
-                          const SizedBox(width: OpenVtsSpacing.sm),
-                          const Expanded(
-                            child: _AccountsOptionCard(
-                              icon: Icons.groups_2_outlined,
-                              title: 'Sub Users',
-                              description:
-                                  'Create sub users and control which vehicles they can access.',
-                              ctaLabel: 'Open Sub Users',
-                              route: RoutePaths.userSubUsers,
+                        const SizedBox(width: OpenVtsSpacing.sm),
+                        Expanded(
+                          child: _AccountsOptionCard(
+                            icon: Icons.groups_2_outlined,
+                            title: context.mobileText('Sub Users'),
+                            description: context.mobileText(
+                              'Create sub users and control which vehicles they can access.',
                             ),
+                            ctaLabel: 'Open Sub Users',
+                            route: RoutePaths.userSubUsers,
                           ),
-                        ],
+                        ),
                       ],
                     )
                   else
                     Column(
                       children: [
-                        const _AccountsOptionCard(
+                        _AccountsOptionCard(
                           icon: Icons.badge_outlined,
-                          title: 'Drivers',
-                          description:
-                              'Create drivers, manage assigned vehicles, documents, and driver activity.',
+                          title: context.mobileText('Drivers'),
+                          description: context.mobileText(
+                            'Create drivers, manage assigned vehicles, documents, and driver activity.',
+                          ),
                           ctaLabel: 'Open Drivers',
                           route: RoutePaths.userDrivers,
                         ),
-                        if (!isSubuser) ...[
-                          const SizedBox(height: OpenVtsSpacing.sm),
-                          const _AccountsOptionCard(
+                        if (primary) const SizedBox(height: OpenVtsSpacing.sm),
+                        if (primary)
+                          _AccountsOptionCard(
                             icon: Icons.groups_2_outlined,
-                            title: 'Sub Users',
-                            description:
-                                'Create sub users and control which vehicles they can access.',
+                            title: context.mobileText('Sub Users'),
+                            description: context.mobileText(
+                              'Create sub users and control which vehicles they can access.',
+                            ),
                             ctaLabel: 'Open Sub Users',
                             route: RoutePaths.userSubUsers,
                           ),
-                        ],
                       ],
                     ),
                 ],
@@ -122,7 +123,8 @@ class _AccountsHeaderCard extends StatelessWidget {
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.surface,
               border: Border.all(
-                  color: Theme.of(context).colorScheme.outlineVariant),
+                color: Theme.of(context).colorScheme.outlineVariant,
+              ),
               borderRadius: BorderRadius.circular(OpenVtsRadius.md),
             ),
             child: Icon(
@@ -137,7 +139,7 @@ class _AccountsHeaderCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Accounts',
+                  context.mobileText('Accounts'),
                   style: OpenVtsTypography.body.copyWith(
                     fontWeight: FontWeight.w700,
                     color: Theme.of(context).colorScheme.onSurface,
@@ -145,7 +147,9 @@ class _AccountsHeaderCard extends StatelessWidget {
                 ),
                 const SizedBox(height: OpenVtsSpacing.xxs),
                 Text(
-                  'Manage the accounts linked to your fleet.',
+                  context.mobileText(
+                    'Manage drivers and sub users linked to your fleet.',
+                  ),
                   style: OpenVtsTypography.meta.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
@@ -193,7 +197,8 @@ class _AccountsOptionCard extends StatelessWidget {
                   color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(OpenVtsRadius.md),
                   border: Border.all(
-                      color: Theme.of(context).colorScheme.outlineVariant),
+                    color: Theme.of(context).colorScheme.outlineVariant,
+                  ),
                 ),
                 child: Icon(
                   icon,

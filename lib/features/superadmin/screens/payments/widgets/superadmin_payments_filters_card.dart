@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../../../shared/widgets/open_vts_date_time_range_selector.dart';
 import '../../../../../shared/widgets/open_vts_search_field.dart';
@@ -42,7 +43,7 @@ class SuperadminPaymentsFiltersCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  'Filters',
+                  context.mobileText('Filters'),
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
@@ -61,16 +62,16 @@ class SuperadminPaymentsFiltersCard extends StatelessWidget {
                     minimumSize: Size.zero,
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
-                  child: const Text(
-                    'Clear',
-                    style: TextStyle(fontSize: 12),
+                  child: Text(
+                    context.mobileText('Clear'),
+                    style: const TextStyle(fontSize: 12),
                   ),
                 ),
             ],
           ),
           const SizedBox(height: OpenVtsSpacing.sm),
           OpenVtsSearchField(
-            hintText: 'Search by reference or admin...',
+            hintText: context.mobileText('Search by reference or admin...'),
             onChanged: onSearchChanged,
           ),
           const SizedBox(height: OpenVtsSpacing.sm),
@@ -117,8 +118,9 @@ class _CollapsibleFiltersSectionState
     }
 
     final selectedId = widget.state.selectedAdminId!;
-    final hasSelected =
-        widget.state.admins.any((item) => item.uid == selectedId);
+    final hasSelected = widget.state.admins.any(
+      (item) => item.uid == selectedId,
+    );
     if (hasSelected) {
       return widget.state.admins;
     }
@@ -138,26 +140,29 @@ class _CollapsibleFiltersSectionState
   List<OpenVtsDropdownOption<int>> _buildAdminOptions(
     List<SuperadminPaymentAdminOption> admins,
   ) {
-    return admins.map((admin) {
-      final parts = <String>[
-        if (admin.username.trim().isNotEmpty) '@${admin.username.trim()}',
-        if (admin.email.trim().isNotEmpty) admin.email.trim(),
-      ];
-      return OpenVtsDropdownOption<int>(
-        value: admin.uid,
-        label: admin.displayName,
-        subtitle: parts.isNotEmpty ? parts.join(' • ') : null,
-        searchText: admin.searchText,
-      );
-    }).toList(growable: false);
+    return admins
+        .map((admin) {
+          final parts = <String>[
+            if (admin.username.trim().isNotEmpty) '@${admin.username.trim()}',
+            if (admin.email.trim().isNotEmpty) admin.email.trim(),
+          ];
+          return OpenVtsDropdownOption<int>(
+            value: admin.uid,
+            label: admin.displayName,
+            subtitle: parts.isNotEmpty ? parts.join(' • ') : null,
+            searchText: admin.searchText,
+          );
+        })
+        .toList(growable: false);
   }
 
   @override
   Widget build(BuildContext context) {
     final admins = _resolveAdminOptions();
     final selectedAdmin = widget.state.selectedAdminId;
-    final selectedAdminValue =
-        admins.any((item) => item.uid == selectedAdmin) ? selectedAdmin : null;
+    final selectedAdminValue = admins.any((item) => item.uid == selectedAdmin)
+        ? selectedAdmin
+        : null;
     final adminOptions = _buildAdminOptions(admins);
 
     return Column(
@@ -172,7 +177,7 @@ class _CollapsibleFiltersSectionState
             child: Row(
               children: [
                 Text(
-                  'Advanced Filters',
+                  context.mobileText('Advanced Filters'),
                   style: OpenVtsTypography.label.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontWeight: FontWeight.w600,
@@ -193,8 +198,8 @@ class _CollapsibleFiltersSectionState
         if (_isExpanded) ...[
           const SizedBox(height: OpenVtsSpacing.sm),
           OpenVtsSearchableDropdown<int>(
-            label: 'Administrator',
-            hintText: 'All Admins',
+            label: context.mobileText('Administrator'),
+            hintText: context.mobileText('All Admins'),
             searchHintText: 'Search by name, username, email or ID',
             sheetTitle: 'Filter by Administrator',
             options: adminOptions,
@@ -204,7 +209,7 @@ class _CollapsibleFiltersSectionState
           ),
           const SizedBox(height: OpenVtsSpacing.sm),
           Text(
-            'Date Range',
+            context.mobileText('Date Range'),
             style: OpenVtsTypography.label.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
@@ -215,40 +220,45 @@ class _CollapsibleFiltersSectionState
             runSpacing: OpenVtsSpacing.xs,
             children: [
               _FilterChoiceChip(
-                label: 'All Time',
-                selected: widget.state.rangePreset ==
+                label: context.mobileText('All Time'),
+                selected:
+                    widget.state.rangePreset ==
                     SuperadminPaymentsRangePreset.allTime,
                 onTap: () => widget.onRangePresetChanged(
                   SuperadminPaymentsRangePreset.allTime,
                 ),
               ),
               _FilterChoiceChip(
-                label: 'This Month',
-                selected: widget.state.rangePreset ==
+                label: context.mobileText('This Month'),
+                selected:
+                    widget.state.rangePreset ==
                     SuperadminPaymentsRangePreset.thisMonth,
                 onTap: () => widget.onRangePresetChanged(
                   SuperadminPaymentsRangePreset.thisMonth,
                 ),
               ),
               _FilterChoiceChip(
-                label: 'Last 30 Days',
-                selected: widget.state.rangePreset ==
+                label: context.mobileText('Last 30 Days'),
+                selected:
+                    widget.state.rangePreset ==
                     SuperadminPaymentsRangePreset.last30,
                 onTap: () => widget.onRangePresetChanged(
                   SuperadminPaymentsRangePreset.last30,
                 ),
               ),
               _FilterChoiceChip(
-                label: 'This Year',
-                selected: widget.state.rangePreset ==
+                label: context.mobileText('This Year'),
+                selected:
+                    widget.state.rangePreset ==
                     SuperadminPaymentsRangePreset.thisYear,
                 onTap: () => widget.onRangePresetChanged(
                   SuperadminPaymentsRangePreset.thisYear,
                 ),
               ),
               _FilterChoiceChip(
-                label: 'Custom',
-                selected: widget.state.rangePreset ==
+                label: context.mobileText('Custom'),
+                selected:
+                    widget.state.rangePreset ==
                     SuperadminPaymentsRangePreset.custom,
                 onTap: () => widget.onRangePresetChanged(
                   SuperadminPaymentsRangePreset.custom,
@@ -260,8 +270,8 @@ class _CollapsibleFiltersSectionState
               SuperadminPaymentsRangePreset.custom) ...[
             const SizedBox(height: OpenVtsSpacing.sm),
             OpenVtsDateTimeRangeField(
-              label: 'Custom Range',
-              title: 'Choose Date Range',
+              label: context.mobileText('Custom Range'),
+              title: context.mobileText('Choose Date Range'),
               value: OpenVtsDateTimeRange(
                 start: widget.state.customFrom,
                 end: widget.state.customTo,
@@ -276,7 +286,7 @@ class _CollapsibleFiltersSectionState
           ],
           const SizedBox(height: OpenVtsSpacing.sm),
           Text(
-            'Status',
+            context.mobileText('Status'),
             style: OpenVtsTypography.label.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
@@ -287,27 +297,30 @@ class _CollapsibleFiltersSectionState
             runSpacing: OpenVtsSpacing.xs,
             children: [
               _FilterChoiceChip(
-                label: 'All',
+                label: context.mobileText('All'),
                 selected: widget.state.selectedStatus == null,
                 onTap: () => widget.onStatusChanged(null),
               ),
               _FilterChoiceChip(
                 label: SuperadminTransactionStatus.success.label,
-                selected: widget.state.selectedStatus ==
+                selected:
+                    widget.state.selectedStatus ==
                     SuperadminTransactionStatus.success,
                 onTap: () =>
                     widget.onStatusChanged(SuperadminTransactionStatus.success),
               ),
               _FilterChoiceChip(
                 label: SuperadminTransactionStatus.pending.label,
-                selected: widget.state.selectedStatus ==
+                selected:
+                    widget.state.selectedStatus ==
                     SuperadminTransactionStatus.pending,
                 onTap: () =>
                     widget.onStatusChanged(SuperadminTransactionStatus.pending),
               ),
               _FilterChoiceChip(
                 label: SuperadminTransactionStatus.failed.label,
-                selected: widget.state.selectedStatus ==
+                selected:
+                    widget.state.selectedStatus ==
                     SuperadminTransactionStatus.failed,
                 onTap: () =>
                     widget.onStatusChanged(SuperadminTransactionStatus.failed),
@@ -334,11 +347,13 @@ class _FilterChoiceChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final backgroundColor =
-        selected ? (isDark ? Colors.black : Colors.white) : Colors.transparent;
+    final backgroundColor = selected
+        ? (isDark ? Colors.black : Colors.white)
+        : Colors.transparent;
     final textColor = isDark ? Colors.white : Colors.black;
-    final borderColor =
-        isDark ? Colors.white : Colors.black.withValues(alpha: 0.2);
+    final borderColor = isDark
+        ? Colors.white
+        : Colors.black.withValues(alpha: 0.2);
 
     return Material(
       color: Colors.transparent,

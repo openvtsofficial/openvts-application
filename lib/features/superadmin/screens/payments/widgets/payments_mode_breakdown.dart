@@ -6,15 +6,13 @@ import 'package:intl/intl.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../../../shared/widgets/open_vts_empty_state.dart';
 import '../../../models/superadmin_payments_model.dart';
 
 class PaymentsModeBreakdown extends StatelessWidget {
-  const PaymentsModeBreakdown({
-    required this.items,
-    super.key,
-  });
+  const PaymentsModeBreakdown({required this.items, super.key});
 
   final List<SuperadminModeBreakdown> items;
 
@@ -22,32 +20,35 @@ class PaymentsModeBreakdown extends StatelessWidget {
   Widget build(BuildContext context) {
     final ranked = [...items]
       ..sort((left, right) => right.count.compareTo(left.count));
-    final maxCount =
-        ranked.fold<int>(0, (value, item) => math.max(value, item.count));
+    final maxCount = ranked.fold<int>(
+      0,
+      (value, item) => math.max(value, item.count),
+    );
 
     return OpenVtsCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Payment Mode Breakdown',
+            context.mobileText('Payment Mode Breakdown'),
             style: OpenVtsTypography.titleSmall.copyWith(
               color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: OpenVtsSpacing.xxs),
           Text(
-            'Ranked by transaction count',
+            context.mobileText('Ranked by transaction count'),
             style: OpenVtsTypography.meta.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
           const SizedBox(height: OpenVtsSpacing.sm),
           if (ranked.isEmpty)
-            const OpenVtsEmptyState(
-              title: 'No mode data',
-              message:
-                  'Payment mode breakdown is not available for this range.',
+            OpenVtsEmptyState(
+              title: context.mobileText('No mode data'),
+              message: context.mobileText(
+                'Payment mode breakdown is not available for this range.',
+              ),
             )
           else
             Column(

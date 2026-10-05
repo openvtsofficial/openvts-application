@@ -7,6 +7,7 @@ import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../core/utils/date_time_formatter.dart';
 import '../../../../../core/utils/validators.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../shared/widgets/open_vts_bottom_sheet.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
@@ -17,6 +18,7 @@ import '../../../controllers/admin_user_details_controller.dart';
 import '../../../models/admin_user_details_model.dart';
 import '../../../models/admin_users_model.dart' as admin_users;
 import '../../../utils/location_label_resolver.dart';
+import '../../../widgets/admin_action_gate.dart';
 import 'admin_user_form_fields.dart';
 
 // =============================================================================
@@ -58,7 +60,8 @@ class AdminUserProfileTab extends ConsumerWidget {
       );
     }
 
-    final isBusy = state.isSavingProfile ||
+    final isBusy =
+        state.isSavingProfile ||
         state.isChangingPassword ||
         state.isSavingCompany;
 
@@ -120,11 +123,16 @@ class AdminUserProfileTab extends ConsumerWidget {
     if (!context.mounted) return;
     if (ok) {
       ToastHelper.showSuccess(
-        isActive ? 'User activated.' : 'User deactivated.',
+        isActive
+            ? context.mobileText('User activated.')
+            : context.mobileText('User deactivated.'),
         context: context,
       );
     } else {
-      ToastHelper.showError('Unable to update status.', context: context);
+      ToastHelper.showError(
+        context.mobileText('Unable to update status.'),
+        context: context,
+      );
     }
   }
 
@@ -146,7 +154,7 @@ class AdminUserProfileTab extends ConsumerWidget {
     final provider = adminUserDetailsControllerProvider(userId);
     await OpenVtsBottomSheet.show<void>(
       context: context,
-      title: 'Change Password',
+      title: context.mobileText('Change Password'),
       initialChildSize: 0.46,
       minChildSize: 0.36,
       maxChildSize: 0.72,
@@ -157,13 +165,17 @@ class AdminUserProfileTab extends ConsumerWidget {
             isSubmitting: state.isChangingPassword,
             errorMessage: state.sectionErrorMessage,
             onSubmit: (password) async {
-              final ok =
-                  await ref.read(provider.notifier).updatePassword(password);
+              final ok = await ref
+                  .read(provider.notifier)
+                  .updatePassword(password);
               if (!sheetContext.mounted) return;
               if (ok) {
                 Navigator.of(sheetContext).pop();
                 if (!context.mounted) return;
-                ToastHelper.showSuccess('Password updated.', context: context);
+                ToastHelper.showSuccess(
+                  context.mobileText('Password updated.'),
+                  context: context,
+                );
               } else {
                 ToastHelper.showError(
                   ref.read(provider).sectionErrorMessage ??
@@ -232,7 +244,7 @@ Future<void> _showAdminUserEditProfileSheetWithProfile({
 }) {
   return OpenVtsBottomSheet.show<void>(
     context: context,
-    title: 'Edit Profile',
+    title: context.mobileText('Edit Profile'),
     initialChildSize: 0.82,
     minChildSize: 0.52,
     maxChildSize: 0.94,
@@ -242,7 +254,10 @@ Future<void> _showAdminUserEditProfileSheetWithProfile({
         final ok = await controller.updateProfile(request);
         if (!context.mounted) return false;
         if (ok) {
-          ToastHelper.showSuccess('Profile updated.', context: context);
+          ToastHelper.showSuccess(
+            context.mobileText('Profile updated.'),
+            context: context,
+          );
         } else {
           ToastHelper.showError(
             ref
@@ -293,7 +308,7 @@ Future<void> _showAdminUserEditCompanySheetWithProfile({
 }) {
   return OpenVtsBottomSheet.show<void>(
     context: context,
-    title: 'Edit Company',
+    title: context.mobileText('Edit Company'),
     initialChildSize: 0.78,
     minChildSize: 0.48,
     maxChildSize: 0.94,
@@ -305,7 +320,10 @@ Future<void> _showAdminUserEditCompanySheetWithProfile({
         final ok = await controller.updateCompany(request);
         if (!context.mounted) return false;
         if (ok) {
-          ToastHelper.showSuccess('Company updated.', context: context);
+          ToastHelper.showSuccess(
+            context.mobileText('Company updated.'),
+            context: context,
+          );
         } else {
           ToastHelper.showError(
             ref
@@ -344,8 +362,9 @@ class _AccountCard extends StatelessWidget {
     final lastLogin = profile.updatedAt != null
         ? fmt.formatDate(profile.updatedAt!)
         : 'Never';
-    final created =
-        profile.createdAt != null ? fmt.formatDate(profile.createdAt!) : '—';
+    final created = profile.createdAt != null
+        ? fmt.formatDate(profile.createdAt!)
+        : '—';
 
     return _SectionCard(
       title: 'ACCOUNT',
@@ -394,37 +413,40 @@ class _AccountCard extends StatelessWidget {
                 SizedBox(
                   width: 44,
                   height: 44,
-                  child: Switch.adaptive(
-                    value: profile.isActive,
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    onChanged: isBusy ? null : onToggleStatus,
+                  child: AdminActionGate(
+                    capability: 'users.update',
+                    child: Switch.adaptive(
+                      value: profile.isActive,
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      onChanged: isBusy ? null : onToggleStatus,
+                    ),
                   ),
                 ),
             ],
           ),
         ),
         _InfoRow(
-          label: 'Address',
+          label: context.mobileText('Address'),
           value: profile.address,
           icon: Icons.home_outlined,
         ),
         _InfoRow(
-          label: 'Country',
+          label: context.mobileText('Country'),
           value: _resolveCountryLabel(profile),
           icon: Icons.public_outlined,
         ),
         _InfoRow(
-          label: 'State',
+          label: context.mobileText('State'),
           value: _resolveStateLabel(profile),
           icon: Icons.map_outlined,
         ),
         _InfoRow(
-          label: 'City',
+          label: context.mobileText('City'),
           value: profile.city,
           icon: Icons.location_city_outlined,
         ),
         _InfoRow(
-          label: 'Pincode',
+          label: context.mobileText('Pincode'),
           value: profile.pincode,
           icon: Icons.local_post_office_outlined,
         ),
@@ -442,7 +464,7 @@ class _AccountCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      'Created: ',
+                      context.mobileText('Created: '),
                       style: OpenVtsTypography.meta.copyWith(
                         color: Theme.of(context).colorScheme.outline,
                         fontSize: 10,
@@ -475,7 +497,7 @@ class _AccountCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      'Last login: ',
+                      context.mobileText('Last login: '),
                       style: OpenVtsTypography.meta.copyWith(
                         color: Theme.of(context).colorScheme.outline,
                         fontSize: 10,
@@ -536,36 +558,39 @@ class _CompanyCard extends StatelessWidget {
       trailing: SizedBox(
         width: 32,
         height: 32,
-        child: IconButton(
-          padding: EdgeInsets.zero,
-          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-          icon: Icon(
-            Icons.edit_outlined,
-            size: 16,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
+        child: AdminActionGate(
+          capability: 'users.update',
+          child: IconButton(
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+            icon: Icon(
+              Icons.edit_outlined,
+              size: 16,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+            tooltip: context.mobileText('Edit company'),
+            onPressed: isBusy ? null : onEditCompany,
           ),
-          tooltip: 'Edit company',
-          onPressed: isBusy ? null : onEditCompany,
         ),
       ),
       children: [
         _InfoRow(
-          label: 'Company',
+          label: context.mobileText('Company'),
           value: profile.companyName,
           icon: Icons.business_outlined,
         ),
         _InfoRow(
-          label: 'Website',
+          label: context.mobileText('Website'),
           value: profile.websiteUrl,
           icon: Icons.language_outlined,
         ),
         _InfoRow(
-          label: 'Domain',
+          label: context.mobileText('Domain'),
           value: profile.customDomain,
           icon: Icons.dns_outlined,
         ),
         _InfoRow(
-          label: 'Brand color',
+          label: context.mobileText('Brand color'),
           value: profile.primaryColor,
           icon: Icons.palette_outlined,
           trailing: profile.primaryColor.trim().isNotEmpty
@@ -636,18 +661,24 @@ class _BottomActions extends StatelessWidget {
     return Row(
       children: [
         Expanded(
-          child: OpenVtsButton(
-            label: 'Edit Profile',
-            variant: OpenVtsButtonVariant.secondary,
-            onPressed: isBusy ? null : onEditProfile,
+          child: AdminActionGate(
+            capability: 'users.update',
+            child: OpenVtsButton(
+              label: context.mobileText('Edit Profile'),
+              variant: OpenVtsButtonVariant.secondary,
+              onPressed: isBusy ? null : onEditProfile,
+            ),
           ),
         ),
         const SizedBox(width: OpenVtsSpacing.sm),
         Expanded(
-          child: OpenVtsButton(
-            label: 'Change Password',
-            variant: OpenVtsButtonVariant.secondary,
-            onPressed: isBusy ? null : onChangePassword,
+          child: AdminActionGate(
+            capability: 'users.update',
+            child: OpenVtsButton(
+              label: context.mobileText('Change Password'),
+              variant: OpenVtsButtonVariant.secondary,
+              onPressed: isBusy ? null : onChangePassword,
+            ),
           ),
         ),
       ],
@@ -733,8 +764,11 @@ class _Avatar extends StatelessWidget {
   }
 
   static String _initials(String value) {
-    final parts =
-        value.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
+    final parts = value
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((p) => p.isNotEmpty)
+        .toList();
     if (parts.isEmpty) return 'OV';
     if (parts.length == 1) {
       return parts.first
@@ -784,7 +818,8 @@ class _InfoRow extends StatelessWidget {
           ),
           const SizedBox(width: OpenVtsSpacing.xs),
           Expanded(
-            child: valueWidget ??
+            child:
+                valueWidget ??
                 Text(
                   _displayValue(value ?? ''),
                   style: OpenVtsTypography.label.copyWith(
@@ -861,7 +896,7 @@ class _SectionErrorCard extends StatelessWidget {
               ),
               const SizedBox(width: OpenVtsSpacing.xs),
               Text(
-                'Unable to load profile',
+                context.mobileText('Unable to load profile'),
                 style: OpenVtsTypography.label.copyWith(
                   color: Theme.of(context).colorScheme.onSurface,
                   fontWeight: FontWeight.w800,
@@ -878,7 +913,7 @@ class _SectionErrorCard extends StatelessWidget {
           ),
           const SizedBox(height: OpenVtsSpacing.sm),
           OpenVtsButton(
-            label: 'Retry',
+            label: context.mobileText('Retry'),
             height: 34,
             variant: OpenVtsButtonVariant.secondary,
             onPressed: onRetry,
@@ -936,10 +971,7 @@ class _SkeletonBox extends StatelessWidget {
 // =============================================================================
 
 class _EditProfileSheet extends ConsumerStatefulWidget {
-  const _EditProfileSheet({
-    required this.profile,
-    required this.onSubmit,
-  });
+  const _EditProfileSheet({required this.profile, required this.onSubmit});
 
   final _ProfileSnapshot profile;
   final Future<bool> Function(AdminUpdateUserDetailsRequest request) onSubmit;
@@ -1023,26 +1055,24 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
                   const SizedBox(height: OpenVtsSpacing.md),
                 ],
                 AdminUserFormSection(
-                  title: 'Identity',
+                  title: context.mobileText('Identity'),
                   children: [
                     OpenVtsTextField(
-                      label: 'Name',
+                      label: context.mobileText('Name'),
                       controller: _nameController,
                       textInputAction: TextInputAction.next,
                       prefixIcon: Icons.person_outline_rounded,
-                      validator: (value) => Validators.required(
-                        value,
-                        fieldName: 'Name',
-                      ),
+                      validator: (value) =>
+                          Validators.required(value, fieldName: 'Name'),
                     ),
                     const SizedBox(height: OpenVtsSpacing.sm),
                     OpenVtsTextField(
-                      label: 'Email (optional)',
+                      label: context.mobileText('Email'),
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
                       textInputAction: TextInputAction.next,
                       prefixIcon: Icons.mail_outline_rounded,
-                      validator: Validators.adminEmailOptional,
+                      validator: Validators.email,
                     ),
                     const SizedBox(height: OpenVtsSpacing.sm),
                     AdminUserPrefixPhoneRow(
@@ -1059,54 +1089,48 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
                     ),
                     const SizedBox(height: OpenVtsSpacing.sm),
                     OpenVtsTextField(
-                      label: 'Username',
+                      label: context.mobileText('Username'),
                       controller: _usernameController,
                       textInputAction: TextInputAction.next,
                       prefixIcon: Icons.alternate_email_rounded,
-                      validator: (value) => Validators.required(
-                        value,
-                        fieldName: 'Username',
-                      ),
+                      validator: (value) =>
+                          Validators.required(value, fieldName: 'Username'),
                     ),
                   ],
                 ),
                 const SizedBox(height: OpenVtsSpacing.lg),
                 AdminUserFormSection(
-                  title: 'Company',
+                  title: context.mobileText('Company'),
                   children: [
                     OpenVtsTextField(
-                      label: 'Company Name',
+                      label: context.mobileText('Company Name'),
                       controller: _companyNameController,
                       textInputAction: TextInputAction.next,
                       prefixIcon: Icons.apartment_rounded,
-                      validator: (value) => Validators.required(
-                        value,
-                        fieldName: 'Company name',
-                      ),
+                      validator: (value) =>
+                          Validators.required(value, fieldName: 'Company name'),
                     ),
                   ],
                 ),
                 const SizedBox(height: OpenVtsSpacing.lg),
                 AdminUserFormSection(
-                  title: 'Location',
+                  title: context.mobileText('Location'),
                   children: [
                     OpenVtsTextField(
-                      label: 'Address',
+                      label: context.mobileText('Address'),
                       controller: _addressController,
                       textInputAction: TextInputAction.next,
                       prefixIcon: Icons.place_outlined,
                       maxLines: 2,
-                      validator: (value) => Validators.required(
-                        value,
-                        fieldName: 'Address',
-                      ),
+                      validator: (value) =>
+                          Validators.required(value, fieldName: 'Address'),
                     ),
                     const SizedBox(height: OpenVtsSpacing.sm),
                     AdminUserDropdownField(
-                      label: 'Country',
+                      label: context.mobileText('Country'),
                       value: _countryCode,
                       options: _countryOptions,
-                      hintText: 'Select country',
+                      hintText: context.mobileText('Select country'),
                       prefixIcon: Icons.public_rounded,
                       isLoading: _isLoadingReferences,
                       validator: requiredDropdown,
@@ -1115,23 +1139,25 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
                     ),
                     const SizedBox(height: OpenVtsSpacing.sm),
                     AdminUserDropdownField(
-                      label: 'State (optional)',
+                      label: context.mobileText('State'),
                       value: _stateCode,
                       options: _stateOptions,
-                      hintText: 'Select state',
+                      hintText: context.mobileText('Select state'),
                       prefixIcon: Icons.map_outlined,
                       isLoading: _isLoadingStates,
+                      validator: requiredDropdown,
                       searchable: true,
                       onChanged: _countryCode == null ? null : _onStateChanged,
                     ),
                     const SizedBox(height: OpenVtsSpacing.sm),
                     AdminUserDropdownField(
-                      label: 'City (optional)',
+                      label: context.mobileText('City'),
                       value: _city,
                       options: _cityOptions,
-                      hintText: 'Select city',
+                      hintText: context.mobileText('Select city'),
                       prefixIcon: Icons.location_city_rounded,
                       isLoading: _isLoadingCities,
+                      validator: requiredDropdown,
                       searchable: true,
                       onChanged: _stateCode == null
                           ? null
@@ -1139,7 +1165,7 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
                     ),
                     const SizedBox(height: OpenVtsSpacing.sm),
                     OpenVtsTextField(
-                      label: 'Pincode',
+                      label: context.mobileText('Pincode'),
                       controller: _pincodeController,
                       keyboardType: TextInputType.number,
                       textInputAction: TextInputAction.done,
@@ -1152,10 +1178,7 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
             ),
           ),
           const Divider(height: 1),
-          _SheetActions(
-            isSubmitting: _isSubmitting,
-            onSubmit: _submit,
-          ),
+          _SheetActions(isSubmitting: _isSubmitting, onSubmit: _submit),
         ],
       ),
     );
@@ -1163,22 +1186,30 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
 
   List<AdminUserDropdownOption> get _mobilePrefixOptions {
     return _mobilePrefixes
-        .map((item) =>
-            AdminUserDropdownOption(value: item.value, label: item.label))
+        .map(
+          (item) =>
+              AdminUserDropdownOption(value: item.value, label: item.label),
+        )
         .toList(growable: false);
   }
 
   List<AdminUserDropdownOption> get _countryOptions {
     final options = _countries
-        .map((item) =>
-            AdminUserDropdownOption(value: item.value, label: item.label))
+        .map(
+          (item) =>
+              AdminUserDropdownOption(value: item.value, label: item.label),
+        )
         .toList(growable: true);
     // Inject current country if not in list
     if (_countryCode != null && !options.any((o) => o.value == _countryCode)) {
       options.insert(
         0,
         AdminUserDropdownOption(
-            value: _countryCode!, label: '$_countryCode (current)'),
+          value: _countryCode!,
+          label: context.mobileText("{value1} (current)", {
+            'value1': (_countryCode).toString(),
+          }),
+        ),
       );
     }
     return options;
@@ -1186,15 +1217,21 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
 
   List<AdminUserDropdownOption> get _stateOptions {
     final options = _states
-        .map((item) =>
-            AdminUserDropdownOption(value: item.value, label: item.label))
+        .map(
+          (item) =>
+              AdminUserDropdownOption(value: item.value, label: item.label),
+        )
         .toList(growable: true);
     // Inject current state if not in list
     if (_stateCode != null && !options.any((o) => o.value == _stateCode)) {
       options.insert(
         0,
         AdminUserDropdownOption(
-            value: _stateCode!, label: '$_stateCode (current)'),
+          value: _stateCode!,
+          label: context.mobileText("{value1} (current)", {
+            'value1': (_stateCode).toString(),
+          }),
+        ),
       );
     }
     return options;
@@ -1202,14 +1239,21 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
 
   List<AdminUserDropdownOption> get _cityOptions {
     final options = _cities
-        .map((item) =>
-            AdminUserDropdownOption(value: item.value, label: item.label))
+        .map(
+          (item) =>
+              AdminUserDropdownOption(value: item.value, label: item.label),
+        )
         .toList(growable: true);
     // Inject current city if not in list
     if (_city != null && !options.any((o) => o.value == _city)) {
       options.insert(
         0,
-        AdminUserDropdownOption(value: _city!, label: '$_city (current)'),
+        AdminUserDropdownOption(
+          value: _city!,
+          label: context.mobileText("{value1} (current)", {
+            'value1': (_city).toString(),
+          }),
+        ),
       );
     }
     return options;
@@ -1236,7 +1280,10 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
     } catch (_) {
       if (!mounted) return;
       setState(() => _isLoadingReferences = false);
-      ToastHelper.showError('Unable to load form options.', context: context);
+      ToastHelper.showError(
+        context.mobileText('Unable to load form options.'),
+        context: context,
+      );
     }
   }
 
@@ -1283,7 +1330,10 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
     } catch (_) {
       if (!mounted) return;
       setState(() => _isLoadingStates = false);
-      ToastHelper.showError('Unable to load states.', context: context);
+      ToastHelper.showError(
+        context.mobileText('Unable to load states.'),
+        context: context,
+      );
     }
   }
 
@@ -1319,7 +1369,10 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
     } catch (_) {
       if (!mounted) return;
       setState(() => _isLoadingCities = false);
-      ToastHelper.showError('Unable to load cities.', context: context);
+      ToastHelper.showError(
+        context.mobileText('Unable to load cities.'),
+        context: context,
+      );
     }
   }
 
@@ -1399,13 +1452,15 @@ class _PasswordSheetState extends State<_PasswordSheet> {
         padding: const EdgeInsets.all(OpenVtsSpacing.md),
         children: [
           OpenVtsTextField(
-            label: 'New password',
+            label: context.mobileText('New password'),
             controller: _passwordController,
             obscureText: _obscurePassword,
             textInputAction: TextInputAction.next,
             prefixIcon: Icons.lock_outline_rounded,
             suffixIcon: IconButton(
-              tooltip: _obscurePassword ? 'Show password' : 'Hide password',
+              tooltip: _obscurePassword
+                  ? context.mobileText('Show password')
+                  : context.mobileText('Hide password'),
               onPressed: () {
                 setState(() => _obscurePassword = !_obscurePassword);
               },
@@ -1420,13 +1475,15 @@ class _PasswordSheetState extends State<_PasswordSheet> {
           ),
           const SizedBox(height: OpenVtsSpacing.sm),
           OpenVtsTextField(
-            label: 'Confirm password',
+            label: context.mobileText('Confirm password'),
             controller: _confirmController,
             obscureText: _obscureConfirm,
             textInputAction: TextInputAction.done,
             prefixIcon: Icons.lock_reset_rounded,
             suffixIcon: IconButton(
-              tooltip: _obscureConfirm ? 'Show password' : 'Hide password',
+              tooltip: _obscureConfirm
+                  ? context.mobileText('Show password')
+                  : context.mobileText('Hide password'),
               onPressed: () {
                 setState(() => _obscureConfirm = !_obscureConfirm);
               },
@@ -1451,7 +1508,7 @@ class _PasswordSheetState extends State<_PasswordSheet> {
           ],
           const SizedBox(height: OpenVtsSpacing.lg),
           OpenVtsButton(
-            label: 'Update Password',
+            label: context.mobileText('Update Password'),
             height: 40,
             isLoading: widget.isSubmitting,
             onPressed: widget.isSubmitting ? null : _submit,
@@ -1464,20 +1521,20 @@ class _PasswordSheetState extends State<_PasswordSheet> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    await widget.onSubmit(_passwordController.text.trim());
+    await widget.onSubmit(_passwordController.text);
   }
 
   String? _passwordValidator(String? value) {
-    final normalized = value?.trim() ?? '';
+    final normalized = value ?? '';
     if (normalized.isEmpty) return 'Required';
     if (normalized.length < 8) return 'Use at least 8 characters';
     return null;
   }
 
   String? _confirmValidator(String? value) {
-    final normalized = value?.trim() ?? '';
+    final normalized = value ?? '';
     if (normalized.isEmpty) return 'Required';
-    if (normalized != _passwordController.text.trim()) {
+    if (normalized != _passwordController.text) {
       return 'Passwords do not match';
     }
     return null;
@@ -1585,21 +1642,19 @@ class _CompanySheetState extends State<_CompanySheet> {
                   const SizedBox(height: OpenVtsSpacing.md),
                 ],
                 AdminUserFormSection(
-                  title: 'Company',
+                  title: context.mobileText('Company'),
                   children: [
                     OpenVtsTextField(
-                      label: 'Name',
+                      label: context.mobileText('Name'),
                       controller: _nameController,
                       textInputAction: TextInputAction.next,
                       prefixIcon: Icons.apartment_rounded,
-                      validator: (value) => Validators.required(
-                        value,
-                        fieldName: 'Company name',
-                      ),
+                      validator: (value) =>
+                          Validators.required(value, fieldName: 'Company name'),
                     ),
                     const SizedBox(height: OpenVtsSpacing.sm),
                     OpenVtsTextField(
-                      label: 'Website',
+                      label: context.mobileText('Website'),
                       controller: _websiteController,
                       textInputAction: TextInputAction.next,
                       keyboardType: TextInputType.url,
@@ -1607,7 +1662,7 @@ class _CompanySheetState extends State<_CompanySheet> {
                     ),
                     const SizedBox(height: OpenVtsSpacing.sm),
                     OpenVtsTextField(
-                      label: 'Custom Domain',
+                      label: context.mobileText('Custom Domain'),
                       controller: _customDomainController,
                       textInputAction: TextInputAction.next,
                       keyboardType: TextInputType.url,
@@ -1615,10 +1670,10 @@ class _CompanySheetState extends State<_CompanySheet> {
                     ),
                     const SizedBox(height: OpenVtsSpacing.sm),
                     AdminUserDropdownField(
-                      label: 'Primary Color',
+                      label: context.mobileText('Primary Color'),
                       value: _primaryColor,
                       options: _primaryColorOptions,
-                      hintText: 'Select color',
+                      hintText: context.mobileText('Select color'),
                       prefixIcon: Icons.palette_outlined,
                       validator: requiredDropdown,
                       onChanged: (value) {
@@ -1629,7 +1684,7 @@ class _CompanySheetState extends State<_CompanySheet> {
                 ),
                 const SizedBox(height: OpenVtsSpacing.lg),
                 AdminUserFormSection(
-                  title: 'Social Links',
+                  title: context.mobileText('Social Links'),
                   children: [
                     for (final socialKey in _socialKeys) ...[
                       OpenVtsTextField(
@@ -1650,10 +1705,7 @@ class _CompanySheetState extends State<_CompanySheet> {
             ),
           ),
           const Divider(height: 1),
-          _SheetActions(
-            isSubmitting: _isSubmitting,
-            onSubmit: _submit,
-          ),
+          _SheetActions(isSubmitting: _isSubmitting, onSubmit: _submit),
         ],
       ),
     );
@@ -1675,8 +1727,10 @@ class _CompanySheetState extends State<_CompanySheet> {
     } catch (_) {
       if (!mounted) return;
       setState(() => _isLoadingCompany = false);
-      ToastHelper.showError('Unable to load company details.',
-          context: context);
+      ToastHelper.showError(
+        context.mobileText('Unable to load company details.'),
+        context: context,
+      );
     }
   }
 
@@ -1689,8 +1743,9 @@ class _CompanySheetState extends State<_CompanySheet> {
     _primaryColor =
         _normalizePrimaryColorOption(company.primaryColor) ?? 'Black';
     for (final socialKey in _socialKeys) {
-      _socialControllers[socialKey]?.text =
-          _initialText(company.socialLinks[socialKey]);
+      _socialControllers[socialKey]?.text = _initialText(
+        company.socialLinks[socialKey],
+      );
     }
     setState(() {}); // Ensure UI updates with all applied values
   }
@@ -1728,10 +1783,7 @@ class _CompanySheetState extends State<_CompanySheet> {
 // =============================================================================
 
 class _SheetActions extends StatelessWidget {
-  const _SheetActions({
-    required this.isSubmitting,
-    required this.onSubmit,
-  });
+  const _SheetActions({required this.isSubmitting, required this.onSubmit});
 
   final bool isSubmitting;
   final VoidCallback onSubmit;
@@ -1746,17 +1798,18 @@ class _SheetActions extends StatelessWidget {
           children: [
             Expanded(
               child: OpenVtsButton(
-                label: 'Cancel',
+                label: context.mobileText('Cancel'),
                 height: 40,
                 variant: OpenVtsButtonVariant.secondary,
-                onPressed:
-                    isSubmitting ? null : () => Navigator.of(context).pop(),
+                onPressed: isSubmitting
+                    ? null
+                    : () => Navigator.of(context).pop(),
               ),
             ),
             const SizedBox(width: OpenVtsSpacing.sm),
             Expanded(
               child: OpenVtsButton(
-                label: 'Save',
+                label: context.mobileText('Save'),
                 height: 40,
                 isLoading: isSubmitting,
                 onPressed: isSubmitting ? null : onSubmit,
@@ -1880,8 +1933,10 @@ class _ProfileSnapshot {
           address?.fullAddress,
           details.location,
         ]),
-        countryCode:
-            _firstNonEmpty([details.countryCode, address?.countryCode]),
+        countryCode: _firstNonEmpty([
+          details.countryCode,
+          address?.countryCode,
+        ]),
         countryName: address?.countryName ?? '',
         stateCode: address?.stateCode ?? '',
         stateName: address?.stateName ?? '',
@@ -2086,8 +2141,9 @@ String _normalizeUrl(String value) {
 String _hostnameOnly(String value) {
   final normalized = value.trim();
   if (normalized.isEmpty) return '';
-  final candidate =
-      normalized.contains('://') ? normalized : 'https://$normalized';
+  final candidate = normalized.contains('://')
+      ? normalized
+      : 'https://$normalized';
   final uri = Uri.tryParse(candidate);
   if (uri != null && uri.host.isNotEmpty) {
     return uri.host.toLowerCase();

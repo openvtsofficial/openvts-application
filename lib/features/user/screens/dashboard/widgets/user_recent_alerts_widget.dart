@@ -8,6 +8,7 @@ import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../core/utils/date_time_formatter.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../controllers/user_providers.dart';
 import '../../../models/user_dashboard_model.dart';
 import 'user_dashboard_vehicle_selector.dart';
@@ -41,10 +42,11 @@ class _UserRecentAlertsWidgetState
   @override
   void initState() {
     super.initState();
-    _selectedVehicleId = userDashboardPropString(
-          widget.config.props,
-          const ['vehicleId', 'vehicle_id'],
-        ) ??
+    _selectedVehicleId =
+        userDashboardPropString(widget.config.props, const [
+          'vehicleId',
+          'vehicle_id',
+        ]) ??
         'all';
     _startRefreshTimer();
   }
@@ -185,11 +187,12 @@ class _UserRecentAlertsWidgetState
 
   Widget _buildBody(
     AsyncValue<
-            ({
-              List<UserDashboardVehicleOption> vehicles,
-              UserDashboardRecentAlertsPage page,
-            })>
-        state,
+      ({
+        List<UserDashboardVehicleOption> vehicles,
+        UserDashboardRecentAlertsPage page,
+      })
+    >
+    state,
   ) {
     if (state.hasError) {
       return UserDashboardWidgetError(
@@ -216,8 +219,8 @@ class _UserRecentAlertsWidgetState
         ),
         const SizedBox(height: OpenVtsSpacing.sm),
         if (items.isEmpty)
-          const UserDashboardWidgetEmpty(
-            message: 'No recent alerts.',
+          UserDashboardWidgetEmpty(
+            message: context.mobileText('No recent alerts.'),
             icon: Icons.notifications_none_rounded,
           )
         else ...[
@@ -236,7 +239,9 @@ class _UserRecentAlertsWidgetState
           if (items.length > 10) ...[
             const SizedBox(height: OpenVtsSpacing.xs),
             Text(
-              'Showing 10 of ${items.length} latest alerts',
+              context.mobileText("Showing 10 of {value1} latest alerts", {
+                'value1': (items.length).toString(),
+              }),
               textAlign: TextAlign.center,
               style: OpenVtsTypography.meta.copyWith(
                 color: Theme.of(context).colorScheme.outline,
@@ -314,13 +319,17 @@ class _AlertRow extends ConsumerWidget {
                           overflow: TextOverflow.ellipsis,
                           style: OpenVtsTypography.label.copyWith(
                             color: Theme.of(context).colorScheme.onSurface,
-                            fontWeight:
-                                isRead ? FontWeight.w700 : FontWeight.w900,
+                            fontWeight: isRead
+                                ? FontWeight.w700
+                                : FontWeight.w900,
                           ),
                         ),
                       ),
                       const SizedBox(width: OpenVtsSpacing.xs),
-                      _AlertChip(label: severity.label, color: severity.color),
+                      _AlertChip(
+                        label: context.mobileText(severity.label),
+                        color: severity.color,
+                      ),
                     ],
                   ),
                   const SizedBox(height: 3),
@@ -329,10 +338,15 @@ class _AlertRow extends ConsumerWidget {
                     runSpacing: 2,
                     children: [
                       _MetaText(
-                          item.source.isEmpty ? 'Source unknown' : item.source),
+                        item.source.isEmpty ? 'Source unknown' : item.source,
+                      ),
                       _MetaText(vehicle),
-                      _MetaText(userDashboardFormatShortTime(item.createdAt,
-                          formatter: formatter)),
+                      _MetaText(
+                        userDashboardFormatShortTime(
+                          item.createdAt,
+                          formatter: formatter,
+                        ),
+                      ),
                     ],
                   ),
                   if (item.message.trim().isNotEmpty) ...[
@@ -390,8 +404,9 @@ class _AlertDetailSheet extends StatelessWidget {
         return DecoratedBox(
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
-            borderRadius:
-                BorderRadius.vertical(top: Radius.circular(OpenVtsRadius.lg)),
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(OpenVtsRadius.lg),
+            ),
           ),
           child: ListView(
             controller: scrollController,
@@ -415,16 +430,20 @@ class _AlertDetailSheet extends StatelessWidget {
               const SizedBox(height: OpenVtsSpacing.md),
               Row(
                 children: [
-                  _AlertChip(label: severity.label, color: severity.color),
+                  _AlertChip(
+                    label: context.mobileText(severity.label),
+                    color: severity.color,
+                  ),
                   const SizedBox(width: OpenVtsSpacing.xs),
                   _AlertChip(
-                    label:
-                        alert.source.isEmpty ? 'Source unknown' : alert.source,
+                    label: alert.source.isEmpty
+                        ? context.mobileText('Source unknown')
+                        : alert.source,
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                   const Spacer(),
                   IconButton(
-                    tooltip: 'Close',
+                    tooltip: context.mobileText('Close'),
                     onPressed: () => Navigator.of(context).pop(),
                     icon: const Icon(Icons.close_rounded, size: 18),
                   ),
@@ -451,8 +470,10 @@ class _AlertDetailSheet extends StatelessWidget {
                 builder: (context, ref, _) {
                   final formatter = ref.watch(appDateFormatterProvider);
                   return Text(
-                    userDashboardFormatDateTime(alert.createdAt,
-                        formatter: formatter),
+                    userDashboardFormatDateTime(
+                      alert.createdAt,
+                      formatter: formatter,
+                    ),
                     style: OpenVtsTypography.meta.copyWith(
                       color: Theme.of(context).colorScheme.outline,
                       fontWeight: FontWeight.w600,
@@ -462,10 +483,10 @@ class _AlertDetailSheet extends StatelessWidget {
               ),
               const SizedBox(height: OpenVtsSpacing.md),
               _DetailSection(
-                title: 'Message',
+                title: context.mobileText('Message'),
                 child: Text(
                   alert.message.trim().isEmpty
-                      ? 'No message provided.'
+                      ? context.mobileText('No message provided.')
                       : alert.message,
                   style: OpenVtsTypography.body.copyWith(
                     color: Theme.of(context).colorScheme.onSurface,
@@ -475,7 +496,7 @@ class _AlertDetailSheet extends StatelessWidget {
               if ((alert.meta ?? const <String, dynamic>{}).isNotEmpty) ...[
                 const SizedBox(height: OpenVtsSpacing.sm),
                 _DetailSection(
-                  title: 'Details',
+                  title: context.mobileText('Details'),
                   child: Column(
                     children: [
                       for (final entry in alert.meta!.entries) ...[
@@ -485,9 +506,9 @@ class _AlertDetailSheet extends StatelessWidget {
                         ),
                         if (entry.key != alert.meta!.keys.last)
                           Divider(
-                              height: OpenVtsSpacing.sm,
-                              color:
-                                  Theme.of(context).colorScheme.outlineVariant),
+                            height: OpenVtsSpacing.sm,
+                            color: Theme.of(context).colorScheme.outlineVariant,
+                          ),
                       ],
                     ],
                   ),
@@ -505,9 +526,10 @@ class _AlertDetailSheet extends StatelessWidget {
                   state.valueOrNull!.deliveries.isNotEmpty) ...[
                 const SizedBox(height: OpenVtsSpacing.md),
                 _DetailSection(
-                  title: 'Delivery Logs',
+                  title: context.mobileText('Delivery Logs'),
                   child: _DeliveryLogList(
-                      deliveries: state.valueOrNull!.deliveries),
+                    deliveries: state.valueOrNull!.deliveries,
+                  ),
                 ),
               ],
             ],
@@ -540,8 +562,9 @@ class _DeliveryLogList extends StatelessWidget {
           _DeliveryLogRow(delivery: deliveries[index]),
           if (index != deliveries.length - 1)
             Divider(
-                height: OpenVtsSpacing.md,
-                color: Theme.of(context).colorScheme.outlineVariant),
+              height: OpenVtsSpacing.md,
+              color: Theme.of(context).colorScheme.outlineVariant,
+            ),
         ],
       ],
     );
@@ -565,8 +588,9 @@ class _DeliveryLogRow extends ConsumerWidget {
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-            border:
-                Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+            border: Border.all(
+              color: Theme.of(context).colorScheme.outlineVariant,
+            ),
           ),
           child: Icon(
             Icons.mail_outline_rounded,
@@ -580,7 +604,9 @@ class _DeliveryLogRow extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                delivery.channel.isEmpty ? 'Channel unknown' : delivery.channel,
+                delivery.channel.isEmpty
+                    ? context.mobileText('Channel unknown')
+                    : delivery.channel,
                 style: OpenVtsTypography.label.copyWith(
                   color: Theme.of(context).colorScheme.onSurface,
                   fontWeight: FontWeight.w800,
@@ -591,11 +617,15 @@ class _DeliveryLogRow extends ConsumerWidget {
                 [
                   delivery.status.isEmpty ? 'No status' : delivery.status,
                   if (delivery.deliveredAt != null)
-                    userDashboardFormatShortTime(delivery.deliveredAt,
-                        formatter: formatter)
+                    userDashboardFormatShortTime(
+                      delivery.deliveredAt,
+                      formatter: formatter,
+                    )
                   else if (delivery.sentAt != null)
-                    userDashboardFormatShortTime(delivery.sentAt,
-                        formatter: formatter),
+                    userDashboardFormatShortTime(
+                      delivery.sentAt,
+                      formatter: formatter,
+                    ),
                 ].join(' - '),
                 style: OpenVtsTypography.meta.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -703,7 +733,9 @@ class _AlertChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(
-          horizontal: OpenVtsSpacing.xs, vertical: 3),
+        horizontal: OpenVtsSpacing.xs,
+        vertical: 3,
+      ),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
@@ -767,20 +799,28 @@ class _SeverityStyle {
         title.contains('SOS') ||
         title.contains('ALARM')) {
       return const _SeverityStyle(
-          label: 'Critical', color: OpenVtsColors.error);
+        label: 'Critical',
+        color: OpenVtsColors.error,
+      );
     }
     if (severity == 'WARNING' || source.contains('OVERSPEED')) {
       return const _SeverityStyle(
-          label: 'Warning', color: OpenVtsColors.warning);
+        label: 'Warning',
+        color: OpenVtsColors.warning,
+      );
     }
     if (source.contains('IGNITION') || title.contains('IGNITION')) {
       return const _SeverityStyle(
-          label: 'Ignition', color: OpenVtsColors.success);
+        label: 'Ignition',
+        color: OpenVtsColors.success,
+      );
     }
     if (source.contains('GEOFENCE') || title.contains('GEOFENCE')) {
       return const _SeverityStyle(label: 'Geofence', color: OpenVtsColors.info);
     }
     return const _SeverityStyle(
-        label: 'Info', color: OpenVtsColors.textSecondary);
+      label: 'Info',
+      color: OpenVtsColors.textSecondary,
+    );
   }
 }

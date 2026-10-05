@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../core/utils/date_time_formatter.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../models/admin_users_model.dart';
 import '../../../utils/location_label_resolver.dart';
+import '../../../widgets/admin_action_gate.dart';
 
 enum AdminUserCardAction {
   viewDetails,
@@ -146,9 +149,9 @@ class _CardHeader extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: -0.2,
-                          ),
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -0.2,
+                      ),
                     ),
                   ),
                   const SizedBox(width: OpenVtsSpacing.xs),
@@ -222,7 +225,7 @@ class _AvatarCircle extends StatelessWidget {
   }
 }
 
-class _StatusToggle extends StatelessWidget {
+class _StatusToggle extends ConsumerWidget {
   const _StatusToggle({
     required this.isActive,
     required this.isBusy,
@@ -236,7 +239,8 @@ class _StatusToggle extends StatelessWidget {
   final ValueChanged<bool> onChanged;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (!adminCanPerform(ref, 'users.update')) return const SizedBox.shrink();
     if (isToggling) {
       return const SizedBox(
         width: 40,
@@ -251,7 +255,9 @@ class _StatusToggle extends StatelessWidget {
     }
 
     return Tooltip(
-      message: isActive ? 'Deactivate user' : 'Activate user',
+      message: isActive
+          ? context.mobileText('Deactivate user')
+          : context.mobileText('Activate user'),
       child: Transform.scale(
         scale: 0.85,
         child: Switch(
@@ -268,7 +274,7 @@ class _StatusToggle extends StatelessWidget {
   }
 }
 
-class _CardMenu extends StatelessWidget {
+class _CardMenu extends ConsumerWidget {
   const _CardMenu({
     required this.isBusy,
     required this.isLoggingIn,
@@ -284,7 +290,7 @@ class _CardMenu extends StatelessWidget {
   final ValueChanged<AdminUserCardAction> onActionSelected;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     if (isLoggingIn) {
       return const Padding(
         padding: EdgeInsetsDirectional.only(start: OpenVtsSpacing.xs),
@@ -296,10 +302,19 @@ class _CardMenu extends StatelessWidget {
     }
 
     return PopupMenuButton<AdminUserCardAction>(
-      tooltip: 'More options',
+      tooltip: context.mobileText('More options'),
       onSelected: onActionSelected,
       itemBuilder: (context) => [
-        for (final action in AdminUserCardAction.values)
+        for (final action in AdminUserCardAction.values.where(
+          (action) =>
+              action == AdminUserCardAction.viewDetails ||
+              adminCanPerform(
+                ref,
+                action == AdminUserCardAction.delete
+                    ? 'users.delete'
+                    : 'users.update',
+              ),
+        ))
           if (action == AdminUserCardAction.delete) ...[
             const PopupMenuDivider(),
             _menuItem(context, action),
@@ -350,10 +365,7 @@ class _CardMenu extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _CardInfoGrid extends StatelessWidget {
-  const _CardInfoGrid({
-    required this.user,
-    this.countryOptions = const [],
-  });
+  const _CardInfoGrid({required this.user, this.countryOptions = const []});
 
   final AdminUserListItem user;
   final List<AdminUserCountryOption> countryOptions;
@@ -398,10 +410,7 @@ class _CardInfoGrid extends StatelessWidget {
                 ),
                 const SizedBox(width: OpenVtsSpacing.sm),
                 Expanded(
-                  child: _InfoRow(
-                    icon: Icons.call_outlined,
-                    value: phoneValue,
-                  ),
+                  child: _InfoRow(icon: Icons.call_outlined, value: phoneValue),
                 ),
               ],
             ),
@@ -432,10 +441,7 @@ class _CardInfoGrid extends StatelessWidget {
 }
 
 class _InfoRow extends StatelessWidget {
-  const _InfoRow({
-    required this.icon,
-    required this.value,
-  });
+  const _InfoRow({required this.icon, required this.value});
 
   final IconData icon;
   final String value;
@@ -493,7 +499,7 @@ class _CardMetricsRow extends StatelessWidget {
                   Expanded(
                     child: _MetricCell(
                       icon: Icons.directions_car_outlined,
-                      label: 'Vehicles',
+                      label: context.mobileText('Vehicles'),
                       value: user.vehicleCount.toString(),
                     ),
                   ),
@@ -501,7 +507,7 @@ class _CardMetricsRow extends StatelessWidget {
                   Expanded(
                     child: _MetricCell(
                       icon: Icons.calendar_today_rounded,
-                      label: 'Created',
+                      label: context.mobileText('Created'),
                       value: createdValue,
                     ),
                   ),
@@ -510,7 +516,7 @@ class _CardMetricsRow extends StatelessWidget {
               const SizedBox(height: OpenVtsSpacing.xs),
               _MetricCell(
                 icon: Icons.schedule_outlined,
-                label: 'Updated',
+                label: context.mobileText('Updated'),
                 value: updatedValue,
               ),
             ],
@@ -522,7 +528,7 @@ class _CardMetricsRow extends StatelessWidget {
             Expanded(
               child: _MetricCell(
                 icon: Icons.directions_car_outlined,
-                label: 'Vehicles',
+                label: context.mobileText('Vehicles'),
                 value: user.vehicleCount.toString(),
               ),
             ),
@@ -530,7 +536,7 @@ class _CardMetricsRow extends StatelessWidget {
             Expanded(
               child: _MetricCell(
                 icon: Icons.calendar_today_rounded,
-                label: 'Created',
+                label: context.mobileText('Created'),
                 value: createdValue,
               ),
             ),
@@ -539,7 +545,7 @@ class _CardMetricsRow extends StatelessWidget {
               flex: 2,
               child: _MetricCell(
                 icon: Icons.schedule_outlined,
-                label: 'Updated',
+                label: context.mobileText('Updated'),
                 value: updatedValue,
               ),
             ),
@@ -650,11 +656,7 @@ class _RoundedSurface extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       borderRadius: radius,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: radius,
-        child: surface,
-      ),
+      child: InkWell(onTap: onTap, borderRadius: radius, child: surface),
     );
   }
 }
@@ -730,19 +732,23 @@ String _locationText(
 
   final countryCode = user.countryCode.trim();
   if (countryCode.isNotEmpty) {
-    parts.add(LocationLabelResolver.resolveCountry(
-      countryCode,
-      apiOptions: countryOptions,
-    ));
+    parts.add(
+      LocationLabelResolver.resolveCountry(
+        countryCode,
+        apiOptions: countryOptions,
+      ),
+    );
   }
 
   final stateCode = user.stateCode.trim();
   if (stateCode.isNotEmpty) {
-    parts.add(LocationLabelResolver.resolveState(
-      countryCode,
-      stateCode,
-      apiOptions: const [],
-    ));
+    parts.add(
+      LocationLabelResolver.resolveState(
+        countryCode,
+        stateCode,
+        apiOptions: const [],
+      ),
+    );
   }
 
   final city = user.city.trim();

@@ -12,6 +12,7 @@ import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../core/utils/date_time_formatter.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../shared/widgets/open_vts_empty_state.dart';
@@ -23,6 +24,7 @@ import '../../../controllers/admin_providers.dart';
 import '../../../models/admin_support_model.dart';
 import '../../../models/admin_support_state.dart';
 import '../../../services/admin_support_service.dart';
+import '../../../widgets/admin_action_gate.dart';
 
 const DateTimeFormatter _dateFormatter = DateTimeFormatter();
 
@@ -39,7 +41,7 @@ class AdminSupportConversationScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return OpenVtsPageScaffold(
-      title: 'Support Ticket',
+      title: context.mobileText('Support Ticket'),
       headerMode: OpenVtsPageHeaderMode.standard,
       padding: EdgeInsets.zero,
       body: AdminSupportConversationPane(tab: tab, ticketId: ticketId),
@@ -118,17 +120,15 @@ class _AdminSupportConversationPaneState
   }
 
   Future<void> _loadTicket() {
-    return ref.read(adminSupportControllerProvider.notifier).openTicket(
-          tab: widget.tab,
-          ticketId: widget.ticketId,
-        );
+    return ref
+        .read(adminSupportControllerProvider.notifier)
+        .openTicket(tab: widget.tab, ticketId: widget.ticketId);
   }
 
   Future<void> _refreshTicket() {
-    return ref.read(adminSupportControllerProvider.notifier).loadTicketDetails(
-          tab: widget.tab,
-          ticketId: widget.ticketId,
-        );
+    return ref
+        .read(adminSupportControllerProvider.notifier)
+        .loadTicketDetails(tab: widget.tab, ticketId: widget.ticketId);
   }
 
   Future<void> _pickAttachments() async {
@@ -145,19 +145,26 @@ class _AdminSupportConversationPaneState
   Future<void> _sendReply(AdminSupportTicketDetails ticket) async {
     final message = _replyController.text.trim();
     if (message.isEmpty) {
-      ToastHelper.showError('Reply message is required.', context: context);
+      ToastHelper.showError(
+        context.mobileText('Reply message is required.'),
+        context: context,
+      );
       return;
     }
     if (message.length > AdminSupportService.maxMessageLength) {
       ToastHelper.showError(
-        'Reply must be ${AdminSupportService.maxMessageLength} characters or less.',
+        context.mobileText("Reply must be {value1} characters or less.", {
+          'value1': (AdminSupportService.maxMessageLength).toString(),
+        }),
         context: context,
       );
       return;
     }
 
     try {
-      await ref.read(adminSupportControllerProvider.notifier).sendReply(
+      await ref
+          .read(adminSupportControllerProvider.notifier)
+          .sendReply(
             tab: widget.tab,
             ticketId: ticket.id,
             message: message,
@@ -171,7 +178,10 @@ class _AdminSupportConversationPaneState
       _replyController.clear();
       setState(() => _attachments = <PlatformFile>[]);
       _scheduleScrollToBottom();
-      ToastHelper.showSuccess('Reply sent.', context: context);
+      ToastHelper.showSuccess(
+        context.mobileText('Reply sent.'),
+        context: context,
+      );
     } catch (_) {
       if (!mounted) {
         return;
@@ -179,7 +189,7 @@ class _AdminSupportConversationPaneState
 
       final error =
           ref.read(adminSupportControllerProvider).detailsErrorMessage ??
-              'Unable to send reply.';
+          'Unable to send reply.';
       ToastHelper.showError(error, context: context);
     }
   }
@@ -189,8 +199,12 @@ class _AdminSupportConversationPaneState
     AdminSupportTicketStatus status,
   ) async {
     if (status == ticket.status) {
-      ToastHelper.showInfo('Ticket status is already ${status.label}.',
-          context: context);
+      ToastHelper.showInfo(
+        context.mobileText("Ticket status is already {value1}.", {
+          'value1': (status.label).toString(),
+        }),
+        context: context,
+      );
       return;
     }
 
@@ -205,7 +219,10 @@ class _AdminSupportConversationPaneState
       if (!mounted) {
         return;
       }
-      ToastHelper.showSuccess('Ticket status updated.', context: context);
+      ToastHelper.showSuccess(
+        context.mobileText('Ticket status updated.'),
+        context: context,
+      );
     } catch (_) {
       if (!mounted) {
         return;
@@ -213,7 +230,7 @@ class _AdminSupportConversationPaneState
 
       final error =
           ref.read(adminSupportControllerProvider).detailsErrorMessage ??
-              'Unable to update ticket status.';
+          'Unable to update ticket status.';
       ToastHelper.showError(error, context: context);
     }
   }
@@ -303,8 +320,9 @@ class _AdminSupportConversationPaneState
               OpenVtsSpacing.md,
               OpenVtsSpacing.xs,
             ),
-            child:
-                _InlineConversationError(message: state.detailsErrorMessage!),
+            child: _InlineConversationError(
+              message: state.detailsErrorMessage!,
+            ),
           ),
         Expanded(
           child: _MessageTimeline(
@@ -318,24 +336,27 @@ class _AdminSupportConversationPaneState
         ),
         if (detail.status == AdminSupportTicketStatus.closed)
           const _ClosedTicketNotice(),
-        _ReplyComposer(
-          controller: _replyController,
-          attachments: _attachments,
-          canSend: _hasReplyText && !state.isReplying,
-          isSending: state.isReplying,
-          onAttach: state.isReplying ? null : _pickAttachments,
-          onRemoveAttachment: (file) {
-            setState(
-              () => _attachments = _attachments
-                  .where(
-                    (item) =>
-                        _adminSupportAttachmentIdentity(item) !=
-                        _adminSupportAttachmentIdentity(file),
-                  )
-                  .toList(growable: false),
-            );
-          },
-          onSend: () => unawaited(_sendReply(detail)),
+        AdminActionGate(
+          capability: 'support.reply',
+          child: _ReplyComposer(
+            controller: _replyController,
+            attachments: _attachments,
+            canSend: _hasReplyText && !state.isReplying,
+            isSending: state.isReplying,
+            onAttach: state.isReplying ? null : _pickAttachments,
+            onRemoveAttachment: (file) {
+              setState(
+                () => _attachments = _attachments
+                    .where(
+                      (item) =>
+                          _adminSupportAttachmentIdentity(item) !=
+                          _adminSupportAttachmentIdentity(file),
+                    )
+                    .toList(growable: false),
+              );
+            },
+            onSend: () => unawaited(_sendReply(detail)),
+          ),
         ),
       ],
     );
@@ -384,7 +405,7 @@ class _ConversationHeader extends StatelessWidget {
             children: [
               if (onBack != null) ...[
                 IconButton(
-                  tooltip: 'Back',
+                  tooltip: context.mobileText('Back'),
                   onPressed: onBack,
                   icon: const Icon(Icons.arrow_back_rounded),
                   constraints: const BoxConstraints(
@@ -423,7 +444,7 @@ class _ConversationHeader extends StatelessWidget {
               ),
               const SizedBox(width: OpenVtsSpacing.sm),
               IconButton(
-                tooltip: 'Refresh',
+                tooltip: context.mobileText('Refresh'),
                 onPressed: isRefreshing ? null : onRefresh,
                 icon: isRefreshing
                     ? const SizedBox.square(
@@ -440,8 +461,9 @@ class _ConversationHeader extends StatelessWidget {
             runSpacing: OpenVtsSpacing.xs,
             children: [
               _MetaChip(
-                  label: ticket.status.label,
-                  color: _statusColor(ticket.status)),
+                label: ticket.status.label,
+                color: _statusColor(ticket.status),
+              ),
               _StatusActionChip(
                 status: ticket.status,
                 isLoading: isUpdatingStatus,
@@ -456,18 +478,27 @@ class _ConversationHeader extends StatelessWidget {
               if (_roleMetaLabel != null) _MetaChip(label: _roleMetaLabel!),
               if (ticket.createdAt != null)
                 _MetaChip(
-                  label:
-                      'Created ${_dateFormatter.formatDate(ticket.createdAt!)}',
+                  label: context.mobileText("Created {value1}", {
+                    'value1': (_dateFormatter.formatDate(
+                      ticket.createdAt!,
+                    )).toString(),
+                  }),
                 ),
               if (ticket.updatedAt != null)
                 _MetaChip(
-                  label:
-                      'Updated ${_dateFormatter.formatDate(ticket.updatedAt!)}',
+                  label: context.mobileText("Updated {value1}", {
+                    'value1': (_dateFormatter.formatDate(
+                      ticket.updatedAt!,
+                    )).toString(),
+                  }),
                 ),
               if (ticket.closedAt != null)
                 _MetaChip(
-                  label:
-                      'Closed ${_dateFormatter.formatDate(ticket.closedAt!)}',
+                  label: context.mobileText("Closed {value1}", {
+                    'value1': (_dateFormatter.formatDate(
+                      ticket.closedAt!,
+                    )).toString(),
+                  }),
                 ),
             ],
           ),
@@ -477,8 +508,9 @@ class _ConversationHeader extends StatelessWidget {
   }
 
   String? get _roleMetaLabel {
-    final source =
-        tab == AdminSupportTab.userTickets ? ticket.fromUser : ticket.toUser;
+    final source = tab == AdminSupportTab.userTickets
+        ? ticket.fromUser
+        : ticket.toUser;
     final name = source?.displayName.trim() ?? '';
     if (name.isEmpty || name == '-') {
       return null;
@@ -487,7 +519,7 @@ class _ConversationHeader extends StatelessWidget {
   }
 }
 
-class _StatusActionChip extends StatelessWidget {
+class _StatusActionChip extends ConsumerWidget {
   const _StatusActionChip({
     required this.status,
     required this.isLoading,
@@ -499,11 +531,11 @@ class _StatusActionChip extends StatelessWidget {
   final ValueChanged<AdminSupportTicketStatus> onSelected;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
     return PopupMenuButton<AdminSupportTicketStatus>(
-      enabled: !isLoading,
-      tooltip: 'Update status',
+      enabled: !isLoading && adminCanPerform(ref, 'support.reply'),
+      tooltip: context.mobileText('Update status'),
       onSelected: onSelected,
       itemBuilder: (context) {
         return AdminSupportTicketStatus.values
@@ -523,7 +555,9 @@ class _StatusActionChip extends StatelessWidget {
             .toList(growable: false);
       },
       child: _MetaChip(
-        label: isLoading ? 'Updating' : 'Update status',
+        label: isLoading
+            ? context.mobileText('Updating')
+            : context.mobileText('Update status'),
         color: isLoading ? colorScheme.onSurfaceVariant : colorScheme.primary,
         trailing: isLoading
             ? const SizedBox.square(
@@ -563,12 +597,13 @@ class _MessageTimeline extends StatelessWidget {
           controller: scrollController,
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.all(OpenVtsSpacing.lg),
-          children: const [
-            SizedBox(height: OpenVtsSpacing.xl),
+          children: [
+            const SizedBox(height: OpenVtsSpacing.xl),
             OpenVtsEmptyState(
-              title: 'No conversation yet',
-              message:
-                  'Replies will appear here once the ticket conversation starts.',
+              title: context.mobileText('No conversation yet'),
+              message: context.mobileText(
+                'Replies will appear here once the ticket conversation starts.',
+              ),
             ),
           ],
         ),
@@ -643,8 +678,9 @@ class _AdminSupportMessageBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final alignment =
-        isCurrentUser ? Alignment.centerRight : Alignment.centerLeft;
+    final alignment = isCurrentUser
+        ? Alignment.centerRight
+        : Alignment.centerLeft;
     final borderColor = isCurrentUser
         ? colorScheme.primary.withValues(alpha: 0.18)
         : colorScheme.outlineVariant;
@@ -771,7 +807,7 @@ class _ReplyComposer extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 IconButton(
-                  tooltip: 'Attach file',
+                  tooltip: context.mobileText('Attach file'),
                   onPressed: onAttach,
                   constraints: const BoxConstraints(
                     minWidth: 40,
@@ -788,11 +824,11 @@ class _ReplyComposer extends StatelessWidget {
                     maxLines: 4,
                     maxLength: AdminSupportService.maxMessageLength,
                     textInputAction: TextInputAction.newline,
-                    decoration: const InputDecoration(
-                      hintText: 'Write a reply...',
+                    decoration: InputDecoration(
+                      hintText: context.mobileText('Write a reply...'),
                       counterText: '',
                       isDense: true,
-                      contentPadding: EdgeInsets.symmetric(
+                      contentPadding: const EdgeInsets.symmetric(
                         horizontal: OpenVtsSpacing.sm,
                         vertical: OpenVtsSpacing.sm,
                       ),
@@ -801,7 +837,7 @@ class _ReplyComposer extends StatelessWidget {
                 ),
                 const SizedBox(width: OpenVtsSpacing.xs),
                 OpenVtsButton(
-                  label: 'Send',
+                  label: context.mobileText('Send'),
                   isLoading: isSending,
                   trailingIcon: isSending ? null : Icons.send_rounded,
                   onPressed: canSend ? onSend : null,
@@ -841,7 +877,9 @@ class _ClosedTicketNotice extends StatelessWidget {
           borderRadius: BorderRadius.circular(OpenVtsRadius.md),
         ),
         child: Text(
-          'This ticket is closed. Reply may reopen or move it to In Progress based on backend behavior.',
+          context.mobileText(
+            'This ticket is closed. Reply may reopen or move it to In Progress based on backend behavior.',
+          ),
           style: OpenVtsTypography.body.copyWith(
             color: colorScheme.onSurfaceVariant,
             fontWeight: FontWeight.w600,
@@ -971,7 +1009,7 @@ class _DraftAttachmentWrap extends StatelessWidget {
                   ),
                   const SizedBox(width: OpenVtsSpacing.xxs),
                   IconButton(
-                    tooltip: 'Remove attachment',
+                    tooltip: context.mobileText('Remove attachment'),
                     constraints: const BoxConstraints(
                       minWidth: 36,
                       minHeight: 36,
@@ -1084,32 +1122,43 @@ class _UploadedAttachmentChip extends StatelessWidget {
   Future<void> _openAttachment(BuildContext context) async {
     final path = attachment.filePath.trim();
     if (path.isEmpty) {
-      ToastHelper.showError('Attachment path is not available.',
-          context: context);
+      ToastHelper.showError(
+        context.mobileText('Attachment path is not available.'),
+        context: context,
+      );
       return;
     }
 
     final resolved = _resolveAttachmentUrl(baseUrl, path);
     final uri = Uri.tryParse(resolved);
     if (uri == null) {
-      ToastHelper.showError('Unable to open this attachment.',
-          context: context);
+      ToastHelper.showError(
+        context.mobileText('Unable to open this attachment.'),
+        context: context,
+      );
       return;
     }
 
     try {
-      final launched =
-          await launchUrl(uri, mode: LaunchMode.externalApplication);
+      final launched = await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+      );
       if (!launched && context.mounted) {
         await Clipboard.setData(ClipboardData(text: resolved));
         if (context.mounted) {
-          ToastHelper.showInfo('Could not open file. Link copied.',
-              context: context);
+          ToastHelper.showInfo(
+            context.mobileText('Could not open file. Link copied.'),
+            context: context,
+          );
         }
       }
     } catch (_) {
       if (context.mounted) {
-        ToastHelper.showError('Could not open attachment.', context: context);
+        ToastHelper.showError(
+          context.mobileText('Could not open attachment.'),
+          context: context,
+        );
       }
     }
   }
@@ -1122,7 +1171,9 @@ Future<List<PlatformFile>?> _pickAdminSupportAttachments(
   final remaining = AdminSupportService.maxAttachmentCount - existing.length;
   if (remaining <= 0) {
     ToastHelper.showError(
-      'You can upload up to ${AdminSupportService.maxAttachmentCount} files.',
+      context.mobileText("You can upload up to {value1} files.", {
+        'value1': (AdminSupportService.maxAttachmentCount).toString(),
+      }),
       context: context,
     );
     return existing;
@@ -1132,8 +1183,9 @@ Future<List<PlatformFile>?> _pickAdminSupportAttachments(
     allowMultiple: true,
     withData: true,
     type: FileType.custom,
-    allowedExtensions:
-        AdminSupportService.allowedExtensions.toList(growable: false),
+    allowedExtensions: AdminSupportService.allowedExtensions.toList(
+      growable: false,
+    ),
   );
 
   if (!context.mounted || result == null || result.files.isEmpty) {
@@ -1176,19 +1228,25 @@ Future<List<PlatformFile>?> _pickAdminSupportAttachments(
 
   if (blocked.isNotEmpty) {
     ToastHelper.showError(
-      'Blocked file removed: ${_compactFileList(blocked)}',
+      context.mobileText("Blocked file removed: {value1}", {
+        'value1': (_compactFileList(blocked)).toString(),
+      }),
       context: context,
     );
   }
   if (unsupported.isNotEmpty) {
     ToastHelper.showError(
-      'Unsupported file removed: ${_compactFileList(unsupported)}',
+      context.mobileText("Unsupported file removed: {value1}", {
+        'value1': (_compactFileList(unsupported)).toString(),
+      }),
       context: context,
     );
   }
   if (oversized.isNotEmpty) {
     ToastHelper.showError(
-      'File exceeds 5MB: ${_compactFileList(oversized)}',
+      context.mobileText("File exceeds 5MB: {value1}", {
+        'value1': (_compactFileList(oversized)).toString(),
+      }),
       context: context,
     );
   }

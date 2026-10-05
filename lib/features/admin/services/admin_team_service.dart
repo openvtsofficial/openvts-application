@@ -79,7 +79,7 @@ class AdminTeamService {
   }
 
   Future<void> changeTeamMemberPassword(String teamId, String password) async {
-    final pass = password.trim();
+    final pass = password;
     if (pass.isEmpty) {
       throw ArgumentError('password is required');
     }

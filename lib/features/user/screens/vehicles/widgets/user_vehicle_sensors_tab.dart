@@ -8,6 +8,7 @@ import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../core/utils/date_time_formatter.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../shared/widgets/open_vts_bottom_sheet.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
@@ -23,8 +24,11 @@ import 'user_vehicle_sensor_sheet.dart';
 class UserVehicleSensorsTabView extends ConsumerStatefulWidget {
   const UserVehicleSensorsTabView({required this.provider, super.key});
 
-  final AutoDisposeStateNotifierProvider<UserVehicleDetailsController,
-      UserVehicleDetailsState> provider;
+  final AutoDisposeStateNotifierProvider<
+    UserVehicleDetailsController,
+    UserVehicleDetailsState
+  >
+  provider;
 
   @override
   ConsumerState<UserVehicleSensorsTabView> createState() =>
@@ -63,7 +67,7 @@ class _UserVehicleSensorsTabViewState
         ],
         const SizedBox(height: OpenVtsSpacing.sm),
         if (isInitialLoading)
-          const _LoadingCard(label: 'Loading sensors')
+          _LoadingCard(label: context.mobileText('Loading sensors'))
         else if (state.sectionErrorMessage != null && state.sensors.isEmpty)
           _ErrorCard(
             message: state.sectionErrorMessage!,
@@ -79,7 +83,8 @@ class _UserVehicleSensorsTabViewState
             _SensorCard(
               sensor: sensor,
               formatter: ref.watch(appDateFormatterProvider),
-              isBusy: state.isUpdatingSensor ||
+              isBusy:
+                  state.isUpdatingSensor ||
                   state.isDeletingSensor ||
                   state.isLoadingSensorHistory,
               onEdit: () => _showSensorSheet(context, sensor),
@@ -108,14 +113,13 @@ class _UserVehicleSensorsTabViewState
   ) {
     return OpenVtsBottomSheet.show<void>(
       context: context,
-      title: sensor == null ? 'Add Sensor' : 'Edit Sensor',
+      title: sensor == null
+          ? context.mobileText('Add Sensor')
+          : context.mobileText('Edit Sensor'),
       initialChildSize: 0.78,
       minChildSize: 0.46,
       maxChildSize: 0.94,
-      child: UserVehicleSensorSheet(
-        provider: widget.provider,
-        sensor: sensor,
-      ),
+      child: UserVehicleSensorSheet(provider: widget.provider, sensor: sensor),
     );
   }
 
@@ -125,7 +129,7 @@ class _UserVehicleSensorsTabViewState
   ) {
     return OpenVtsBottomSheet.show<void>(
       context: context,
-      title: 'Sensor History',
+      title: context.mobileText('Sensor History'),
       initialChildSize: 0.72,
       minChildSize: 0.48,
       maxChildSize: 0.94,
@@ -143,17 +147,21 @@ class _UserVehicleSensorsTabViewState
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Delete sensor'),
-        content: Text('Remove ${sensor.title}?'),
+        title: Text(context.mobileText('Delete sensor')),
+        content: Text(
+          context.mobileText("Remove {value1}?", {
+            'value1': (sensor.title).toString(),
+          }),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Cancel'),
+            child: Text(context.mobileText('Cancel')),
           ),
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
             style: TextButton.styleFrom(foregroundColor: OpenVtsColors.error),
-            child: const Text('Delete'),
+            child: Text(context.mobileText('Delete')),
           ),
         ],
       ),
@@ -163,7 +171,10 @@ class _UserVehicleSensorsTabViewState
     final ok = await ref.read(widget.provider.notifier).deleteSensor(sensor.id);
     if (!context.mounted) return;
     if (ok) {
-      ToastHelper.showSuccess('Sensor deleted.', context: context);
+      ToastHelper.showSuccess(
+        context.mobileText('Sensor deleted.'),
+        context: context,
+      );
       return;
     }
 
@@ -203,7 +214,7 @@ class _HeaderCard extends StatelessWidget {
                     const Icon(Icons.sensors_outlined, size: 17),
                     const SizedBox(width: OpenVtsSpacing.xs),
                     Text(
-                      'Sensors',
+                      context.mobileText('Sensors'),
                       style: OpenVtsTypography.label.copyWith(
                         color: Theme.of(context).colorScheme.onSurface,
                         fontWeight: FontWeight.w800,
@@ -229,7 +240,7 @@ class _HeaderCard extends StatelessWidget {
                 ),
               ),
               _SmallButton(
-                label: 'Add Sensor',
+                label: context.mobileText('Add Sensor'),
                 icon: Icons.add_rounded,
                 onPressed: onAdd,
               ),
@@ -237,7 +248,7 @@ class _HeaderCard extends StatelessWidget {
           ),
           const SizedBox(height: OpenVtsSpacing.sm),
           OpenVtsSearchField(
-            hintText: 'Search sensors',
+            hintText: context.mobileText('Search sensors'),
             onChanged: onSearchChanged,
           ),
         ],
@@ -277,13 +288,13 @@ class _SensorCard extends StatelessWidget {
                 width: 34,
                 height: 34,
                 decoration: BoxDecoration(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onSurface
-                      .withValues(alpha: 0.04),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.04),
                   borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
                   border: Border.all(
-                      color: Theme.of(context).colorScheme.outlineVariant),
+                    color: Theme.of(context).colorScheme.outlineVariant,
+                  ),
                 ),
                 child: Icon(
                   _iconFor(sensor.icon),
@@ -320,13 +331,15 @@ class _SensorCard extends StatelessWidget {
               ),
               const SizedBox(width: OpenVtsSpacing.xs),
               _StatusPill(
-                label: sensor.isActive ? 'Active' : 'Inactive',
+                label: sensor.isActive
+                    ? context.mobileText('Active')
+                    : context.mobileText('Inactive'),
                 color: sensor.isActive
                     ? OpenVtsColors.success
                     : OpenVtsColors.textSecondary,
               ),
               PopupMenuButton<_SensorAction>(
-                tooltip: 'Sensor actions',
+                tooltip: context.mobileText('Sensor actions'),
                 enabled: !isBusy,
                 icon: isBusy
                     ? const SizedBox(
@@ -345,22 +358,27 @@ class _SensorCard extends StatelessWidget {
                       onDelete();
                   }
                 },
-                itemBuilder: (context) => const [
+                itemBuilder: (context) => [
                   PopupMenuItem(
                     value: _SensorAction.edit,
-                    child: _MenuRow(icon: Icons.edit_outlined, label: 'Edit'),
+                    child: _MenuRow(
+                      icon: Icons.edit_outlined,
+                      label: context.mobileText('Edit'),
+                    ),
                   ),
                   PopupMenuItem(
                     value: _SensorAction.history,
                     child: _MenuRow(
-                        icon: Icons.timeline_rounded, label: 'History'),
+                      icon: Icons.timeline_rounded,
+                      label: context.mobileText('History'),
+                    ),
                   ),
-                  PopupMenuDivider(height: 8),
+                  const PopupMenuDivider(height: 8),
                   PopupMenuItem(
                     value: _SensorAction.delete,
                     child: _MenuRow(
                       icon: Icons.delete_outline_rounded,
-                      label: 'Delete',
+                      label: context.mobileText('Delete'),
                       isDestructive: true,
                     ),
                   ),
@@ -403,7 +421,7 @@ class _SensorCard extends StatelessWidget {
               _MetaPill(
                 icon: Icons.schedule_rounded,
                 label: sensor.lastUpdated == null
-                    ? 'Not updated'
+                    ? context.mobileText('Not updated')
                     : formatter.formatDateTime(sensor.lastUpdated!.toLocal()),
               ),
               if (sensor.code.trim().isNotEmpty)
@@ -430,14 +448,18 @@ class _EmptySensorsCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           OpenVtsEmptyState(
-            title: hasSearch ? 'No sensors found' : 'No sensors',
+            title: hasSearch
+                ? context.mobileText('No sensors found')
+                : context.mobileText('No sensors'),
             message: hasSearch
-                ? 'Try a different search term.'
-                : 'No sensors are configured for this vehicle.',
+                ? context.mobileText('Try a different search term.')
+                : context.mobileText(
+                    'No sensors are configured for this vehicle.',
+                  ),
           ),
           const SizedBox(height: OpenVtsSpacing.sm),
           OpenVtsButton(
-            label: 'Add Sensor',
+            label: context.mobileText('Add Sensor'),
             height: 38,
             trailingIcon: Icons.add_rounded,
             onPressed: onAdd,
@@ -500,7 +522,7 @@ class _ErrorCard extends StatelessWidget {
           ),
           const SizedBox(height: OpenVtsSpacing.sm),
           OpenVtsButton(
-            label: 'Retry',
+            label: context.mobileText('Retry'),
             height: 36,
             variant: OpenVtsButtonVariant.secondary,
             onPressed: onRetry,
@@ -527,8 +549,11 @@ class _InlineError extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.error_outline_rounded,
-              size: 16, color: OpenVtsColors.error),
+          const Icon(
+            Icons.error_outline_rounded,
+            size: 16,
+            color: OpenVtsColors.error,
+          ),
           const SizedBox(width: OpenVtsSpacing.xs),
           Expanded(
             child: Text(
@@ -623,22 +648,24 @@ class _MetaPill extends StatelessWidget {
       constraints: const BoxConstraints(maxWidth: 260),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: Theme.of(context)
-            .colorScheme
-            .onSurfaceVariant
-            .withValues(alpha: 0.05),
+        color: Theme.of(
+          context,
+        ).colorScheme.onSurfaceVariant.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
         border: Border.all(
-            color: Theme.of(context)
-                .colorScheme
-                .onSurfaceVariant
-                .withValues(alpha: 0.16)),
+          color: Theme.of(
+            context,
+          ).colorScheme.onSurfaceVariant.withValues(alpha: 0.16),
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon,
-              size: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
+          Icon(
+            icon,
+            size: 12,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
           const SizedBox(width: 4),
           Flexible(
             child: Text(

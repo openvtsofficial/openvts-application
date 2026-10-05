@@ -1,9 +1,6 @@
 import 'dart:convert';
 
-enum UserSettingsTab {
-  profile,
-  localization,
-}
+enum UserSettingsTab { profile, localization, security }
 
 enum UserLayoutDirection {
   ltr,
@@ -92,8 +89,14 @@ class UserSettingsSocialLinks {
   final String? github;
 
   bool get isEmpty {
-    return [facebook, twitter, linkedin, instagram, youtube, github]
-        .every((value) => value == null || value.trim().isEmpty);
+    return [
+      facebook,
+      twitter,
+      linkedin,
+      instagram,
+      youtube,
+      github,
+    ].every((value) => value == null || value.trim().isEmpty);
   }
 
   factory UserSettingsSocialLinks.fromDynamic(dynamic json) {
@@ -110,13 +113,10 @@ class UserSettingsSocialLinks {
 
   Map<String, dynamic> toJsonNonEmpty() {
     final map = <String, dynamic>{};
-    void put(
-      String key,
-      String? value, {
-      bool normalizeAsUrl = false,
-    }) {
-      final normalized =
-          normalizeAsUrl ? _normalizeOptionalUrl(value) : value?.trim();
+    void put(String key, String? value, {bool normalizeAsUrl = false}) {
+      final normalized = normalizeAsUrl
+          ? _normalizeOptionalUrl(value)
+          : value?.trim();
       if (normalized != null && normalized.isNotEmpty) {
         map[key] = normalized;
       }
@@ -197,16 +197,24 @@ class UserSettingsCompany {
       id: _readInt(source, const ['id', 'companyId']),
       name: _readNullableString(source, const ['name', 'companyName', 'Name']),
       websiteUrl: _readNullableString(source, const ['websiteUrl', 'website']),
-      customDomain:
-          _readNullableString(source, const ['customDomain', 'domain']),
+      customDomain: _readNullableString(source, const [
+        'customDomain',
+        'domain',
+      ]),
       socialLinks: links.isEmpty ? null : links,
-      logoLightUrl:
-          _readNullableString(source, const ['logoLightUrl', 'logoLight']),
-      logoDarkUrl:
-          _readNullableString(source, const ['logoDarkUrl', 'logoDark']),
+      logoLightUrl: _readNullableString(source, const [
+        'logoLightUrl',
+        'logoLight',
+      ]),
+      logoDarkUrl: _readNullableString(source, const [
+        'logoDarkUrl',
+        'logoDark',
+      ]),
       faviconUrl: _readNullableString(source, const ['faviconUrl', 'favicon']),
-      primaryColor:
-          _readNullableString(source, const ['primaryColor', 'color']),
+      primaryColor: _readNullableString(source, const [
+        'primaryColor',
+        'color',
+      ]),
     );
   }
 
@@ -250,16 +258,16 @@ class UserSettingsCompany {
 
   @override
   int get hashCode => Object.hash(
-        id,
-        name,
-        websiteUrl,
-        customDomain,
-        socialLinks,
-        logoLightUrl,
-        logoDarkUrl,
-        faviconUrl,
-        primaryColor,
-      );
+    id,
+    name,
+    websiteUrl,
+    customDomain,
+    socialLinks,
+    logoLightUrl,
+    logoDarkUrl,
+    faviconUrl,
+    primaryColor,
+  );
 }
 
 class UserSettingsAddress {
@@ -287,28 +295,32 @@ class UserSettingsAddress {
     final source = _asMap(json);
     return UserSettingsAddress(
       id: _readInt(source, const ['id', 'addressId']),
-      addressLine: _readNullableString(
-        source,
-        const ['addressLine', 'address', 'line'],
-      ),
-      countryCode: _readNullableString(
-        source,
-        const ['countryCode', 'country'],
-      ),
+      addressLine: _readNullableString(source, const [
+        'addressLine',
+        'address',
+        'line',
+      ]),
+      countryCode: _readNullableString(source, const [
+        'countryCode',
+        'country',
+      ]),
       stateCode: _readNullableString(source, const ['stateCode', 'state']),
-      cityName: _readNullableString(
-        source,
-        const ['cityName', 'city', 'cityId'],
-      ),
+      cityName: _readNullableString(source, const [
+        'cityName',
+        'city',
+        'cityId',
+      ]),
       cityId: _readInt(source, const ['cityId']),
-      pincode: _readNullableString(
-        source,
-        const ['pincode', 'pinCode', 'zip', 'zipCode'],
-      ),
-      fullAddress: _readNullableString(
-        source,
-        const ['fullAddress', 'formatted'],
-      ),
+      pincode: _readNullableString(source, const [
+        'pincode',
+        'pinCode',
+        'zip',
+        'zipCode',
+      ]),
+      fullAddress: _readNullableString(source, const [
+        'fullAddress',
+        'formatted',
+      ]),
     );
   }
 
@@ -349,15 +361,15 @@ class UserSettingsAddress {
 
   @override
   int get hashCode => Object.hash(
-        id,
-        addressLine,
-        countryCode,
-        stateCode,
-        cityName,
-        cityId,
-        pincode,
-        fullAddress,
-      );
+    id,
+    addressLine,
+    countryCode,
+    stateCode,
+    cityName,
+    cityId,
+    pincode,
+    fullAddress,
+  );
 }
 
 class UserSettingsProfile {
@@ -425,31 +437,41 @@ class UserSettingsProfile {
       name: _readNullableString(source, const ['name', 'Name', 'fullName']),
       username: _readNullableString(source, const ['username', 'userName']),
       email: _readNullableString(source, const ['email']),
-      mobilePrefix: _readNullableString(
-        source,
-        const ['mobilePrefix', 'phonePrefix', 'mobile_prefix'],
-      ),
-      mobileNumber: _readNullableString(
-        source,
-        const ['mobileNumber', 'phoneNumber', 'mobile', 'mobile_number'],
-      ),
-      profileUrl: _readNullableString(
-        source,
-        const ['profileUrl', 'avatar', 'profile', 'image', 'url'],
-      ),
+      mobilePrefix: _readNullableString(source, const [
+        'mobilePrefix',
+        'phonePrefix',
+        'mobile_prefix',
+      ]),
+      mobileNumber: _readNullableString(source, const [
+        'mobileNumber',
+        'phoneNumber',
+        'mobile',
+        'mobile_number',
+      ]),
+      profileUrl: _readNullableString(source, const [
+        'profileUrl',
+        'avatar',
+        'profile',
+        'image',
+        'url',
+      ]),
       credits: _readDouble(source, const ['credits', 'balance']),
       createdAt: _readDateTime(source, const ['createdAt', 'created']),
       updatedAt: _readDateTime(source, const ['updatedAt', 'modified']),
-      isEmailVerified: _readBool(
-            source,
-            const ['isEmailVerified', 'emailVerified', 'is_email_verified'],
-          ) ??
+      isEmailVerified:
+          _readBool(source, const [
+            'isEmailVerified',
+            'emailVerified',
+            'is_email_verified',
+          ]) ??
           false,
       emailVerifiedAt: _readDateTime(source, const ['emailVerifiedAt']),
-      isMobileVerified: _readBool(
-            source,
-            const ['isMobileVerified', 'mobileVerified', 'is_mobile_verified'],
-          ) ??
+      isMobileVerified:
+          _readBool(source, const [
+            'isMobileVerified',
+            'mobileVerified',
+            'is_mobile_verified',
+          ]) ??
           false,
       mobileVerifiedAt: _readDateTime(source, const ['mobileVerifiedAt']),
       company: companyMap == null
@@ -522,23 +544,23 @@ class UserSettingsProfile {
 
   @override
   int get hashCode => Object.hash(
-        uid,
-        name,
-        username,
-        email,
-        mobilePrefix,
-        mobileNumber,
-        profileUrl,
-        credits,
-        createdAt,
-        updatedAt,
-        isEmailVerified,
-        emailVerifiedAt,
-        isMobileVerified,
-        mobileVerifiedAt,
-        company,
-        address,
-      );
+    uid,
+    name,
+    username,
+    email,
+    mobilePrefix,
+    mobileNumber,
+    profileUrl,
+    credits,
+    createdAt,
+    updatedAt,
+    isEmailVerified,
+    emailVerifiedAt,
+    isMobileVerified,
+    mobileVerifiedAt,
+    company,
+    address,
+  );
 }
 
 class UserEmailSubscriptionStatus {
@@ -563,21 +585,18 @@ class UserEmailSubscriptionStatus {
     }
 
     final nested = _asMap(source['data']);
-    final isSubscribed = _readBool(
-          source,
-          const ['isSubscribed', 'subscribed', 'value'],
-        ) ??
-        _readBool(
-          nested,
-          const ['isSubscribed', 'subscribed', 'value'],
-        ) ??
+    final isSubscribed =
+        _readBool(source, const ['isSubscribed', 'subscribed', 'value']) ??
+        _readBool(nested, const ['isSubscribed', 'subscribed', 'value']) ??
         false;
 
     return UserEmailSubscriptionStatus(
       isSubscribed: isSubscribed,
-      brandOwnerId: _readInt(source, const ['brandOwnerId']) ??
+      brandOwnerId:
+          _readInt(source, const ['brandOwnerId']) ??
           _readInt(nested, const ['brandOwnerId']),
-      scope: _readNullableString(source, const ['scope']) ??
+      scope:
+          _readNullableString(source, const ['scope']) ??
           _readNullableString(nested, const ['scope']),
     );
   }
@@ -711,9 +730,9 @@ class UserChangePasswordRequest {
   final String newPassword;
 
   Map<String, dynamic> toJson() => <String, dynamic>{
-        'currentPassword': currentPassword,
-        'newPassword': newPassword,
-      };
+    'currentPassword': currentPassword,
+    'newPassword': newPassword,
+  };
 }
 
 class UserOtpConfirmRequest {
@@ -759,15 +778,17 @@ class UserLocalizationSettings {
 
     final language =
         _readNullableString(source, const ['language', 'languageCode']) ??
-            defaults.language;
+        defaults.language;
 
     final rawDirection = source['layoutDirection'] ?? source['direction'];
     final layoutDirection = UserLayoutDirection.fromValue(rawDirection);
 
-    final dateFormat = _readNullableString(source, const ['dateFormat']) ??
+    final dateFormat =
+        _readNullableString(source, const ['dateFormat']) ??
         defaults.dateFormat;
 
-    final use24Hour = _readBool(source, const ['use24Hour']) ??
+    final use24Hour =
+        _readBool(source, const ['use24Hour']) ??
         UserTimeFormat.fromValue(source['timeFormat']).use24Hour;
 
     final rawTheme = source['theme'];
@@ -781,16 +802,12 @@ class UserLocalizationSettings {
     final rawUnits = source['units'] ?? source['distanceUnit'];
     final units = UserDistanceUnit.fromValue(rawUnits);
 
-    final defaultLat = _readDouble(
-          source,
-          const ['defaultLat', 'mapLat'],
-        ) ??
+    final defaultLat =
+        _readDouble(source, const ['defaultLat', 'mapLat']) ??
         defaults.defaultLat;
 
-    final defaultLon = _readDouble(
-          source,
-          const ['defaultLon', 'defaultLng', 'mapLng'],
-        ) ??
+    final defaultLon =
+        _readDouble(source, const ['defaultLon', 'defaultLng', 'mapLng']) ??
         defaults.defaultLon;
 
     final mapZoom =
@@ -837,17 +854,17 @@ class UserLocalizationSettings {
   }
 
   Map<String, dynamic> toPatchJson() => <String, dynamic>{
-        'language': language,
-        'layoutDirection': layoutDirection.apiValue,
-        'dateFormat': dateFormat,
-        'use24Hour': use24Hour,
-        'theme': theme.apiValue,
-        'timezoneOffset': timezoneOffset,
-        'units': units.apiValue,
-        'defaultLat': defaultLat,
-        'defaultLon': defaultLon,
-        'mapZoom': mapZoom,
-      };
+    'language': language,
+    'layoutDirection': layoutDirection.apiValue,
+    'dateFormat': dateFormat,
+    'use24Hour': use24Hour,
+    'theme': theme.apiValue,
+    'timezoneOffset': timezoneOffset,
+    'units': units.apiValue,
+    'defaultLat': defaultLat,
+    'defaultLon': defaultLon,
+    'mapZoom': mapZoom,
+  };
 
   @override
   bool operator ==(Object other) {
@@ -866,24 +883,21 @@ class UserLocalizationSettings {
 
   @override
   int get hashCode => Object.hash(
-        language,
-        layoutDirection,
-        dateFormat,
-        use24Hour,
-        theme,
-        timezoneOffset,
-        units,
-        defaultLat,
-        defaultLon,
-        mapZoom,
-      );
+    language,
+    layoutDirection,
+    dateFormat,
+    use24Hour,
+    theme,
+    timezoneOffset,
+    units,
+    defaultLat,
+    defaultLon,
+    mapZoom,
+  );
 }
 
 class UserLanguageOption {
-  const UserLanguageOption({
-    required this.code,
-    required this.label,
-  });
+  const UserLanguageOption({required this.code, required this.label});
 
   final String code;
   final String label;
@@ -931,10 +945,7 @@ class UserLanguageOption {
 }
 
 class UserDateFormatOption {
-  const UserDateFormatOption({
-    required this.value,
-    required this.label,
-  });
+  const UserDateFormatOption({required this.value, required this.label});
 
   final String value;
   final String label;
@@ -979,10 +990,7 @@ class UserDateFormatOption {
 }
 
 class UserCountryOption {
-  const UserCountryOption({
-    required this.value,
-    required this.label,
-  });
+  const UserCountryOption({required this.value, required this.label});
 
   final String value;
   final String label;
@@ -1001,22 +1009,23 @@ class UserCountryOption {
             return const UserCountryOption(value: '', label: '');
           }
 
-          final value = (_readNullableString(
-                    source,
-                    const [
-                      'countryCode',
-                      'country_code',
-                      'code',
-                      'iso2',
-                      'country'
-                    ],
-                  ) ??
-                  '')
-              .toUpperCase();
-          final label = _readNullableString(
-                source,
-                const ['name', 'countryName', 'country_name', 'label'],
-              ) ??
+          final value =
+              (_readNullableString(source, const [
+                        'countryCode',
+                        'country_code',
+                        'code',
+                        'iso2',
+                        'country',
+                      ]) ??
+                      '')
+                  .toUpperCase();
+          final label =
+              _readNullableString(source, const [
+                'name',
+                'countryName',
+                'country_name',
+                'label',
+              ]) ??
               value;
           return UserCountryOption(value: value, label: label);
         })
@@ -1038,10 +1047,7 @@ class UserCountryOption {
 }
 
 class UserStateOption {
-  const UserStateOption({
-    required this.value,
-    required this.label,
-  });
+  const UserStateOption({required this.value, required this.label});
 
   final String value;
   final String label;
@@ -1062,23 +1068,24 @@ class UserStateOption {
             return const UserStateOption(value: '', label: '');
           }
 
-          final value = (_readNullableString(
-                    source,
-                    const [
-                      'stateCode',
-                      'state_code',
-                      'code',
-                      'iso2',
-                      'state',
-                      'value'
-                    ],
-                  ) ??
-                  '')
-              .toUpperCase();
-          final label = _readNullableString(
-                source,
-                const ['name', 'stateName', 'state_name', 'label'],
-              ) ??
+          final value =
+              (_readNullableString(source, const [
+                        'stateCode',
+                        'state_code',
+                        'code',
+                        'iso2',
+                        'state',
+                        'value',
+                      ]) ??
+                      '')
+                  .toUpperCase();
+          final label =
+              _readNullableString(source, const [
+                'name',
+                'stateName',
+                'state_name',
+                'label',
+              ]) ??
               value;
           return UserStateOption(value: value, label: label);
         })
@@ -1100,10 +1107,7 @@ class UserStateOption {
 }
 
 class UserCityOption {
-  const UserCityOption({
-    required this.value,
-    required this.label,
-  });
+  const UserCityOption({required this.value, required this.label});
 
   final String value;
   final String label;
@@ -1121,24 +1125,26 @@ class UserCityOption {
             return const UserCityOption(value: '', label: '');
           }
 
-          final value = _readNullableString(
-                source,
-                const [
-                  'name',
-                  'cityName',
-                  'city_name',
-                  'city',
-                  'value',
-                  'cityId',
-                  'city_id',
-                  'id',
-                ],
-              ) ??
+          final value =
+              _readNullableString(source, const [
+                'name',
+                'cityName',
+                'city_name',
+                'city',
+                'value',
+                'cityId',
+                'city_id',
+                'id',
+              ]) ??
               '';
-          final label = _readNullableString(
-                source,
-                const ['name', 'cityName', 'city_name', 'city', 'label'],
-              ) ??
+          final label =
+              _readNullableString(source, const [
+                'name',
+                'cityName',
+                'city_name',
+                'city',
+                'label',
+              ]) ??
               value;
           return UserCityOption(value: value, label: label);
         })
@@ -1192,31 +1198,33 @@ class UserMobilePrefixOption {
             );
           }
 
-          final countryCode = (_readNullableString(
-                    source,
-                    const ['countryCode', 'country_code', 'country', 'iso2'],
-                  ) ??
-                  '')
-              .toUpperCase();
+          final countryCode =
+              (_readNullableString(source, const [
+                        'countryCode',
+                        'country_code',
+                        'country',
+                        'iso2',
+                      ]) ??
+                      '')
+                  .toUpperCase();
           final value = _normalizeDialCode(
-            _readNullableString(
-                  source,
-                  const [
-                    'mobilePrefix',
-                    'mobile_prefix',
-                    'dialCode',
-                    'dial_code',
-                    'code',
-                    'prefix',
-                    'value',
-                  ],
-                ) ??
+            _readNullableString(source, const [
+                  'mobilePrefix',
+                  'mobile_prefix',
+                  'dialCode',
+                  'dial_code',
+                  'code',
+                  'prefix',
+                  'value',
+                ]) ??
                 '',
           );
-          final countryName = _readNullableString(
-            source,
-            const ['name', 'countryName', 'country_name', 'label'],
-          );
+          final countryName = _readNullableString(source, const [
+            'name',
+            'countryName',
+            'country_name',
+            'label',
+          ]);
 
           final label = [
             value,

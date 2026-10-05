@@ -8,6 +8,7 @@ import '../../../../core/theme/open_vts_radius.dart';
 import '../../../../core/theme/open_vts_spacing.dart';
 import '../../../../core/theme/open_vts_typography.dart';
 import '../../../../core/utils/date_time_formatter.dart';
+import '../../../../shared/helpers/mobile_text.dart';
 import '../../../../shared/widgets/open_vts_button.dart';
 import '../../../../shared/widgets/open_vts_card.dart';
 import '../../../../shared/widgets/open_vts_empty_state.dart';
@@ -18,6 +19,7 @@ import '../../../auth/controllers/auth_controller.dart';
 import '../../controllers/user_providers.dart';
 import '../../models/user_transactions_model.dart';
 import '../../models/user_transactions_state.dart';
+import 'user_vehicle_services_screen.dart';
 import 'widgets/user_transaction_card.dart';
 import 'widgets/user_transaction_details_sheet.dart';
 import 'widgets/user_transactions_filter_card.dart';
@@ -37,7 +39,7 @@ class UserTransactionsScreen extends ConsumerWidget {
     final filteredTransactions = state.filteredTransactionsFor(currentUserId);
 
     return OpenVtsPageScaffold(
-      title: 'Transactions',
+      title: context.mobileText('Transactions'),
       headerMode: OpenVtsPageHeaderMode.closeable,
       padding: const EdgeInsets.fromLTRB(
         OpenVtsSpacing.sm,
@@ -46,10 +48,19 @@ class UserTransactionsScreen extends ConsumerWidget {
         0,
       ),
       actions: [
+        IconButton(
+          tooltip: context.mobileText('Vehicle services'),
+          icon: const Icon(Icons.event_available_outlined),
+          onPressed: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => const UserVehicleServicesScreen(),
+            ),
+          ),
+        ),
         Padding(
           padding: const EdgeInsets.only(right: OpenVtsSpacing.xxs),
           child: IconButton(
-            tooltip: 'Refresh transactions',
+            tooltip: context.mobileText('Refresh transactions'),
             onPressed: state.isRefreshing ? null : controller.refresh,
             icon: state.isRefreshing
                 ? const SizedBox.square(
@@ -109,23 +120,25 @@ class UserTransactionsScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: OpenVtsSpacing.sm),
                     if (state.isLoading && !state.hasTransactions)
-                      const SizedBox(
-                        height: 220,
-                        child: OpenVtsLoader(),
-                      )
+                      const SizedBox(height: 220, child: OpenVtsLoader())
                     else if (!state.hasTransactions &&
                         state.errorMessage != null)
                       OpenVtsErrorView(
-                        message: state.errorMessage ??
+                        message:
+                            state.errorMessage ??
                             'Unable to load transactions right now.',
                         onRetry: controller.loadTransactions,
                       )
                     else if (filteredTransactions.isEmpty)
                       OpenVtsEmptyState(
-                        title: 'No transactions found',
+                        title: context.mobileText('No transactions found'),
                         message: state.hasActiveFilters
-                            ? 'Try adjusting the filters or date range.'
-                            : 'No transactions available for this period.',
+                            ? context.mobileText(
+                                'Try adjusting the filters or date range.',
+                              )
+                            : context.mobileText(
+                                'No transactions available for this period.',
+                              ),
                       )
                     else
                       ...filteredTransactions.map(
@@ -159,7 +172,7 @@ class UserTransactionsScreen extends ConsumerWidget {
                     if (state.hasMore && state.hasTransactions) ...[
                       const SizedBox(height: OpenVtsSpacing.xs),
                       OpenVtsButton(
-                        label: 'Load More',
+                        label: context.mobileText('Load More'),
                         variant: OpenVtsButtonVariant.secondary,
                         height: 44,
                         isLoading: state.isLoading,
@@ -193,8 +206,9 @@ class _TransactionsHeaderCard extends StatelessWidget {
     final resolvedTotal = totalCount <= 0 ? loadedCount : totalCount;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final headingColor = isDark ? Colors.white : OpenVtsColors.textPrimary;
-    final subheadingColor =
-        isDark ? Colors.grey[300] : OpenVtsColors.textSecondary;
+    final subheadingColor = isDark
+        ? Colors.grey[300]
+        : OpenVtsColors.textSecondary;
 
     return OpenVtsCard(
       padding: const EdgeInsets.all(OpenVtsSpacing.sm),
@@ -202,7 +216,7 @@ class _TransactionsHeaderCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Transactions',
+            context.mobileText('Transactions'),
             style: OpenVtsTypography.label.copyWith(
               fontWeight: FontWeight.w700,
               color: headingColor,
@@ -210,22 +224,25 @@ class _TransactionsHeaderCard extends StatelessWidget {
           ),
           const SizedBox(height: OpenVtsSpacing.xxs),
           Text(
-            'View payments, credits, debits, and billing records.',
-            style: OpenVtsTypography.meta.copyWith(
-              color: subheadingColor,
+            context.mobileText(
+              'View payments, credits, debits, and billing records.',
             ),
+            style: OpenVtsTypography.meta.copyWith(color: subheadingColor),
           ),
           const SizedBox(height: OpenVtsSpacing.xs),
           Wrap(
             spacing: OpenVtsSpacing.xs,
             runSpacing: OpenVtsSpacing.xs,
             children: [
-              _HeaderValueChip(label: 'Loaded', value: '$loadedCount'),
-              _HeaderValueChip(label: 'Total', value: '$resolvedTotal'),
-              if (rangeLabel != null)
-                _HeaderTagChip(
-                  text: rangeLabel!,
-                ),
+              _HeaderValueChip(
+                label: context.mobileText('Loaded'),
+                value: '$loadedCount',
+              ),
+              _HeaderValueChip(
+                label: context.mobileText('Total'),
+                value: '$resolvedTotal',
+              ),
+              if (rangeLabel != null) _HeaderTagChip(text: rangeLabel!),
             ],
           ),
         ],
@@ -235,10 +252,7 @@ class _TransactionsHeaderCard extends StatelessWidget {
 }
 
 class _HeaderValueChip extends StatelessWidget {
-  const _HeaderValueChip({
-    required this.label,
-    required this.value,
-  });
+  const _HeaderValueChip({required this.label, required this.value});
 
   final String label;
   final String value;
@@ -246,8 +260,9 @@ class _HeaderValueChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final backgroundColor =
-        isDark ? Colors.black : OpenVtsColors.surfaceElevated;
+    final backgroundColor = isDark
+        ? Colors.black
+        : OpenVtsColors.surfaceElevated;
     final borderColor = isDark ? Colors.white : OpenVtsColors.border;
     final textColor = isDark ? Colors.white : OpenVtsColors.textPrimary;
 
@@ -259,10 +274,7 @@ class _HeaderValueChip extends StatelessWidget {
       decoration: BoxDecoration(
         color: backgroundColor,
         borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-        border: Border.all(
-          color: borderColor,
-          width: isDark ? 1 : 1,
-        ),
+        border: Border.all(color: borderColor, width: isDark ? 1 : 1),
       ),
       child: Text(
         '$label: $value',
@@ -295,10 +307,7 @@ class _HeaderTagChip extends StatelessWidget {
       decoration: BoxDecoration(
         color: backgroundColor,
         borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-        border: Border.all(
-          color: borderColor,
-          width: isDark ? 1 : 1,
-        ),
+        border: Border.all(color: borderColor, width: isDark ? 1 : 1),
       ),
       child: Text(
         text,
@@ -377,8 +386,10 @@ String? _rangeLabel(UserTransactionsState state, dynamic formatter) {
 }
 
 String _counterpartyLabel(UserTransaction transaction, String? currentUserId) {
-  final fromName =
-      _partyDisplayName(transaction.fromUser, transaction.fromUserId);
+  final fromName = _partyDisplayName(
+    transaction.fromUser,
+    transaction.fromUserId,
+  );
   final toName = _partyDisplayName(transaction.toUser, transaction.toUserId);
   final normalizedUserId = currentUserId?.trim() ?? '';
 

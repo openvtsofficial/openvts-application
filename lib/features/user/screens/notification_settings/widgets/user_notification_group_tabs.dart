@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../models/user_notification_settings_model.dart';
 
@@ -19,29 +20,29 @@ class UserNotificationGroupTabs extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tabs = <_GroupTabItem>[
-      const _GroupTabItem(
+      _GroupTabItem(
         group: UserNotificationGroup.basic,
-        label: 'Basic',
+        label: context.mobileText('Basic'),
         icon: Icons.bolt_rounded,
       ),
-      const _GroupTabItem(
+      _GroupTabItem(
         group: UserNotificationGroup.overspeed,
-        label: 'Overspeed',
+        label: context.mobileText('Overspeed'),
         icon: Icons.speed_rounded,
       ),
-      const _GroupTabItem(
+      _GroupTabItem(
         group: UserNotificationGroup.duration,
-        label: 'Duration',
+        label: context.mobileText('Duration'),
         icon: Icons.timer_outlined,
       ),
-      const _GroupTabItem(
+      _GroupTabItem(
         group: UserNotificationGroup.geofence,
-        label: 'Geofence',
+        label: context.mobileText('Geofence'),
         icon: Icons.location_on_outlined,
       ),
-      const _GroupTabItem(
+      _GroupTabItem(
         group: UserNotificationGroup.route,
-        label: 'Route',
+        label: context.mobileText('Route'),
         icon: Icons.alt_route_rounded,
       ),
     ];
@@ -102,11 +103,13 @@ class _GroupChoiceChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final backgroundColor =
-        selected ? (isDark ? Colors.black : Colors.white) : Colors.transparent;
+    final backgroundColor = selected
+        ? (isDark ? Colors.black : Colors.white)
+        : Colors.transparent;
     final textColor = isDark ? Colors.white : Colors.black;
-    final borderColor =
-        isDark ? Colors.white : Colors.black.withValues(alpha: 0.2);
+    final borderColor = isDark
+        ? Colors.white
+        : Colors.black.withValues(alpha: 0.2);
 
     return Material(
       color: Colors.transparent,
@@ -122,18 +125,12 @@ class _GroupChoiceChip extends StatelessWidget {
           decoration: BoxDecoration(
             color: backgroundColor,
             borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
-            border: Border.all(
-              color: borderColor,
-            ),
+            border: Border.all(color: borderColor),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                item.icon,
-                size: 15,
-                color: textColor,
-              ),
+              Icon(item.icon, size: 15, color: textColor),
               const SizedBox(width: OpenVtsSpacing.xxs),
               Text(
                 item.label,

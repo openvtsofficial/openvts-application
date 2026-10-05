@@ -53,9 +53,7 @@ class SuperadminSettingsService {
     }
   }
 
-  Future<void> updateCompany(
-    SuperadminUpdateCompanyRequest request,
-  ) async {
+  Future<void> updateCompany(SuperadminUpdateCompanyRequest request) async {
     await _apiClient.patch<void>(
       ApiEndpoints.superadmin.companyDetails,
       data: request.toJson(),
@@ -64,9 +62,7 @@ class SuperadminSettingsService {
     );
   }
 
-  Future<void> changePassword(
-    SuperadminChangePasswordRequest request,
-  ) async {
+  Future<void> changePassword(SuperadminChangePasswordRequest request) async {
     await _apiClient.patch<void>(
       ApiEndpoints.superadmin.updatePassword,
       data: request.toJson(),

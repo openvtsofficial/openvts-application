@@ -43,11 +43,8 @@ void main() {
     await tester.pumpAndSettle();
 
     final search = find.byType(TextField).last;
-    final results = find.byType(ListView);
-    final gb = find.descendant(
-      of: results,
-      matching: find.text('+44 (GB)'),
-    );
+    final results = find.byType(SliverList);
+    final gb = find.descendant(of: results, matching: find.text('+44 (GB)'));
 
     await tester.enterText(search, '44');
     await tester.pump();

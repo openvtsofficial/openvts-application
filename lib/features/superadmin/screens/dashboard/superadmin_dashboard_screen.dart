@@ -9,6 +9,8 @@ import '../../../../core/theme/open_vts_radius.dart';
 import '../../../../core/theme/open_vts_spacing.dart';
 import '../../../../core/theme/open_vts_typography.dart';
 import '../../../../core/utils/date_time_formatter.dart';
+import '../../../../shared/helpers/mobile_text.dart';
+import '../../../../shared/widgets/dashboard/open_vts_dashboard_metric_card.dart';
 import '../../../../shared/widgets/open_vts_button.dart';
 import '../../../../shared/widgets/open_vts_card.dart';
 import '../../../../shared/widgets/open_vts_date_time_range_selector.dart';
@@ -40,7 +42,7 @@ class _SuperadminDashboardScreenState
     final controller = ref.read(superadminDashboardControllerProvider.notifier);
 
     return OpenVtsPageScaffold(
-      title: 'Dashboard',
+      title: context.mobileText('Dashboard'),
       headerMode: OpenVtsPageHeaderMode.closeable,
       padding: EdgeInsets.zero,
       body: _buildBody(context, state, controller),
@@ -67,16 +69,16 @@ class _SuperadminDashboardScreenState
     final people = dashboard.recentUsers.isNotEmpty
         ? dashboard.recentUsers
         : dashboard.activityActors
-            .take(5)
-            .map(
-              (actor) => SuperadminRecentUser(
-                id: actor.id.toString(),
-                name: actor.name,
-                email: '—',
-                createdAt: null,
-              ),
-            )
-            .toList(growable: false);
+              .take(5)
+              .map(
+                (actor) => SuperadminRecentUser(
+                  id: actor.id.toString(),
+                  name: actor.name,
+                  email: '—',
+                  createdAt: null,
+                ),
+              )
+              .toList(growable: false);
 
     return RefreshIndicator(
       color: Theme.of(context).colorScheme.primary,
@@ -115,10 +117,12 @@ class _SuperadminDashboardScreenState
                   const SizedBox(height: OpenVtsSpacing.sm),
                   Consumer(
                     builder: (context, ref, _) {
-                      final dashboardState =
-                          ref.watch(superadminDashboardControllerProvider);
-                      final dashboardController = ref
-                          .read(superadminDashboardControllerProvider.notifier);
+                      final dashboardState = ref.watch(
+                        superadminDashboardControllerProvider,
+                      );
+                      final dashboardController = ref.read(
+                        superadminDashboardControllerProvider.notifier,
+                      );
                       return _AdoptionGrowthSection(
                         points: _pointsForRange(dashboard.adoptionGrowth),
                         selectedRange: _selectedRange,
@@ -230,7 +234,7 @@ class _SuperadminDashboardScreenState
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
-                      'Filter Activity Logs',
+                      context.mobileText('Filter Activity Logs'),
                       style: OpenVtsTypography.titleSmall.copyWith(
                         color: isDark
                             ? OpenVtsColors.darkTextPrimary
@@ -239,7 +243,9 @@ class _SuperadminDashboardScreenState
                     ),
                     const SizedBox(height: OpenVtsSpacing.xs),
                     Text(
-                      'Filter by administrator and date range.',
+                      context.mobileText(
+                        'Filter by administrator and date range.',
+                      ),
                       style: OpenVtsTypography.body.copyWith(
                         color: isDark
                             ? OpenVtsColors.darkTextSecondary
@@ -250,13 +256,13 @@ class _SuperadminDashboardScreenState
                     DropdownButtonFormField<int?>(
                       initialValue: selectedActorId,
                       isExpanded: true,
-                      decoration: const InputDecoration(
-                        labelText: 'Actor',
+                      decoration: InputDecoration(
+                        labelText: context.mobileText('Actor'),
                       ),
                       items: [
-                        const DropdownMenuItem<int?>(
+                        DropdownMenuItem<int?>(
                           value: null,
-                          child: Text('All actors'),
+                          child: Text(context.mobileText('All actors')),
                         ),
                         ...actors.map(
                           (actor) => DropdownMenuItem<int?>(
@@ -273,12 +279,9 @@ class _SuperadminDashboardScreenState
                     ),
                     const SizedBox(height: OpenVtsSpacing.sm),
                     OpenVtsDateTimeRangeField(
-                      label: 'Date Range',
-                      title: 'Choose Date Range',
-                      value: OpenVtsDateTimeRange(
-                        start: fromDate,
-                        end: toDate,
-                      ),
+                      label: context.mobileText('Date Range'),
+                      title: context.mobileText('Choose Date Range'),
+                      value: OpenVtsDateTimeRange(start: fromDate, end: toDate),
                       firstDate: DateTime(2020),
                       lastDate: DateTime(2100),
                       onChanged: (range) {
@@ -297,7 +300,7 @@ class _SuperadminDashboardScreenState
                       children: [
                         Expanded(
                           child: OpenVtsButton(
-                            label: 'Clear',
+                            label: context.mobileText('Clear'),
                             variant: OpenVtsButtonVariant.secondary,
                             onPressed: () {
                               Navigator.of(context).pop(
@@ -309,7 +312,7 @@ class _SuperadminDashboardScreenState
                         const SizedBox(width: OpenVtsSpacing.sm),
                         Expanded(
                           child: OpenVtsButton(
-                            label: 'Apply Filters',
+                            label: context.mobileText('Apply Filters'),
                             onPressed: () {
                               Navigator.of(context).pop(
                                 _DashboardActivityFilterResult(
@@ -370,32 +373,32 @@ class _MetricsGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     final metrics = <_MetricTileData>[
       _MetricTileData(
-        title: 'All Admins',
+        title: context.mobileText('All Admins'),
         value: counts.totalAdmins,
         icon: Icons.admin_panel_settings_outlined,
       ),
       _MetricTileData(
-        title: 'Total Vehicles',
+        title: context.mobileText('Total Vehicles'),
         value: counts.totalVehicles,
         icon: Icons.local_shipping_outlined,
       ),
       _MetricTileData(
-        title: 'Active Vehicle',
+        title: context.mobileText('Active Vehicle'),
         value: counts.activeVehicles,
         icon: Icons.bolt_outlined,
       ),
       _MetricTileData(
-        title: 'Total Users',
+        title: context.mobileText('Total Users'),
         value: counts.totalUsers,
         icon: Icons.group_outlined,
       ),
       _MetricTileData(
-        title: 'License Issued',
+        title: context.mobileText('License Issued'),
         value: counts.licensesIssued,
         icon: Icons.article_outlined,
       ),
       _MetricTileData(
-        title: 'License Used',
+        title: context.mobileText('License Used'),
         value: counts.licensesUsed,
         icon: Icons.adjust_outlined,
       ),
@@ -403,7 +406,10 @@ class _MetricsGrid extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount = constraints.maxWidth >= 760 ? 3 : 2;
+        final crossAxisCount = OpenVtsDashboardMetricCard.gridColumns(
+          context,
+          constraints.maxWidth,
+        );
 
         return GridView.builder(
           shrinkWrap: true,
@@ -413,7 +419,7 @@ class _MetricsGrid extends StatelessWidget {
             crossAxisCount: crossAxisCount,
             mainAxisSpacing: OpenVtsSpacing.sm,
             crossAxisSpacing: OpenVtsSpacing.sm,
-            childAspectRatio: 1.52,
+            mainAxisExtent: OpenVtsDashboardMetricCard.gridExtent(context),
           ),
           itemBuilder: (context, index) => _MetricTile(data: metrics[index]),
         );
@@ -429,49 +435,10 @@ class _MetricTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return OpenVtsCard(
-      padding: const EdgeInsets.fromLTRB(
-        OpenVtsSpacing.md,
-        OpenVtsSpacing.md,
-        OpenVtsSpacing.md,
-        OpenVtsSpacing.sm,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Text(
-                  data.title.toUpperCase(),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: OpenVtsTypography.meta.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.8,
-                  ),
-                ),
-              ),
-              Icon(
-                data.icon,
-                size: 16,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ],
-          ),
-          const Spacer(),
-          Text(
-            NumberFormat.decimalPattern('en_IN').format(data.value),
-            style: OpenVtsTypography.numeric.copyWith(
-              fontSize: 19,
-              color: theme.colorScheme.onSurface,
-            ),
-          ),
-        ],
-      ),
+    return OpenVtsDashboardMetricCard(
+      title: data.title,
+      value: NumberFormat.decimalPattern('en_IN').format(data.value),
+      icon: data.icon,
     );
   }
 }
@@ -528,7 +495,7 @@ class _AdoptionGrowthSection extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Adoption & Growth',
+                        context.mobileText('Adoption & Growth'),
                         style: OpenVtsTypography.titleSmall.copyWith(
                           color: theme.colorScheme.onSurface,
                           fontSize: 20,
@@ -538,7 +505,9 @@ class _AdoptionGrowthSection extends StatelessWidget {
                       const SizedBox(height: OpenVtsSpacing.xxs),
                       Text(
                         latestPoint == null
-                            ? 'Platform growth across users, vehicles, and licenses.'
+                            ? context.mobileText(
+                                'Platform growth across users, vehicles, and licenses.',
+                              )
                             : 'Premium trend view for ${latestPoint.label} across users, vehicles, and license credits.',
                         style: OpenVtsTypography.meta.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
@@ -562,19 +531,19 @@ class _AdoptionGrowthSection extends StatelessWidget {
               runSpacing: OpenVtsSpacing.xs,
               children: [
                 _LegendDot(
-                  label: 'Vehicles',
+                  label: context.mobileText('Vehicles'),
                   color: OpenVtsColors.info,
                   isSelected: visibleMetrics.contains('vehicles'),
                   onTap: () => onToggleMetric('vehicles'),
                 ),
                 _LegendDot(
-                  label: 'Users',
+                  label: context.mobileText('Users'),
                   color: OpenVtsColors.success,
                   isSelected: visibleMetrics.contains('users'),
                   onTap: () => onToggleMetric('users'),
                 ),
                 _LegendDot(
-                  label: 'Licenses',
+                  label: context.mobileText('Licenses'),
                   color: OpenVtsColors.warning,
                   isSelected: visibleMetrics.contains('licenses'),
                   onTap: () => onToggleMetric('licenses'),
@@ -585,29 +554,30 @@ class _AdoptionGrowthSection extends StatelessWidget {
           if (latestPoint != null) ...[
             const SizedBox(height: OpenVtsSpacing.sm),
             Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: OpenVtsSpacing.md),
+              padding: const EdgeInsets.symmetric(
+                horizontal: OpenVtsSpacing.md,
+              ),
               child: Wrap(
                 spacing: OpenVtsSpacing.sm,
                 runSpacing: OpenVtsSpacing.sm,
                 children: [
                   if (visibleMetrics.contains('vehicles'))
                     _ChartSeriesPill(
-                      label: 'Vehicles',
+                      label: context.mobileText('Vehicles'),
                       color: OpenVtsColors.info,
                       value: latestPoint.vehicles,
                       periodLabel: latestPoint.label,
                     ),
                   if (visibleMetrics.contains('users'))
                     _ChartSeriesPill(
-                      label: 'Users',
+                      label: context.mobileText('Users'),
                       color: OpenVtsColors.success,
                       value: latestPoint.users,
                       periodLabel: latestPoint.label,
                     ),
                   if (visibleMetrics.contains('licenses'))
                     _ChartSeriesPill(
-                      label: 'Licenses',
+                      label: context.mobileText('Licenses'),
                       color: OpenVtsColors.warning,
                       value: latestPoint.licenses,
                       periodLabel: latestPoint.label,
@@ -646,11 +616,12 @@ class _AdoptionGrowthSection extends StatelessWidget {
                   );
                 },
                 child: points.isEmpty
-                    ? const OpenVtsEmptyState(
-                        key: ValueKey('empty-adoption-chart'),
-                        title: 'No adoption data',
-                        message:
-                            'The overview response does not include chart points yet.',
+                    ? OpenVtsEmptyState(
+                        key: const ValueKey('empty-adoption-chart'),
+                        title: context.mobileText('No adoption data'),
+                        message: context.mobileText(
+                          'The overview response does not include chart points yet.',
+                        ),
                       )
                     : KeyedSubtree(
                         key: ValueKey<String>(
@@ -692,52 +663,53 @@ class _RangeSelector extends StatelessWidget {
         padding: const EdgeInsets.all(3),
         child: Row(
           mainAxisSize: MainAxisSize.min,
-          children: _DashboardChartRange.values.map(
-            (range) {
-              final isSelected = selectedRange == range;
+          children: _DashboardChartRange.values
+              .map((range) {
+                final isSelected = selectedRange == range;
 
-              return Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-                  onTap: () => onRangeChanged(range),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 180),
-                    curve: Curves.easeOutCubic,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: OpenVtsSpacing.xs,
-                      vertical: OpenVtsSpacing.xxs + 1,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? theme.colorScheme.primaryContainer
-                          : Colors.transparent,
-                      borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-                      boxShadow: isSelected
-                          ? [
-                              BoxShadow(
-                                color: theme.colorScheme.primary
-                                    .withValues(alpha: 0.08),
-                                blurRadius: 10,
-                                offset: const Offset(0, 3),
-                              ),
-                            ]
-                          : null,
-                    ),
-                    child: Text(
-                      range.label,
-                      style: OpenVtsTypography.meta.copyWith(
+                return Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
+                    onTap: () => onRangeChanged(range),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      curve: Curves.easeOutCubic,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: OpenVtsSpacing.xs,
+                        vertical: OpenVtsSpacing.xxs + 1,
+                      ),
+                      decoration: BoxDecoration(
                         color: isSelected
-                            ? theme.colorScheme.onPrimaryContainer
-                            : theme.colorScheme.onSurfaceVariant,
-                        fontWeight: FontWeight.w700,
+                            ? theme.colorScheme.primaryContainer
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
+                        boxShadow: isSelected
+                            ? [
+                                BoxShadow(
+                                  color: theme.colorScheme.primary.withValues(
+                                    alpha: 0.08,
+                                  ),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ]
+                            : null,
+                      ),
+                      child: Text(
+                        range.label,
+                        style: OpenVtsTypography.meta.copyWith(
+                          color: isSelected
+                              ? theme.colorScheme.onPrimaryContainer
+                              : theme.colorScheme.onSurfaceVariant,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                   ),
-                ),
-              );
-            },
-          ).toList(growable: false),
+                );
+              })
+              .toList(growable: false),
         ),
       ),
     );
@@ -778,10 +750,7 @@ class _LegendDot extends StatelessWidget {
                 : color.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
             border: isSelected
-                ? Border.all(
-                    color: color.withValues(alpha: 0.3),
-                    width: 1.2,
-                  )
+                ? Border.all(color: color.withValues(alpha: 0.3), width: 1.2)
                 : null,
             boxShadow: isSelected
                 ? [
@@ -919,10 +888,7 @@ class _ChartSeriesPill extends StatelessWidget {
 }
 
 class _AdoptionChart extends StatelessWidget {
-  const _AdoptionChart({
-    required this.points,
-    required this.visibleMetrics,
-  });
+  const _AdoptionChart({required this.points, required this.visibleMetrics});
 
   final List<SuperadminAdoptionPoint> points;
   final Set<String> visibleMetrics;
@@ -949,8 +915,11 @@ class _AdoptionChart extends StatelessWidget {
                 end: Alignment.bottomCenter,
                 colors: [
                   theme.colorScheme.surface,
-                  Color.lerp(theme.colorScheme.surface,
-                          theme.colorScheme.onSurface, 0.08) ??
+                  Color.lerp(
+                        theme.colorScheme.surface,
+                        theme.colorScheme.onSurface,
+                        0.08,
+                      ) ??
                       theme.colorScheme.surface,
                 ],
               ),
@@ -978,7 +947,7 @@ class _AdoptionChart extends StatelessWidget {
                   Row(
                     children: [
                       Text(
-                        'Latest period',
+                        context.mobileText('Latest period'),
                         style: OpenVtsTypography.meta.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                           fontWeight: FontWeight.w600,
@@ -992,10 +961,12 @@ class _AdoptionChart extends StatelessWidget {
                         ),
                         decoration: BoxDecoration(
                           color: theme.colorScheme.primaryContainer,
-                          borderRadius:
-                              BorderRadius.circular(OpenVtsRadius.pill),
+                          borderRadius: BorderRadius.circular(
+                            OpenVtsRadius.pill,
+                          ),
                           border: Border.all(
-                              color: theme.colorScheme.outlineVariant),
+                            color: theme.colorScheme.outlineVariant,
+                          ),
                         ),
                         child: Text(
                           latestPoint.label,
@@ -1007,7 +978,11 @@ class _AdoptionChart extends StatelessWidget {
                       ),
                       const Spacer(),
                       Text(
-                        'License peak ${_formatCompactMetric(latestPoint.licenses)}',
+                        context.mobileText("License peak {value1}", {
+                          'value1': (_formatCompactMetric(
+                            latestPoint.licenses,
+                          )).toString(),
+                        }),
                         style: OpenVtsTypography.meta.copyWith(
                           color: OpenVtsColors.warning,
                           fontWeight: FontWeight.w700,
@@ -1027,8 +1002,9 @@ class _AdoptionChart extends StatelessWidget {
                         const SizedBox(width: OpenVtsSpacing.xs),
                         Expanded(
                           child: ClipRRect(
-                            borderRadius:
-                                BorderRadius.circular(OpenVtsRadius.md),
+                            borderRadius: BorderRadius.circular(
+                              OpenVtsRadius.md,
+                            ),
                             child: CustomPaint(
                               painter: _AdoptionChartPainter(
                                 series: filteredSeries,
@@ -1093,8 +1069,10 @@ class _AdoptionChart extends StatelessWidget {
       0,
       (max, item) => math.max(
         max,
-        item.values
-            .fold<int>(0, (innerMax, value) => math.max(innerMax, value)),
+        item.values.fold<int>(
+          0,
+          (innerMax, value) => math.max(innerMax, value),
+        ),
       ),
     );
 
@@ -1108,12 +1086,12 @@ class _AdoptionChart extends StatelessWidget {
     final niceNormalized = normalized <= 1
         ? 1
         : normalized <= 2
-            ? 2
-            : normalized <= 2.5
-                ? 2.5
-                : normalized <= 5
-                    ? 5
-                    : 10;
+        ? 2
+        : normalized <= 2.5
+        ? 2.5
+        : normalized <= 5
+        ? 5
+        : 10;
 
     return (niceNormalized * magnitude).round();
   }
@@ -1191,11 +1169,7 @@ class _AdoptionChartPainter extends CustomPainter {
     );
 
     for (final item in series) {
-      _drawSeries(
-        canvas,
-        plotRect,
-        item,
-      );
+      _drawSeries(canvas, plotRect, item);
     }
   }
 
@@ -1207,7 +1181,11 @@ class _AdoptionChartPainter extends CustomPainter {
   }
 
   void _drawPlotSurface(
-      Canvas canvas, Rect plotRect, Color surfaceColor, Color outlineColor) {
+    Canvas canvas,
+    Rect plotRect,
+    Color surfaceColor,
+    Color outlineColor,
+  ) {
     canvas.drawRect(
       plotRect,
       Paint()
@@ -1239,11 +1217,7 @@ class _AdoptionChartPainter extends CustomPainter {
     }
   }
 
-  void _drawSeries(
-    Canvas canvas,
-    Rect plotRect,
-    _AdoptionSeries series,
-  ) {
+  void _drawSeries(Canvas canvas, Rect plotRect, _AdoptionSeries series) {
     final points = _mapValuesToOffsets(series.values, plotRect);
     if (points.length < 2) {
       return;
@@ -1267,9 +1241,7 @@ class _AdoptionChartPainter extends CustomPainter {
     canvas.drawPath(fillPath, fillPaint);
 
     final glowPaint = Paint()
-      ..color = series.color.withValues(
-        alpha: series.isPrimary ? 0.18 : 0.1,
-      )
+      ..color = series.color.withValues(alpha: series.isPrimary ? 0.18 : 0.1)
       ..style = PaintingStyle.stroke
       ..strokeWidth = series.isPrimary ? 8 : 6
       ..strokeCap = StrokeCap.round
@@ -1317,13 +1289,17 @@ class _AdoptionChartPainter extends CustomPainter {
 
       final controlPoint1 = Offset(
         current.dx + (next.dx - previous.dx) / 6,
-        (current.dy + (next.dy - previous.dy) / 6)
-            .clamp(plotRect.top, plotRect.bottom),
+        (current.dy + (next.dy - previous.dy) / 6).clamp(
+          plotRect.top,
+          plotRect.bottom,
+        ),
       );
       final controlPoint2 = Offset(
         next.dx - (afterNext.dx - current.dx) / 6,
-        (next.dy - (afterNext.dy - current.dy) / 6)
-            .clamp(plotRect.top, plotRect.bottom),
+        (next.dy - (afterNext.dy - current.dy) / 6).clamp(
+          plotRect.top,
+          plotRect.bottom,
+        ),
       );
 
       path.cubicTo(
@@ -1339,11 +1315,7 @@ class _AdoptionChartPainter extends CustomPainter {
     return path;
   }
 
-  void _drawLatestMarker(
-    Canvas canvas,
-    Offset point,
-    _AdoptionSeries series,
-  ) {
+  void _drawLatestMarker(Canvas canvas, Offset point, _AdoptionSeries series) {
     final haloRadius = series.isPrimary ? 8.5 : 6.5;
     final innerRadius = series.isPrimary ? 4.2 : 3.6;
 
@@ -1357,19 +1329,10 @@ class _AdoptionChartPainter extends CustomPainter {
       haloRadius / 1.8,
       Paint()..color = backgroundColor,
     );
-    canvas.drawCircle(
-      point,
-      innerRadius,
-      Paint()..color = series.color,
-    );
+    canvas.drawCircle(point, innerRadius, Paint()..color = series.color);
   }
 
-  void _drawDashedLine(
-    Canvas canvas,
-    Offset start,
-    Offset end,
-    Paint paint,
-  ) {
+  void _drawDashedLine(Canvas canvas, Offset start, Offset end, Paint paint) {
     const dashWidth = 5.0;
     const dashSpace = 4.0;
     final totalDistance = (end - start).distance;
@@ -1431,8 +1394,8 @@ class _XAxisLabels extends StatelessWidget {
         final interval = constraints.maxWidth < 380
             ? 3
             : constraints.maxWidth < 560
-                ? 2
-                : 1;
+            ? 2
+            : 1;
 
         return SizedBox(
           height: useRotation ? 34 : 18,
@@ -1454,27 +1417,28 @@ class _XAxisLabels extends StatelessWidget {
 
               return Expanded(
                 child: Align(
-                  alignment:
-                      useRotation ? Alignment.topLeft : Alignment.topCenter,
+                  alignment: useRotation
+                      ? Alignment.topLeft
+                      : Alignment.topCenter,
                   child: !showLabel
                       ? const SizedBox.shrink()
                       : useRotation
-                          ? Transform.rotate(
-                              angle: -math.pi / 5.2,
-                              alignment: Alignment.topLeft,
-                              child: Text(
-                                point.label,
-                                maxLines: 1,
-                                overflow: TextOverflow.visible,
-                                style: style,
-                              ),
-                            )
-                          : Text(
-                              point.label,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: style,
-                            ),
+                      ? Transform.rotate(
+                          angle: -math.pi / 5.2,
+                          alignment: Alignment.topLeft,
+                          child: Text(
+                            point.label,
+                            maxLines: 1,
+                            overflow: TextOverflow.visible,
+                            style: style,
+                          ),
+                        )
+                      : Text(
+                          point.label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: style,
+                        ),
                 ),
               );
             }),
@@ -1527,31 +1491,31 @@ class _VehicleStatusSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final statuses = <_VehicleStatusTileData>[
       _VehicleStatusTileData(
-        label: 'Connected',
+        label: context.mobileText('Connected'),
         count: summary.connectedCount,
         color: OpenVtsColors.success,
         icon: Icons.wifi_tethering_outlined,
       ),
       _VehicleStatusTileData(
-        label: 'Running',
+        label: context.mobileText('Running'),
         count: summary.runningCount,
         color: OpenVtsColors.brandInk,
         icon: Icons.trending_up_outlined,
       ),
       _VehicleStatusTileData(
-        label: 'Stop',
+        label: context.mobileText('Stop'),
         count: summary.stopCount,
         color: OpenVtsColors.warning,
         icon: Icons.pause_circle_outline,
       ),
       _VehicleStatusTileData(
-        label: 'Inactive - 48H',
+        label: context.mobileText('Inactive - 48H'),
         count: summary.inactiveCount,
         color: OpenVtsColors.divider,
         icon: Icons.warning_amber_outlined,
       ),
       _VehicleStatusTileData(
-        label: 'No Data',
+        label: context.mobileText('No Data'),
         count: summary.noDataCount,
         color: OpenVtsColors.textTertiary,
         icon: Icons.note_alt_outlined,
@@ -1582,7 +1546,7 @@ class _VehicleStatusSection extends StatelessWidget {
                 ),
                 const SizedBox(width: OpenVtsSpacing.xs),
                 Text(
-                  'Vehicle Status',
+                  context.mobileText('Vehicle Status'),
                   style: OpenVtsTypography.titleSmall.copyWith(fontSize: 20),
                 ),
                 const SizedBox(width: OpenVtsSpacing.xs),
@@ -1608,8 +1572,9 @@ class _VehicleStatusSection extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      NumberFormat.decimalPattern()
-                          .format(summary.totalDevices),
+                      NumberFormat.decimalPattern().format(
+                        summary.totalDevices,
+                      ),
                       style: OpenVtsTypography.numeric.copyWith(fontSize: 18),
                     ),
                     Text(
@@ -1627,7 +1592,10 @@ class _VehicleStatusSection extends StatelessWidget {
             const SizedBox(height: OpenVtsSpacing.md),
             LayoutBuilder(
               builder: (context, constraints) {
-                final crossAxisCount = constraints.maxWidth >= 760 ? 3 : 2;
+                final crossAxisCount = OpenVtsDashboardMetricCard.gridColumns(
+                  context,
+                  constraints.maxWidth,
+                );
 
                 return GridView.builder(
                   shrinkWrap: true,
@@ -1637,7 +1605,9 @@ class _VehicleStatusSection extends StatelessWidget {
                     crossAxisCount: crossAxisCount,
                     mainAxisSpacing: OpenVtsSpacing.sm,
                     crossAxisSpacing: OpenVtsSpacing.sm,
-                    childAspectRatio: 1.55,
+                    mainAxisExtent: OpenVtsDashboardMetricCard.gridExtent(
+                      context,
+                    ),
                   ),
                   itemBuilder: (context, index) => _VehicleStatusTile(
                     data: statuses[index],
@@ -1654,10 +1624,7 @@ class _VehicleStatusSection extends StatelessWidget {
 }
 
 class _VehicleStatusTile extends StatelessWidget {
-  const _VehicleStatusTile({
-    required this.data,
-    required this.totalDevices,
-  });
+  const _VehicleStatusTile({required this.data, required this.totalDevices});
 
   final _VehicleStatusTileData data;
   final int totalDevices;
@@ -1665,8 +1632,9 @@ class _VehicleStatusTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final percentage =
-        totalDevices <= 0 ? 0.0 : (data.count / totalDevices).clamp(0.0, 1.0);
+    final percentage = totalDevices <= 0
+        ? 0.0
+        : (data.count / totalDevices).clamp(0.0, 1.0);
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -1681,8 +1649,11 @@ class _VehicleStatusTile extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(data.icon,
-                    size: 12, color: theme.colorScheme.onSurfaceVariant),
+                Icon(
+                  data.icon,
+                  size: 12,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
                 const SizedBox(width: OpenVtsSpacing.xxs),
                 Expanded(
                   child: Text(
@@ -1723,8 +1694,9 @@ class _VehicleStatusTile extends StatelessWidget {
               child: LinearProgressIndicator(
                 value: percentage,
                 minHeight: 4,
-                backgroundColor:
-                    theme.colorScheme.outlineVariant.withValues(alpha: 0.2),
+                backgroundColor: theme.colorScheme.outlineVariant.withValues(
+                  alpha: 0.2,
+                ),
                 color: data.color,
               ),
             ),
@@ -1757,15 +1729,16 @@ class _RecentVehiclesSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _SectionCard(
-      title: 'Recent Vehicles',
+      title: context.mobileText('Recent Vehicles'),
       icon: Icons.local_shipping_outlined,
       child: vehicles.isEmpty
-          ? const Padding(
-              padding: EdgeInsets.all(OpenVtsSpacing.lg),
+          ? Padding(
+              padding: const EdgeInsets.all(OpenVtsSpacing.lg),
               child: OpenVtsEmptyState(
-                title: 'No recent vehicles',
-                message:
-                    'The overview response does not include recent vehicles yet.',
+                title: context.mobileText('No recent vehicles'),
+                message: context.mobileText(
+                  'The overview response does not include recent vehicles yet.',
+                ),
               ),
             )
           : Column(
@@ -1775,8 +1748,9 @@ class _RecentVehiclesSection extends StatelessWidget {
                   children: [
                     if (index > 0)
                       Divider(
-                          height: 1,
-                          color: Theme.of(context).colorScheme.outlineVariant),
+                        height: 1,
+                        color: Theme.of(context).colorScheme.outlineVariant,
+                      ),
                     _RecentVehicleRow(vehicle: vehicle),
                   ],
                 );
@@ -1876,7 +1850,7 @@ class _TransactionsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _SectionCard(
-      title: 'Transactions',
+      title: context.mobileText('Transactions'),
       icon: Icons.credit_card_outlined,
       // trailing: Text(
       //   'View All',
@@ -1886,12 +1860,13 @@ class _TransactionsSection extends StatelessWidget {
       //   ),
       // ),
       child: transactions.isEmpty
-          ? const Padding(
-              padding: EdgeInsets.all(OpenVtsSpacing.lg),
+          ? Padding(
+              padding: const EdgeInsets.all(OpenVtsSpacing.lg),
               child: OpenVtsEmptyState(
-                title: 'No transactions',
-                message:
-                    'Transaction activity will appear here when available.',
+                title: context.mobileText('No transactions'),
+                message: context.mobileText(
+                  'Transaction activity will appear here when available.',
+                ),
               ),
             )
           : Column(
@@ -1901,8 +1876,9 @@ class _TransactionsSection extends StatelessWidget {
                   children: [
                     if (index > 0)
                       Divider(
-                          height: 1,
-                          color: Theme.of(context).colorScheme.outlineVariant),
+                        height: 1,
+                        color: Theme.of(context).colorScheme.outlineVariant,
+                      ),
                     _TransactionRow(transaction: transaction),
                   ],
                 );
@@ -2003,15 +1979,16 @@ class _RecentUsersSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _SectionCard(
-      title: 'Recent Users',
+      title: context.mobileText('Recent Users'),
       icon: Icons.group_outlined,
       child: users.isEmpty
-          ? const Padding(
-              padding: EdgeInsets.all(OpenVtsSpacing.lg),
+          ? Padding(
+              padding: const EdgeInsets.all(OpenVtsSpacing.lg),
               child: OpenVtsEmptyState(
-                title: 'No recent users',
-                message:
-                    'Recent users will appear here when the dashboard overview returns them.',
+                title: context.mobileText('No recent users'),
+                message: context.mobileText(
+                  'Recent users will appear here when the dashboard overview returns them.',
+                ),
               ),
             )
           : Column(
@@ -2021,8 +1998,9 @@ class _RecentUsersSection extends StatelessWidget {
                   children: [
                     if (index > 0)
                       Divider(
-                          height: 1,
-                          color: Theme.of(context).colorScheme.outlineVariant),
+                        height: 1,
+                        color: Theme.of(context).colorScheme.outlineVariant,
+                      ),
                     _RecentUserRow(user: user),
                   ],
                 );
@@ -2139,10 +2117,10 @@ class _ActivityLogsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _SectionCard(
-      title: 'Activity Logs',
+      title: context.mobileText('Activity Logs'),
       icon: Icons.insights_outlined,
       trailing: IconButton(
-        tooltip: 'Filter activity logs',
+        tooltip: context.mobileText('Filter activity logs'),
         onPressed: onOpenFilters,
         icon: Icon(
           Icons.filter_alt_outlined,
@@ -2177,19 +2155,25 @@ class _ActivityLogsSection extends StatelessWidget {
                     ),
                   if (state.fromDate != null)
                     _FilterChipLabel(
-                      label:
-                          'From ${_dashboardDateFormatter.formatDate(state.fromDate!.toLocal())}',
+                      label: context.mobileText("From {value1}", {
+                        'value1': (_dashboardDateFormatter.formatDate(
+                          state.fromDate!.toLocal(),
+                        )).toString(),
+                      }),
                     ),
                   if (state.toDate != null)
                     _FilterChipLabel(
-                      label:
-                          'To ${_dashboardDateFormatter.formatDate(state.toDate!.toLocal())}',
+                      label: context.mobileText("To {value1}", {
+                        'value1': (_dashboardDateFormatter.formatDate(
+                          state.toDate!.toLocal(),
+                        )).toString(),
+                      }),
                     ),
                   if (onClearFilters != null)
                     GestureDetector(
                       onTap: onClearFilters,
                       child: Text(
-                        'Clear',
+                        context.mobileText('Clear'),
                         style: OpenVtsTypography.meta.copyWith(
                           color: OpenVtsColors.textSecondary,
                           fontWeight: FontWeight.w700,
@@ -2200,12 +2184,13 @@ class _ActivityLogsSection extends StatelessWidget {
               ),
             ),
           if (logs.isEmpty)
-            const Padding(
-              padding: EdgeInsets.all(OpenVtsSpacing.lg),
+            Padding(
+              padding: const EdgeInsets.all(OpenVtsSpacing.lg),
               child: OpenVtsEmptyState(
-                title: 'No activity logs',
-                message:
-                    'Recent activity will appear here once the backend returns it.',
+                title: context.mobileText('No activity logs'),
+                message: context.mobileText(
+                  'Recent activity will appear here once the backend returns it.',
+                ),
               ),
             )
           else
@@ -2216,8 +2201,9 @@ class _ActivityLogsSection extends StatelessWidget {
                   children: [
                     if (index > 0)
                       Divider(
-                          height: 1,
-                          color: Theme.of(context).colorScheme.outlineVariant),
+                        height: 1,
+                        color: Theme.of(context).colorScheme.outlineVariant,
+                      ),
                     _ActivityLogRow(log: log),
                   ],
                 );
@@ -2240,7 +2226,7 @@ class _ActivityLogsSection extends StatelessWidget {
                           height: 16,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Text('Load More'),
+                      : Text(context.mobileText('Load More')),
                 ),
               ),
             ),
@@ -2284,11 +2270,7 @@ class _ActivityLogRow extends StatelessWidget {
               color: tone.color.withValues(alpha: 0.12),
               shape: BoxShape.circle,
             ),
-            child: Icon(
-              tone.icon,
-              size: 16,
-              color: tone.color,
-            ),
+            child: Icon(tone.icon, size: 16, color: tone.color),
           ),
           const SizedBox(width: OpenVtsSpacing.sm),
           Expanded(
@@ -2364,10 +2346,7 @@ class _ActivityLogRow extends StatelessWidget {
     final value = title.toLowerCase();
     final scheme = Theme.of(context).colorScheme;
     if (value.contains('login') || value.contains('auth')) {
-      return _ActivityTone(
-        icon: Icons.login_rounded,
-        color: scheme.tertiary,
-      );
+      return _ActivityTone(icon: Icons.login_rounded, color: scheme.tertiary);
     }
     if (value.contains('upload')) {
       return _ActivityTone(
@@ -2383,10 +2362,7 @@ class _ActivityLogRow extends StatelessWidget {
 }
 
 class _ActivityTone {
-  const _ActivityTone({
-    required this.icon,
-    required this.color,
-  });
+  const _ActivityTone({required this.icon, required this.color});
 
   final IconData icon;
   final Color color;
@@ -2441,10 +2417,7 @@ class _SectionCard extends StatelessWidget {
 }
 
 class _InlineErrorBanner extends StatelessWidget {
-  const _InlineErrorBanner({
-    required this.message,
-    required this.onRetry,
-  });
+  const _InlineErrorBanner({required this.message, required this.onRetry});
 
   final String message;
   final VoidCallback onRetry;
@@ -2455,9 +2428,7 @@ class _InlineErrorBanner extends StatelessWidget {
       decoration: BoxDecoration(
         color: OpenVtsColors.error.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(OpenVtsRadius.md),
-        border: Border.all(
-          color: OpenVtsColors.error.withValues(alpha: 0.2),
-        ),
+        border: Border.all(color: OpenVtsColors.error.withValues(alpha: 0.2)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(OpenVtsSpacing.sm),
@@ -2480,7 +2451,7 @@ class _InlineErrorBanner extends StatelessWidget {
             ),
             TextButton(
               onPressed: onRetry,
-              child: const Text('Retry'),
+              child: Text(context.mobileText('Retry')),
             ),
           ],
         ),
@@ -2522,10 +2493,13 @@ class _DashboardActivityFilterResult {
     this.actorId,
     this.fromDate,
     this.toDate,
-    this.clearFilters = false,
-  });
+  }) : clearFilters = false;
 
-  const _DashboardActivityFilterResult.clear() : this(clearFilters: true);
+  const _DashboardActivityFilterResult.clear()
+    : actorId = null,
+      fromDate = null,
+      toDate = null,
+      clearFilters = true;
 
   final int? actorId;
   final DateTime? fromDate;

@@ -5,6 +5,7 @@ import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
@@ -94,13 +95,11 @@ class _GeneralSettingsSectionState
     final ok = await _controller.updateSoftwareConfig(request);
     if (!mounted) return;
     if (ok) {
-      ToastHelper.showSuccess('Settings saved');
+      ToastHelper.showSuccess(context.mobileText('Settings saved'));
       await _controller.loadSoftwareConfig();
       if (mounted) {
         setState(() => _hydrated = false);
-        _hydrate(
-          ref.read(superadminSettingsControllerProvider).softwareConfig,
-        );
+        _hydrate(ref.read(superadminSettingsControllerProvider).softwareConfig);
       }
     } else {
       ToastHelper.showError(
@@ -118,7 +117,7 @@ class _GeneralSettingsSectionState
     final ok = await _controller.previewDataRetention();
     if (!mounted) return;
     if (ok) {
-      ToastHelper.showInfo('Preview updated');
+      ToastHelper.showInfo(context.mobileText('Preview updated'));
     } else {
       ToastHelper.showError(
         ref.read(superadminSettingsControllerProvider).sectionErrorMessage ??
@@ -131,7 +130,7 @@ class _GeneralSettingsSectionState
     final ok = await _controller.runDataRetention(dryRun: true);
     if (!mounted) return;
     if (ok) {
-      ToastHelper.showInfo('Dry-run completed');
+      ToastHelper.showInfo(context.mobileText('Dry-run completed'));
     } else {
       ToastHelper.showError(
         ref.read(superadminSettingsControllerProvider).sectionErrorMessage ??
@@ -157,7 +156,7 @@ class _GeneralSettingsSectionState
     final ok = await _controller.runDataRetention(dryRun: false);
     if (!mounted) return;
     if (ok) {
-      ToastHelper.showSuccess('Cleanup completed');
+      ToastHelper.showSuccess(context.mobileText('Cleanup completed'));
       await _controller.previewDataRetention();
     } else {
       ToastHelper.showError(
@@ -197,7 +196,7 @@ class _GeneralSettingsSectionState
             ),
             const SizedBox(height: OpenVtsSpacing.sm),
             OpenVtsButton(
-              label: 'Retry',
+              label: context.mobileText('Retry'),
               variant: OpenVtsButtonVariant.secondary,
               height: 40,
               onPressed: _controller.loadSoftwareConfig,
@@ -214,11 +213,13 @@ class _GeneralSettingsSectionState
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _SectionHeader(
-            title: 'Settings',
-            subtitle: 'Platform behavior, signup, geocoding, and retention.',
+            title: context.mobileText('Settings'),
+            subtitle: context.mobileText(
+              'Platform behavior, signup, geocoding, and retention.',
+            ),
             icon: Icons.settings_suggest_outlined,
             trailing: IconButton(
-              tooltip: 'Refresh',
+              tooltip: context.mobileText('Refresh'),
               onPressed: state.isLoadingSoftwareConfig
                   ? null
                   : _controller.loadSoftwareConfig,
@@ -238,11 +239,13 @@ class _GeneralSettingsSectionState
           const SizedBox(height: OpenVtsSpacing.sm),
           _GroupedCard(
             icon: Icons.science_outlined,
-            title: 'Demo Login',
-            subtitle: 'Allow visitors to log in to a demo workspace.',
+            title: context.mobileText('Demo login'),
+            subtitle: context.mobileText(
+              'Allow visitors to log in to a demo workspace.',
+            ),
             children: [
               _LabeledSwitchRow(
-                label: 'Enable demo login',
+                label: context.mobileText('Enable demo login'),
                 value: _allowDemoLogin,
                 onChanged: (v) => setState(() => _allowDemoLogin = v),
               ),
@@ -251,19 +254,19 @@ class _GeneralSettingsSectionState
           const SizedBox(height: OpenVtsSpacing.sm),
           _GroupedCard(
             icon: Icons.place_outlined,
-            title: 'Reverse Geocoding Precision',
-            subtitle: 'Higher precision uses more lookups.',
+            title: context.mobileText('Reverse Geocoding Precision'),
+            subtitle: context.mobileText('Higher precision uses more lookups.'),
             children: [
               _SegmentedControl<SuperadminGeocodingPrecision>(
                 value: _precision,
-                segments: const [
+                segments: [
                   _Seg(
                     value: SuperadminGeocodingPrecision.twoDigit,
-                    label: '2 digits',
+                    label: context.mobileText('2 digits'),
                   ),
                   _Seg(
                     value: SuperadminGeocodingPrecision.threeDigit,
-                    label: '3 digits',
+                    label: context.mobileText('3 digits'),
                   ),
                 ],
                 onChanged: (v) => setState(() => _precision = v),
@@ -273,17 +276,17 @@ class _GeneralSettingsSectionState
           const SizedBox(height: OpenVtsSpacing.sm),
           _GroupedCard(
             icon: Icons.person_add_alt_1_outlined,
-            title: 'Signup',
-            subtitle: 'Public signup and welcome credits.',
+            title: context.mobileText('Signup'),
+            subtitle: context.mobileText('Public signup and welcome credits.'),
             children: [
               _LabeledSwitchRow(
-                label: 'Enable public signup',
+                label: context.mobileText('Enable public signup'),
                 value: _allowSignup,
                 onChanged: (v) => setState(() => _allowSignup = v),
               ),
               const SizedBox(height: OpenVtsSpacing.sm),
               OpenVtsTextField(
-                label: 'Free signup credits',
+                label: context.mobileText('Free signup credits'),
                 controller: _signupCreditsCtrl,
                 keyboardType: TextInputType.number,
                 hintText: '100',
@@ -302,8 +305,10 @@ class _GeneralSettingsSectionState
           const SizedBox(height: OpenVtsSpacing.sm),
           _GroupedCard(
             icon: Icons.backup_outlined,
-            title: 'Backup / Data Retention',
-            subtitle: 'How long historical data is kept before cleanup.',
+            title: context.mobileText('Backup / Data Retention'),
+            subtitle: context.mobileText(
+              'How long historical data is kept before cleanup.',
+            ),
             children: [
               _BackupDaysDropdown(
                 value: _backupDays,
@@ -316,7 +321,7 @@ class _GeneralSettingsSectionState
           ),
           const SizedBox(height: OpenVtsSpacing.md),
           OpenVtsButton(
-            label: 'Save changes',
+            label: context.mobileText('Save Changes'),
             isLoading: state.isSavingSoftwareConfig,
             height: 44,
             onPressed: state.isSavingSoftwareConfig ? null : _save,
@@ -324,8 +329,9 @@ class _GeneralSettingsSectionState
           const SizedBox(height: OpenVtsSpacing.md),
           _AdvancedCleanupCard(
             state: state,
-            onPreview:
-                state.isPreviewingDataRetention ? null : _previewRetention,
+            onPreview: state.isPreviewingDataRetention
+                ? null
+                : _previewRetention,
             onDryRun: state.isRunningDataRetention ? null : _dryRunRetention,
             onRun: state.isRunningDataRetention ? null : _openCleanupSheet,
           ),
@@ -386,7 +392,7 @@ class _CurrentConfigCard extends StatelessWidget {
             children: [
               Expanded(
                 child: _ConfigTile(
-                  label: 'Demo login',
+                  label: context.mobileText('Demo login'),
                   value: allowDemoLogin ? 'On' : 'Off',
                   positive: allowDemoLogin,
                 ),
@@ -394,7 +400,7 @@ class _CurrentConfigCard extends StatelessWidget {
               const SizedBox(width: OpenVtsSpacing.xs),
               Expanded(
                 child: _ConfigTile(
-                  label: 'Signup',
+                  label: context.mobileText('Signup'),
                   value: allowSignup ? 'On' : 'Off',
                   positive: allowSignup,
                 ),
@@ -406,7 +412,7 @@ class _CurrentConfigCard extends StatelessWidget {
             children: [
               Expanded(
                 child: _ConfigTile(
-                  label: 'Geocoding',
+                  label: context.mobileText('Geocoding'),
                   value: precision == SuperadminGeocodingPrecision.threeDigit
                       ? '3 digits'
                       : '2 digits',
@@ -415,7 +421,7 @@ class _CurrentConfigCard extends StatelessWidget {
               const SizedBox(width: OpenVtsSpacing.xs),
               Expanded(
                 child: _ConfigTile(
-                  label: 'Backup',
+                  label: context.mobileText('Backup'),
                   value: _formatBackupDays(backupDays),
                 ),
               ),
@@ -423,7 +429,7 @@ class _CurrentConfigCard extends StatelessWidget {
           ),
           const SizedBox(height: OpenVtsSpacing.xs),
           _ConfigTile(
-            label: 'Free signup credits',
+            label: context.mobileText('Free signup credits'),
             value: signupCredits.toString(),
           ),
         ],
@@ -433,11 +439,7 @@ class _CurrentConfigCard extends StatelessWidget {
 }
 
 class _ConfigTile extends StatelessWidget {
-  const _ConfigTile({
-    required this.label,
-    required this.value,
-    this.positive,
-  });
+  const _ConfigTile({required this.label, required this.value, this.positive});
 
   final String label;
   final String value;
@@ -530,17 +532,31 @@ class _BackupDaysDropdown extends StatelessWidget {
   Widget build(BuildContext context) {
     final hasValue = _kBackupOptions.any((o) => o.days == value);
     final items = <DropdownMenuItem<int>>[
-      if (!hasValue) DropdownMenuItem(value: value, child: Text('$value days')),
+      if (!hasValue)
+        DropdownMenuItem(
+          value: value,
+          child: Text(
+            context.mobileText("{value1} days", {'value1': (value).toString()}),
+          ),
+        ),
       for (final o in _kBackupOptions)
         DropdownMenuItem(
           value: o.days,
-          child: Text('${o.label}  ·  ${o.days} days'),
+          child: Text(
+            context.mobileText("{value1}  ·  {value2} days", {
+              'value1': (o.label).toString(),
+              'value2': (o.days).toString(),
+            }),
+          ),
         ),
     ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Retention period', style: OpenVtsTypography.label),
+        Text(
+          context.mobileText('Retention period'),
+          style: OpenVtsTypography.label,
+        ),
         const SizedBox(height: OpenVtsSpacing.xs),
         InputDecorator(
           decoration: const InputDecoration(isDense: true),
@@ -730,7 +746,7 @@ class _AdvancedCleanupCard extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      'Advanced Cleanup',
+                      context.mobileText('Advanced Cleanup'),
                       style: TextStyle(
                         fontFamily: OpenVtsTypography.primaryFontFamily,
                         fontSize: 13.5,
@@ -740,7 +756,9 @@ class _AdvancedCleanupCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 1),
                     Text(
-                      'Permanently remove historical rows older than the retention period.',
+                      context.mobileText(
+                        'Permanently remove historical rows older than the retention period.',
+                      ),
                       style: TextStyle(
                         fontFamily: OpenVtsTypography.primaryFontFamily,
                         fontSize: 11,
@@ -755,27 +773,26 @@ class _AdvancedCleanupCard extends StatelessWidget {
           ),
           const SizedBox(height: OpenVtsSpacing.sm),
           Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 10,
-              vertical: 8,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
             decoration: BoxDecoration(
               color: const Color(0xFFFFF7E6),
               borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
               border: Border.all(color: const Color(0xFFFFE0A6)),
             ),
-            child: const Row(
+            child: Row(
               children: [
-                Icon(
+                const Icon(
                   Icons.warning_amber_rounded,
                   size: 14,
                   color: Color(0xFFB76E00),
                 ),
-                SizedBox(width: 6),
+                const SizedBox(width: 6),
                 Expanded(
                   child: Text(
-                    'Running cleanup deletes data permanently. Always preview first.',
-                    style: TextStyle(
+                    context.mobileText(
+                      'Running cleanup deletes data permanently. Always preview first.',
+                    ),
+                    style: const TextStyle(
                       fontFamily: OpenVtsTypography.primaryFontFamily,
                       fontSize: 11,
                       height: 1.3,
@@ -791,7 +808,7 @@ class _AdvancedCleanupCard extends StatelessWidget {
             children: [
               Expanded(
                 child: OpenVtsButton(
-                  label: 'Preview',
+                  label: context.mobileText('Preview'),
                   variant: OpenVtsButtonVariant.secondary,
                   height: 40,
                   isLoading: state.isPreviewingDataRetention,
@@ -801,10 +818,11 @@ class _AdvancedCleanupCard extends StatelessWidget {
               const SizedBox(width: OpenVtsSpacing.xs),
               Expanded(
                 child: OpenVtsButton(
-                  label: 'Dry-run',
+                  label: context.mobileText('Dry-run'),
                   variant: OpenVtsButtonVariant.secondary,
                   height: 40,
-                  isLoading: state.isRunningDataRetention &&
+                  isLoading:
+                      state.isRunningDataRetention &&
                       (preview?.dryRun ?? false),
                   onPressed: onDryRun,
                 ),
@@ -813,7 +831,7 @@ class _AdvancedCleanupCard extends StatelessWidget {
           ),
           const SizedBox(height: OpenVtsSpacing.xs),
           OpenVtsButton(
-            label: 'Run cleanup',
+            label: context.mobileText('Run cleanup'),
             height: 42,
             isLoading: state.isRunningDataRetention,
             onPressed: onRun,
@@ -859,7 +877,9 @@ class _RetentionSummaryBlock extends StatelessWidget {
               ),
               const SizedBox(width: 4),
               Text(
-                summary.dryRun ? 'Dry-run summary' : 'Last cleanup',
+                summary.dryRun
+                    ? context.mobileText('Dry-run summary')
+                    : context.mobileText('Last cleanup'),
                 style: TextStyle(
                   fontFamily: OpenVtsTypography.primaryFontFamily,
                   fontSize: 11.5,
@@ -871,27 +891,27 @@ class _RetentionSummaryBlock extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           _SummaryRow(
-            label: 'Retention',
+            label: context.mobileText('Retention'),
             value: summary.retentionDays != null
                 ? '${summary.retentionDays} days'
                 : '—',
           ),
           _SummaryRow(
-            label: 'Cutoff',
+            label: context.mobileText('Cutoff'),
             value: summary.cutoff != null
                 ? summary.cutoff!.toIso8601String().split('T').first
                 : '—',
           ),
           _SummaryRow(
-            label: 'Older rows',
+            label: context.mobileText('Older rows'),
             value: _formatNumber(summary.totalOlderRows),
           ),
           _SummaryRow(
-            label: 'Deleted rows',
+            label: context.mobileText('Deleted rows'),
             value: _formatNumber(summary.totalDeletedRows),
           ),
           _SummaryRow(
-            label: 'Failed tables',
+            label: context.mobileText('Failed tables'),
             value: summary.failedTables.toString(),
             warn: summary.failedTables > 0,
           ),
@@ -907,7 +927,9 @@ class _RetentionSummaryBlock extends StatelessWidget {
                 tilePadding: EdgeInsets.zero,
                 childrenPadding: EdgeInsets.zero,
                 title: Text(
-                  'Tables (${summary.tables.length})',
+                  context.mobileText("Tables ({value1})", {
+                    'value1': (summary.tables.length).toString(),
+                  }),
                   style: TextStyle(
                     fontFamily: OpenVtsTypography.primaryFontFamily,
                     fontSize: 12,
@@ -915,9 +937,7 @@ class _RetentionSummaryBlock extends StatelessWidget {
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
-                children: [
-                  for (final t in summary.tables) _TableRow(table: t),
-                ],
+                children: [for (final t in summary.tables) _TableRow(table: t)],
               ),
             ),
           ],
@@ -1009,9 +1029,9 @@ class _TableRow extends StatelessWidget {
                     borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
                     border: Border.all(color: const Color(0xFFFFC4B0)),
                   ),
-                  child: const Text(
-                    'FAILED',
-                    style: TextStyle(
+                  child: Text(
+                    context.mobileText('Failed'),
+                    style: const TextStyle(
                       fontFamily: OpenVtsTypography.primaryFontFamily,
                       fontSize: 9.5,
                       fontWeight: FontWeight.w700,
@@ -1026,12 +1046,12 @@ class _TableRow extends StatelessWidget {
           Row(
             children: [
               _MiniMetric(
-                label: 'Older',
+                label: context.mobileText('Older'),
                 value: _formatNumber(table.olderRows),
               ),
               const SizedBox(width: 10),
               _MiniMetric(
-                label: 'Deleted',
+                label: context.mobileText('Deleted'),
                 value: _formatNumber(table.deletedRows),
               ),
             ],
@@ -1168,7 +1188,7 @@ class _CleanupConfirmSheetState extends State<_CleanupConfirmSheet> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Confirm cleanup',
+                      context.mobileText('Confirm cleanup'),
                       style: TextStyle(
                         fontFamily: OpenVtsTypography.primaryFontFamily,
                         fontSize: 14,
@@ -1181,8 +1201,10 @@ class _CleanupConfirmSheetState extends State<_CleanupConfirmSheet> {
               ),
               const SizedBox(height: 6),
               Text(
-                'This permanently deletes data older than the retention period. '
-                'It cannot be undone.',
+                context.mobileText(
+                  'This permanently deletes data older than the retention period. '
+                  'It cannot be undone.',
+                ),
                 style: TextStyle(
                   fontFamily: OpenVtsTypography.primaryFontFamily,
                   fontSize: 11.5,
@@ -1199,7 +1221,7 @@ class _CleanupConfirmSheetState extends State<_CleanupConfirmSheet> {
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                   children: [
-                    const TextSpan(text: 'Type '),
+                    TextSpan(text: context.mobileText('Type ')),
                     TextSpan(
                       text: _kCleanupPhrase,
                       style: TextStyle(
@@ -1208,13 +1230,15 @@ class _CleanupConfirmSheetState extends State<_CleanupConfirmSheet> {
                         letterSpacing: 0.5,
                       ),
                     ),
-                    const TextSpan(text: ' to enable the button.'),
+                    TextSpan(
+                      text: context.mobileText(' to enable the button.'),
+                    ),
                   ],
                 ),
               ),
               const SizedBox(height: OpenVtsSpacing.xs),
               OpenVtsTextField(
-                label: 'Confirmation phrase',
+                label: context.mobileText('Confirmation phrase'),
                 controller: _ctrl,
                 hintText: _kCleanupPhrase,
                 textInputAction: TextInputAction.done,
@@ -1224,7 +1248,7 @@ class _CleanupConfirmSheetState extends State<_CleanupConfirmSheet> {
                 children: [
                   Expanded(
                     child: OpenVtsButton(
-                      label: 'Cancel',
+                      label: context.mobileText('Cancel'),
                       variant: OpenVtsButtonVariant.secondary,
                       height: 42,
                       onPressed: () => Navigator.of(context).pop(false),
@@ -1233,7 +1257,7 @@ class _CleanupConfirmSheetState extends State<_CleanupConfirmSheet> {
                   const SizedBox(width: OpenVtsSpacing.sm),
                   Expanded(
                     child: OpenVtsButton(
-                      label: 'Delete',
+                      label: context.mobileText('Delete'),
                       height: 42,
                       onPressed: _matches
                           ? () => Navigator.of(context).pop(true)
@@ -1280,10 +1304,14 @@ class _SectionHeader extends StatelessWidget {
               color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
               border: Border.all(
-                  color: Theme.of(context).colorScheme.outlineVariant),
+                color: Theme.of(context).colorScheme.outlineVariant,
+              ),
             ),
-            child: Icon(icon,
-                size: 16, color: Theme.of(context).colorScheme.onSurface),
+            child: Icon(
+              icon,
+              size: 16,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
           ),
           const SizedBox(width: OpenVtsSpacing.xs),
           Expanded(
@@ -1349,9 +1377,11 @@ class _GroupedCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(icon,
-                  size: 16,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant),
+              Icon(
+                icon,
+                size: 16,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Column(

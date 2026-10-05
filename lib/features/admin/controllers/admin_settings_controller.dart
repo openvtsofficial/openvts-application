@@ -10,7 +10,7 @@ import '../services/admin_settings_service.dart';
 
 class AdminSettingsController extends StateNotifier<AdminSettingsState> {
   AdminSettingsController(this._service)
-      : super(const AdminSettingsState.initial());
+    : super(const AdminSettingsState.initial());
 
   final AdminSettingsService _service;
 
@@ -32,16 +32,16 @@ class AdminSettingsController extends StateNotifier<AdminSettingsState> {
     unawaited(_loadForSection(section, lazy: true));
   }
 
-  Future<void> refreshCurrentSection() => _loadForSection(
-        state.selectedSection,
-        lazy: false,
-      );
+  Future<void> refreshCurrentSection() =>
+      _loadForSection(state.selectedSection, lazy: false);
 
   Future<void> _loadForSection(
     AdminSettingsSection section, {
     required bool lazy,
   }) async {
     switch (section) {
+      case AdminSettingsSection.security:
+        break;
       case AdminSettingsSection.profile:
         if (!lazy || state.profile == null) await loadProfile();
         break;
@@ -127,10 +127,7 @@ class AdminSettingsController extends StateNotifier<AdminSettingsState> {
         bytes: bytes,
         fileName: fileName,
       );
-      state = state.copyWith(
-        profile: profile,
-        isUploadingProfilePhoto: false,
-      );
+      state = state.copyWith(profile: profile, isUploadingProfilePhoto: false);
       return true;
     } catch (error) {
       state = state.copyWith(
@@ -143,8 +140,10 @@ class AdminSettingsController extends StateNotifier<AdminSettingsState> {
 
   Future<bool> requestEmailOtp() async {
     if (state.isRequestingEmailOtp) return false;
-    state =
-        state.copyWith(isRequestingEmailOtp: true, sectionErrorMessage: null);
+    state = state.copyWith(
+      isRequestingEmailOtp: true,
+      sectionErrorMessage: null,
+    );
     try {
       await _service.requestEmailOtp();
       state = state.copyWith(isRequestingEmailOtp: false);

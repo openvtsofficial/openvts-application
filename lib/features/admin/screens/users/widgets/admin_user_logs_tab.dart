@@ -10,6 +10,7 @@ import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../core/utils/date_time_formatter.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/widgets/open_vts_bottom_sheet.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
@@ -28,10 +29,7 @@ const List<_ActionGroup> _actionGroups = <_ActionGroup>[
 ];
 
 class AdminUserLogsTab extends ConsumerStatefulWidget {
-  const AdminUserLogsTab({
-    super.key,
-    required this.userId,
-  });
+  const AdminUserLogsTab({super.key, required this.userId});
 
   final String userId;
 
@@ -63,7 +61,8 @@ class _AdminUserLogsTabState extends ConsumerState<AdminUserLogsTab> {
     final state = ref.watch(provider);
     final controller = ref.read(provider.notifier);
     final hasDateRange = state.logFrom != null || state.logTo != null;
-    final hasFilters = state.logSearch.trim().isNotEmpty ||
+    final hasFilters =
+        state.logSearch.trim().isNotEmpty ||
         state.logActionPrefix.trim().isNotEmpty ||
         hasDateRange;
 
@@ -81,14 +80,11 @@ class _AdminUserLogsTabState extends ConsumerState<AdminUserLogsTab> {
         ),
         const SizedBox(height: OpenVtsSpacing.sm),
         OpenVtsDateTimeRangeField(
-          label: 'Date range',
-          title: 'Activity date range',
-          hintText: 'Select date range',
+          label: context.mobileText('Date range'),
+          title: context.mobileText('Activity date range'),
+          hintText: context.mobileText('Select date range'),
           dateTimeEnabled: true,
-          value: OpenVtsDateTimeRange(
-            start: state.logFrom,
-            end: state.logTo,
-          ),
+          value: OpenVtsDateTimeRange(start: state.logFrom, end: state.logTo),
           onChanged: _onDateRangeChanged,
         ),
         if (hasFilters) ...[
@@ -98,7 +94,7 @@ class _AdminUserLogsTabState extends ConsumerState<AdminUserLogsTab> {
             child: TextButton.icon(
               onPressed: _resetFilters,
               icon: const Icon(Icons.refresh_rounded, size: 14),
-              label: const Text('Reset filters'),
+              label: Text(context.mobileText('Reset filters')),
               style: TextButton.styleFrom(
                 foregroundColor: Theme.of(context).colorScheme.onSurfaceVariant,
                 minimumSize: const Size(0, 30),
@@ -110,14 +106,14 @@ class _AdminUserLogsTabState extends ConsumerState<AdminUserLogsTab> {
         ],
         const SizedBox(height: OpenVtsSpacing.sm),
         if (state.isLoadingLogs && state.logs.isEmpty)
-          const _SectionLoader(title: 'Logs')
+          _SectionLoader(title: context.mobileText('Logs'))
         else if (state.sectionErrorMessage != null && state.logs.isEmpty)
           _SectionErrorCard(
             message: state.sectionErrorMessage!,
             onRetry: controller.loadLogs,
           )
         else if (state.logs.isEmpty)
-          const _EmptyCard(label: 'No logs found')
+          _EmptyCard(label: context.mobileText('No logs found'))
         else ...[
           if (state.sectionErrorMessage != null) ...[
             _InlineError(message: state.sectionErrorMessage!),
@@ -131,7 +127,7 @@ class _AdminUserLogsTabState extends ConsumerState<AdminUserLogsTab> {
           if (state.logsHasMore) ...[
             const SizedBox(height: OpenVtsSpacing.sm),
             OpenVtsButton(
-              label: 'Load More',
+              label: context.mobileText('Load More'),
               height: 38,
               variant: OpenVtsButtonVariant.secondary,
               isLoading: state.isLoadingMoreLogs,
@@ -195,7 +191,7 @@ class _AdminUserLogsTabState extends ConsumerState<AdminUserLogsTab> {
   Future<void> _showLogDetails(AdminUserActivityLog log) {
     return OpenVtsBottomSheet.show<void>(
       context: context,
-      title: 'Activity Detail',
+      title: context.mobileText('Activity Detail'),
       initialChildSize: 0.74,
       minChildSize: 0.46,
       maxChildSize: 0.94,
@@ -229,7 +225,7 @@ class _SearchField extends StatelessWidget {
         color: Theme.of(context).colorScheme.onSurface,
       ),
       decoration: InputDecoration(
-        hintText: 'Search logs',
+        hintText: context.mobileText('Search logs'),
         hintStyle: TextStyle(
           color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),
@@ -241,14 +237,16 @@ class _SearchField extends StatelessWidget {
         suffixIcon: controller.text.isEmpty
             ? null
             : IconButton(
-                tooltip: 'Clear search',
+                tooltip: context.mobileText('Clear search'),
                 onPressed: () {
                   controller.clear();
                   onChanged('');
                 },
-                icon: Icon(Icons.close_rounded,
-                    size: 17,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant),
+                icon: Icon(
+                  Icons.close_rounded,
+                  size: 17,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
               ),
       ),
     );
@@ -477,7 +475,7 @@ class _LogDetailSheet extends StatelessWidget {
         ),
         const SizedBox(height: OpenVtsSpacing.sm),
         _DetailsCard(
-          title: 'Details',
+          title: context.mobileText('Details'),
           rows: [
             _DetailRowData('Action', _displayValue(log.action)),
             _DetailRowData('Created At', _dateTimeText(log.createdAt)),
@@ -496,7 +494,7 @@ class _LogDetailSheet extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Meta',
+                context.mobileText('Meta'),
                 style: OpenVtsTypography.label.copyWith(
                   color: colorScheme.onSurface,
                   fontWeight: FontWeight.w800,
@@ -656,7 +654,9 @@ class _SectionLoader extends StatelessWidget {
           ),
           const SizedBox(width: OpenVtsSpacing.sm),
           Text(
-            'Loading $title',
+            context.mobileText("Loading {value1}", {
+              'value1': (title).toString(),
+            }),
             style: OpenVtsTypography.label.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
               fontWeight: FontWeight.w700,
@@ -692,7 +692,7 @@ class _SectionErrorCard extends StatelessWidget {
               const SizedBox(width: OpenVtsSpacing.xs),
               Expanded(
                 child: Text(
-                  'Unable to load logs',
+                  context.mobileText('Unable to load logs'),
                   style: OpenVtsTypography.label.copyWith(
                     color: colorScheme.onSurface,
                     fontWeight: FontWeight.w800,
@@ -710,7 +710,7 @@ class _SectionErrorCard extends StatelessWidget {
           ),
           const SizedBox(height: OpenVtsSpacing.sm),
           OpenVtsButton(
-            label: 'Retry',
+            label: context.mobileText('Retry'),
             height: 34,
             variant: OpenVtsButtonVariant.secondary,
             onPressed: onRetry,
@@ -771,9 +771,11 @@ String _titleCase(String value) {
   }
   return normalized
       .split(RegExp(r'\s+'))
-      .map((word) => word.isEmpty
-          ? word
-          : '${word.substring(0, 1).toUpperCase()}${word.substring(1).toLowerCase()}')
+      .map(
+        (word) => word.isEmpty
+            ? word
+            : '${word.substring(0, 1).toUpperCase()}${word.substring(1).toLowerCase()}',
+      )
       .join(' ');
 }
 
@@ -822,11 +824,7 @@ String _entityLabel(String entity, String entityId) {
 }
 
 String _platformLine(AdminUserActivityLog log) {
-  return _joinParts([
-    log.platform,
-    _shortText(log.browser, 46),
-    log.ip,
-  ]);
+  return _joinParts([log.platform, _shortText(log.browser, 46), log.ip]);
 }
 
 String _shortText(String value, int maxLength) {

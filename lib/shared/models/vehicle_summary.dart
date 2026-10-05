@@ -14,9 +14,6 @@ class VehicleSummary {
     this.hasValidLocation = true,
     this.updatedAt,
     this.distanceKm,
-    this.browserDayKey,
-    this.browserDayStart,
-    this.browserDayBaseOdometer,
     this.odometerKm,
     this.engineHoursToday,
     this.engineHours,
@@ -40,11 +37,7 @@ class VehicleSummary {
   final int? deviceTypeId;
   final bool hasValidLocation;
   final DateTime? updatedAt;
-  /// Distance for the day represented by [browserDayKey] when available.
   final double? distanceKm;
-  final String? browserDayKey;
-  final DateTime? browserDayStart;
-  final double? browserDayBaseOdometer;
   final double? odometerKm;
   final double? engineHoursToday;
   final double? engineHours;
@@ -128,16 +121,18 @@ class VehicleSummary {
             json['distance_today'] ??
             json['todayDistance'] ??
             json['today_distance'] ??
-            json['todayKm'] ??
-            json['today_km'] ??
-            json['kmToday'] ??
-            json['km_today'] ??
             json['dailyDistance'] ??
-            json['daily_distance'],
+            json['daily_distance'] ??
+            json['tripDistance'] ??
+            json['trip_distance'] ??
+            json['travelDistance'] ??
+            json['travel_distance'] ??
+            json['coveredDistance'] ??
+            json['covered_distance'] ??
+            json['distance'] ??
+            json['distanceKm'] ??
+            json['distance_km'],
       ),
-      browserDayKey: json['browserDayKey']?.toString(),
-      browserDayStart: _asDateTime(json['browserDayStart']),
-      browserDayBaseOdometer: _asDouble(json['browserDayBaseOdometer']),
       odometerKm: _firstOdometerKm(json, const [
         'odometer',
         'odometerKm',
@@ -226,87 +221,6 @@ class VehicleSummary {
     );
   }
 
-  /// Reconcile the local-day HTTP baseline with cumulative GPS odometer updates.
-  /// Socket `distanceToday` is in the owner's day and must not replace it.
-  VehicleSummary withTodayDistanceFrom(
-    VehicleSummary incoming, {
-    required DateTime now,
-    bool authoritativeBaseline = false,
-  }) {
-    final localNow = now.toLocal();
-    final dayStart = DateTime(localNow.year, localNow.month, localNow.day);
-    final dayKey = localDayKey(localNow);
-    final freshOdometer = incoming.odometerKm;
-    final incomingIsOlder = updatedAt != null &&
-        incoming.updatedAt != null &&
-        incoming.updatedAt!.isBefore(updatedAt!);
-    final incomingIsNewer = incoming.updatedAt != null &&
-        (updatedAt == null || incoming.updatedAt!.isAfter(updatedAt!));
-    final acceptsOdometer = !incomingIsOlder &&
-        freshOdometer != null && freshOdometer.isFinite &&
-        (odometerKm == null || freshOdometer >= odometerKm! ||
-         authoritativeBaseline || incomingIsNewer);
-    final odometer = acceptsOdometer ? freshOdometer : odometerKm;
-    final odometerReset = acceptsOdometer && odometerKm != null &&
-        freshOdometer! < odometerKm!;
-
-    if (authoritativeBaseline &&
-        incoming.browserDayKey == dayKey &&
-        incoming.browserDayStart?.isAtSameMomentAs(dayStart) == true) {
-      final baseline = incoming.browserDayBaseOdometer;
-      final total = baseline != null && baseline.isFinite &&
-              odometer != null && odometer.isFinite
-          ? math.max(0.0, odometer - baseline)
-          : incoming.distanceKm;
-      return copyWith(
-        distanceKm: total,
-        browserDayKey: dayKey,
-        browserDayStart: incoming.browserDayStart,
-        browserDayBaseOdometer: baseline,
-        odometerKm: odometer,
-      );
-    }
-
-    if (browserDayKey == null) {
-      return copyWith(
-        distanceKm: incomingIsOlder
-            ? distanceKm
-            : incoming.distanceKm ?? distanceKm,
-        odometerKm: odometer,
-      );
-    }
-    if (browserDayKey != dayKey ||
-        browserDayStart?.isAtSameMomentAs(dayStart) != true) {
-      // Midnight/time-zone change requires a new authoritative server baseline.
-      // Do not display yesterday's total or mistake a trip increment for Today.
-      return copyWith(
-        distanceKm: null,
-        browserDayKey: dayKey,
-        browserDayStart: dayStart,
-        browserDayBaseOdometer: null,
-        odometerKm: odometer,
-      );
-    }
-    if (odometerReset) {
-      // A newer server cumulative counter can reset. Its previous baseline no
-      // longer applies; wait for HTTP to provide the corrected day's ledger.
-      return copyWith(
-        distanceKm: null, browserDayBaseOdometer: null, odometerKm: odometer,
-      );
-    }
-    final baseline = browserDayBaseOdometer;
-    final total = baseline != null && baseline.isFinite &&
-            odometer != null && odometer.isFinite
-        ? math.max(0.0, odometer - baseline)
-        : distanceKm;
-    return copyWith(distanceKm: total, odometerKm: odometer);
-  }
-
-  static String localDayKey(DateTime now) =>
-      '${now.year.toString().padLeft(4, '0')}-'
-      '${now.month.toString().padLeft(2, '0')}-'
-      '${now.day.toString().padLeft(2, '0')}';
-
   VehicleSummary copyWith({
     String? id,
     String? imei,
@@ -320,9 +234,6 @@ class VehicleSummary {
     bool? hasValidLocation,
     Object? updatedAt = _unset,
     Object? distanceKm = _unset,
-    Object? browserDayKey = _unset,
-    Object? browserDayStart = _unset,
-    Object? browserDayBaseOdometer = _unset,
     Object? odometerKm = _unset,
     Object? engineHoursToday = _unset,
     Object? engineHours = _unset,
@@ -353,15 +264,6 @@ class VehicleSummary {
       distanceKm: identical(distanceKm, _unset)
           ? this.distanceKm
           : distanceKm as double?,
-      browserDayKey: identical(browserDayKey, _unset)
-          ? this.browserDayKey
-          : browserDayKey as String?,
-      browserDayStart: identical(browserDayStart, _unset)
-          ? this.browserDayStart
-          : browserDayStart as DateTime?,
-      browserDayBaseOdometer: identical(browserDayBaseOdometer, _unset)
-          ? this.browserDayBaseOdometer
-          : browserDayBaseOdometer as double?,
       odometerKm: identical(odometerKm, _unset)
           ? this.odometerKm
           : odometerKm as double?,
@@ -401,7 +303,7 @@ double? _firstOdometerKm(Map<String, dynamic> source, List<String> keys) {
     }
 
     final normalizedValue = _normalizeOdometerKm(key, value);
-    if (normalizedValue.isFinite && normalizedValue >= 0) {
+    if (normalizedValue.isFinite && normalizedValue > 0) {
       return normalizedValue;
     }
   }

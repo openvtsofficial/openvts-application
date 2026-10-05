@@ -12,11 +12,12 @@ import '../user_report_result_toolbar.dart';
 import '../user_report_row_details_sheet.dart';
 
 class UserSensorReportResult extends StatelessWidget {
-  const UserSensorReportResult(
-      {required this.state,
-      required this.onLoadMore,
-      required this.onExport,
-      super.key});
+  const UserSensorReportResult({
+    required this.state,
+    required this.onLoadMore,
+    required this.onExport,
+    super.key,
+  });
 
   final UserReportWorkspaceState state;
   final VoidCallback onLoadMore;
@@ -38,13 +39,15 @@ class UserSensorReportResult extends StatelessWidget {
     final indexed = rows
         .asMap()
         .entries
-        .map((e) => (
-              index: e.key,
-              row: e.value,
-              x: hasTimestamps
-                  ? (e.value.timestampMs ?? e.key.toDouble())
-                  : e.key.toDouble(),
-            ))
+        .map(
+          (e) => (
+            index: e.key,
+            row: e.value,
+            x: hasTimestamps
+                ? (e.value.timestampMs ?? e.key.toDouble())
+                : e.key.toDouble(),
+          ),
+        )
         .toList();
     final chartIndexed = downsampleLTTB(
       data: indexed,
@@ -68,7 +71,8 @@ class UserSensorReportResult extends StatelessWidget {
                   entries: chartRows,
                   sensorLabel: sensorLabel,
                   unit: firstRow?.unit,
-                  hasTimestamps: hasTimestamps),
+                  hasTimestamps: hasTimestamps,
+                ),
           const SizedBox(height: OpenVtsSpacing.sm),
         ],
         UserReportResultToolbar(
@@ -95,8 +99,8 @@ class UserSensorReportResult extends StatelessWidget {
       // Mirrors web BooleanSensorResult KPIs: currentState, transitions, activeDuration, lastChange
       final currentState = rows.isNotEmpty
           ? ((rows.last.rawValue == true || rows.last.rawValue == 1)
-              ? 'ON'
-              : 'OFF')
+                ? 'ON'
+                : 'OFF')
           : '—';
       int transitions = 0;
       double activeSec = 0;
@@ -109,13 +113,17 @@ class UserSensorReportResult extends StatelessWidget {
           lastChange = rows[i].timestamp;
         }
         if (curr == true || curr == 1) {
-          final prevMs =
-              DateTime.tryParse(rows[i - 1].timestamp)?.millisecondsSinceEpoch;
-          final currMs =
-              DateTime.tryParse(rows[i].timestamp)?.millisecondsSinceEpoch;
+          final prevMs = DateTime.tryParse(
+            rows[i - 1].timestamp,
+          )?.millisecondsSinceEpoch;
+          final currMs = DateTime.tryParse(
+            rows[i].timestamp,
+          )?.millisecondsSinceEpoch;
           if (prevMs != null && currMs != null) {
-            activeSec +=
-                ((currMs - prevMs).abs() / 1000).clamp(0, double.infinity);
+            activeSec += ((currMs - prevMs).abs() / 1000).clamp(
+              0,
+              double.infinity,
+            );
           }
         }
       }
@@ -123,7 +131,9 @@ class UserSensorReportResult extends StatelessWidget {
         ReportKpi(label: 'Current State', value: currentState),
         ReportKpi(label: 'Transitions', value: '$transitions'),
         ReportKpi(
-            label: 'Active Duration', value: formatDurationSeconds(activeSec)),
+          label: 'Active Duration',
+          value: formatDurationSeconds(activeSec),
+        ),
         ReportKpi(label: 'Last Change', value: lastChange),
       ];
     } else {
@@ -131,8 +141,9 @@ class UserSensorReportResult extends StatelessWidget {
           .where((r) => r.rawValue is num)
           .map((r) => r.numericValue)
           .toList();
-      if (values.isEmpty)
+      if (values.isEmpty) {
         return [ReportKpi(label: 'Readings', value: '${rows.length}')];
+      }
       // Matches web NumericSensorResult KPIs: latest, min, max, avg
       final latest = values.last;
       final minVal = values.reduce((a, b) => a < b ? a : b);
@@ -149,11 +160,12 @@ class UserSensorReportResult extends StatelessWidget {
 }
 
 class _NumericSensorChart extends StatelessWidget {
-  const _NumericSensorChart(
-      {required this.entries,
-      required this.sensorLabel,
-      required this.hasTimestamps,
-      this.unit});
+  const _NumericSensorChart({
+    required this.entries,
+    required this.sensorLabel,
+    required this.hasTimestamps,
+    this.unit,
+  });
   final List<({SensorRow row, double x})> entries;
   final String sensorLabel;
   final bool hasTimestamps;
@@ -162,8 +174,9 @@ class _NumericSensorChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final lineColor =
-        isDark ? OpenVtsColors.info.withValues(alpha: 0.9) : OpenVtsColors.info;
+    final lineColor = isDark
+        ? OpenVtsColors.info.withValues(alpha: 0.9)
+        : OpenVtsColors.info;
     final spots = entries
         .where((e) => e.row.rawValue is num)
         .map((e) => FlSpot(e.x, e.row.numericValue))
@@ -178,68 +191,91 @@ class _NumericSensorChart extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(OpenVtsSpacing.sm),
       decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(OpenVtsRadius.lg),
-          border: Border.all(
-              color: isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border)),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('$sensorLabel${unit != null ? ' ($unit)' : ''}',
-            style:
-                OpenVtsTypography.label.copyWith(fontWeight: FontWeight.w600)),
-        const SizedBox(height: OpenVtsSpacing.sm),
-        SizedBox(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(OpenVtsRadius.lg),
+        border: Border.all(
+          color: isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '$sensorLabel${unit != null ? ' ($unit)' : ''}',
+            style: OpenVtsTypography.label.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: OpenVtsSpacing.sm),
+          SizedBox(
             height: 180,
-            child: LineChart(LineChartData(
-              minY: minY - padding,
-              maxY: maxY + padding,
-              lineBarsData: [
-                LineChartBarData(
+            child: LineChart(
+              LineChartData(
+                minY: minY - padding,
+                maxY: maxY + padding,
+                lineBarsData: [
+                  LineChartBarData(
                     spots: spots,
                     isCurved: true,
                     curveSmoothness: 0.2,
                     color: lineColor,
                     barWidth: 2,
-                    dotData: FlDotData(show: spots.length <= 30))
-              ],
-              titlesData: FlTitlesData(
-                leftTitles: AxisTitles(
+                    dotData: FlDotData(show: spots.length <= 30),
+                  ),
+                ],
+                titlesData: FlTitlesData(
+                  leftTitles: AxisTitles(
                     sideTitles: SideTitles(
-                        showTitles: true,
-                        reservedSize: 44,
-                        getTitlesWidget: (v, _) => Text(v.toStringAsFixed(1),
-                            style:
-                                OpenVtsTypography.meta.copyWith(fontSize: 8)))),
-                bottomTitles: AxisTitles(
+                      showTitles: true,
+                      reservedSize: 44,
+                      getTitlesWidget: (v, _) => Text(
+                        v.toStringAsFixed(1),
+                        style: OpenVtsTypography.meta.copyWith(fontSize: 8),
+                      ),
+                    ),
+                  ),
+                  bottomTitles: AxisTitles(
                     sideTitles: SideTitles(
-                        showTitles: hasTimestamps,
-                        reservedSize: 22,
-                        getTitlesWidget: (v, meta) {
-                          if (!hasTimestamps) return const SizedBox.shrink();
-                          final dt = DateTime.fromMillisecondsSinceEpoch(
-                              v.toInt(),
-                              isUtc: true);
-                          final h = dt.hour.toString().padLeft(2, '0');
-                          final m = dt.minute.toString().padLeft(2, '0');
-                          return Text('$h:$m',
-                              style:
-                                  OpenVtsTypography.meta.copyWith(fontSize: 8));
-                        })),
-                topTitles:
-                    const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                rightTitles:
-                    const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-              ),
-              borderData: FlBorderData(show: false),
-              gridData: FlGridData(
+                      showTitles: hasTimestamps,
+                      reservedSize: 22,
+                      getTitlesWidget: (v, meta) {
+                        if (!hasTimestamps) return const SizedBox.shrink();
+                        final dt = DateTime.fromMillisecondsSinceEpoch(
+                          v.toInt(),
+                          isUtc: true,
+                        );
+                        final h = dt.hour.toString().padLeft(2, '0');
+                        final m = dt.minute.toString().padLeft(2, '0');
+                        return Text(
+                          '$h:$m',
+                          style: OpenVtsTypography.meta.copyWith(fontSize: 8),
+                        );
+                      },
+                    ),
+                  ),
+                  topTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  rightTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                ),
+                borderData: FlBorderData(show: false),
+                gridData: FlGridData(
                   show: true,
                   drawVerticalLine: false,
                   getDrawingHorizontalLine: (_) => FlLine(
-                      color: isDark
-                          ? OpenVtsColors.darkBorder
-                          : OpenVtsColors.border,
-                      strokeWidth: 0.5)),
-            ))),
-      ]),
+                    color: isDark
+                        ? OpenVtsColors.darkBorder
+                        : OpenVtsColors.border,
+                    strokeWidth: 0.5,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -259,54 +295,72 @@ class _BoolSensorChart extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(OpenVtsSpacing.sm),
       decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(OpenVtsRadius.lg),
-          border: Border.all(
-              color: isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border)),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(sensorLabel,
-            style:
-                OpenVtsTypography.label.copyWith(fontWeight: FontWeight.w600)),
-        const SizedBox(height: OpenVtsSpacing.sm),
-        SizedBox(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(OpenVtsRadius.lg),
+        border: Border.all(
+          color: isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            sensorLabel,
+            style: OpenVtsTypography.label.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: OpenVtsSpacing.sm),
+          SizedBox(
             height: 120,
-            child: LineChart(LineChartData(
-              minY: -0.1,
-              maxY: 1.2,
-              lineBarsData: [
-                LineChartBarData(
+            child: LineChart(
+              LineChartData(
+                minY: -0.1,
+                maxY: 1.2,
+                lineBarsData: [
+                  LineChartBarData(
                     spots: spots,
                     isCurved: false,
                     color: OpenVtsColors.success,
                     barWidth: 2,
                     isStepLineChart: true,
-                    dotData: FlDotData(show: spots.length <= 20))
-              ],
-              titlesData: FlTitlesData(
-                leftTitles: AxisTitles(
+                    dotData: FlDotData(show: spots.length <= 20),
+                  ),
+                ],
+                titlesData: FlTitlesData(
+                  leftTitles: AxisTitles(
                     sideTitles: SideTitles(
-                        showTitles: true,
-                        reservedSize: 36,
-                        getTitlesWidget: (v, _) {
-                          if (v == 1.0)
-                            return Text('ON',
-                                style: OpenVtsTypography.meta
-                                    .copyWith(fontSize: 9));
-                          if (v == 0.0)
-                            return Text('OFF',
-                                style: OpenVtsTypography.meta
-                                    .copyWith(fontSize: 9));
-                          return const SizedBox.shrink();
-                        })),
-                bottomTitles:
-                    const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                topTitles:
-                    const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                rightTitles:
-                    const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-              ),
-              borderData: FlBorderData(show: false),
-              gridData: FlGridData(
+                      showTitles: true,
+                      reservedSize: 36,
+                      getTitlesWidget: (v, _) {
+                        if (v == 1.0) {
+                          return Text(
+                            'ON',
+                            style: OpenVtsTypography.meta.copyWith(fontSize: 9),
+                          );
+                        }
+                        if (v == 0.0) {
+                          return Text(
+                            'OFF',
+                            style: OpenVtsTypography.meta.copyWith(fontSize: 9),
+                          );
+                        }
+                        return const SizedBox.shrink();
+                      },
+                    ),
+                  ),
+                  bottomTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  topTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  rightTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                ),
+                borderData: FlBorderData(show: false),
+                gridData: FlGridData(
                   show: true,
                   drawVerticalLine: false,
                   getDrawingHorizontalLine: (v) => v == 0 || v == 1
@@ -314,10 +368,15 @@ class _BoolSensorChart extends StatelessWidget {
                           color: isDark
                               ? OpenVtsColors.darkBorder
                               : OpenVtsColors.border,
-                          strokeWidth: 0.5)
-                      : FlLine(color: Colors.transparent)),
-            ))),
-      ]),
+                          strokeWidth: 0.5,
+                        )
+                      : const FlLine(color: Colors.transparent),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -332,12 +391,12 @@ class _SensorRowCard extends StatelessWidget {
     final displayValue = row.isBoolean
         ? ((row.rawValue as bool?) == true ? 'ON' : 'OFF')
         : (row.rawValue is num
-            ? '${row.numericValue.toStringAsFixed(2)}${row.unit != null ? ' ${row.unit}' : ''}'
-            : '—');
+              ? '${row.numericValue.toStringAsFixed(2)}${row.unit != null ? ' ${row.unit}' : ''}'
+              : '—');
     final valueColor = row.isBoolean
         ? ((row.rawValue as bool?) == true
-            ? OpenVtsColors.success
-            : OpenVtsColors.textSecondary)
+              ? OpenVtsColors.success
+              : OpenVtsColors.textSecondary)
         : null;
     return Padding(
       padding: const EdgeInsets.only(bottom: OpenVtsSpacing.xs),
@@ -346,48 +405,67 @@ class _SensorRowCard extends StatelessWidget {
         onTap: () => _showDetails(context),
         child: Container(
           padding: const EdgeInsets.symmetric(
-              horizontal: OpenVtsSpacing.sm, vertical: 10),
+            horizontal: OpenVtsSpacing.sm,
+            vertical: 10,
+          ),
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(OpenVtsRadius.lg),
             border: Border.all(
-                color:
-                    isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border),
+              color: isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border,
+            ),
           ),
-          child: Row(children: [
-            Expanded(
+          child: Row(
+            children: [
+              Expanded(
                 child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(row.sensorLabel,
-                    style: OpenVtsTypography.label
-                        .copyWith(fontWeight: FontWeight.w600)),
-                const SizedBox(height: 2),
-                Text(row.timestamp,
-                    style: OpenVtsTypography.meta
-                        .copyWith(color: OpenVtsColors.textSecondary)),
-              ],
-            )),
-            Text(displayValue,
-                style: OpenVtsTypography.label
-                    .copyWith(fontWeight: FontWeight.w700, color: valueColor)),
-          ]),
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      row.sensorLabel,
+                      style: OpenVtsTypography.label.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      row.timestamp,
+                      style: OpenVtsTypography.meta.copyWith(
+                        color: OpenVtsColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Text(
+                displayValue,
+                style: OpenVtsTypography.label.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: valueColor,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
   void _showDetails(BuildContext context) {
-    UserReportRowDetailsSheet.show(context, title: row.sensorLabel, fields: [
-      ('Sensor', row.sensorLabel),
-      ('Vehicle', row.vehicleName),
-      ('Time', row.timestamp),
-      if (row.isBoolean)
-        ('Value', (row.rawValue as bool?) == true ? 'ON' : 'OFF'),
-      if (!row.isBoolean && row.rawValue is num)
-        ('Value', row.numericValue.toStringAsFixed(4)),
-      if (row.unit != null) ('Unit', row.unit!),
-      if (row.rawValue != null) ('Raw', row.rawValue.toString()),
-    ]);
+    UserReportRowDetailsSheet.show(
+      context,
+      title: row.sensorLabel,
+      fields: [
+        ('Sensor', row.sensorLabel),
+        ('Vehicle', row.vehicleName),
+        ('Time', row.timestamp),
+        if (row.isBoolean)
+          ('Value', (row.rawValue as bool?) == true ? 'ON' : 'OFF'),
+        if (!row.isBoolean && row.rawValue is num)
+          ('Value', row.numericValue.toStringAsFixed(4)),
+        if (row.unit != null) ('Unit', row.unit!),
+        if (row.rawValue != null) ('Raw', row.rawValue.toString()),
+      ],
+    );
   }
 }

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/utils/validators.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../shared/widgets/open_vts_bottom_sheet.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
@@ -16,13 +17,15 @@ import '../../users/widgets/admin_user_form_fields.dart';
 
 Future<void> showDriverEditSheet({
   required BuildContext context,
-  required AutoDisposeStateNotifierProvider<AdminDriverDetailsController,
-          AdminDriverDetailsState>
-      provider,
+  required AutoDisposeStateNotifierProvider<
+    AdminDriverDetailsController,
+    AdminDriverDetailsState
+  >
+  provider,
 }) {
   return OpenVtsBottomSheet.show<void>(
     context: context,
-    title: 'Edit Profile',
+    title: context.mobileText('Edit Profile'),
     initialChildSize: 0.9,
     minChildSize: 0.5,
     maxChildSize: 0.96,
@@ -33,8 +36,11 @@ Future<void> showDriverEditSheet({
 class _DriverEditSheet extends ConsumerStatefulWidget {
   const _DriverEditSheet({required this.provider});
 
-  final AutoDisposeStateNotifierProvider<AdminDriverDetailsController,
-      AdminDriverDetailsState> provider;
+  final AutoDisposeStateNotifierProvider<
+    AdminDriverDetailsController,
+    AdminDriverDetailsState
+  >
+  provider;
 
   @override
   ConsumerState<_DriverEditSheet> createState() => _DriverEditSheetState();
@@ -76,9 +82,7 @@ class _DriverEditSheetState extends ConsumerState<_DriverEditSheet> {
     _address = TextEditingController(
       text: _editText(driver?.address.addressLine),
     );
-    _pincode = TextEditingController(
-      text: _editText(driver?.address.pincode),
-    );
+    _pincode = TextEditingController(text: _editText(driver?.address.pincode));
 
     _mobilePrefix = _editValue(driver?.mobilePrefix);
     _countryCode = _editValue(driver?.address.countryCode);
@@ -115,21 +119,29 @@ class _DriverEditSheetState extends ConsumerState<_DriverEditSheet> {
 
   List<AdminUserDropdownOption> get _mobilePrefixOptions {
     return _mobilePrefixes
-        .map((item) =>
-            AdminUserDropdownOption(value: item.value, label: item.label))
+        .map(
+          (item) =>
+              AdminUserDropdownOption(value: item.value, label: item.label),
+        )
         .toList(growable: false);
   }
 
   List<AdminUserDropdownOption> get _countryOptions {
     final options = _countries
-        .map((item) =>
-            AdminUserDropdownOption(value: item.value, label: item.label))
+        .map(
+          (item) =>
+              AdminUserDropdownOption(value: item.value, label: item.label),
+        )
         .toList(growable: true);
     if (_countryCode != null && !options.any((o) => o.value == _countryCode)) {
       options.insert(
         0,
         AdminUserDropdownOption(
-            value: _countryCode!, label: '$_countryCode (current)'),
+          value: _countryCode!,
+          label: context.mobileText("{value1} (current)", {
+            'value1': (_countryCode).toString(),
+          }),
+        ),
       );
     }
     return options;
@@ -137,14 +149,20 @@ class _DriverEditSheetState extends ConsumerState<_DriverEditSheet> {
 
   List<AdminUserDropdownOption> get _stateOptions {
     final options = _states
-        .map((item) =>
-            AdminUserDropdownOption(value: item.value, label: item.label))
+        .map(
+          (item) =>
+              AdminUserDropdownOption(value: item.value, label: item.label),
+        )
         .toList(growable: true);
     if (_stateCode != null && !options.any((o) => o.value == _stateCode)) {
       options.insert(
         0,
         AdminUserDropdownOption(
-            value: _stateCode!, label: '$_stateCode (current)'),
+          value: _stateCode!,
+          label: context.mobileText("{value1} (current)", {
+            'value1': (_stateCode).toString(),
+          }),
+        ),
       );
     }
     return options;
@@ -152,14 +170,20 @@ class _DriverEditSheetState extends ConsumerState<_DriverEditSheet> {
 
   List<AdminUserDropdownOption> get _cityOptions {
     final options = _cities
-        .map((item) =>
-            AdminUserDropdownOption(value: item.value, label: item.label))
+        .map(
+          (item) =>
+              AdminUserDropdownOption(value: item.value, label: item.label),
+        )
         .toList(growable: true);
     if (_cityValue != null && !options.any((o) => o.value == _cityValue)) {
       options.insert(
         0,
         AdminUserDropdownOption(
-            value: _cityValue!, label: '$_cityValue (current)'),
+          value: _cityValue!,
+          label: context.mobileText("{value1} (current)", {
+            'value1': (_cityValue).toString(),
+          }),
+        ),
       );
     }
     return options;
@@ -178,13 +202,13 @@ class _DriverEditSheetState extends ConsumerState<_DriverEditSheet> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             OpenVtsTextField(
-              label: 'Name',
+              label: context.mobileText('Name'),
               controller: _name,
               validator: Validators.driverName,
             ),
             const SizedBox(height: OpenVtsSpacing.sm),
             OpenVtsTextField(
-              label: 'Email',
+              label: context.mobileText('Email'),
               controller: _email,
               keyboardType: TextInputType.emailAddress,
               validator: (v) {
@@ -196,14 +220,15 @@ class _DriverEditSheetState extends ConsumerState<_DriverEditSheet> {
             ),
             const SizedBox(height: OpenVtsSpacing.sm),
             AdminUserDropdownField(
-              label: 'Mobile Prefix',
+              label: context.mobileText('Mobile Prefix'),
               value: _mobilePrefix,
               options: _mobilePrefixOptions,
               hintText: '+91',
               prefixIcon: Icons.phone_android_rounded,
               isLoading: _loadingReferences,
               searchable: true,
-              validator: (value) => _mobile.text.trim().isNotEmpty &&
+              validator: (value) =>
+                  _mobile.text.trim().isNotEmpty &&
                       (value == null || value.trim().isEmpty)
                   ? 'Mobile prefix is required'
                   : null,
@@ -213,29 +238,29 @@ class _DriverEditSheetState extends ConsumerState<_DriverEditSheet> {
             ),
             const SizedBox(height: OpenVtsSpacing.sm),
             OpenVtsTextField(
-              label: 'Mobile',
+              label: context.mobileText('Mobile'),
               controller: _mobile,
               keyboardType: TextInputType.phone,
               validator: Validators.mobileNumber,
             ),
             const SizedBox(height: OpenVtsSpacing.sm),
             OpenVtsTextField(
-              label: 'Username',
+              label: context.mobileText('Username'),
               controller: _username,
               validator: Validators.driverUsername,
             ),
             const SizedBox(height: OpenVtsSpacing.sm),
             OpenVtsTextField(
-              label: 'Address',
+              label: context.mobileText('Address'),
               controller: _address,
               validator: Validators.driverAddressOptional,
             ),
             const SizedBox(height: OpenVtsSpacing.sm),
             AdminUserDropdownField(
-              label: 'Country',
+              label: context.mobileText('Country'),
               value: _countryCode,
               options: _countryOptions,
-              hintText: 'Select country',
+              hintText: context.mobileText('Select country'),
               prefixIcon: Icons.public_rounded,
               isLoading: _loadingReferences,
               searchable: true,
@@ -244,12 +269,12 @@ class _DriverEditSheetState extends ConsumerState<_DriverEditSheet> {
             ),
             const SizedBox(height: OpenVtsSpacing.sm),
             AdminUserDropdownField(
-              label: 'State',
+              label: context.mobileText('State'),
               value: _stateCode,
               options: _stateOptions,
               hintText: _countryCode == null
-                  ? 'Select country first'
-                  : 'Select state',
+                  ? context.mobileText('Select country first')
+                  : context.mobileText('Select state'),
               prefixIcon: Icons.map_outlined,
               isLoading: _loadingStates,
               searchable: true,
@@ -258,11 +283,12 @@ class _DriverEditSheetState extends ConsumerState<_DriverEditSheet> {
             ),
             const SizedBox(height: OpenVtsSpacing.sm),
             AdminUserDropdownField(
-              label: 'City',
+              label: context.mobileText('City'),
               value: _cityValue,
               options: _cityOptions,
-              hintText:
-                  _stateCode == null ? 'Select state first' : 'Select city',
+              hintText: _stateCode == null
+                  ? context.mobileText('Select state first')
+                  : context.mobileText('Select city'),
               prefixIcon: Icons.location_city_rounded,
               isLoading: _loadingCities,
               searchable: true,
@@ -273,12 +299,12 @@ class _DriverEditSheetState extends ConsumerState<_DriverEditSheet> {
             ),
             const SizedBox(height: OpenVtsSpacing.sm),
             OpenVtsTextField(
-              label: 'Pincode',
+              label: context.mobileText('Pincode'),
               controller: _pincode,
               validator: Validators.driverPincodeOptional,
             ),
             const SizedBox(height: OpenVtsSpacing.sm),
-            const Text('Attributes'),
+            Text(context.mobileText('Attributes')),
             const SizedBox(height: OpenVtsSpacing.xs),
             ..._attrs.asMap().entries.map((entry) {
               final index = entry.key;
@@ -290,14 +316,18 @@ class _DriverEditSheetState extends ConsumerState<_DriverEditSheet> {
                     Expanded(
                       child: TextFormField(
                         controller: row.key,
-                        decoration: const InputDecoration(hintText: 'Key'),
+                        decoration: InputDecoration(
+                          hintText: context.mobileText('Key'),
+                        ),
                       ),
                     ),
                     const SizedBox(width: OpenVtsSpacing.xs),
                     Expanded(
                       child: TextFormField(
                         controller: row.value,
-                        decoration: const InputDecoration(hintText: 'Value'),
+                        decoration: InputDecoration(
+                          hintText: context.mobileText('Value'),
+                        ),
                       ),
                     ),
                     IconButton(
@@ -317,11 +347,11 @@ class _DriverEditSheetState extends ConsumerState<_DriverEditSheet> {
             TextButton.icon(
               onPressed: () => setState(() => _attrs.add(_AttrRow())),
               icon: const Icon(Icons.add_rounded),
-              label: const Text('Add attribute'),
+              label: Text(context.mobileText('Add attribute')),
             ),
             const SizedBox(height: OpenVtsSpacing.sm),
             OpenVtsButton(
-              label: 'Save Profile',
+              label: context.mobileText('Save Profile'),
               isLoading: isSubmitting,
               onPressed: isSubmitting ? null : _submit,
             ),
@@ -353,7 +383,10 @@ class _DriverEditSheetState extends ConsumerState<_DriverEditSheet> {
       if (!mounted) return;
       setState(() => _loadingReferences = false);
       if (mounted) {
-        ToastHelper.showError('Unable to load form options.', context: context);
+        ToastHelper.showError(
+          context.mobileText('Unable to load form options.'),
+          context: context,
+        );
       }
     }
   }
@@ -401,7 +434,10 @@ class _DriverEditSheetState extends ConsumerState<_DriverEditSheet> {
     } catch (_) {
       if (!mounted) return;
       setState(() => _loadingStates = false);
-      ToastHelper.showError('Unable to load states.', context: context);
+      ToastHelper.showError(
+        context.mobileText('Unable to load states.'),
+        context: context,
+      );
     }
   }
 
@@ -437,7 +473,10 @@ class _DriverEditSheetState extends ConsumerState<_DriverEditSheet> {
     } catch (_) {
       if (!mounted) return;
       setState(() => _loadingCities = false);
-      ToastHelper.showError('Unable to load cities.', context: context);
+      ToastHelper.showError(
+        context.mobileText('Unable to load cities.'),
+        context: context,
+      );
     }
   }
 
@@ -452,7 +491,7 @@ class _DriverEditSheetState extends ConsumerState<_DriverEditSheet> {
       if (key.isEmpty) continue;
       if (!seen.add(key.toLowerCase())) {
         ToastHelper.showError(
-          'Attribute keys must be unique.',
+          context.mobileText('Attribute keys must be unique.'),
           context: context,
         );
         return;
@@ -478,7 +517,10 @@ class _DriverEditSheetState extends ConsumerState<_DriverEditSheet> {
     if (!mounted) return;
     if (ok) {
       Navigator.of(context).pop();
-      ToastHelper.showSuccess('Profile updated.', context: context);
+      ToastHelper.showSuccess(
+        context.mobileText('Profile updated.'),
+        context: context,
+      );
     } else {
       ToastHelper.showError(
         ref.read(widget.provider).sectionErrorMessage ??
@@ -524,8 +566,8 @@ String? _editValue(String? raw) {
 
 class _AttrRow {
   _AttrRow({String? key, String? value})
-      : key = TextEditingController(text: key ?? ''),
-        value = TextEditingController(text: value ?? '');
+    : key = TextEditingController(text: key ?? ''),
+      value = TextEditingController(text: value ?? '');
 
   final TextEditingController key;
   final TextEditingController value;

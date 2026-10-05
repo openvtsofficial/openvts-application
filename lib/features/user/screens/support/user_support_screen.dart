@@ -15,6 +15,8 @@ import 'package:open_vts/features/user/screens/support/widgets/user_support_conv
 import 'package:open_vts/features/user/screens/support/widgets/user_support_ticket_list_view.dart';
 import 'package:open_vts/shared/widgets/open_vts_page_scaffold.dart';
 
+import '../../../../shared/helpers/mobile_text.dart';
+
 class UserSupportScreen extends ConsumerStatefulWidget {
   const UserSupportScreen({super.key});
 
@@ -88,7 +90,7 @@ class _UserSupportScreenState extends ConsumerState<UserSupportScreen> {
     final useSplitLayout = _usesSplitLayout(context);
 
     return OpenVtsPageScaffold(
-      title: 'Support',
+      title: context.mobileText('Support'),
       headerMode: OpenVtsPageHeaderMode.closeable,
       padding: const EdgeInsets.fromLTRB(
         OpenVtsSpacing.md,
@@ -98,7 +100,7 @@ class _UserSupportScreenState extends ConsumerState<UserSupportScreen> {
       ),
       actions: [
         IconButton(
-          tooltip: 'Refresh tickets',
+          tooltip: context.mobileText('Refresh tickets'),
           onPressed: state.isRefreshingList ? null : controller.refreshTickets,
           icon: state.isRefreshingList
               ? const SizedBox.square(
@@ -168,7 +170,7 @@ class _SplitSupportLayout extends StatelessWidget {
   final ValueChanged<String> onSearchChanged;
   final ValueChanged<UserSupportTicketListItem> onOpenTicket;
   final String? Function(UserSupportTicketListItem, UserSupportState)
-      lastMessagePreview;
+  lastMessagePreview;
 
   @override
   Widget build(BuildContext context) {
@@ -251,12 +253,14 @@ class _SelectTicketPlaceholder extends StatelessWidget {
             ),
             const SizedBox(height: OpenVtsSpacing.sm),
             Text(
-              'Select a ticket',
+              context.mobileText('Select a ticket'),
               style: OpenVtsTypography.titleSmall.copyWith(fontSize: 16),
             ),
             const SizedBox(height: OpenVtsSpacing.xs),
             Text(
-              'Open a support ticket to review the full conversation.',
+              context.mobileText(
+                'Open a support ticket to review the full conversation.',
+              ),
               textAlign: TextAlign.center,
               style: OpenVtsTypography.body.copyWith(
                 color: colorScheme.onSurfaceVariant,

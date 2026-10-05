@@ -1,0 +1,105 @@
+OPEN VTS MOBILE — UI, LANGUAGE AND OPERATIONS REVISION
+5 October 2026
+
+This is the complete revised mobile source, including the previous API/MFA/role
+upgrade. It is source code, not an APK/AAB/IPA. The web/backend/listener are not
+modified by this mobile delivery.
+
+INPUTS
+Previously delivered mobile: openvts-application-master(2).zip
+SHA-256: 187c0319d43f08bb8e32f7493238f53aeeaa8edfb628713fc0a5b13e4fbc6463
+Reference web/backend: openVTS-main(20261002-095331).zip
+SHA-256: eeb238f6c0f1b3f6ca9e9a98746e0b48972e4e193e4303d3d1390aea7a7a6083
+Revision patch baseline commit: 0f8bb7b7446ca9629117d00135e180411c3c0b82
+
+IMPLEMENTED
+- Original launcher icon design and layout restored; permission filtering kept.
+- Header order: Language, theme, notifications, profile. Language persists and
+  switches immediately. Arabic RTL is supported.
+- English, Arabic, Spanish, French, Hindi and Portuguese: 2,715 matching message
+  keys per catalog. Forms, selectors, dialogs, validation, feedback and display
+  dates use the chosen language. API identifiers, password bytes, user content,
+  backend messages and wire-format dates remain unchanged.
+- Security is a Settings tab for all six roles. Legacy Security links redirect
+  there. Team personal Settings use Team APIs through a dedicated controller.
+- Operations/Landmarks share route creation: POI, geofence, map and coordinates;
+  stop editing/reordering, via points and round trips; actual road geometry,
+  distance and duration; current route POST/PATCH payloads. Invalid/unavailable
+  road results do not save a fabricated straight-line path.
+- Stop order optimization retains fixed endpoints. It uses geographic distance
+  (exact up to 12 stops, bounded heuristic above that), followed by road routing;
+  it is not a global road-time optimization guarantee.
+- Saved routes return to retained trip drafts. Planning supports eligibility,
+  account timezones, schedule variants, recurring versions, skip dates and
+  warnings. Calendar drilldown, event acknowledgment, proofs and unsaved-change
+  protection were reviewed and improved.
+- Shared buttons, inputs, dropdown sheets, dialogs, tabs, calendars and save
+  bars have consistent themes, accessible targets and narrow-screen/large-text
+  handling. Calendar cache isolation follows account and permission scope.
+- Prior MFA, six role logins, dynamic permissions, Admin Transactions and Driver
+  workflows remain included. Admin Roles and the requested web-only pages remain
+  excluded. No in-app checkout is added.
+
+See docs/MOBILE_UX_REVISION_2026-10-05.md for behavior, maintenance guidance and
+rendered previews; docs/MOBILE_UPGRADE_2026-10-05.md records the earlier API and
+page-by-page review.
+
+FINAL AUTOMATED VERIFICATION
+Environment: Flutter 3.47.6 / Dart 3.13.5, Linux.
+Commands used CI=true and FLUTTER_SUPPRESS_ANALYTICS=true.
+- dart analyze --format machine lib test tool: passed; 0 errors, 0 warnings,
+  0 informational diagnostics.
+- flutter --no-version-check test --no-pub --reporter expanded: 2,183 tests
+  passed, zero failures.
+- flutter --no-version-check build web --release --no-pub: passed (JavaScript
+  release compiler check; not evidence of native or WebAssembly readiness).
+- Localization contract: passed; 4,520 static calls, 26 reviewed dynamic calls,
+  2,687 registered source messages. Catalog/placeholder and six-locale validation
+  coverage are included in the full test suite.
+- git diff --check: passed.
+- Rendered launcher/calendar previews inspected in light/dark and narrow sizes.
+  Widget tests cover key changed flows, large text, keyboard-safe dropdowns,
+  RTL, stale results, exact credentials and account changes with controlled data.
+
+ARCHITECTURE CHECK
+The repository-wide architecture guard still fails on existing migration debt.
+The same corrected identifier-matching checker finds 87 files in the delivered
+baseline and 87 in this revision, with no newly violating file paths
+(305 baseline / 305 revised matching lines). No broad allowlist was introduced.
+Examples include legacy Dio types in feature layers, PDF font downloads and an
+older API FutureBuilder. New routing transport is under core/api; Team Settings
+API actions now go through its controller. This is not a passing global gate.
+
+DEPLOYMENT LIMITS AND REMAINING VALIDATION
+No Android/iOS SDK, signing identities, physical devices or live role credentials
+were available. No signed native build was produced. Tests use controlled
+transports and do not prove production end-to-end behavior. Validate on staging:
+six real roles, MFA/recovery, permission revocation, account/server switching,
+real routing, recurring scheduling/timezones, private files, driver transitions,
+telemetry/sockets and native notifications.
+
+The default OSRM routing service matches the web. Configure your intended
+compatible production provider with --dart-define=OSRM_BASE_URL=https://your-host.
+Provider availability/capacity affects route calculation; failure preserves the
+draft. The road provider is not sent backend credentials.
+
+Driver in-app notifications are implemented. Native driver FCM registration
+remains withheld because the supplied backend token schema references User IDs
+and drivers have a separate identity table; backend support is still required.
+These constraints are not hidden by the successful source/compiler checks.
+
+USING THE SOURCE ZIP
+Extract openvts-application-master(2).zip, open its project folder, use the
+validated SDK, run flutter pub get, then flutter run. The included non-secret
+.env retains the original default server and USE_MOCK_DATA=false. Configure your
+deployment using Server URL at sign-in and supply platform build/signing setup.
+
+USING THE REVISION PATCH
+The patch is an alternative to the complete source ZIP. Apply only to a CLEAN
+extraction of the PREVIOUSLY DELIVERED mobile ZIP with the input SHA-256 above,
+not to the original legacy mobile source and not to this newly revised ZIP:
+  git apply --check /absolute/path/OpenVTS_Mobile_UI_Operations_Revision_2026-10-05.patch
+  git apply /absolute/path/OpenVTS_Mobile_UI_Operations_Revision_2026-10-05.patch
+
+The accompanying delivery verification adds final ZIP/patch SHA-256 values,
+archive integrity and exact patch reconstruction results after packaging.

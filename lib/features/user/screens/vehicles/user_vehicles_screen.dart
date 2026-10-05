@@ -5,6 +5,7 @@ import '../../../../core/theme/open_vts_colors.dart';
 import '../../../../core/theme/open_vts_radius.dart';
 import '../../../../core/theme/open_vts_spacing.dart';
 import '../../../../core/theme/open_vts_typography.dart';
+import '../../../../shared/helpers/mobile_text.dart';
 import '../../../../shared/widgets/open_vts_card.dart';
 import '../../../../shared/widgets/open_vts_empty_state.dart';
 import '../../../../shared/widgets/open_vts_error_view.dart';
@@ -27,13 +28,13 @@ class UserVehiclesScreen extends ConsumerWidget {
     final controller = ref.read(userVehiclesControllerProvider.notifier);
 
     return OpenVtsPageScaffold(
-      title: 'Vehicles',
+      title: context.mobileText('Vehicles'),
       headerMode: OpenVtsPageHeaderMode.closeable,
       actions: [
         Padding(
           padding: const EdgeInsets.only(right: OpenVtsSpacing.xxs),
           child: IconButton(
-            tooltip: 'Refresh',
+            tooltip: context.mobileText('Refresh'),
             onPressed: state.isRefreshing ? null : controller.refresh,
             icon: state.isRefreshing
                 ? const SizedBox(
@@ -86,8 +87,9 @@ class UserVehiclesScreen extends ConsumerWidget {
           const SizedBox(height: OpenVtsSpacing.sm),
           if (state.filteredVehicles.isEmpty)
             OpenVtsEmptyState(
-              title:
-                  state.hasActiveFilters ? 'No vehicles found' : 'No vehicles',
+              title: state.hasActiveFilters
+                  ? 'No vehicles found'
+                  : 'No vehicles',
               message: state.hasActiveFilters
                   ? 'Try changing the search or filters.'
                   : 'No vehicles are assigned yet.',
@@ -133,7 +135,10 @@ class _ToolbarCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  '${state.filteredVehicles.length} of ${state.vehicles.length} vehicles',
+                  context.mobileText("{value1} of {value2} vehicles", {
+                    'value1': (state.filteredVehicles.length).toString(),
+                    'value2': (state.vehicles.length).toString(),
+                  }),
                   style: OpenVtsTypography.label.copyWith(
                     color: Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.w800,
@@ -145,7 +150,7 @@ class _ToolbarCard extends StatelessWidget {
                   onPressed: onClearFilters,
                   icon: const Icon(Icons.filter_alt_off_outlined, size: 15),
                   label: Text(
-                    'Clear',
+                    context.mobileText('Clear'),
                     style: OpenVtsTypography.meta.copyWith(
                       fontWeight: FontWeight.w800,
                     ),
@@ -155,7 +160,9 @@ class _ToolbarCard extends StatelessWidget {
           ),
           const SizedBox(height: OpenVtsSpacing.xs),
           OpenVtsSearchField(
-            hintText: 'Search vehicle, plate, VIN, IMEI, SIM...',
+            hintText: context.mobileText(
+              'Search vehicle, plate, VIN, IMEI, SIM...',
+            ),
             onChanged: onSearchChanged,
           ),
           const SizedBox(height: OpenVtsSpacing.sm),
@@ -193,20 +200,21 @@ class _TypeFilterButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final selected = _selectedOption;
     final isSelected = value != null;
-    final backgroundColor =
-        isSelected ? _primaryInkColor(context) : _softSurfaceColor(context);
+    final backgroundColor = isSelected
+        ? _primaryInkColor(context)
+        : _softSurfaceColor(context);
     final textColor = isSelected
         ? OpenVtsColors.white
         : Theme.of(context).colorScheme.onSurfaceVariant;
 
     return PopupMenuButton<String?>(
-      tooltip: 'Vehicle type filter',
+      tooltip: context.mobileText('Vehicle type filter'),
       enabled: options.isNotEmpty,
       onSelected: onChanged,
       itemBuilder: (context) => [
-        const PopupMenuItem<String?>(
+        PopupMenuItem<String?>(
           value: null,
-          child: Text('All Types'),
+          child: Text(context.mobileText('All Types')),
         ),
         for (final option in options)
           PopupMenuItem<String?>(
@@ -225,11 +233,7 @@ class _TypeFilterButton extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.category_outlined,
-              size: 15,
-              color: textColor,
-            ),
+            Icon(Icons.category_outlined, size: 15, color: textColor),
             const SizedBox(width: 6),
             Text(
               selected?.label ?? 'All Types',
@@ -239,11 +243,7 @@ class _TypeFilterButton extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 4),
-            Icon(
-              Icons.expand_more_rounded,
-              size: 16,
-              color: textColor,
-            ),
+            Icon(Icons.expand_more_rounded, size: 16, color: textColor),
           ],
         ),
       ),
@@ -274,8 +274,11 @@ class _InlineError extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.error_outline_rounded,
-              size: 16, color: OpenVtsColors.error),
+          const Icon(
+            Icons.error_outline_rounded,
+            size: 16,
+            color: OpenVtsColors.error,
+          ),
           const SizedBox(width: OpenVtsSpacing.xs),
           Expanded(
             child: Text(
@@ -307,14 +310,14 @@ List<_TypeFilterOption> _typeOptions(List<UserVehicleListItem> vehicles) {
     final value = type.id.trim().isNotEmpty
         ? type.id.trim().toLowerCase()
         : type.slug.trim().isNotEmpty
-            ? type.slug.trim().toLowerCase()
-            : type.name.trim().toLowerCase();
+        ? type.slug.trim().toLowerCase()
+        : type.name.trim().toLowerCase();
     if (value.isEmpty) continue;
     final label = type.name.trim().isNotEmpty
         ? type.name.trim()
         : type.slug.trim().isNotEmpty
-            ? type.slug.trim()
-            : type.id.trim();
+        ? type.slug.trim()
+        : type.id.trim();
     byValue[value] = _TypeFilterOption(value: value, label: label);
   }
   final options = byValue.values.toList(growable: false)

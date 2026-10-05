@@ -3,8 +3,8 @@ import 'package:http_parser/http_parser.dart';
 
 import '../../../core/api/api_client.dart';
 import '../../../core/api/api_endpoints.dart';
-import '../../../core/api/api_options.dart';
 import '../../../core/api/api_exception.dart';
+import '../../../core/api/api_options.dart';
 import '../models/user_settings_model.dart';
 
 class UserSettingsService {
@@ -305,9 +305,7 @@ class UserSettingsService {
 
   String? _extractErrorMessage(dynamic data) {
     if (data is Map) {
-      final map = data.map(
-        (key, value) => MapEntry(key.toString(), value),
-      );
+      final map = data.map((key, value) => MapEntry(key.toString(), value));
 
       for (final key in const ['message', 'error']) {
         final value = map[key];
@@ -335,9 +333,7 @@ class UserSettingsService {
     if (data is List) {
       list = data;
     } else if (data is Map) {
-      final map = data.map(
-        (key, value) => MapEntry(key.toString(), value),
-      );
+      final map = data.map((key, value) => MapEntry(key.toString(), value));
       for (final key in const ['data', 'items', 'timezones', 'list']) {
         final value = map[key];
         if (value is List) {
@@ -438,9 +434,7 @@ class UserSettingsService {
       return value;
     }
     if (value is Map) {
-      return value.map(
-        (key, item) => MapEntry(key.toString(), item),
-      );
+      return value.map((key, item) => MapEntry(key.toString(), item));
     }
     return const <String, dynamic>{};
   }

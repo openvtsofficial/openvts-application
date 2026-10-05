@@ -10,6 +10,7 @@ import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../core/utils/date_time_formatter.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../shared/widgets/open_vts_bottom_sheet.dart';
 import '../../../../../shared/widgets/open_vts_loader.dart';
@@ -121,14 +122,13 @@ class _UserShareTrackLinkFormSheetState
 
   void _setFromLink(UserShareTrackLink link) {
     _activeLink = link;
-    _expiryAt = link.expiryAt?.toLocal() ??
+    _expiryAt =
+        link.expiryAt?.toLocal() ??
         DateTime.now().add(const Duration(hours: 24));
     _isGeofence = link.isGeofence;
     _isHistory = link.isHistory;
     _isActive = link.isActive;
-    _selectedVehicleIds = {
-      for (final vehicle in link.vehicles) vehicle.id,
-    };
+    _selectedVehicleIds = {for (final vehicle in link.vehicles) vehicle.id};
   }
 
   @override
@@ -155,8 +155,12 @@ class _UserShareTrackLinkFormSheetState
             ),
             children: [
               _SectionLabel(
-                title: _isEditing ? 'Edit Track Link' : 'New Track Link',
-                subtitle: 'Choose vehicles, expiry, and sharing options.',
+                title: _isEditing
+                    ? context.mobileText('Edit Track Link')
+                    : context.mobileText('New Track Link'),
+                subtitle: context.mobileText(
+                  'Choose vehicles, expiry, and sharing options.',
+                ),
               ),
               if (_detailsError != null) ...[
                 const SizedBox(height: OpenVtsSpacing.sm),
@@ -168,8 +172,10 @@ class _UserShareTrackLinkFormSheetState
               ],
               const SizedBox(height: OpenVtsSpacing.md),
               _SectionLabel(
-                title: 'Vehicle Selection',
-                subtitle: '${_selectedVehicleIds.length} selected',
+                title: context.mobileText('Vehicle Selection'),
+                subtitle: context.mobileText("{value1} selected", {
+                  'value1': (_selectedVehicleIds.length).toString(),
+                }),
                 compact: true,
               ),
               const SizedBox(height: OpenVtsSpacing.xs),
@@ -177,14 +183,12 @@ class _UserShareTrackLinkFormSheetState
                 future: _vehiclesFuture,
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const _VehicleListFrame(
-                      child: OpenVtsLoader(),
-                    );
+                    return const _VehicleListFrame(child: OpenVtsLoader());
                   }
 
                   if (snapshot.hasError) {
                     return _InlineRetry(
-                      message: 'Unable to load vehicles.',
+                      message: context.mobileText('Unable to load vehicles.'),
                       onRetry: () {
                         setState(() {
                           _vehiclesFuture = _loadVehicles();
@@ -198,11 +202,13 @@ class _UserShareTrackLinkFormSheetState
                   );
 
                   if (vehicles.isEmpty) {
-                    return const _VehicleListFrame(
+                    return _VehicleListFrame(
                       child: _MutedPanel(
                         icon: Icons.directions_car_outlined,
-                        title: 'No vehicles available',
-                        message: 'Only assigned user vehicles can be shared.',
+                        title: context.mobileText('No vehicles available'),
+                        message: context.mobileText(
+                          'Only assigned user vehicles can be shared.',
+                        ),
                       ),
                     );
                   }
@@ -212,7 +218,7 @@ class _UserShareTrackLinkFormSheetState
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       OpenVtsSearchField(
-                        hintText: 'Search vehicles...',
+                        hintText: context.mobileText('Search vehicles...'),
                         onChanged: (value) {
                           setState(() {
                             _vehicleQuery = value.trim().toLowerCase();
@@ -223,10 +229,12 @@ class _UserShareTrackLinkFormSheetState
                       _VehicleListFrame(
                         key: const Key('track-link-vehicle-list-frame'),
                         child: filteredVehicles.isEmpty
-                            ? const _MutedPanel(
+                            ? _MutedPanel(
                                 icon: Icons.search_off_rounded,
-                                title: 'No vehicles found',
-                                message: 'Try a different name or plate.',
+                                title: context.mobileText('No vehicles found'),
+                                message: context.mobileText(
+                                  'Try a different name or plate.',
+                                ),
                               )
                             : ListView.separated(
                                 key: const Key('track-link-vehicle-list'),
@@ -239,13 +247,14 @@ class _UserShareTrackLinkFormSheetState
                                 itemCount: filteredVehicles.length,
                                 separatorBuilder: (context, index) =>
                                     const Divider(
-                                  height: 1,
-                                  color: OpenVtsColors.divider,
-                                ),
+                                      height: 1,
+                                      color: OpenVtsColors.divider,
+                                    ),
                                 itemBuilder: (context, index) {
                                   final vehicle = filteredVehicles[index];
-                                  final selected =
-                                      _selectedVehicleIds.contains(vehicle.id);
+                                  final selected = _selectedVehicleIds.contains(
+                                    vehicle.id,
+                                  );
                                   final disabled =
                                       vehicle.isLicenseBlocked && !selected;
                                   return _VehicleSelectRow(
@@ -258,8 +267,8 @@ class _UserShareTrackLinkFormSheetState
                                     onChanged: disabled
                                         ? null
                                         : () => setState(
-                                              () => _toggleVehicle(vehicle.id),
-                                            ),
+                                            () => _toggleVehicle(vehicle.id),
+                                          ),
                                   );
                                 },
                               ),
@@ -269,9 +278,9 @@ class _UserShareTrackLinkFormSheetState
                 },
               ),
               const SizedBox(height: OpenVtsSpacing.md),
-              const _SectionLabel(
-                title: 'Expiry Date/Time',
-                subtitle: 'The link expires automatically.',
+              _SectionLabel(
+                title: context.mobileText('Expiry Date/Time'),
+                subtitle: context.mobileText('The link expires automatically.'),
                 compact: true,
               ),
               const SizedBox(height: OpenVtsSpacing.xs),
@@ -279,7 +288,7 @@ class _UserShareTrackLinkFormSheetState
                 children: [
                   Expanded(
                     child: _PickerTile(
-                      label: 'Date',
+                      label: context.mobileText('Date'),
                       value: dateFormatter.formatDate(_expiryAt),
                       icon: Icons.calendar_today_outlined,
                       onTap: _pickDate,
@@ -288,7 +297,7 @@ class _UserShareTrackLinkFormSheetState
                   const SizedBox(width: OpenVtsSpacing.sm),
                   Expanded(
                     child: _PickerTile(
-                      label: 'Time',
+                      label: context.mobileText('Time'),
                       value: dateFormatter.formatTime(_expiryAt),
                       icon: Icons.schedule_rounded,
                       onTap: _pickTime,
@@ -297,15 +306,17 @@ class _UserShareTrackLinkFormSheetState
                 ],
               ),
               const SizedBox(height: OpenVtsSpacing.md),
-              const _SectionLabel(
-                title: 'Options',
-                subtitle: 'Control what viewers can see.',
+              _SectionLabel(
+                title: context.mobileText('Options'),
+                subtitle: context.mobileText('Control what viewers can see.'),
                 compact: true,
               ),
               const SizedBox(height: OpenVtsSpacing.xs),
               _ToggleRow(
-                title: 'Show Geofence',
-                subtitle: 'Display assigned geofence context.',
+                title: context.mobileText('Show Geofence'),
+                subtitle: context.mobileText(
+                  'Display assigned geofence context.',
+                ),
                 value: _isGeofence,
                 onChanged: isSaving
                     ? null
@@ -313,8 +324,8 @@ class _UserShareTrackLinkFormSheetState
               ),
               const SizedBox(height: OpenVtsSpacing.xs),
               _ToggleRow(
-                title: 'Allow History',
-                subtitle: 'Allow route history access.',
+                title: context.mobileText('Allow History'),
+                subtitle: context.mobileText('Allow route history access.'),
                 value: _isHistory,
                 onChanged: isSaving
                     ? null
@@ -322,15 +333,17 @@ class _UserShareTrackLinkFormSheetState
               ),
               if (_isEditing) ...[
                 const SizedBox(height: OpenVtsSpacing.md),
-                const _SectionLabel(
-                  title: 'Status',
-                  subtitle: 'Disable without deleting the link.',
+                _SectionLabel(
+                  title: context.mobileText('Status'),
+                  subtitle: context.mobileText(
+                    'Disable without deleting the link.',
+                  ),
                   compact: true,
                 ),
                 const SizedBox(height: OpenVtsSpacing.xs),
                 _ToggleRow(
-                  title: 'Active',
-                  subtitle: 'Enable this public link.',
+                  title: context.mobileText('Active'),
+                  subtitle: context.mobileText('Enable this public link.'),
                   value: _isActive,
                   onChanged: isSaving
                       ? null
@@ -363,26 +376,25 @@ class _UserShareTrackLinkFormSheetState
     }
 
     final merged = byId.values.toList(growable: false);
-    return merged
-      ..sort((a, b) {
-        final aSelected = _selectedVehicleIds.contains(a.id);
-        final bSelected = _selectedVehicleIds.contains(b.id);
-        if (aSelected != bSelected) return aSelected ? -1 : 1;
-        return a.displayName.toLowerCase().compareTo(
-              b.displayName.toLowerCase(),
-            );
-      });
+    return merged..sort((a, b) {
+      final aSelected = _selectedVehicleIds.contains(a.id);
+      final bSelected = _selectedVehicleIds.contains(b.id);
+      if (aSelected != bSelected) return aSelected ? -1 : 1;
+      return a.displayName.toLowerCase().compareTo(b.displayName.toLowerCase());
+    });
   }
 
   List<UserShareTrackVehicle> _filteredVehicles(
     List<UserShareTrackVehicle> vehicles,
   ) {
     if (_vehicleQuery.isEmpty) return vehicles;
-    return vehicles.where((vehicle) {
-      final plate = vehicle.plateNumber?.toLowerCase() ?? '';
-      return vehicle.name.toLowerCase().contains(_vehicleQuery) ||
-          plate.contains(_vehicleQuery);
-    }).toList(growable: false);
+    return vehicles
+        .where((vehicle) {
+          final plate = vehicle.plateNumber?.toLowerCase() ?? '';
+          return vehicle.name.toLowerCase().contains(_vehicleQuery) ||
+              plate.contains(_vehicleQuery);
+        })
+        .toList(growable: false);
   }
 
   void _toggleVehicle(String id) {
@@ -432,19 +444,25 @@ class _UserShareTrackLinkFormSheetState
 
   Future<void> _submit() async {
     if (_selectedVehicleIds.isEmpty) {
-      ToastHelper.showError('Select at least one vehicle.', context: context);
+      ToastHelper.showError(
+        context.mobileText('Select at least one vehicle.'),
+        context: context,
+      );
       return;
     }
 
     if (!_expiryAt.isAfter(DateTime.now())) {
-      ToastHelper.showError('Expiry must be in the future.', context: context);
+      ToastHelper.showError(
+        context.mobileText('Expiry must be in the future.'),
+        context: context,
+      );
       return;
     }
 
     final vehicleIds = _selectedVehicleIdsAsInts();
     if (vehicleIds == null || vehicleIds.isEmpty) {
       ToastHelper.showError(
-        'One or more selected vehicles are invalid.',
+        context.mobileText('One or more selected vehicles are invalid.'),
         context: context,
       );
       return;
@@ -514,8 +532,9 @@ class _SectionLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? OpenVtsColors.white : OpenVtsColors.textPrimary;
-    final subtitleColor =
-        isDark ? OpenVtsColors.white : OpenVtsColors.textSecondary;
+    final subtitleColor = isDark
+        ? OpenVtsColors.white
+        : OpenVtsColors.textSecondary;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -560,15 +579,13 @@ class _VehicleListFrame extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      constraints: const BoxConstraints(
-        minHeight: 112,
-        maxHeight: 280,
-      ),
+      constraints: const BoxConstraints(minHeight: 112, maxHeight: 280),
       decoration: BoxDecoration(
         color: isDark ? Colors.black : Colors.white,
         borderRadius: BorderRadius.circular(OpenVtsRadius.lg),
         border: Border.all(
-            color: isDark ? OpenVtsColors.white : OpenVtsColors.border),
+          color: isDark ? OpenVtsColors.white : OpenVtsColors.border,
+        ),
       ),
       child: child,
     );
@@ -595,8 +612,9 @@ class _VehicleSelectRow extends StatelessWidget {
     final titleColor = disabled
         ? OpenVtsColors.textTertiary
         : (isDark ? OpenVtsColors.white : OpenVtsColors.textPrimary);
-    final subtitleColor =
-        isDark ? OpenVtsColors.white : OpenVtsColors.textSecondary;
+    final subtitleColor = isDark
+        ? OpenVtsColors.white
+        : OpenVtsColors.textSecondary;
 
     return InkWell(
       onTap: onChanged,
@@ -623,7 +641,7 @@ class _VehicleSelectRow extends StatelessWidget {
                       Expanded(
                         child: Text(
                           vehicle.name.trim().isEmpty
-                              ? 'Vehicle'
+                              ? context.mobileText('Vehicle')
                               : vehicle.name.trim(),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -672,7 +690,7 @@ class _LicenseBlockedChip extends StatelessWidget {
         border: Border.all(color: OpenVtsColors.error.withValues(alpha: 0.16)),
       ),
       child: Text(
-        'License blocked',
+        context.mobileText('License blocked'),
         style: OpenVtsTypography.meta.copyWith(
           color: OpenVtsColors.error,
           fontSize: 10,
@@ -702,8 +720,9 @@ class _PickerTile extends StatelessWidget {
     final bgColor = isDark ? Colors.black : Colors.white;
     final borderColor = isDark ? OpenVtsColors.white : OpenVtsColors.border;
     final textColor = isDark ? OpenVtsColors.white : OpenVtsColors.textPrimary;
-    final labelColor =
-        isDark ? OpenVtsColors.white : OpenVtsColors.textSecondary;
+    final labelColor = isDark
+        ? OpenVtsColors.white
+        : OpenVtsColors.textSecondary;
     return InkWell(
       borderRadius: BorderRadius.circular(OpenVtsRadius.lg),
       onTap: onTap,
@@ -771,8 +790,9 @@ class _ToggleRow extends StatelessWidget {
     final bgColor = isDark ? Colors.black : Colors.white;
     final borderColor = isDark ? OpenVtsColors.white : OpenVtsColors.border;
     final textColor = isDark ? OpenVtsColors.white : OpenVtsColors.textPrimary;
-    final subtitleColor =
-        isDark ? OpenVtsColors.white : OpenVtsColors.textSecondary;
+    final subtitleColor = isDark
+        ? OpenVtsColors.white
+        : OpenVtsColors.textSecondary;
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: OpenVtsSpacing.sm,
@@ -815,8 +835,9 @@ class _ToggleRow extends StatelessWidget {
             activeThumbColor: OpenVtsColors.white,
             activeTrackColor: OpenVtsColors.brandInk,
             inactiveThumbColor: OpenVtsColors.textSecondary,
-            inactiveTrackColor:
-                OpenVtsColors.textTertiary.withValues(alpha: 0.3),
+            inactiveTrackColor: OpenVtsColors.textTertiary.withValues(
+              alpha: 0.3,
+            ),
           ),
         ],
       ),
@@ -904,14 +925,16 @@ class _ActionBar extends StatelessWidget {
         decoration: BoxDecoration(
           color: isDark ? Colors.black : Colors.white,
           border: Border(
-              top: BorderSide(
-                  color: isDark ? OpenVtsColors.white : OpenVtsColors.border)),
+            top: BorderSide(
+              color: isDark ? OpenVtsColors.white : OpenVtsColors.border,
+            ),
+          ),
         ),
         child: Row(
           children: [
             Expanded(
               child: _ActionButton(
-                label: 'Cancel',
+                label: context.mobileText('Cancel'),
                 onPressed: onCancel,
                 isSecondary: true,
               ),
@@ -920,10 +943,10 @@ class _ActionBar extends StatelessWidget {
             Expanded(
               child: _ActionButton(
                 label: isSaving
-                    ? 'Saving...'
+                    ? context.mobileText('Saving...')
                     : isEditing
-                        ? 'Save'
-                        : 'Create',
+                    ? context.mobileText('Save')
+                    : context.mobileText('Create'),
                 onPressed: onSave,
                 isLoading: isSaving,
               ),
@@ -950,8 +973,9 @@ class _MutedPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? OpenVtsColors.white : OpenVtsColors.textPrimary;
-    final subtitleColor =
-        isDark ? OpenVtsColors.white : OpenVtsColors.textSecondary;
+    final subtitleColor = isDark
+        ? OpenVtsColors.white
+        : OpenVtsColors.textSecondary;
     return Padding(
       padding: const EdgeInsets.all(OpenVtsSpacing.md),
       child: Column(
@@ -997,7 +1021,7 @@ class _InlineRetry extends StatelessWidget {
       color: OpenVtsColors.error,
       trailing: TextButton(
         onPressed: onRetry,
-        child: const Text('Retry'),
+        child: Text(context.mobileText('Retry')),
       ),
     );
   }

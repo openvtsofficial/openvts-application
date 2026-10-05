@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:open_vts/shared/helpers/toast_helper.dart';
 
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/utils/validators.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
+import '../../../../../shared/helpers/validation_localizations.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../shared/widgets/open_vts_searchable_dropdown.dart';
 import '../../../models/admin_vehicle_model.dart';
@@ -45,8 +48,10 @@ class _AdminVehicleEditSheetState extends State<AdminVehicleEditSheet> {
     _vehicleTypeId = widget.vehicle.vehicleTypeId;
     _gmtOffset = widget.vehicle.gmtOffset;
     _metaRows = widget.vehicle.vehicleMeta.entries
-        .map((entry) =>
-            _MetaRow(keyText: entry.key, valueText: '${entry.value ?? ''}'))
+        .map(
+          (entry) =>
+              _MetaRow(keyText: entry.key, valueText: '${entry.value ?? ''}'),
+        )
         .toList(growable: true);
     if (_metaRows.isEmpty) {
       _metaRows.add(const _MetaRow(keyText: '', valueText: ''));
@@ -72,25 +77,30 @@ class _AdminVehicleEditSheetState extends State<AdminVehicleEditSheet> {
             children: [
               TextFormField(
                 controller: _nameController,
-                decoration: const InputDecoration(labelText: 'Name'),
-                validator: Validators.vehicleName,
+                decoration: InputDecoration(
+                  labelText: context.mobileText('Name'),
+                ),
+                validator: context.localizedValidator(Validators.vehicleName),
               ),
               const SizedBox(height: OpenVtsSpacing.sm),
               TextFormField(
                 controller: _plateController,
-                decoration:
-                    const InputDecoration(labelText: 'Plate Number (optional)'),
-                validator: Validators.plateNumberOptional,
+                decoration: InputDecoration(
+                  labelText: context.mobileText('Plate Number (optional)'),
+                ),
+                validator: context.localizedValidator(Validators.plateNumberOptional),
               ),
               const SizedBox(height: OpenVtsSpacing.sm),
               TextFormField(
                 controller: _vinController,
-                decoration: const InputDecoration(labelText: 'VIN (optional)'),
-                validator: Validators.vinOptional,
+                decoration: InputDecoration(
+                  labelText: context.mobileText('VIN (optional)'),
+                ),
+                validator: context.localizedValidator(Validators.vinOptional),
               ),
               const SizedBox(height: OpenVtsSpacing.sm),
               OpenVtsSearchableDropdown<String>(
-                label: 'Vehicle Type',
+                label: context.mobileText('Vehicle Type'),
                 value: _vehicleTypeId.isEmpty ? null : _vehicleTypeId,
                 options: _vehicleTypeOptions,
                 onChanged: (value) =>
@@ -99,18 +109,26 @@ class _AdminVehicleEditSheetState extends State<AdminVehicleEditSheet> {
               const SizedBox(height: OpenVtsSpacing.sm),
               DropdownButtonFormField<String>(
                 initialValue: _gmtOffset.isEmpty ? null : _gmtOffset,
-                decoration: const InputDecoration(labelText: 'GMT Offset'),
+                decoration: InputDecoration(
+                  labelText: context.mobileText('GMT Offset'),
+                ),
                 items: widget.timezones
-                    .map((item) => DropdownMenuItem<String>(
-                        value: item, child: Text(item)))
+                    .map(
+                      (item) => DropdownMenuItem<String>(
+                        value: item,
+                        child: Text(item),
+                      ),
+                    )
                     .toList(growable: false),
                 onChanged: (value) => setState(() => _gmtOffset = value ?? ''),
               ),
               const SizedBox(height: OpenVtsSpacing.md),
               Align(
                 alignment: Alignment.centerLeft,
-                child: Text('Vehicle Meta',
-                    style: Theme.of(context).textTheme.titleSmall),
+                child: Text(
+                  context.mobileText('Vehicle Meta'),
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
               ),
               const SizedBox(height: OpenVtsSpacing.xs),
               ..._metaRows.asMap().entries.map((entry) {
@@ -123,18 +141,22 @@ class _AdminVehicleEditSheetState extends State<AdminVehicleEditSheet> {
                       Expanded(
                         child: TextFormField(
                           initialValue: row.keyText,
-                          decoration: const InputDecoration(labelText: 'Key'),
-                          onChanged: (value) => _metaRows[idx] =
-                              _metaRows[idx].copyWith(keyText: value),
+                          decoration: InputDecoration(
+                            labelText: context.mobileText('Key'),
+                          ),
+                          onChanged: (value) => _metaRows[idx] = _metaRows[idx]
+                              .copyWith(keyText: value),
                         ),
                       ),
                       const SizedBox(width: OpenVtsSpacing.xs),
                       Expanded(
                         child: TextFormField(
                           initialValue: row.valueText,
-                          decoration: const InputDecoration(labelText: 'Value'),
-                          onChanged: (value) => _metaRows[idx] =
-                              _metaRows[idx].copyWith(valueText: value),
+                          decoration: InputDecoration(
+                            labelText: context.mobileText('Value'),
+                          ),
+                          onChanged: (value) => _metaRows[idx] = _metaRows[idx]
+                              .copyWith(valueText: value),
                         ),
                       ),
                       IconButton(
@@ -142,7 +164,7 @@ class _AdminVehicleEditSheetState extends State<AdminVehicleEditSheet> {
                             ? null
                             : () => setState(() => _metaRows.removeAt(idx)),
                         icon: const Icon(Icons.remove_circle_outline_rounded),
-                      )
+                      ),
                     ],
                   ),
                 );
@@ -150,15 +172,18 @@ class _AdminVehicleEditSheetState extends State<AdminVehicleEditSheet> {
               Align(
                 alignment: Alignment.centerLeft,
                 child: TextButton.icon(
-                  onPressed: () => setState(() => _metaRows
-                      .add(const _MetaRow(keyText: '', valueText: ''))),
+                  onPressed: () => setState(
+                    () => _metaRows.add(
+                      const _MetaRow(keyText: '', valueText: ''),
+                    ),
+                  ),
                   icon: const Icon(Icons.add_rounded),
-                  label: const Text('Add Meta Row'),
+                  label: Text(context.mobileText('Add Meta Row')),
                 ),
               ),
               const SizedBox(height: OpenVtsSpacing.sm),
               OpenVtsButton(
-                label: 'Save Changes',
+                label: context.mobileText('Save Changes'),
                 isLoading: widget.isSubmitting,
                 onPressed: widget.isSubmitting ? null : _submit,
               ),
@@ -192,8 +217,9 @@ class _AdminVehicleEditSheetState extends State<AdminVehicleEditSheet> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     if (_gmtOffset.trim().isNotEmpty &&
-        !RegExp(r'^[+-](0\d|1\d|2[0-3]):[0-5]\d$')
-            .hasMatch(_gmtOffset.trim())) {
+        !RegExp(
+          r'^[+-](0\d|1\d|2[0-3]):[0-5]\d$',
+        ).hasMatch(_gmtOffset.trim())) {
       _show('Invalid GMT offset format. Use +05:30');
       return;
     }
@@ -231,8 +257,7 @@ class _AdminVehicleEditSheetState extends State<AdminVehicleEditSheet> {
   }
 
   void _show(String message) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
+    ToastHelper.show(context, message);
   }
 }
 

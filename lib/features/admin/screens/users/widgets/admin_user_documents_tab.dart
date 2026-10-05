@@ -10,13 +10,16 @@ import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../core/utils/date_time_formatter.dart';
 import '../../../../../core/utils/validators.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
+import '../../../../../shared/helpers/validation_localizations.dart';
 import '../../../../../shared/widgets/open_vts_bottom_sheet.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../../../shared/widgets/open_vts_text_field.dart';
 import '../../../controllers/admin_providers.dart';
 import '../../../models/admin_user_details_model.dart';
+import '../../../widgets/admin_action_gate.dart';
 
 const DateTimeFormatter _dateFormatter = DateTimeFormatter();
 const int _maxDocumentBytes = 10 * 1024 * 1024;
@@ -45,10 +48,7 @@ const List<String> _allowedDocumentExtensions = <String>[
 ];
 
 class AdminUserDocumentsTab extends ConsumerStatefulWidget {
-  const AdminUserDocumentsTab({
-    super.key,
-    required this.userId,
-  });
+  const AdminUserDocumentsTab({super.key, required this.userId});
 
   final String userId;
 
@@ -68,7 +68,7 @@ class _AdminUserDocumentsTabState extends ConsumerState<AdminUserDocumentsTab> {
         state.isLoadingDocuments && state.documents.isEmpty;
 
     if (isInitialLoading) {
-      return const _SectionLoader(title: 'Documents');
+      return _SectionLoader(title: context.mobileText('Documents'));
     }
 
     if (state.sectionErrorMessage != null && state.documents.isEmpty) {
@@ -96,7 +96,7 @@ class _AdminUserDocumentsTabState extends ConsumerState<AdminUserDocumentsTab> {
           const SizedBox(height: OpenVtsSpacing.sm),
         ],
         if (state.documents.isEmpty)
-          const _EmptyCard(label: 'No documents uploaded')
+          _EmptyCard(label: context.mobileText('No documents uploaded'))
         else
           for (final document in state.documents) ...[
             _DocumentCard(
@@ -118,7 +118,10 @@ class _AdminUserDocumentsTabState extends ConsumerState<AdminUserDocumentsTab> {
   Future<void> _openDocument(String baseUrl, AdminUserDocument document) async {
     final url = _resolveFileUrl(document.filePath, baseUrl);
     if (url == null) {
-      ToastHelper.showError('File URL is not available.', context: context);
+      ToastHelper.showError(
+        context.mobileText('File URL is not available.'),
+        context: context,
+      );
       return;
     }
 
@@ -131,27 +134,32 @@ class _AdminUserDocumentsTabState extends ConsumerState<AdminUserDocumentsTab> {
         return;
       }
       if (!launched) {
-        ToastHelper.showError('Could not open file.', context: context);
+        ToastHelper.showError(
+          context.mobileText('Could not open file.'),
+          context: context,
+        );
       }
     } catch (_) {
       if (!mounted) {
         return;
       }
-      ToastHelper.showError('Could not open file.', context: context);
+      ToastHelper.showError(
+        context.mobileText('Could not open file.'),
+        context: context,
+      );
     }
   }
 
   Future<void> _showDocumentSheet({required AdminUserDocument? existing}) {
     return OpenVtsBottomSheet.show<void>(
       context: context,
-      title: existing == null ? 'Upload Document' : 'Edit Document',
+      title: existing == null
+          ? context.mobileText('Upload Document')
+          : context.mobileText('Edit Document'),
       initialChildSize: 0.86,
       minChildSize: 0.48,
       maxChildSize: 0.96,
-      child: _DocumentSheet(
-        userId: widget.userId,
-        existing: existing,
-      ),
+      child: _DocumentSheet(userId: widget.userId, existing: existing),
     );
   }
 
@@ -161,17 +169,21 @@ class _AdminUserDocumentsTabState extends ConsumerState<AdminUserDocumentsTab> {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('Delete document'),
-          content: Text('Remove $label from this user?'),
+          title: Text(context.mobileText('Delete document')),
+          content: Text(
+            context.mobileText("Remove {value1} from this user?", {
+              'value1': (label).toString(),
+            }),
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('Cancel'),
+              child: Text(context.mobileText('Cancel')),
             ),
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(true),
               style: TextButton.styleFrom(foregroundColor: OpenVtsColors.error),
-              child: const Text('Delete'),
+              child: Text(context.mobileText('Delete')),
             ),
           ],
         );
@@ -188,7 +200,10 @@ class _AdminUserDocumentsTabState extends ConsumerState<AdminUserDocumentsTab> {
       return;
     }
     if (ok) {
-      ToastHelper.showSuccess('Document deleted.', context: context);
+      ToastHelper.showSuccess(
+        context.mobileText('Document deleted.'),
+        context: context,
+      );
     } else {
       ToastHelper.showError(
         ref.read(provider).sectionErrorMessage ?? 'Unable to delete document.',
@@ -232,7 +247,7 @@ class _SummaryCard extends StatelessWidget {
                     ),
                     const SizedBox(width: OpenVtsSpacing.xs),
                     Text(
-                      'Documents',
+                      context.mobileText('Documents'),
                       style: OpenVtsTypography.label.copyWith(
                         color: Theme.of(context).colorScheme.onSurface,
                         fontWeight: FontWeight.w800,
@@ -250,7 +265,10 @@ class _SummaryCard extends StatelessWidget {
                 ),
                 const SizedBox(height: OpenVtsSpacing.xs),
                 Text(
-                  '$documentCount files - $typeCount user types',
+                  context.mobileText("{value1} files - {value2} user types", {
+                    'value1': (documentCount).toString(),
+                    'value2': (typeCount).toString(),
+                  }),
                   style: OpenVtsTypography.meta.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontWeight: FontWeight.w700,
@@ -261,12 +279,15 @@ class _SummaryCard extends StatelessWidget {
           ),
           SizedBox(
             height: 34,
-            child: OpenVtsButton(
-              label: 'Upload',
-              height: 34,
-              isLoading: isUploading,
-              onPressed: onUpload,
-              trailingIcon: Icons.upload_file_rounded,
+            child: AdminActionGate(
+              capability: 'users.update',
+              child: OpenVtsButton(
+                label: context.mobileText('Upload'),
+                height: 34,
+                isLoading: isUploading,
+                onPressed: onUpload,
+                trailingIcon: Icons.upload_file_rounded,
+              ),
             ),
           ),
         ],
@@ -277,7 +298,7 @@ class _SummaryCard extends StatelessWidget {
 
 enum _DocumentAction { view, edit, delete }
 
-class _DocumentCard extends StatelessWidget {
+class _DocumentCard extends ConsumerWidget {
   const _DocumentCard({
     required this.document,
     required this.isDeleting,
@@ -293,7 +314,7 @@ class _DocumentCard extends StatelessWidget {
   final VoidCallback? onDelete;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final extension = _fileExtension(document);
     return OpenVtsCard(
       onTap: onView,
@@ -335,7 +356,7 @@ class _DocumentCard extends StatelessWidget {
               ),
               const SizedBox(width: OpenVtsSpacing.xs),
               PopupMenuButton<_DocumentAction>(
-                tooltip: 'Document actions',
+                tooltip: context.mobileText('Document actions'),
                 enabled: !isDeleting,
                 icon: isDeleting
                     ? const SizedBox(
@@ -358,29 +379,34 @@ class _DocumentCard extends StatelessWidget {
                       onDelete?.call();
                   }
                 },
-                itemBuilder: (context) => const [
+                itemBuilder: (context) => [
                   PopupMenuItem(
                     value: _DocumentAction.view,
                     height: 38,
                     child: _MenuRow(
                       icon: Icons.open_in_new_rounded,
-                      label: 'View',
+                      label: context.mobileText('View'),
                     ),
                   ),
-                  PopupMenuItem(
-                    value: _DocumentAction.edit,
-                    height: 38,
-                    child: _MenuRow(icon: Icons.edit_outlined, label: 'Edit'),
-                  ),
-                  PopupMenuItem(
-                    value: _DocumentAction.delete,
-                    height: 38,
-                    child: _MenuRow(
-                      icon: Icons.delete_outline_rounded,
-                      label: 'Delete',
-                      isDestructive: true,
+                  if (adminCanPerform(ref, 'users.update'))
+                    PopupMenuItem(
+                      value: _DocumentAction.edit,
+                      height: 38,
+                      child: _MenuRow(
+                        icon: Icons.edit_outlined,
+                        label: context.mobileText('Edit'),
+                      ),
                     ),
-                  ),
+                  if (adminCanPerform(ref, 'users.update'))
+                    PopupMenuItem(
+                      value: _DocumentAction.delete,
+                      height: 38,
+                      child: _MenuRow(
+                        icon: Icons.delete_outline_rounded,
+                        label: context.mobileText('Delete'),
+                        isDestructive: true,
+                      ),
+                    ),
                 ],
               ),
             ],
@@ -402,13 +428,15 @@ class _DocumentCard extends StatelessWidget {
               _MetaPill(
                 icon: Icons.event_outlined,
                 label: document.expiryAt == null
-                    ? 'No expiry'
+                    ? context.mobileText('No expiry')
                     : 'Expiry ${_dateText(document.expiryAt)}',
               ),
               _VisibilityPill(isVisible: document.isVisible),
               _MetaPill(
                 icon: Icons.calendar_today_outlined,
-                label: 'Added ${_dateText(document.createdAt)}',
+                label: context.mobileText("Added {value1}", {
+                  'value1': (_dateText(document.createdAt)).toString(),
+                }),
               ),
               for (final tag in document.tags.take(3))
                 _MetaPill(icon: Icons.label_outline_rounded, label: tag),
@@ -421,10 +449,7 @@ class _DocumentCard extends StatelessWidget {
 }
 
 class _DocumentSheet extends ConsumerStatefulWidget {
-  const _DocumentSheet({
-    required this.userId,
-    required this.existing,
-  });
+  const _DocumentSheet({required this.userId, required this.existing});
 
   final String userId;
   final AdminUserDocument? existing;
@@ -476,8 +501,9 @@ class _DocumentSheetState extends ConsumerState<_DocumentSheet> {
     final userTypes = state.documentTypes
         .where((type) => type.docFor.isEmpty || type.isForUser)
         .toList(growable: false);
-    final isSubmitting =
-        _isEdit ? state.isUpdatingDocument : state.isUploadingDocument;
+    final isSubmitting = _isEdit
+        ? state.isUpdatingDocument
+        : state.isUploadingDocument;
 
     return Column(
       children: [
@@ -498,9 +524,9 @@ class _DocumentSheetState extends ConsumerState<_DocumentSheet> {
                   ),
                   const SizedBox(height: OpenVtsSpacing.sm),
                   OpenVtsTextField(
-                    label: 'Title',
+                    label: context.mobileText('Title'),
                     controller: _titleController,
-                    hintText: 'Document title',
+                    hintText: context.mobileText('Document title'),
                     prefixIcon: Icons.title_rounded,
                     textInputAction: TextInputAction.next,
                     validator: Validators.documentTitle,
@@ -521,17 +547,17 @@ class _DocumentSheetState extends ConsumerState<_DocumentSheet> {
                   ),
                   const SizedBox(height: OpenVtsSpacing.sm),
                   OpenVtsTextField(
-                    label: 'Tags',
+                    label: context.mobileText('Tags'),
                     controller: _tagsController,
-                    hintText: 'license, insurance',
+                    hintText: context.mobileText('license, insurance'),
                     prefixIcon: Icons.label_outline_rounded,
                     textInputAction: TextInputAction.next,
                   ),
                   const SizedBox(height: OpenVtsSpacing.sm),
                   OpenVtsTextField(
-                    label: 'Description',
+                    label: context.mobileText('Description'),
                     controller: _descriptionController,
-                    hintText: 'Optional notes',
+                    hintText: context.mobileText('Optional notes'),
                     prefixIcon: Icons.notes_rounded,
                     maxLines: 3,
                   ),
@@ -554,23 +580,29 @@ class _DocumentSheetState extends ConsumerState<_DocumentSheet> {
               children: [
                 Expanded(
                   child: OpenVtsButton(
-                    label: 'Cancel',
+                    label: context.mobileText('Cancel'),
                     height: 40,
                     variant: OpenVtsButtonVariant.secondary,
-                    onPressed:
-                        isSubmitting ? null : () => Navigator.of(context).pop(),
+                    onPressed: isSubmitting
+                        ? null
+                        : () => Navigator.of(context).pop(),
                   ),
                 ),
                 const SizedBox(width: OpenVtsSpacing.sm),
                 Expanded(
-                  child: OpenVtsButton(
-                    label: _isEdit ? 'Save' : 'Upload',
-                    height: 40,
-                    isLoading: isSubmitting,
-                    trailingIcon: _isEdit
-                        ? Icons.check_rounded
-                        : Icons.upload_file_rounded,
-                    onPressed: isSubmitting ? null : _submit,
+                  child: AdminActionGate(
+                    capability: 'users.update',
+                    child: OpenVtsButton(
+                      label: _isEdit
+                          ? context.mobileText('Save')
+                          : context.mobileText('Upload'),
+                      height: 40,
+                      isLoading: isSubmitting,
+                      trailingIcon: _isEdit
+                          ? Icons.check_rounded
+                          : Icons.upload_file_rounded,
+                      onPressed: isSubmitting ? null : _submit,
+                    ),
                   ),
                 ),
               ],
@@ -599,17 +631,24 @@ class _DocumentSheetState extends ConsumerState<_DocumentSheet> {
       final file = result.files.first;
       final extension = _extensionFromName(file.name).toLowerCase();
       if (_blockedDocumentExtensions.contains(extension)) {
-        ToastHelper.showError('This file type is not allowed.',
-            context: context);
+        ToastHelper.showError(
+          context.mobileText('This file type is not allowed.'),
+          context: context,
+        );
         return;
       }
       if (!_allowedDocumentExtensions.contains(extension)) {
-        ToastHelper.showError('Unsupported file type.', context: context);
+        ToastHelper.showError(
+          context.mobileText('Unsupported file type.'),
+          context: context,
+        );
         return;
       }
       if (file.size > _maxDocumentBytes) {
-        ToastHelper.showError('File must be 10MB or smaller.',
-            context: context);
+        ToastHelper.showError(
+          context.mobileText('File must be 10MB or smaller.'),
+          context: context,
+        );
         return;
       }
 
@@ -619,7 +658,10 @@ class _DocumentSheetState extends ConsumerState<_DocumentSheet> {
       });
     } catch (_) {
       if (mounted) {
-        ToastHelper.showError('Could not pick file.', context: context);
+        ToastHelper.showError(
+          context.mobileText('Could not pick file.'),
+          context: context,
+        );
       }
     } finally {
       if (mounted) {
@@ -677,7 +719,9 @@ class _DocumentSheetState extends ConsumerState<_DocumentSheet> {
 
     if (ok) {
       ToastHelper.showSuccess(
-        _isEdit ? 'Document updated.' : 'Document uploaded.',
+        _isEdit
+            ? context.mobileText('Document updated.')
+            : context.mobileText('Document uploaded.'),
         context: context,
       );
       Navigator.of(context).pop();
@@ -712,14 +756,22 @@ class _DocumentTypeField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Document type', style: OpenVtsTypography.label),
+        Text(
+          context.mobileText('Document type'),
+          style: OpenVtsTypography.label,
+        ),
         const SizedBox(height: OpenVtsSpacing.xs),
         DropdownButtonFormField<String>(
           initialValue: hasValue ? value : null,
           isExpanded: true,
-          hint: Text(isLoading ? 'Loading user types' : 'Select type'),
-          decoration:
-              const InputDecoration(prefixIcon: Icon(Icons.category_outlined)),
+          hint: Text(
+            isLoading
+                ? context.mobileText('Loading user types')
+                : context.mobileText('Select type'),
+          ),
+          decoration: const InputDecoration(
+            prefixIcon: Icon(Icons.category_outlined),
+          ),
           items: types
               .map(
                 (type) => DropdownMenuItem<String>(
@@ -732,12 +784,7 @@ class _DocumentTypeField extends StatelessWidget {
                 ),
               )
               .toList(growable: false),
-          validator: (value) {
-            if (value == null || value.trim().isEmpty) {
-              return 'Document type is required.';
-            }
-            return null;
-          },
+          validator: context.localizedValidator((value) {if (value == null || value.trim().isEmpty) {return 'Document type is required.';} return null;}),
           onChanged: isLoading ? null : onChanged,
         ),
       ],
@@ -766,7 +813,7 @@ class _FilePickerField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('File', style: OpenVtsTypography.label),
+        Text(context.mobileText('File'), style: OpenVtsTypography.label),
         const SizedBox(height: OpenVtsSpacing.xs),
         Container(
           padding: const EdgeInsets.all(OpenVtsSpacing.sm),
@@ -789,7 +836,9 @@ class _FilePickerField extends StatelessWidget {
               const SizedBox(width: OpenVtsSpacing.xs),
               Expanded(
                 child: Text(
-                  currentName.isEmpty ? 'Choose a file' : currentName,
+                  currentName.isEmpty
+                      ? context.mobileText('Choose a file')
+                      : currentName,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: OpenVtsTypography.meta.copyWith(
@@ -814,7 +863,9 @@ class _FilePickerField extends StatelessWidget {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : Text(
-                        currentName.isEmpty ? 'Browse' : 'Replace',
+                        currentName.isEmpty
+                            ? context.mobileText('Browse')
+                            : context.mobileText('Replace'),
                         style: OpenVtsTypography.meta.copyWith(
                           fontWeight: FontWeight.w800,
                         ),
@@ -826,7 +877,7 @@ class _FilePickerField extends StatelessWidget {
         if (showError) ...[
           const SizedBox(height: 4),
           Text(
-            'File is required.',
+            context.mobileText('File is required.'),
             style: OpenVtsTypography.meta.copyWith(color: OpenVtsColors.error),
           ),
         ],
@@ -851,7 +902,7 @@ class _ExpiryField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Expiry date', style: OpenVtsTypography.label),
+        Text(context.mobileText('Expiry date'), style: OpenVtsTypography.label),
         const SizedBox(height: OpenVtsSpacing.xs),
         InkWell(
           borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
@@ -865,7 +916,8 @@ class _ExpiryField extends StatelessWidget {
               color: Theme.of(context).colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
               border: Border.all(
-                  color: Theme.of(context).colorScheme.outlineVariant),
+                color: Theme.of(context).colorScheme.outlineVariant,
+              ),
             ),
             child: Row(
               children: [
@@ -877,7 +929,9 @@ class _ExpiryField extends StatelessWidget {
                 const SizedBox(width: OpenVtsSpacing.xs),
                 Expanded(
                   child: Text(
-                    value == null ? 'No expiry' : _dateText(value),
+                    value == null
+                        ? context.mobileText('No expiry')
+                        : _dateText(value),
                     style: OpenVtsTypography.meta.copyWith(
                       color: value == null
                           ? Theme.of(context).colorScheme.onSurfaceVariant
@@ -888,7 +942,7 @@ class _ExpiryField extends StatelessWidget {
                 ),
                 if (value != null)
                   IconButton(
-                    tooltip: 'Clear expiry',
+                    tooltip: context.mobileText('Clear expiry'),
                     onPressed: onClear,
                     icon: const Icon(Icons.close_rounded, size: 17),
                     style: IconButton.styleFrom(
@@ -943,13 +997,15 @@ class _VisibilityToggle extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Visible to user',
+                  context.mobileText('Visible to user'),
                   style: OpenVtsTypography.label.copyWith(
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 Text(
-                  value ? 'Shown in user documents' : 'Hidden from user',
+                  value
+                      ? context.mobileText('Shown in user documents')
+                      : context.mobileText('Hidden from user'),
                   style: OpenVtsTypography.meta.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
@@ -1003,8 +1059,11 @@ class _InfoLine extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon,
-            size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
+        Icon(
+          icon,
+          size: 14,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
         const SizedBox(width: OpenVtsSpacing.xs),
         Expanded(
           child: Text(
@@ -1023,19 +1082,14 @@ class _InfoLine extends StatelessWidget {
 }
 
 class _MetaPill extends StatelessWidget {
-  const _MetaPill({
-    required this.icon,
-    required this.label,
-    this.color,
-  });
+  const _MetaPill({required this.icon, required this.label});
 
   final IconData icon;
   final String label;
-  final Color? color;
 
   @override
   Widget build(BuildContext context) {
-    final pillColor = color ?? Theme.of(context).colorScheme.onSurfaceVariant;
+    final pillColor = Theme.of(context).colorScheme.onSurfaceVariant;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
@@ -1089,7 +1143,9 @@ class _VisibilityPill extends StatelessWidget {
           ),
           const SizedBox(width: 4),
           Text(
-            isVisible ? 'Visible' : 'Hidden',
+            isVisible
+                ? context.mobileText('Visible')
+                : context.mobileText('Hidden'),
             style: OpenVtsTypography.meta.copyWith(
               color: pillColor,
               fontSize: 11,
@@ -1191,7 +1247,9 @@ class _SectionLoader extends StatelessWidget {
           ),
           const SizedBox(width: OpenVtsSpacing.sm),
           Text(
-            'Loading $title',
+            context.mobileText("Loading {value1}", {
+              'value1': (title).toString(),
+            }),
             style: OpenVtsTypography.label.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
               fontWeight: FontWeight.w700,
@@ -1226,7 +1284,7 @@ class _SectionErrorCard extends StatelessWidget {
               const SizedBox(width: OpenVtsSpacing.xs),
               Expanded(
                 child: Text(
-                  'Unable to load documents',
+                  context.mobileText('Unable to load documents'),
                   style: OpenVtsTypography.label.copyWith(
                     color: Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.w800,
@@ -1244,7 +1302,7 @@ class _SectionErrorCard extends StatelessWidget {
           ),
           const SizedBox(height: OpenVtsSpacing.sm),
           OpenVtsButton(
-            label: 'Retry',
+            label: context.mobileText('Retry'),
             height: 34,
             variant: OpenVtsButtonVariant.secondary,
             onPressed: onRetry,

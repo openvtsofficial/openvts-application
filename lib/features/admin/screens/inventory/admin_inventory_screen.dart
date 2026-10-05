@@ -5,6 +5,7 @@ import '../../../../core/theme/open_vts_colors.dart';
 import '../../../../core/theme/open_vts_radius.dart';
 import '../../../../core/theme/open_vts_spacing.dart';
 import '../../../../core/theme/open_vts_typography.dart';
+import '../../../../shared/helpers/mobile_text.dart';
 import '../../../../shared/widgets/open_vts_bottom_sheet.dart';
 import '../../../../shared/widgets/open_vts_empty_state.dart';
 import '../../../../shared/widgets/open_vts_error_view.dart';
@@ -15,6 +16,7 @@ import '../../controllers/admin_inventory_controller.dart';
 import '../../controllers/admin_providers.dart';
 import '../../models/admin_inventory_model.dart';
 import '../../models/admin_inventory_state.dart';
+import '../../widgets/admin_action_gate.dart';
 import 'widgets/admin_inventory_add_sheet.dart';
 import 'widgets/admin_inventory_device_card.dart';
 import 'widgets/admin_inventory_edit_device_sheet.dart';
@@ -33,19 +35,22 @@ class AdminInventoryScreen extends ConsumerWidget {
     final isInitialLoading = isDevices
         ? state.isLoadingDevices && state.devices.isEmpty
         : state.isLoadingSimCards && state.simCards.isEmpty;
-    final hasData =
-        isDevices ? state.devices.isNotEmpty : state.simCards.isNotEmpty;
-    final errorMessage =
-        isDevices ? state.devicesErrorMessage : state.simCardsErrorMessage;
-    final isRefreshing =
-        isDevices ? state.isRefreshingDevices : state.isRefreshingSimCards;
+    final hasData = isDevices
+        ? state.devices.isNotEmpty
+        : state.simCards.isNotEmpty;
+    final errorMessage = isDevices
+        ? state.devicesErrorMessage
+        : state.simCardsErrorMessage;
+    final isRefreshing = isDevices
+        ? state.isRefreshingDevices
+        : state.isRefreshingSimCards;
 
     return OpenVtsPageScaffold(
-      title: 'Inventory',
+      title: context.mobileText('Inventory'),
       headerMode: OpenVtsPageHeaderMode.closeable,
       actions: [
         IconButton(
-          tooltip: 'Refresh inventory',
+          tooltip: context.mobileText('Refresh inventory'),
           onPressed: controller.refreshCurrentTab,
           icon: isRefreshing
               ? const SizedBox.square(
@@ -64,29 +69,28 @@ class AdminInventoryScreen extends ConsumerWidget {
       body: isInitialLoading
           ? const OpenVtsLoader()
           : errorMessage != null && !hasData
-              ? OpenVtsErrorView(
-                  message: errorMessage,
-                  onRetry: isDevices
-                      ? controller.loadDevices
-                      : controller.loadSimCards,
-                )
-              : _InventoryBody(
-                  state: state,
-                  controller: controller,
-                  onAdd: () => _showAddSheet(context),
-                  onOpenFilters: () => _showFilterSheet(context, ref),
-                  onOpenSort: () => _showSortSheet(context, ref),
-                  onEditDevice: (device) =>
-                      _showEditDeviceSheet(context, device),
-                  onEditSim: (sim) => _showEditSimSheet(context, sim),
-                ),
+          ? OpenVtsErrorView(
+              message: errorMessage,
+              onRetry: isDevices
+                  ? controller.loadDevices
+                  : controller.loadSimCards,
+            )
+          : _InventoryBody(
+              state: state,
+              controller: controller,
+              onAdd: () => _showAddSheet(context),
+              onOpenFilters: () => _showFilterSheet(context, ref),
+              onOpenSort: () => _showSortSheet(context, ref),
+              onEditDevice: (device) => _showEditDeviceSheet(context, device),
+              onEditSim: (sim) => _showEditSimSheet(context, sim),
+            ),
     );
   }
 
   Future<void> _showAddSheet(BuildContext context) {
     return OpenVtsBottomSheet.show<void>(
       context: context,
-      title: 'Add Inventory',
+      title: context.mobileText('Add Inventory'),
       initialChildSize: 0.9,
       minChildSize: 0.5,
       maxChildSize: 0.96,
@@ -100,7 +104,7 @@ class AdminInventoryScreen extends ConsumerWidget {
   ) {
     return OpenVtsBottomSheet.show<void>(
       context: context,
-      title: 'Edit Device',
+      title: context.mobileText('Edit Device'),
       initialChildSize: 0.85,
       minChildSize: 0.45,
       maxChildSize: 0.96,
@@ -114,7 +118,7 @@ class AdminInventoryScreen extends ConsumerWidget {
   ) {
     return OpenVtsBottomSheet.show<void>(
       context: context,
-      title: 'Edit SIM',
+      title: context.mobileText('Edit SIM'),
       initialChildSize: 0.85,
       minChildSize: 0.45,
       maxChildSize: 0.96,
@@ -122,10 +126,7 @@ class AdminInventoryScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _showFilterSheet(
-    BuildContext context,
-    WidgetRef ref,
-  ) async {
+  Future<void> _showFilterSheet(BuildContext context, WidgetRef ref) async {
     final controller = ref.read(adminInventoryControllerProvider.notifier);
     final state = ref.read(adminInventoryControllerProvider);
 
@@ -147,10 +148,10 @@ class AdminInventoryScreen extends ConsumerWidget {
           return StatefulBuilder(
             builder: (context, setSheetState) {
               return OpenVtsListPageOptionsSheet(
-                title: 'Filter devices',
+                title: context.mobileText('Filter devices'),
                 sections: [
                   OpenVtsListPageOptionsSection(
-                    label: 'Inventory status',
+                    label: context.mobileText('Inventory status'),
                     child: Wrap(
                       spacing: OpenVtsSpacing.xs,
                       runSpacing: OpenVtsSpacing.xs,
@@ -167,7 +168,7 @@ class AdminInventoryScreen extends ConsumerWidget {
                     ),
                   ),
                   OpenVtsListPageOptionsSection(
-                    label: 'Active status',
+                    label: context.mobileText('Active status'),
                     child: Wrap(
                       spacing: OpenVtsSpacing.xs,
                       runSpacing: OpenVtsSpacing.xs,
@@ -212,8 +213,7 @@ class AdminInventoryScreen extends ConsumerWidget {
       for (final item in state.simCards)
         if (item.provider.trim().isNotEmpty && item.provider.trim() != '-')
           item.provider.trim(),
-    }.toList()
-      ..sort();
+    }.toList()..sort();
 
     await showModalBottomSheet<void>(
       context: context,
@@ -229,10 +229,10 @@ class AdminInventoryScreen extends ConsumerWidget {
         return StatefulBuilder(
           builder: (context, setSheetState) {
             return OpenVtsListPageOptionsSheet(
-              title: 'Filter SIM cards',
+              title: context.mobileText('Filter SIM cards'),
               sections: [
                 OpenVtsListPageOptionsSection(
-                  label: 'SIM status',
+                  label: context.mobileText('SIM status'),
                   child: Wrap(
                     spacing: OpenVtsSpacing.xs,
                     runSpacing: OpenVtsSpacing.xs,
@@ -249,7 +249,7 @@ class AdminInventoryScreen extends ConsumerWidget {
                   ),
                 ),
                 OpenVtsListPageOptionsSection(
-                  label: 'Active status',
+                  label: context.mobileText('Active status'),
                   child: Wrap(
                     spacing: OpenVtsSpacing.xs,
                     runSpacing: OpenVtsSpacing.xs,
@@ -267,13 +267,13 @@ class AdminInventoryScreen extends ConsumerWidget {
                 ),
                 if (providers.isNotEmpty)
                   OpenVtsListPageOptionsSection(
-                    label: 'Provider',
+                    label: context.mobileText('Provider'),
                     child: Wrap(
                       spacing: OpenVtsSpacing.xs,
                       runSpacing: OpenVtsSpacing.xs,
                       children: [
                         OpenVtsListPageChoiceChip(
-                          label: 'All Providers',
+                          label: context.mobileText('All Providers'),
                           selected: provider == null,
                           onSelected: () =>
                               setSheetState(() => provider = null),
@@ -328,10 +328,10 @@ class AdminInventoryScreen extends ConsumerWidget {
         ),
         builder: (sheetContext) {
           return OpenVtsListPageOptionsSheet(
-            title: 'Sort devices',
+            title: context.mobileText('Sort devices'),
             sections: [
               OpenVtsListPageOptionsSection(
-                label: 'Order by',
+                label: context.mobileText('Order by'),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: AdminInventoryDeviceSortOption.values
@@ -375,10 +375,10 @@ class AdminInventoryScreen extends ConsumerWidget {
       ),
       builder: (sheetContext) {
         return OpenVtsListPageOptionsSheet(
-          title: 'Sort SIM cards',
+          title: context.mobileText('Sort SIM cards'),
           sections: [
             OpenVtsListPageOptionsSection(
-              label: 'Order by',
+              label: context.mobileText('Order by'),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: AdminInventorySimSortOption.values
@@ -410,7 +410,7 @@ class AdminInventoryScreen extends ConsumerWidget {
   }
 }
 
-class _InventoryBody extends StatelessWidget {
+class _InventoryBody extends ConsumerWidget {
   const _InventoryBody({
     required this.state,
     required this.controller,
@@ -430,24 +430,33 @@ class _InventoryBody extends StatelessWidget {
   final ValueChanged<AdminInventorySimCard> onEditSim;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final isDevices = state.selectedTab == AdminInventoryTab.devices;
-    final filteredCount =
-        isDevices ? state.deviceFilteredCount : state.simFilteredCount;
+    final filteredCount = isDevices
+        ? state.deviceFilteredCount
+        : state.simFilteredCount;
     final visible = isDevices ? state.visibleDevices : state.visibleSimCards;
-    final searchQuery =
-        isDevices ? state.deviceSearchQuery : state.simSearchQuery;
-    final recordsPerPage =
-        isDevices ? state.deviceRecordsPerPage : state.simRecordsPerPage;
+    final searchQuery = isDevices
+        ? state.deviceSearchQuery
+        : state.simSearchQuery;
+    final recordsPerPage = isDevices
+        ? state.deviceRecordsPerPage
+        : state.simRecordsPerPage;
     final hasActiveFilters = isDevices
         ? _deviceHasActiveFilters(state)
         : _simHasActiveFilters(state);
-    final errorMessage =
-        isDevices ? state.devicesErrorMessage : state.simCardsErrorMessage;
+    final errorMessage = isDevices
+        ? state.devicesErrorMessage
+        : state.simCardsErrorMessage;
 
     return Column(
       children: [
         OpenVtsListPageHeaderCard(
+          showCreate: adminCanPerform(
+            ref,
+            'inventory.update',
+            scopes: const {'OWN', 'TENANT'},
+          ),
           icon: Icons.inventory_2_outlined,
           countLabel: isDevices
               ? '$filteredCount Device${filteredCount == 1 ? '' : 's'}'
@@ -464,8 +473,8 @@ class _InventoryBody extends StatelessWidget {
         OpenVtsListPageToolbar(
           searchQuery: searchQuery,
           hintText: isDevices
-              ? 'Search IMEI, device type, SIM number\u2026'
-              : 'Search SIM, IMSI, ICCID, provider\u2026',
+              ? context.mobileText('Search IMEI, device type, SIM number\u2026')
+              : context.mobileText('Search SIM, IMSI, ICCID, provider\u2026'),
           hasActiveFilters: hasActiveFilters,
           onSearchChanged: (value) {
             if (isDevices) {
@@ -501,11 +510,15 @@ class _InventoryBody extends StatelessWidget {
                       const SizedBox(height: OpenVtsSpacing.section),
                       OpenVtsEmptyState(
                         title: isDevices
-                            ? 'No devices found'
-                            : 'No SIM cards found',
+                            ? context.mobileText('No devices found')
+                            : context.mobileText('No SIM cards found'),
                         message: hasActiveFilters
-                            ? 'Try a different search or filter.'
-                            : 'Add inventory to get started.',
+                            ? context.mobileText(
+                                'Try a different search or filter.',
+                              )
+                            : context.mobileText(
+                                'Add inventory to get started.',
+                              ),
                       ),
                     ],
                   )
@@ -577,10 +590,7 @@ class _InventoryBody extends StatelessWidget {
 }
 
 class _InventoryTabs extends StatelessWidget {
-  const _InventoryTabs({
-    required this.selectedTab,
-    required this.onTap,
-  });
+  const _InventoryTabs({required this.selectedTab, required this.onTap});
 
   final String selectedTab;
   final ValueChanged<String> onTap;
@@ -662,9 +672,9 @@ class _InlineErrorBanner extends StatelessWidget {
           Expanded(
             child: Text(
               message,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: OpenVtsColors.error,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: OpenVtsColors.error),
             ),
           ),
         ],

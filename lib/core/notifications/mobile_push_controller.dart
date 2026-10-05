@@ -149,14 +149,7 @@ class MobilePushController extends StateNotifier<MobilePushState> {
 
     return OpenVtsPerf.traceAsync(
       'push.registerToken',
-      () async {
-        try {
-          return await _registerTokenForCurrentSession();
-        } catch (error) {
-          await _rememberError(_safeError(error));
-          return false;
-        }
-      },
+      _registerTokenForCurrentSession,
     );
   }
 
@@ -225,10 +218,6 @@ class MobilePushController extends StateNotifier<MobilePushState> {
       final settings = await _service.getNotificationSettings();
       if (settings != null) {
         _applyPermissionSettings(settings);
-        if (!_isGranted(settings.authorizationStatus)) {
-          await _service.deregisterToken();
-          _syncCachedState();
-        }
       }
     } catch (error) {
       await _rememberError(_safeError(error));
@@ -321,7 +310,7 @@ class MobilePushController extends StateNotifier<MobilePushState> {
       if (token == null || token.isEmpty) {
         _syncCachedState();
         await _rememberTestFailure(
-          'Notifications are not ready yet. Please try again in a moment.',
+          'Unable to generate FCM token for this device.',
         );
         return null;
       }
@@ -457,7 +446,7 @@ class MobilePushController extends StateNotifier<MobilePushState> {
     String? token,
     bool force = false,
   }) async {
-    if (!_canUsePush || !_authAllowsRegistration) {
+    if (!_canUsePush) {
       _syncCachedState(fcmToken: token);
       return false;
     }
@@ -472,19 +461,10 @@ class MobilePushController extends StateNotifier<MobilePushState> {
       return false;
     }
 
-    // Permission may have changed in iOS Settings since the cached state.
-    final settings = await _service.getNotificationSettings();
-    if (settings == null) return false;
-    _applyPermissionSettings(settings);
-    if (!_isGranted(settings.authorizationStatus)) {
-      await _service.deregisterToken();
-      _syncCachedState();
-      return false;
-    }
-
     final tokenToRegister = _firstNonEmpty([
       token,
       await _service.getCurrentToken(),
+      _localCache.getString(StorageKeys.mobilePushFcmToken),
     ]);
     if (tokenToRegister == null) {
       _syncCachedState();

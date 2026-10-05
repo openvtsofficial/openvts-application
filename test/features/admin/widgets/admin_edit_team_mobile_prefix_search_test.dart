@@ -49,15 +49,12 @@ void main() {
     await tester.pump();
 
     final result = find.descendant(
-      of: find.byType(ListView),
+      of: find.byType(SliverList),
       matching: find.text('+44'),
     );
     expect(result, findsOneWidget);
     expect(
-      find.descendant(
-        of: find.byType(ListView),
-        matching: find.text('+91'),
-      ),
+      find.descendant(of: find.byType(SliverList), matching: find.text('+91')),
       findsNothing,
     );
 

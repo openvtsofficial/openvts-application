@@ -4,6 +4,7 @@ import '../../core/theme/open_vts_colors.dart';
 import '../../core/theme/open_vts_radius.dart';
 import '../../core/theme/open_vts_spacing.dart';
 import '../../core/theme/open_vts_typography.dart';
+import '../../shared/helpers/mobile_text.dart';
 import 'open_vts_button.dart';
 
 const List<int> openVtsListPageRecordsOptions = <int>[10, 25, 50, 100];
@@ -16,6 +17,7 @@ class OpenVtsListPageHeaderCard extends StatelessWidget {
     required this.createLabel,
     required this.onCreate,
     this.isCreateLoading = false,
+    this.showCreate = true,
     this.footer,
   });
 
@@ -24,6 +26,7 @@ class OpenVtsListPageHeaderCard extends StatelessWidget {
   final String createLabel;
   final VoidCallback onCreate;
   final bool isCreateLoading;
+  final bool showCreate;
   final Widget? footer;
 
   @override
@@ -59,17 +62,18 @@ class OpenVtsListPageHeaderCard extends StatelessWidget {
                 child: Text(
                   countLabel,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: -0.2,
-                      ),
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.2,
+                  ),
                 ),
               ),
               const SizedBox(width: OpenVtsSpacing.sm),
-              OpenVtsListPageCreateButton(
-                label: createLabel,
-                onPressed: onCreate,
-                isLoading: isCreateLoading,
-              ),
+              if (showCreate)
+                OpenVtsListPageCreateButton(
+                  label: createLabel,
+                  onPressed: onCreate,
+                  isLoading: isCreateLoading,
+                ),
             ],
           ),
           if (footer != null) ...[
@@ -97,10 +101,12 @@ class OpenVtsListPageCreateButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final backgroundColor =
-        isDark ? OpenVtsColors.white : OpenVtsColors.brandInk;
-    final foregroundColor =
-        isDark ? OpenVtsColors.brandInk : OpenVtsColors.white;
+    final backgroundColor = isDark
+        ? OpenVtsColors.white
+        : OpenVtsColors.brandInk;
+    final foregroundColor = isDark
+        ? OpenVtsColors.brandInk
+        : OpenVtsColors.white;
     final borderColor = isDark ? OpenVtsColors.white : OpenVtsColors.brandInk;
 
     return ElevatedButton.icon(
@@ -321,11 +327,7 @@ class OpenVtsListPageSearchInput extends StatelessWidget {
                   start: OpenVtsSpacing.sm,
                   end: OpenVtsSpacing.xs,
                 ),
-                child: Icon(
-                  Icons.search_rounded,
-                  size: 18,
-                  color: iconColor,
-                ),
+                child: Icon(Icons.search_rounded, size: 18, color: iconColor),
               ),
               prefixIconConstraints: const BoxConstraints(
                 minWidth: 0,
@@ -338,7 +340,7 @@ class OpenVtsListPageSearchInput extends StatelessWidget {
                         end: OpenVtsSpacing.xxs,
                       ),
                       child: IconButton(
-                        tooltip: 'Clear search',
+                        tooltip: context.mobileText('Clear search'),
                         onPressed: () {
                           controller.clear();
                           onChanged('');
@@ -469,8 +471,9 @@ class OpenVtsListPageRecordsDropdown extends StatelessWidget {
       decoration: BoxDecoration(
         color: OpenVtsListPageTheme.softSurfaceColor(context),
         borderRadius: BorderRadius.circular(OpenVtsRadius.md),
-        border:
-            Border.all(color: OpenVtsListPageTheme.softBorderColor(context)),
+        border: Border.all(
+          color: OpenVtsListPageTheme.softBorderColor(context),
+        ),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<int>(
@@ -537,7 +540,10 @@ class OpenVtsListPagePaginationFooter extends StatelessWidget {
       child: Column(
         children: [
           Text(
-            'Showing $showingCount of $totalCount',
+            context.mobileText("Showing {value1} of {value2}", {
+              'value1': (showingCount).toString(),
+              'value2': (totalCount).toString(),
+            }),
             style: OpenVtsTypography.meta.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
@@ -556,7 +562,10 @@ class OpenVtsListPagePaginationFooter extends StatelessWidget {
                     horizontal: OpenVtsSpacing.sm,
                   ),
                   child: Text(
-                    'Page $currentPage of $pageCount',
+                    context.mobileText("Page {value1} of {value2}", {
+                      'value1': (currentPage).toString(),
+                      'value2': (pageCount).toString(),
+                    }),
                     style: OpenVtsTypography.label.copyWith(
                       fontWeight: FontWeight.w600,
                       color: Theme.of(context).colorScheme.onSurface,
@@ -592,8 +601,9 @@ class OpenVtsListPagePageButton extends StatelessWidget {
     return Material(
       color: enabled
           ? OpenVtsListPageTheme.softSurfaceColor(context)
-          : OpenVtsListPageTheme.softSurfaceColor(context)
-              .withValues(alpha: 0.6),
+          : OpenVtsListPageTheme.softSurfaceColor(
+              context,
+            ).withValues(alpha: 0.6),
       borderRadius: BorderRadius.circular(OpenVtsRadius.md),
       child: InkWell(
         onTap: onPressed,
@@ -613,10 +623,9 @@ class OpenVtsListPagePageButton extends StatelessWidget {
             size: 18,
             color: enabled
                 ? OpenVtsListPageTheme.primaryInkColor(context)
-                : Theme.of(context)
-                    .colorScheme
-                    .onSurfaceVariant
-                    .withValues(alpha: 0.6),
+                : Theme.of(
+                    context,
+                  ).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
           ),
         ),
       ),
@@ -673,14 +682,14 @@ class OpenVtsListPageOptionsSheet extends StatelessWidget {
                   child: Text(
                     title,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
                 IconButton(
                   onPressed: () => Navigator.of(context).maybePop(),
                   icon: const Icon(Icons.close_rounded, size: 20),
-                  tooltip: 'Close',
+                  tooltip: context.mobileText('Close'),
                 ),
               ],
             ),
@@ -756,10 +765,12 @@ class OpenVtsListPageChoiceChip extends StatelessWidget {
     final backgroundColor = selected
         ? (isDark ? OpenVtsColors.darkSurface : OpenVtsColors.surfaceElevated)
         : Colors.transparent;
-    final textColor =
-        isDark ? OpenVtsColors.darkTextPrimary : OpenVtsColors.textPrimary;
-    final borderColor =
-        isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border;
+    final textColor = isDark
+        ? OpenVtsColors.darkTextPrimary
+        : OpenVtsColors.textPrimary;
+    final borderColor = isDark
+        ? OpenVtsColors.darkBorder
+        : OpenVtsColors.border;
 
     return Material(
       color: backgroundColor,
@@ -858,8 +869,9 @@ class OpenVtsListPageRoundedSurface extends StatelessWidget {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(OpenVtsRadius.lg),
-        border:
-            Border.all(color: OpenVtsListPageTheme.softBorderColor(context)),
+        border: Border.all(
+          color: OpenVtsListPageTheme.softBorderColor(context),
+        ),
       ),
       child: child,
     );

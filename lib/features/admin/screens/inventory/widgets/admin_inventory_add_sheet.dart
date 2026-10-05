@@ -5,6 +5,7 @@ import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../core/utils/validators.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../shared/widgets/open_vts_text_field.dart';
@@ -96,34 +97,37 @@ class _AdminInventoryAddSheetState
                         key: ValueKey(
                           'device-type-$_referenceGeneration-$_deviceTypeId',
                         ),
-                        label: 'Device Type',
+                        label: context.mobileText('Device Type'),
                         hintText: _loadingRefs
-                            ? 'Loading device types...'
-                            : 'Select device type',
-                        searchHint: 'Search device type…',
+                            ? context.mobileText('Loading device types...')
+                            : context.mobileText('Select device type'),
+                        searchHint: context.mobileText('Search device type…'),
                         initialValue: _deviceTypeId,
                         items: _deviceTypes
-                            .map((item) => SearchableDropdownItem<String>(
-                                  value: item.id,
-                                  label: item.name,
-                                ))
+                            .map(
+                              (item) => SearchableDropdownItem<String>(
+                                value: item.id,
+                                label: item.name,
+                              ),
+                            )
                             .toList(growable: false),
-                        enabled: !isSubmitting &&
+                        enabled:
+                            !isSubmitting &&
                             !_loadingRefs &&
                             _referenceError == null &&
                             _deviceTypes.isNotEmpty,
                         validator: _mode == AdminInventoryAddMode.sim
                             ? null
                             : (value) => (value == null || value.isEmpty)
-                                ? 'Device type is required'
-                                : null,
+                                  ? 'Device type is required'
+                                  : null,
                         onChanged: (v) => setState(() => _deviceTypeId = v),
                       ),
                       const SizedBox(height: OpenVtsSpacing.sm),
                     ],
                     if (_mode != AdminInventoryAddMode.device) ...[
                       OpenVtsTextField(
-                        label: 'SIM Number',
+                        label: context.mobileText('SIM Number'),
                         controller: _simNumberController,
                         keyboardType: TextInputType.number,
                         validator: (v) {
@@ -135,14 +139,14 @@ class _AdminInventoryAddSheetState
                       ),
                       const SizedBox(height: OpenVtsSpacing.sm),
                       OpenVtsTextField(
-                        label: 'IMSI (optional)',
+                        label: context.mobileText('IMSI (optional)'),
                         controller: _imsiController,
                         keyboardType: TextInputType.number,
                         validator: _validateImsi,
                       ),
                       const SizedBox(height: OpenVtsSpacing.sm),
                       OpenVtsTextField(
-                        label: 'ICCID (optional)',
+                        label: context.mobileText('ICCID (optional)'),
                         controller: _iccidController,
                         keyboardType: TextInputType.number,
                         validator: _validateIccid,
@@ -152,20 +156,24 @@ class _AdminInventoryAddSheetState
                         key: ValueKey(
                           'sim-provider-$_referenceGeneration-$_providerId',
                         ),
-                        label: 'SIM Provider (optional)',
-                        hintText: 'Select provider',
-                        searchHint: 'Search provider…',
+                        label: context.mobileText('SIM Provider (optional)'),
+                        hintText: context.mobileText('Select provider'),
+                        searchHint: context.mobileText('Search provider…'),
                         initialValue: _providerId,
                         items: [
-                          const SearchableDropdownItem<String>(
-                              value: '', label: 'No Provider'),
-                          ..._providers
-                              .map((item) => SearchableDropdownItem<String>(
-                                    value: item.id,
-                                    label: item.name,
-                                  )),
+                          SearchableDropdownItem<String>(
+                            value: '',
+                            label: context.mobileText('No Provider'),
+                          ),
+                          ..._providers.map(
+                            (item) => SearchableDropdownItem<String>(
+                              value: item.id,
+                              label: item.name,
+                            ),
+                          ),
                         ],
-                        enabled: !isSubmitting &&
+                        enabled:
+                            !isSubmitting &&
                             !_loadingRefs &&
                             _referenceError == null,
                         onChanged: (v) => setState(() => _providerId = v),
@@ -185,7 +193,7 @@ class _AdminInventoryAddSheetState
                 children: [
                   Expanded(
                     child: OpenVtsButton(
-                      label: 'Cancel',
+                      label: context.mobileText('Cancel'),
                       variant: OpenVtsButtonVariant.secondary,
                       onPressed: isSubmitting
                           ? null
@@ -195,7 +203,7 @@ class _AdminInventoryAddSheetState
                   const SizedBox(width: OpenVtsSpacing.sm),
                   Expanded(
                     child: OpenVtsButton(
-                      label: 'Save',
+                      label: context.mobileText('Save'),
                       isLoading: isSubmitting,
                       onPressed: isSubmitting ? null : _submit,
                     ),
@@ -216,7 +224,7 @@ class _AdminInventoryAddSheetState
         children: [
           Expanded(
             child: _ModeChip(
-              label: 'Device Only',
+              label: context.mobileText('Device Only'),
               isSelected: _mode == AdminInventoryAddMode.device,
               onTap: () => setState(() => _mode = AdminInventoryAddMode.device),
             ),
@@ -224,7 +232,7 @@ class _AdminInventoryAddSheetState
           const SizedBox(width: OpenVtsSpacing.xs),
           Expanded(
             child: _ModeChip(
-              label: 'SIM Only',
+              label: context.mobileText('SIM Only'),
               isSelected: _mode == AdminInventoryAddMode.sim,
               onTap: () => setState(() => _mode = AdminInventoryAddMode.sim),
             ),
@@ -232,7 +240,7 @@ class _AdminInventoryAddSheetState
           const SizedBox(width: OpenVtsSpacing.xs),
           Expanded(
             child: _ModeChip(
-              label: 'Device + SIM',
+              label: context.mobileText('Device + SIM'),
               isSelected: _mode == AdminInventoryAddMode.both,
               onTap: () => setState(() => _mode = AdminInventoryAddMode.both),
             ),
@@ -318,14 +326,20 @@ class _AdminInventoryAddSheetState
     }
     if (success) {
       Navigator.of(context).pop(result);
-      ToastHelper.showSuccess('Inventory item created.', context: context);
+      ToastHelper.showSuccess(
+        context.mobileText('Inventory item created.'),
+        context: context,
+      );
       return;
     }
 
-    final message =
-        ref.read(adminInventoryControllerProvider).createErrorMessage;
-    ToastHelper.showError(message ?? 'Unable to create inventory item.',
-        context: context);
+    final message = ref
+        .read(adminInventoryControllerProvider)
+        .createErrorMessage;
+    ToastHelper.showError(
+      message ?? 'Unable to create inventory item.',
+      context: context,
+    );
   }
 
   String? _validateImei(String? value) {
@@ -388,10 +402,12 @@ class _ModeChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bgColor = isSelected ? OpenVtsColors.brandInk : OpenVtsColors.white;
-    final fgColor =
-        isSelected ? OpenVtsColors.white : OpenVtsColors.textPrimary;
-    final borderColor =
-        isSelected ? OpenVtsColors.brandInk : OpenVtsColors.border;
+    final fgColor = isSelected
+        ? OpenVtsColors.white
+        : OpenVtsColors.textPrimary;
+    final borderColor = isSelected
+        ? OpenVtsColors.brandInk
+        : OpenVtsColors.border;
 
     return Material(
       color: bgColor,
@@ -423,25 +439,26 @@ class _ReferenceLoadingIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Row(
-      key: Key('inventory-reference-loading'),
+    return Row(
+      key: const Key('inventory-reference-loading'),
       children: [
-        SizedBox.square(
+        const SizedBox.square(
           dimension: 16,
           child: CircularProgressIndicator(strokeWidth: 2),
         ),
-        SizedBox(width: OpenVtsSpacing.xs),
-        Expanded(child: Text('Loading device types and providers...')),
+        const SizedBox(width: OpenVtsSpacing.xs),
+        Expanded(
+          child: Text(
+            context.mobileText('Loading device types and providers...'),
+          ),
+        ),
       ],
     );
   }
 }
 
 class _ReferenceLoadError extends StatelessWidget {
-  const _ReferenceLoadError({
-    required this.message,
-    required this.onRetry,
-  });
+  const _ReferenceLoadError({required this.message, required this.onRetry});
 
   final String message;
   final VoidCallback onRetry;
@@ -456,14 +473,12 @@ class _ReferenceLoadError extends StatelessWidget {
         Expanded(
           child: Text(
             message,
-            style: OpenVtsTypography.meta.copyWith(
-              color: OpenVtsColors.error,
-            ),
+            style: OpenVtsTypography.meta.copyWith(color: OpenVtsColors.error),
           ),
         ),
         TextButton(
           onPressed: onRetry,
-          child: const Text('Retry'),
+          child: Text(context.mobileText('Retry')),
         ),
       ],
     );

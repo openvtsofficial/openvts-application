@@ -53,17 +53,11 @@ void main() {
     final searchField = find.byType(TextField).last;
     await tester.enterText(searchField, '44');
     await tester.pump();
-    final results = find.byType(ListView);
-    final ukOption = find.descendant(
-      of: results,
-      matching: find.text('+44'),
-    );
+    final results = find.byType(SliverList);
+    final ukOption = find.descendant(of: results, matching: find.text('+44'));
     expect(ukOption, findsOneWidget);
     expect(
-      find.descendant(
-        of: results,
-        matching: find.text('United Kingdom GB'),
-      ),
+      find.descendant(of: results, matching: find.text('United Kingdom GB')),
       findsOneWidget,
     );
 

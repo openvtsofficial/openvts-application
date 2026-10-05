@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../shared/helpers/mobile_text.dart';
 import '../../../../shared/helpers/toast_helper.dart';
 import '../../../../shared/widgets/open_vts_page_scaffold.dart';
 import '../../../notifications/widgets/notification_center_view.dart';
@@ -15,7 +16,7 @@ class SuperadminNotificationsScreen extends ConsumerWidget {
     final controller = ref.read(superadminNotificationCenterProvider.notifier);
 
     return OpenVtsPageScaffold(
-      title: 'Notifications',
+      title: context.mobileText('Notifications'),
       headerMode: OpenVtsPageHeaderMode.closeable,
       body: NotificationCenterView(
         state: state,
@@ -31,11 +32,16 @@ class SuperadminNotificationsScreen extends ConsumerWidget {
               ),
             );
             await controller.markAllAsRead();
+            if (!context.mounted) return;
             if (unreadCount > 0) {
-              ToastHelper.showSuccess('All notifications marked as read.');
+              ToastHelper.showSuccess(
+                context.mobileText('All notifications marked as read.'),
+              );
             }
           } catch (_) {
-            final message = ref.read(
+            if (!context.mounted) return;
+            final message =
+                ref.read(
                   superadminNotificationCenterProvider.select(
                     (value) => value.errorMessage,
                   ),
@@ -48,7 +54,9 @@ class SuperadminNotificationsScreen extends ConsumerWidget {
           try {
             await controller.markAsRead(id);
           } catch (_) {
-            final message = ref.read(
+            if (!context.mounted) return;
+            final message =
+                ref.read(
                   superadminNotificationCenterProvider.select(
                     (value) => value.errorMessage,
                   ),

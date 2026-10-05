@@ -5,7 +5,9 @@ import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../core/utils/validators.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
+import '../../../../../shared/helpers/validation_localizations.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../../../shared/widgets/open_vts_searchable_dropdown.dart';
@@ -23,8 +25,11 @@ class UserVehicleEditSheet extends ConsumerStatefulWidget {
     super.key,
   });
 
-  final AutoDisposeStateNotifierProvider<UserVehicleDetailsController,
-      UserVehicleDetailsState> provider;
+  final AutoDisposeStateNotifierProvider<
+    UserVehicleDetailsController,
+    UserVehicleDetailsState
+  >
+  provider;
   final UserVehicleDetails vehicle;
 
   @override
@@ -92,9 +97,9 @@ class _UserVehicleEditSheetState extends ConsumerState<UserVehicleEditSheet> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   OpenVtsTextField(
-                    label: 'Name',
+                    label: context.mobileText('Name'),
                     controller: _nameController,
-                    hintText: 'Vehicle name',
+                    hintText: context.mobileText('Vehicle name'),
                     prefixIcon: Icons.directions_car_filled_outlined,
                     textInputAction: TextInputAction.next,
                     maxLength: Validators.maxVehicleNameLength,
@@ -102,9 +107,9 @@ class _UserVehicleEditSheetState extends ConsumerState<UserVehicleEditSheet> {
                   ),
                   const SizedBox(height: OpenVtsSpacing.sm),
                   OpenVtsTextField(
-                    label: 'Plate Number (optional)',
+                    label: context.mobileText('Plate Number (optional)'),
                     controller: _plateController,
-                    hintText: 'Plate number',
+                    hintText: context.mobileText('Plate number'),
                     prefixIcon: Icons.confirmation_number_outlined,
                     textInputAction: TextInputAction.next,
                     maxLength: Validators.maxPlateNumberLength,
@@ -112,7 +117,7 @@ class _UserVehicleEditSheetState extends ConsumerState<UserVehicleEditSheet> {
                   ),
                   const SizedBox(height: OpenVtsSpacing.sm),
                   OpenVtsTextField(
-                    label: 'VIN (optional)',
+                    label: context.mobileText('VIN (optional)'),
                     controller: _vinController,
                     hintText: 'VIN',
                     prefixIcon: Icons.tag_outlined,
@@ -156,17 +161,18 @@ class _UserVehicleEditSheetState extends ConsumerState<UserVehicleEditSheet> {
               children: [
                 Expanded(
                   child: OpenVtsButton(
-                    label: 'Cancel',
+                    label: context.mobileText('Cancel'),
                     height: 40,
                     variant: OpenVtsButtonVariant.secondary,
-                    onPressed:
-                        isSubmitting ? null : () => Navigator.of(context).pop(),
+                    onPressed: isSubmitting
+                        ? null
+                        : () => Navigator.of(context).pop(),
                   ),
                 ),
                 const SizedBox(width: OpenVtsSpacing.sm),
                 Expanded(
                   child: OpenVtsButton(
-                    label: 'Save',
+                    label: context.mobileText('Save'),
                     height: 40,
                     trailingIcon: Icons.check_rounded,
                     isLoading: isSubmitting,
@@ -212,12 +218,16 @@ class _UserVehicleEditSheetState extends ConsumerState<UserVehicleEditSheet> {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     final gmtOffset = _blankToNull(_gmtOffset);
     if (gmtOffset != null && !_gmtOffsetPattern.hasMatch(gmtOffset)) {
-      ToastHelper.showError('GMT offset must use +05:30 format.',
-          context: context);
+      ToastHelper.showError(
+        context.mobileText('GMT offset must use +05:30 format.'),
+        context: context,
+      );
       return;
     }
 
-    final ok = await ref.read(widget.provider.notifier).updateVehicle(
+    final ok = await ref
+        .read(widget.provider.notifier)
+        .updateVehicle(
           UserVehicleUpdateRequest(
             name: _nameController.text.trim(),
             plateNumber: _plateController.text.trim(),
@@ -230,7 +240,10 @@ class _UserVehicleEditSheetState extends ConsumerState<UserVehicleEditSheet> {
 
     if (!mounted) return;
     if (ok) {
-      ToastHelper.showSuccess('Vehicle updated.', context: context);
+      ToastHelper.showSuccess(
+        context.mobileText('Vehicle updated.'),
+        context: context,
+      );
       Navigator.of(context).pop();
       return;
     }
@@ -270,11 +283,13 @@ class _VehicleTypeField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return OpenVtsSearchableDropdown<String>(
-      label: 'Vehicle Type',
+      label: context.mobileText('Vehicle Type'),
       value: value,
       options: _buildOptions(),
       searchHintText: 'Search by name or ID',
-      hintText: isLoading ? 'Loading types…' : 'Select type',
+      hintText: isLoading
+          ? context.mobileText('Loading types…')
+          : context.mobileText('Select type'),
       enabled: !isLoading,
       onChanged: onChanged,
     );
@@ -287,11 +302,13 @@ class _VehicleTypeField extends StatelessWidget {
       final id = type.id.trim();
       if (id.isEmpty || !seen.add(id)) continue;
       final name = type.name.trim().isEmpty ? id : type.name.trim();
-      options.add(OpenVtsDropdownOption<String>(
-        value: id,
-        label: name,
-        searchText: '$name $id',
-      ));
+      options.add(
+        OpenVtsDropdownOption<String>(
+          value: id,
+          label: name,
+          searchText: '$name $id',
+        ),
+      );
     }
     final normalizedCurrent = _blankToNull(value);
     if (normalizedCurrent != null && seen.add(normalizedCurrent)) {
@@ -324,11 +341,13 @@ class _TimezoneField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return OpenVtsSearchableDropdown<String>(
-      label: 'GMT Offset',
+      label: context.mobileText('GMT Offset'),
       value: value,
       options: _buildOptions(),
       searchHintText: 'Search timezone',
-      hintText: isLoading ? 'Loading timezones…' : 'Select timezone',
+      hintText: isLoading
+          ? context.mobileText('Loading timezones…')
+          : context.mobileText('Select timezone'),
       enabled: !isLoading,
       onChanged: onChanged,
     );
@@ -382,7 +401,7 @@ class _MetaRowsEditor extends StatelessWidget {
               const SizedBox(width: OpenVtsSpacing.xs),
               Expanded(
                 child: Text(
-                  'Vehicle Meta',
+                  context.mobileText('Vehicle Meta'),
                   style: OpenVtsTypography.label.copyWith(
                     color: Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.w800,
@@ -390,7 +409,7 @@ class _MetaRowsEditor extends StatelessWidget {
                 ),
               ),
               IconButton(
-                tooltip: 'Add metadata row',
+                tooltip: context.mobileText('Add metadata row'),
                 onPressed: onAdd,
                 icon: const Icon(Icons.add_rounded, size: 18),
                 style: IconButton.styleFrom(
@@ -435,26 +454,26 @@ class _MetaRowFields extends StatelessWidget {
         Expanded(
           child: TextFormField(
             controller: row.keyController,
-            decoration: const InputDecoration(
-              hintText: 'Key',
+            decoration: InputDecoration(
+              hintText: context.mobileText('Key'),
               isDense: true,
             ),
-            validator: (_) => validateKey(),
+            validator: context.localizedValidator((_) => validateKey()),
           ),
         ),
         const SizedBox(width: OpenVtsSpacing.xs),
         Expanded(
           child: TextFormField(
             controller: row.valueController,
-            decoration: const InputDecoration(
-              hintText: 'Value',
+            decoration: InputDecoration(
+              hintText: context.mobileText('Value'),
               isDense: true,
             ),
           ),
         ),
         const SizedBox(width: OpenVtsSpacing.xs),
         IconButton(
-          tooltip: 'Remove metadata row',
+          tooltip: context.mobileText('Remove metadata row'),
           onPressed: onRemove,
           icon: const Icon(Icons.close_rounded, size: 17),
           style: IconButton.styleFrom(
@@ -473,8 +492,8 @@ class _MetaRowFields extends StatelessWidget {
 
 class _MetaRowController {
   _MetaRowController({String keyText = '', String valueText = ''})
-      : keyController = TextEditingController(text: keyText),
-        valueController = TextEditingController(text: valueText);
+    : keyController = TextEditingController(text: keyText),
+      valueController = TextEditingController(text: valueText);
 
   final TextEditingController keyController;
   final TextEditingController valueController;

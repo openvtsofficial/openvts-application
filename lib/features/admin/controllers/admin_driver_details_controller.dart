@@ -233,7 +233,7 @@ class AdminDriverDetailsController
   Future<bool> deleteDocument(String docId) async {
     state = state.copyWith(isDeletingDocument: true, sectionErrorMessage: null);
     try {
-      await _service.deleteDriverDocument(docId);
+      await _service.deleteDriverDocument(docId, driverId: _driverId);
       state = state.copyWith(isDeletingDocument: false);
       await loadDocuments();
       return true;

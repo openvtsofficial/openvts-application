@@ -6,6 +6,7 @@ import '../../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../../core/utils/date_time_formatter.dart';
+import '../../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../../shared/widgets/open_vts_card.dart';
 import '../../../../models/user_subuser_model.dart';
 
@@ -44,7 +45,8 @@ class UserSubUserCard extends ConsumerWidget {
                   color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
                   border: Border.all(
-                      color: Theme.of(context).colorScheme.outlineVariant),
+                    color: Theme.of(context).colorScheme.outlineVariant,
+                  ),
                 ),
                 child: Icon(
                   Icons.person_outline_rounded,
@@ -87,42 +89,50 @@ class UserSubUserCard extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: OpenVtsSpacing.xs),
-          _InfoRow(label: 'Email', value: _displayEmail(subUser)),
-          _InfoRow(label: 'Mobile', value: _displayMobile(subUser)),
           _InfoRow(
-              label: 'Created', value: _displayCreated(subUser, dateFormatter)),
+            label: context.mobileText('Email'),
+            value: _displayEmail(subUser),
+          ),
+          _InfoRow(
+            label: context.mobileText('Mobile'),
+            value: _displayMobile(subUser),
+          ),
+          _InfoRow(
+            label: context.mobileText('Created'),
+            value: _displayCreated(subUser, dateFormatter),
+          ),
           const SizedBox(height: OpenVtsSpacing.xs),
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 9,
-                  vertical: 4,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
                   border: Border.all(
-                    color: (isActive
-                            ? Theme.of(context).colorScheme.onSurfaceVariant
-                            : Theme.of(context).colorScheme.outline)
-                        .withValues(alpha: 0.35),
+                    color:
+                        (isActive
+                                ? Theme.of(context).colorScheme.onSurfaceVariant
+                                : Theme.of(context).colorScheme.outline)
+                            .withValues(alpha: 0.35),
                   ),
                 ),
                 child: Text(
-                  isActive ? 'Active' : 'Inactive',
+                  isActive
+                      ? context.mobileText('Active')
+                      : context.mobileText('Inactive'),
                   style: OpenVtsTypography.meta.copyWith(
                     color: Theme.of(context).brightness == Brightness.dark
                         ? Colors.white
                         : (isActive
-                            ? Theme.of(context).colorScheme.onSurfaceVariant
-                            : Theme.of(context).colorScheme.outline),
+                              ? Theme.of(context).colorScheme.onSurfaceVariant
+                              : Theme.of(context).colorScheme.outline),
                     fontWeight: FontWeight.w700,
                   ),
                 ),
               ),
               const Spacer(),
               Text(
-                'Status',
+                context.mobileText('Status'),
                 style: OpenVtsTypography.meta.copyWith(
                   color: Theme.of(context).brightness == Brightness.dark
                       ? Colors.white
@@ -144,20 +154,20 @@ class UserSubUserCard extends ConsumerWidget {
                     value: isActive,
                     activeThumbColor:
                         Theme.of(context).brightness == Brightness.dark
-                            ? Colors.white
-                            : OpenVtsColors.brandInk,
+                        ? Colors.white
+                        : OpenVtsColors.brandInk,
                     activeTrackColor:
                         Theme.of(context).brightness == Brightness.dark
-                            ? Colors.white.withValues(alpha: 0.4)
-                            : OpenVtsColors.brandInk.withValues(alpha: 0.35),
+                        ? Colors.white.withValues(alpha: 0.4)
+                        : OpenVtsColors.brandInk.withValues(alpha: 0.35),
                     inactiveThumbColor:
                         Theme.of(context).brightness == Brightness.dark
-                            ? Colors.white
-                            : OpenVtsColors.textTertiary,
+                        ? Colors.white
+                        : OpenVtsColors.textTertiary,
                     inactiveTrackColor:
                         Theme.of(context).brightness == Brightness.dark
-                            ? const Color(0xFF333333)
-                            : null,
+                        ? const Color(0xFF333333)
+                        : null,
                     materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     onChanged: onToggleStatus,
                   ),
@@ -171,10 +181,7 @@ class UserSubUserCard extends ConsumerWidget {
 }
 
 class _InfoRow extends StatelessWidget {
-  const _InfoRow({
-    required this.label,
-    required this.value,
-  });
+  const _InfoRow({required this.label, required this.value});
 
   final String label;
   final String value;
@@ -240,8 +247,10 @@ String _displayEmail(UserSubUser subUser) {
 String _displayMobile(UserSubUser subUser) {
   final prefix = subUser.mobilePrefix.trim();
   final mobile = subUser.mobileNumber.trim();
-  final merged =
-      [prefix, mobile].where((part) => part.isNotEmpty).join(' ').trim();
+  final merged = [
+    prefix,
+    mobile,
+  ].where((part) => part.isNotEmpty).join(' ').trim();
   return merged.isEmpty ? '-' : merged;
 }
 

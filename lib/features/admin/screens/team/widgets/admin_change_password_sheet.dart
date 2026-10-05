@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/utils/validators.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../shared/widgets/open_vts_text_field.dart';
@@ -57,13 +58,15 @@ class _AdminChangePasswordSheetState
               ),
               children: [
                 OpenVtsTextField(
-                  label: 'New Password',
+                  label: context.mobileText('New Password'),
                   controller: _newPasswordController,
                   obscureText: _obscureNew,
                   textInputAction: TextInputAction.next,
                   prefixIcon: Icons.lock_outline_rounded,
                   suffixIcon: IconButton(
-                    tooltip: _obscureNew ? 'Show password' : 'Hide password',
+                    tooltip: _obscureNew
+                        ? context.mobileText('Show password')
+                        : context.mobileText('Hide password'),
                     onPressed: () {
                       setState(() => _obscureNew = !_obscureNew);
                     },
@@ -78,14 +81,15 @@ class _AdminChangePasswordSheetState
                 ),
                 const SizedBox(height: OpenVtsSpacing.sm),
                 OpenVtsTextField(
-                  label: 'Confirm Password',
+                  label: context.mobileText('Confirm Password'),
                   controller: _confirmPasswordController,
                   obscureText: _obscureConfirm,
                   textInputAction: TextInputAction.done,
                   prefixIcon: Icons.lock_outline_rounded,
                   suffixIcon: IconButton(
-                    tooltip:
-                        _obscureConfirm ? 'Show password' : 'Hide password',
+                    tooltip: _obscureConfirm
+                        ? context.mobileText('Show password')
+                        : context.mobileText('Hide password'),
                     onPressed: () {
                       setState(() => _obscureConfirm = !_obscureConfirm);
                     },
@@ -115,7 +119,7 @@ class _AdminChangePasswordSheetState
                 children: [
                   Expanded(
                     child: OpenVtsButton(
-                      label: 'Cancel',
+                      label: context.mobileText('Cancel'),
                       variant: OpenVtsButtonVariant.secondary,
                       onPressed: widget.isSubmitting
                           ? null
@@ -125,7 +129,7 @@ class _AdminChangePasswordSheetState
                   const SizedBox(width: OpenVtsSpacing.sm),
                   Expanded(
                     child: OpenVtsButton(
-                      label: 'Change Password',
+                      label: context.mobileText('Change Password'),
                       onPressed: widget.isSubmitting ? null : _submit,
                       isLoading: widget.isSubmitting,
                       trailingIcon: Icons.check_rounded,
@@ -145,7 +149,7 @@ class _AdminChangePasswordSheetState
       return;
     }
 
-    final password = _newPasswordController.text.trim();
+    final password = _newPasswordController.text;
 
     final success = await ref
         .read(adminTeamControllerProvider.notifier)
@@ -157,12 +161,15 @@ class _AdminChangePasswordSheetState
 
     if (success) {
       Navigator.of(context).pop();
-      ToastHelper.showSuccess('Password changed.', context: context);
+      ToastHelper.showSuccess(
+        context.mobileText('Password changed.'),
+        context: context,
+      );
       return;
     }
 
     ToastHelper.showError(
-      'Unable to change password.',
+      context.mobileText('Unable to change password.'),
       context: context,
     );
   }
@@ -173,7 +180,7 @@ class _AdminChangePasswordSheetState
       return requiredError;
     }
 
-    if (value!.trim().length < 8) {
+    if (value!.length < 8) {
       return 'Password must be at least 8 characters';
     }
 
@@ -181,8 +188,10 @@ class _AdminChangePasswordSheetState
   }
 
   String? _validateConfirm(String? value) {
-    final requiredError =
-        Validators.required(value, fieldName: 'Confirm password');
+    final requiredError = Validators.required(
+      value,
+      fieldName: 'Confirm password',
+    );
     if (requiredError != null) {
       return requiredError;
     }

@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../../core/utils/validators.dart';
+import '../../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../../shared/widgets/open_vts_text_field.dart';
@@ -11,13 +13,10 @@ import '../../../../controllers/user_providers.dart';
 import '../../../../models/user_subuser_model.dart';
 
 class UserSubUserCreateSheet extends ConsumerStatefulWidget {
-  const UserSubUserCreateSheet({
-    required this.onSubmit,
-    super.key,
-  });
+  const UserSubUserCreateSheet({required this.onSubmit, super.key});
 
   final Future<UserSubUser?> Function(CreateUserSubUserRequest request)
-      onSubmit;
+  onSubmit;
 
   @override
   ConsumerState<UserSubUserCreateSheet> createState() =>
@@ -93,7 +92,7 @@ class _UserSubUserCreateSheetState
                     ),
                     children: [
                       Text(
-                        'Create Sub User',
+                        context.mobileText('Create Sub User'),
                         style: OpenVtsTypography.label.copyWith(
                           color: Theme.of(context).colorScheme.onSurface,
                           fontWeight: FontWeight.w800,
@@ -101,14 +100,16 @@ class _UserSubUserCreateSheetState
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Create a compact login profile with controlled access.',
+                        context.mobileText(
+                          'Create a compact login profile with controlled access.',
+                        ),
                         style: OpenVtsTypography.meta.copyWith(
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ),
                       const SizedBox(height: OpenVtsSpacing.md),
                       OpenVtsTextField(
-                        label: 'Name',
+                        label: context.mobileText('Name'),
                         controller: _nameController,
                         textInputAction: TextInputAction.next,
                         prefixIcon: Icons.person_outline_rounded,
@@ -116,7 +117,7 @@ class _UserSubUserCreateSheetState
                       ),
                       const SizedBox(height: OpenVtsSpacing.sm),
                       OpenVtsTextField(
-                        label: 'Username (optional)',
+                        label: context.mobileText('Username (optional)'),
                         controller: _usernameController,
                         textInputAction: TextInputAction.next,
                         prefixIcon: Icons.alternate_email_rounded,
@@ -124,7 +125,7 @@ class _UserSubUserCreateSheetState
                       ),
                       const SizedBox(height: OpenVtsSpacing.sm),
                       OpenVtsTextField(
-                        label: 'Email (optional)',
+                        label: context.mobileText('Email (optional)'),
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
                         textInputAction: TextInputAction.next,
@@ -147,7 +148,7 @@ class _UserSubUserCreateSheetState
                           const SizedBox(width: OpenVtsSpacing.sm),
                           Expanded(
                             child: OpenVtsTextField(
-                              label: 'Mobile (optional)',
+                              label: context.mobileText('Mobile (optional)'),
                               controller: _mobileNumberController,
                               keyboardType: TextInputType.phone,
                               textInputAction: TextInputAction.next,
@@ -159,15 +160,15 @@ class _UserSubUserCreateSheetState
                       ),
                       const SizedBox(height: OpenVtsSpacing.sm),
                       OpenVtsTextField(
-                        label: 'Password',
+                        label: context.mobileText('Password'),
                         controller: _passwordController,
                         obscureText: _obscurePassword,
                         textInputAction: TextInputAction.done,
                         prefixIcon: Icons.lock_outline_rounded,
                         suffixIcon: IconButton(
                           tooltip: _obscurePassword
-                              ? 'Show password'
-                              : 'Hide password',
+                              ? context.mobileText('Show password')
+                              : context.mobileText('Hide password'),
                           onPressed: () {
                             setState(() {
                               _obscurePassword = !_obscurePassword;
@@ -180,7 +181,7 @@ class _UserSubUserCreateSheetState
                             size: 18,
                           ),
                         ),
-                        validator: _passwordValidator,
+                        validator: _optionalPasswordValidator,
                       ),
                       const SizedBox(height: OpenVtsSpacing.sm),
                       Container(
@@ -192,18 +193,18 @@ class _UserSubUserCreateSheetState
                           color: Theme.of(context).colorScheme.surface,
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
-                              color:
-                                  Theme.of(context).colorScheme.outlineVariant),
+                            color: Theme.of(context).colorScheme.outlineVariant,
+                          ),
                         ),
                         child: Row(
                           children: [
                             Expanded(
                               child: Text(
-                                'Active account',
+                                context.mobileText('Active account'),
                                 style: OpenVtsTypography.meta.copyWith(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onSurfaceVariant,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
@@ -239,7 +240,7 @@ class _UserSubUserCreateSheetState
                       children: [
                         Expanded(
                           child: OpenVtsButton(
-                            label: 'Cancel',
+                            label: context.mobileText('Cancel'),
                             height: 40,
                             variant: OpenVtsButtonVariant.secondary,
                             onPressed: isSubmitting
@@ -250,7 +251,7 @@ class _UserSubUserCreateSheetState
                         const SizedBox(width: OpenVtsSpacing.sm),
                         Expanded(
                           child: OpenVtsButton(
-                            label: 'Create Sub User',
+                            label: context.mobileText('Create Sub User'),
                             height: 40,
                             trailingIcon: Icons.person_add_alt_1_rounded,
                             isLoading: isSubmitting,
@@ -290,7 +291,8 @@ class _UserSubUserCreateSheetState
     }
 
     if (created == null) {
-      final message = ref.read(userSubUsersControllerProvider).errorMessage ??
+      final message =
+          ref.read(userSubUsersControllerProvider).errorMessage ??
           'Unable to create sub user.';
       ToastHelper.showError(message, context: context);
       return;
@@ -312,6 +314,9 @@ class _UserSubUserCreateSheetState
 
   String? _optionalUsernameValidator(String? value) {
     final normalized = value?.trim() ?? '';
+    if (!Validators.isPrintableAscii(normalized)) {
+      return 'Username must contain ASCII characters only';
+    }
     if (normalized.isEmpty) {
       return null;
     }
@@ -323,6 +328,9 @@ class _UserSubUserCreateSheetState
 
   String? _optionalEmailValidator(String? value) {
     final normalized = value?.trim() ?? '';
+    if (!Validators.isPrintableAscii(normalized)) {
+      return 'Email must contain ASCII characters only';
+    }
     if (normalized.isEmpty) {
       return null;
     }
@@ -348,13 +356,19 @@ class _UserSubUserCreateSheetState
     return null;
   }
 
-  String? _passwordValidator(String? value) {
-    final password = value ?? '';
-    if (password.trim().isEmpty) {
+  String? _optionalPasswordValidator(String? value) {
+    final normalized = value ?? '';
+    if (!Validators.isPrintableAscii(normalized)) {
+      return 'Password must contain ASCII characters only';
+    }
+    if (normalized.length > 100) {
+      return 'Password must be 100 characters or fewer';
+    }
+    if (normalized.trim().isEmpty) {
       return 'Password is required';
     }
-    if (password.length < 6 || password.length > 100) {
-      return 'Password must be between 6 and 100 characters';
+    if (normalized.length < 6) {
+      return 'Password must be at least 6 characters';
     }
     return null;
   }
@@ -377,7 +391,7 @@ class _UserSubUserCreateSheetState
         Padding(
           padding: const EdgeInsets.only(bottom: OpenVtsSpacing.xs),
           child: Text(
-            'Prefix',
+            context.mobileText('Prefix'),
             style: OpenVtsTypography.meta.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
               fontWeight: FontWeight.w700,
@@ -399,7 +413,7 @@ class _UserSubUserCreateSheetState
             hint: Padding(
               padding: const EdgeInsets.only(left: 12),
               child: Text(
-                'Select',
+                context.mobileText('Select'),
                 style: OpenVtsTypography.meta.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
@@ -411,7 +425,7 @@ class _UserSubUserCreateSheetState
                 child: Padding(
                   padding: const EdgeInsets.only(left: 12),
                   child: Text(
-                    'Select',
+                    context.mobileText('Select'),
                     style: OpenVtsTypography.meta.copyWith(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),

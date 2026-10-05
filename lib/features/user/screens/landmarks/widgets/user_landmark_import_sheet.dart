@@ -11,6 +11,7 @@ import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../shared/widgets/open_vts_bottom_sheet.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
@@ -45,10 +46,7 @@ class UserLandmarkImportSheet {
 }
 
 class _ImportBody extends ConsumerStatefulWidget {
-  const _ImportBody({
-    required this.entityType,
-    required this.scrollController,
-  });
+  const _ImportBody({required this.entityType, required this.scrollController});
 
   final UserLandmarkEntityType entityType;
   final ScrollController scrollController;
@@ -98,7 +96,9 @@ class _ImportBodyState extends ConsumerState<_ImportBody> {
     final parse = _parse;
     if (parse == null || parse.validRows.isEmpty) return;
     try {
-      await ref.read(userLandmarkBulkJobControllerProvider.notifier).start(
+      await ref
+          .read(userLandmarkBulkJobControllerProvider.notifier)
+          .start(
             CreateUserLandmarkBulkJobRequest(
               entityType: widget.entityType,
               rows: parse.validRows,
@@ -128,7 +128,8 @@ class _ImportBodyState extends ConsumerState<_ImportBody> {
   Widget build(BuildContext context) {
     final jobState = ref.watch(userLandmarkBulkJobControllerProvider);
     final hasParse = _parse != null;
-    final canUpload = hasParse &&
+    final canUpload =
+        hasParse &&
         _parse!.validRows.isNotEmpty &&
         !jobState.isUploading &&
         !jobState.isLoading;
@@ -162,7 +163,9 @@ class _ImportBodyState extends ConsumerState<_ImportBody> {
         ],
         const SizedBox(height: OpenVtsSpacing.md),
         OpenVtsButton(
-          label: 'Upload ${_parse?.validRows.length ?? 0} rows',
+          label: context.mobileText("Upload {value1} rows", {
+            'value1': (_parse?.validRows.length ?? 0).toString(),
+          }),
           onPressed: canUpload ? _upload : null,
           isLoading: jobState.isUploading,
         ),
@@ -201,15 +204,18 @@ class _TemplateRow extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.table_chart_outlined,
-              size: 18, color: OpenVtsColors.brandInk),
+          const Icon(
+            Icons.table_chart_outlined,
+            size: 18,
+            color: OpenVtsColors.brandInk,
+          ),
           const SizedBox(width: OpenVtsSpacing.sm),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'CSV template',
+                  context.mobileText('CSV template'),
                   style: OpenVtsTypography.label.copyWith(
                     color: OpenVtsColors.textPrimary,
                     fontWeight: FontWeight.w700,
@@ -227,14 +233,17 @@ class _TemplateRow extends StatelessWidget {
             ),
           ),
           IconButton(
-            tooltip: 'Copy header',
+            tooltip: context.mobileText('Copy header'),
             iconSize: 18,
             color: OpenVtsColors.textSecondary,
             icon: const Icon(Icons.copy_outlined),
             onPressed: () async {
               await Clipboard.setData(ClipboardData(text: header));
               if (!context.mounted) return;
-              ToastHelper.showSuccess('Header copied', context: context);
+              ToastHelper.showSuccess(
+                context.mobileText('Header copied'),
+                context: context,
+              );
             },
           ),
         ],
@@ -283,7 +292,7 @@ class _PickerRow extends StatelessWidget {
         ),
         const SizedBox(width: OpenVtsSpacing.sm),
         OpenVtsButton(
-          label: 'Pick CSV',
+          label: context.mobileText('Pick CSV'),
           onPressed: disabled ? null : onPick,
           variant: OpenVtsButtonVariant.secondary,
           trailingIcon: Icons.upload_file_outlined,
@@ -313,12 +322,16 @@ class _ValidationSummary extends StatelessWidget {
           Row(
             children: [
               _Pill(
-                label: '${parse.validRows.length} valid',
+                label: context.mobileText("{value1} valid", {
+                  'value1': (parse.validRows.length).toString(),
+                }),
                 color: OpenVtsColors.success,
               ),
               const SizedBox(width: 6),
               _Pill(
-                label: '${parse.invalidRows.length} invalid',
+                label: context.mobileText("{value1} invalid", {
+                  'value1': (parse.invalidRows.length).toString(),
+                }),
                 color: parse.invalidRows.isEmpty
                     ? OpenVtsColors.textTertiary
                     : OpenVtsColors.warning,
@@ -333,14 +346,15 @@ class _ValidationSummary extends StatelessWidget {
                 shrinkWrap: true,
                 padding: EdgeInsets.zero,
                 itemCount: parse.invalidRows.length,
-                separatorBuilder: (_, __) => const Divider(
-                  height: 8,
-                  color: OpenVtsColors.divider,
-                ),
+                separatorBuilder: (_, __) =>
+                    const Divider(height: 8, color: OpenVtsColors.divider),
                 itemBuilder: (_, i) {
                   final row = parse.invalidRows[i];
                   return Text(
-                    'Row ${row.rowNumber}: ${row.error}',
+                    context.mobileText("Row {value1}: {value2}", {
+                      'value1': (row.rowNumber).toString(),
+                      'value2': (row.error).toString(),
+                    }),
                     style: OpenVtsTypography.meta.copyWith(
                       color: OpenVtsColors.textSecondary,
                     ),
@@ -409,12 +423,16 @@ class _JobProgress extends ConsumerWidget {
           Row(
             children: [
               _Pill(
-                label: '${job.succeeded} ok',
+                label: context.mobileText("{value1} ok", {
+                  'value1': (job.succeeded).toString(),
+                }),
                 color: OpenVtsColors.success,
               ),
               const SizedBox(width: 6),
               _Pill(
-                label: '${job.failed} failed',
+                label: context.mobileText("{value1} failed", {
+                  'value1': (job.failed).toString(),
+                }),
                 color: job.failed > 0
                     ? OpenVtsColors.error
                     : OpenVtsColors.textTertiary,
@@ -424,7 +442,7 @@ class _JobProgress extends ConsumerWidget {
           if (job.failedRows.isNotEmpty) ...[
             const SizedBox(height: OpenVtsSpacing.sm),
             Text(
-              'Failed rows',
+              context.mobileText('Failed rows'),
               style: OpenVtsTypography.meta.copyWith(
                 color: OpenVtsColors.textTertiary,
                 fontWeight: FontWeight.w700,
@@ -438,10 +456,8 @@ class _JobProgress extends ConsumerWidget {
                 shrinkWrap: true,
                 padding: EdgeInsets.zero,
                 itemCount: job.failedRows.length,
-                separatorBuilder: (_, __) => const Divider(
-                  height: 8,
-                  color: OpenVtsColors.divider,
-                ),
+                separatorBuilder: (_, __) =>
+                    const Divider(height: 8, color: OpenVtsColors.divider),
                 itemBuilder: (_, i) {
                   final row = job.failedRows[i];
                   final prefix = row.index != null ? 'Row ${row.index}: ' : '';
@@ -474,7 +490,7 @@ class _FailedCsvButton extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return OpenVtsButton(
-      label: 'Open failed rows CSV',
+      label: context.mobileText('Open failed rows CSV'),
       variant: OpenVtsButtonVariant.secondary,
       trailingIcon: Icons.open_in_new,
       onPressed: () async {
@@ -483,12 +499,12 @@ class _FailedCsvButton extends ConsumerWidget {
             .failedCsvPath();
         if (path == null) return;
         final url = Uri.parse('${AppConfig.apiBaseUrl}$path');
-        final ok = await launchUrl(
-          url,
-          mode: LaunchMode.externalApplication,
-        );
+        final ok = await launchUrl(url, mode: LaunchMode.externalApplication);
         if (!ok && context.mounted) {
-          ToastHelper.showError('Could not open URL', context: context);
+          ToastHelper.showError(
+            context.mobileText('Could not open URL'),
+            context: context,
+          );
         }
       },
     );

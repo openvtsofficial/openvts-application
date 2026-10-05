@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../core/theme/open_vts_spacing.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
+import '../../../../../shared/helpers/validation_localizations.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../models/admin_vehicle_model.dart';
 
@@ -62,38 +64,45 @@ class _AdminVehicleSensorSheetState extends State<AdminVehicleSensorSheet> {
             children: [
               TextFormField(
                 controller: _nameController,
-                decoration: const InputDecoration(labelText: 'Name'),
-                validator: (v) =>
-                    (v ?? '').trim().isEmpty ? 'Name required' : null,
+                decoration: InputDecoration(
+                  labelText: context.mobileText('Name'),
+                ),
+                validator: context.localizedValidator((v) => (v ?? '').trim().isEmpty ? 'Name required' : null),
               ),
               const SizedBox(height: OpenVtsSpacing.sm),
               TextFormField(
                 controller: _unitController,
-                decoration: const InputDecoration(labelText: 'Unit'),
-                validator: (v) =>
-                    (v ?? '').trim().isEmpty ? 'Unit required' : null,
+                decoration: InputDecoration(
+                  labelText: context.mobileText('Unit'),
+                ),
+                validator: context.localizedValidator((v) => (v ?? '').trim().isEmpty ? 'Unit required' : null),
               ),
               const SizedBox(height: OpenVtsSpacing.sm),
               TextFormField(
                 controller: _iconController,
-                decoration: const InputDecoration(labelText: 'Icon'),
+                decoration: InputDecoration(
+                  labelText: context.mobileText('Icon'),
+                ),
               ),
               const SizedBox(height: OpenVtsSpacing.sm),
               TextFormField(
                 controller: _codeController,
-                decoration: const InputDecoration(labelText: 'Code'),
-                validator: (v) =>
-                    (v ?? '').trim().isEmpty ? 'Code required' : null,
+                decoration: InputDecoration(
+                  labelText: context.mobileText('Code'),
+                ),
+                validator: context.localizedValidator((v) => (v ?? '').trim().isEmpty ? 'Code required' : null),
               ),
               const SizedBox(height: OpenVtsSpacing.sm),
               SwitchListTile(
                 value: _isActive,
                 onChanged: (value) => setState(() => _isActive = value),
-                title: const Text('Active'),
+                title: Text(context.mobileText('Active')),
               ),
               const SizedBox(height: OpenVtsSpacing.sm),
               OpenVtsButton(
-                label: widget.initial == null ? 'Create Sensor' : 'Save Sensor',
+                label: widget.initial == null
+                    ? context.mobileText('Create Sensor')
+                    : context.mobileText('Save Sensor'),
                 isLoading: widget.isSubmitting,
                 onPressed: widget.isSubmitting ? null : _submit,
               ),

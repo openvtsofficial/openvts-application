@@ -6,6 +6,8 @@ import '../../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../../shared/helpers/mobile_text.dart';
+import '../../../../../../shared/helpers/validation_localizations.dart';
 import '../../../../../../shared/widgets/open_vts_bottom_sheet.dart';
 import '../../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../controllers/user_providers.dart';
@@ -115,7 +117,8 @@ class _UserGeofenceFormBodyState extends ConsumerState<_UserGeofenceFormBody> {
     _type = _formTypeFromGeodata(existing?.geodata);
     _color = existing?.color ?? kUserLandmarkPalette.first;
     _active = existing?.isActive ?? true;
-    _toleranceM = existing?.toleranceMeters ??
+    _toleranceM =
+        existing?.toleranceMeters ??
         (existing?.geodata is UserLineGeoData
             ? (existing!.geodata as UserLineGeoData).toleranceM
             : null);
@@ -204,8 +207,9 @@ class _UserGeofenceFormBodyState extends ConsumerState<_UserGeofenceFormBody> {
                 : _description.text.trim(),
             color: _color,
             isActive: _active,
-            toleranceMeters:
-                _type == UserGeofenceFormType.line ? _toleranceM : null,
+            toleranceMeters: _type == UserGeofenceFormType.line
+                ? _toleranceM
+                : null,
             geodata: _geodata!,
           ),
         );
@@ -217,8 +221,9 @@ class _UserGeofenceFormBodyState extends ConsumerState<_UserGeofenceFormBody> {
             description: _description.text.trim(),
             color: _color,
             isActive: _active,
-            toleranceMeters:
-                _type == UserGeofenceFormType.line ? _toleranceM : null,
+            toleranceMeters: _type == UserGeofenceFormType.line
+                ? _toleranceM
+                : null,
             geodata: _geodata,
           ),
         );
@@ -255,11 +260,7 @@ class _UserGeofenceFormBodyState extends ConsumerState<_UserGeofenceFormBody> {
             controller: _name,
             style: OpenVtsTypography.body,
             decoration: _denseDecoration(hint: 'e.g. Warehouse perimeter'),
-            validator: (value) {
-              final v = value?.trim() ?? '';
-              if (v.length < 2) return 'Enter at least 2 characters.';
-              return null;
-            },
+            validator: context.localizedValidator((value) {final v = value?.trim() ?? ''; if (v.length < 2) return 'Enter at least 2 characters.'; return null;}),
           ),
           const SizedBox(height: OpenVtsSpacing.sm),
           const _FieldLabel('Description (optional)'),
@@ -303,7 +304,9 @@ class _UserGeofenceFormBodyState extends ConsumerState<_UserGeofenceFormBody> {
           ],
           const SizedBox(height: OpenVtsSpacing.md),
           OpenVtsButton(
-            label: widget.existing == null ? 'Create geofence' : 'Save changes',
+            label: widget.existing == null
+                ? context.mobileText('Create geofence')
+                : context.mobileText('Save changes'),
             onPressed: _submit,
             isLoading: _submitting,
           ),
@@ -482,11 +485,7 @@ class _GeometrySummaryCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
               border: Border.all(color: borderColor),
             ),
-            child: Icon(
-              _iconFor(type),
-              size: 14,
-              color: textColor,
-            ),
+            child: Icon(_iconFor(type), size: 14, color: textColor),
           ),
           const SizedBox(width: OpenVtsSpacing.sm),
           Expanded(
@@ -494,7 +493,9 @@ class _GeometrySummaryCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  geodata == null ? 'No geometry yet' : 'Geometry ready',
+                  geodata == null
+                      ? context.mobileText('No geometry yet')
+                      : context.mobileText('Geometry ready'),
                   style: OpenVtsTypography.label.copyWith(
                     color: textColor,
                     fontWeight: FontWeight.w600,
@@ -503,9 +504,7 @@ class _GeometrySummaryCard extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   summary,
-                  style: OpenVtsTypography.meta.copyWith(
-                    color: textColor,
-                  ),
+                  style: OpenVtsTypography.meta.copyWith(color: textColor),
                 ),
               ],
             ),
@@ -518,16 +517,18 @@ class _GeometrySummaryCard extends StatelessWidget {
               padding: const EdgeInsets.symmetric(
                 horizontal: OpenVtsSpacing.sm,
               ),
-              side: BorderSide(
-                color: borderColor,
-                width: 1,
-              ),
+              side: BorderSide(color: borderColor, width: 1),
             ),
             onPressed: onDraw,
-            icon: Icon(Icons.edit_location_alt_outlined,
-                size: 14, color: textColor),
+            icon: Icon(
+              Icons.edit_location_alt_outlined,
+              size: 14,
+              color: textColor,
+            ),
             label: Text(
-              geodata == null ? 'Draw' : 'Edit',
+              geodata == null
+                  ? context.mobileText('Draw')
+                  : context.mobileText('Edit'),
               style: OpenVtsTypography.meta.copyWith(
                 fontWeight: FontWeight.w700,
                 color: textColor,
@@ -596,8 +597,9 @@ class _ActiveToggle extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bgColor = isDark ? OpenVtsColors.brandInk : OpenVtsColors.surface;
     final textColor = isDark ? OpenVtsColors.white : OpenVtsColors.textPrimary;
-    final subtitleColor =
-        isDark ? OpenVtsColors.darkTextSecondary : OpenVtsColors.textSecondary;
+    final subtitleColor = isDark
+        ? OpenVtsColors.darkTextSecondary
+        : OpenVtsColors.textSecondary;
     final borderColor = value
         ? OpenVtsColors.success
         : (isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border);
@@ -619,7 +621,7 @@ class _ActiveToggle extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Active',
+                  context.mobileText('Active'),
                   style: OpenVtsTypography.label.copyWith(
                     color: textColor,
                     fontWeight: FontWeight.w600,
@@ -627,11 +629,11 @@ class _ActiveToggle extends StatelessWidget {
                 ),
                 Text(
                   value
-                      ? 'Events will trigger for this geofence.'
-                      : 'Geofence is paused.',
-                  style: OpenVtsTypography.meta.copyWith(
-                    color: subtitleColor,
-                  ),
+                      ? context.mobileText(
+                          'Events will trigger for this geofence.',
+                        )
+                      : context.mobileText('Geofence is paused.'),
+                  style: OpenVtsTypography.meta.copyWith(color: subtitleColor),
                 ),
               ],
             ),

@@ -372,7 +372,7 @@ class AdminSettingsService {
   Future<void> testSmtp(String email) async {
     await _apiClient.post<void>(
       ApiEndpoints.admin.testSmtp,
-      data: <String, dynamic>{'email': email.trim()},
+      data: email.trim(),
       options: _mutationOptions,
       parser: (_) {},
     );

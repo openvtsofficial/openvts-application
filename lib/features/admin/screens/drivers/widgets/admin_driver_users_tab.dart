@@ -6,6 +6,7 @@ import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../core/utils/date_time_formatter.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../../../shared/widgets/open_vts_empty_state.dart';
@@ -14,6 +15,7 @@ import '../../../../../shared/widgets/open_vts_loader.dart';
 import '../../../controllers/admin_driver_details_controller.dart';
 import '../../../models/admin_driver_details_model.dart';
 import '../../../models/admin_driver_details_state.dart';
+import '../../../widgets/admin_action_gate.dart';
 import 'admin_driver_assign_user_sheet.dart';
 
 class AdminDriverUsersTab extends ConsumerWidget {
@@ -23,8 +25,11 @@ class AdminDriverUsersTab extends ConsumerWidget {
     super.key,
   });
 
-  final AutoDisposeStateNotifierProvider<AdminDriverDetailsController,
-      AdminDriverDetailsState> provider;
+  final AutoDisposeStateNotifierProvider<
+    AdminDriverDetailsController,
+    AdminDriverDetailsState
+  >
+  provider;
   final AdminDriverDetailsState state;
 
   @override
@@ -50,22 +55,25 @@ class AdminDriverUsersTab extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        OutlinedButton.icon(
-          onPressed: state.isAssigningUser
-              ? null
-              : () => showDriverAssignUserSheet(
+        AdminActionGate(
+          capability: 'drivers.update',
+          child: OutlinedButton.icon(
+            onPressed: state.isAssigningUser
+                ? null
+                : () => showDriverAssignUserSheet(
                     context: context,
                     provider: provider,
                     users: state.unlinkedUsers,
                   ),
-          icon: const Icon(Icons.person_add_alt_1_rounded, size: 16),
-          label: const Text('Assign User'),
+            icon: const Icon(Icons.person_add_alt_1_rounded, size: 16),
+            label: Text(context.mobileText('Assign User')),
+          ),
         ),
         const SizedBox(height: OpenVtsSpacing.sm),
         if (state.linkedUsers.isEmpty)
-          const OpenVtsEmptyState(
-            title: 'No assigned users',
-            message: 'Assign users to this driver.',
+          OpenVtsEmptyState(
+            title: context.mobileText('No assigned users'),
+            message: context.mobileText('Assign users to this driver.'),
           )
         else
           ...state.linkedUsers.map(
@@ -78,19 +86,24 @@ class AdminDriverUsersTab extends ConsumerWidget {
                   final yes = await showDialog<bool>(
                     context: context,
                     builder: (dCtx) => AlertDialog(
-                      title: const Text('Unassign user'),
-                      content: Text('Remove ${user.name} from this driver?'),
+                      title: Text(context.mobileText('Unassign user')),
+                      content: Text(
+                        context.mobileText(
+                          "Remove {value1} from this driver?",
+                          {'value1': (user.name).toString()},
+                        ),
+                      ),
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.of(dCtx).pop(false),
-                          child: const Text('Cancel'),
+                          child: Text(context.mobileText('Cancel')),
                         ),
                         TextButton(
                           onPressed: () => Navigator.of(dCtx).pop(true),
                           style: TextButton.styleFrom(
                             foregroundColor: OpenVtsColors.error,
                           ),
-                          child: const Text('Unassign'),
+                          child: Text(context.mobileText('Unassign')),
                         ),
                       ],
                     ),
@@ -100,7 +113,7 @@ class AdminDriverUsersTab extends ConsumerWidget {
                   if (!context.mounted) return;
                   if (ok) {
                     ToastHelper.showSuccess(
-                      'User unassigned.',
+                      context.mobileText('User unassigned.'),
                       context: context,
                     );
                   } else {
@@ -167,11 +180,14 @@ class _UserCard extends StatelessWidget {
                   ],
                 ),
               ),
-              _TinyTextButton(
-                onPressed: unassigning ? null : onUnassign,
-                isLoading: unassigning,
-                label: 'Unassign',
-                icon: Icons.link_off_rounded,
+              AdminActionGate(
+                capability: 'drivers.update',
+                child: _TinyTextButton(
+                  onPressed: unassigning ? null : onUnassign,
+                  isLoading: unassigning,
+                  label: context.mobileText('Unassign'),
+                  icon: Icons.link_off_rounded,
+                ),
               ),
             ],
           ),
@@ -197,7 +213,9 @@ class _UserCard extends StatelessWidget {
                   icon: user.isActive!
                       ? Icons.check_circle_outline_rounded
                       : Icons.pause_circle_outline_rounded,
-                  label: user.isActive! ? 'Active' : 'Inactive',
+                  label: user.isActive!
+                      ? context.mobileText('Active')
+                      : context.mobileText('Inactive'),
                   color: user.isActive!
                       ? OpenVtsColors.success
                       : Theme.of(context).colorScheme.onSurfaceVariant,
@@ -238,9 +256,7 @@ class _UserAvatar extends StatelessWidget {
       decoration: BoxDecoration(
         color: _softSurfaceColor(context),
         borderRadius: BorderRadius.circular(OpenVtsRadius.md),
-        border: Border.all(
-          color: _softBorderColor(context),
-        ),
+        border: Border.all(color: _softBorderColor(context)),
       ),
       child: Text(
         _initials(),
@@ -290,10 +306,8 @@ class _TinyTextButton extends StatelessWidget {
                       size: 14,
                       color: onPressed != null
                           ? Theme.of(context).colorScheme.onSurfaceVariant
-                          : Theme.of(context)
-                              .colorScheme
-                              .onSurfaceVariant
-                              .withValues(alpha: 0.5),
+                          : Theme.of(context).colorScheme.onSurfaceVariant
+                                .withValues(alpha: 0.5),
                     ),
                     const SizedBox(width: 4),
                     Text(
@@ -302,10 +316,8 @@ class _TinyTextButton extends StatelessWidget {
                         fontWeight: FontWeight.w600,
                         color: onPressed != null
                             ? Theme.of(context).colorScheme.onSurfaceVariant
-                            : Theme.of(context)
-                                .colorScheme
-                                .onSurfaceVariant
-                                .withValues(alpha: 0.5),
+                            : Theme.of(context).colorScheme.onSurfaceVariant
+                                  .withValues(alpha: 0.5),
                         fontSize: 10,
                       ),
                     ),

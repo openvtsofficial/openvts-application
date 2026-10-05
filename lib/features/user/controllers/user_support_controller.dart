@@ -126,7 +126,7 @@ class UserSupportController extends StateNotifier<UserSupportState> {
 
       final createdTicketId = detail.id.trim();
       if (mounted && createdTicketId.isNotEmpty) {
-        return selectTicket(createdTicketId, force: true);
+        return await selectTicket(createdTicketId, force: true);
       }
 
       return detail;

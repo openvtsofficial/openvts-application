@@ -5,6 +5,7 @@ import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 
 /// Curated palette used by Landmark Studio. Kept short and on-brand to avoid
 /// the loud rainbow grids common in desktop GIS apps.
@@ -45,8 +46,9 @@ class UserLandmarkColorPicker extends StatefulWidget {
 }
 
 class _UserLandmarkColorPickerState extends State<UserLandmarkColorPicker> {
-  late final TextEditingController _hexController =
-      TextEditingController(text: _normalize(widget.value));
+  late final TextEditingController _hexController = TextEditingController(
+    text: _normalize(widget.value),
+  );
 
   @override
   void didUpdateWidget(covariant UserLandmarkColorPicker oldWidget) {
@@ -122,7 +124,7 @@ class _UserLandmarkColorPickerState extends State<UserLandmarkColorPicker> {
                 minWidth: 0,
                 minHeight: 0,
               ),
-              hintText: '#RRGGBB',
+              hintText: context.mobileText('#RRGGBB'),
               hintStyle: OpenVtsTypography.body.copyWith(
                 color: OpenVtsColors.textTertiary,
               ),
@@ -207,10 +209,6 @@ class _Swatch extends StatelessWidget {
       ),
     );
     if (onTap == null) return dot;
-    return InkResponse(
-      onTap: onTap,
-      radius: size,
-      child: dot,
-    );
+    return InkResponse(onTap: onTap, radius: size, child: dot);
   }
 }

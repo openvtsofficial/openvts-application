@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../core/theme/open_vts_spacing.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../models/user_settings_model.dart';
 
@@ -39,7 +40,7 @@ class UserCompanySettingsCard extends StatelessWidget {
       linkedin,
       instagram,
       youtube,
-      github
+      github,
     ].any((link) => link.isNotEmpty);
 
     return Column(
@@ -73,14 +74,16 @@ class UserCompanySettingsCard extends StatelessWidget {
                     height: 32,
                     child: IconButton(
                       padding: EdgeInsets.zero,
-                      constraints:
-                          const BoxConstraints(minWidth: 32, minHeight: 32),
+                      constraints: const BoxConstraints(
+                        minWidth: 32,
+                        minHeight: 32,
+                      ),
                       icon: Icon(
                         Icons.edit_outlined,
                         size: 16,
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
-                      tooltip: 'Edit company',
+                      tooltip: context.mobileText('Edit company'),
                       onPressed: onEdit,
                     ),
                   ),
@@ -93,22 +96,22 @@ class UserCompanySettingsCard extends StatelessWidget {
               ),
               const SizedBox(height: OpenVtsSpacing.xs),
               _InfoRow(
-                label: 'Name',
+                label: context.mobileText('Name'),
                 value: companyName,
                 icon: Icons.business_outlined,
               ),
               _InfoRow(
-                label: 'Website',
+                label: context.mobileText('Website'),
                 value: website,
                 icon: Icons.language_outlined,
               ),
               _InfoRow(
-                label: 'Custom Domain',
+                label: context.mobileText('Custom domain'),
                 value: customDomain,
                 icon: Icons.dns_outlined,
               ),
               _InfoRow(
-                label: 'Primary Color',
+                label: context.mobileText('Primary color'),
                 value: primaryColor,
                 icon: Icons.palette_outlined,
               ),
@@ -128,7 +131,7 @@ class UserCompanySettingsCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'SOCIAL LINKS',
+                  context.mobileText('Social Links'),
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
@@ -144,37 +147,37 @@ class UserCompanySettingsCard extends StatelessWidget {
                 const SizedBox(height: OpenVtsSpacing.xs),
                 if (facebook.isNotEmpty)
                   _InfoRow(
-                    label: 'Facebook',
+                    label: context.mobileText('Facebook'),
                     value: facebook,
                     icon: Icons.facebook_outlined,
                   ),
                 if (twitter.isNotEmpty)
                   _InfoRow(
-                    label: 'Twitter/X',
+                    label: context.mobileText('Twitter/X'),
                     value: twitter,
                     icon: Icons.public_outlined,
                   ),
                 if (linkedin.isNotEmpty)
                   _InfoRow(
-                    label: 'LinkedIn',
+                    label: context.mobileText('LinkedIn'),
                     value: linkedin,
                     icon: Icons.public_outlined,
                   ),
                 if (instagram.isNotEmpty)
                   _InfoRow(
-                    label: 'Instagram',
+                    label: context.mobileText('Instagram'),
                     value: instagram,
                     icon: Icons.public_outlined,
                   ),
                 if (youtube.isNotEmpty)
                   _InfoRow(
-                    label: 'YouTube',
+                    label: context.mobileText('YouTube'),
                     value: youtube,
                     icon: Icons.video_library_outlined,
                   ),
                 if (github.isNotEmpty)
                   _InfoRow(
-                    label: 'GitHub',
+                    label: context.mobileText('GitHub'),
                     value: github,
                     icon: Icons.code_outlined,
                   ),
@@ -205,8 +208,11 @@ class _InfoRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon,
-              size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
+          Icon(
+            icon,
+            size: 14,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
           const SizedBox(width: 8),
           SizedBox(
             width: 100,

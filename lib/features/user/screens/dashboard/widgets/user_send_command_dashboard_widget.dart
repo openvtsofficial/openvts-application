@@ -5,6 +5,7 @@ import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../controllers/user_providers.dart';
 import '../../../models/user_dashboard_model.dart';
 import 'user_dashboard_widget_card.dart';
@@ -63,8 +64,9 @@ class _UserSendCommandDashboardWidgetState
     if (operationalVehicles.isEmpty) {
       _selectedVehicleId = null;
     } else if (_selectedVehicleId == null ||
-        !operationalVehicles
-            .any((vehicle) => vehicle.id == _selectedVehicleId)) {
+        !operationalVehicles.any(
+          (vehicle) => vehicle.id == _selectedVehicleId,
+        )) {
       _selectedVehicleId = operationalVehicles.first.id;
     }
 
@@ -73,8 +75,9 @@ class _UserSendCommandDashboardWidgetState
       return;
     }
 
-    final selectedCommandIsValid =
-        commands.any((command) => command.id == _selectedCommandId);
+    final selectedCommandIsValid = commands.any(
+      (command) => command.id == _selectedCommandId,
+    );
     if (_selectedCommandId == null || !selectedCommandIsValid) {
       _selectedCommandId = commands.first.id;
       if (_commandController.text.trim().isEmpty) {
@@ -84,9 +87,9 @@ class _UserSendCommandDashboardWidgetState
   }
 
   void _reload() => setState(() {
-        _refreshKey++;
-        _sendError = null;
-      });
+    _refreshKey++;
+    _sendError = null;
+  });
 
   void _selectVehicle(String? value) {
     if (value == null || value == _selectedVehicleId) return;
@@ -242,13 +245,14 @@ class _UserSendCommandDashboardWidgetState
 
   Widget _buildBody(
     AsyncValue<
-            ({
-              List<UserDashboardVehicleOption> allVehicles,
-              List<UserDashboardVehicleOption> vehicles,
-              List<UserDashboardCustomCommand> commands,
-              List<UserDashboardSystemVariable> variables,
-            })>
-        state,
+      ({
+        List<UserDashboardVehicleOption> allVehicles,
+        List<UserDashboardVehicleOption> vehicles,
+        List<UserDashboardCustomCommand> commands,
+        List<UserDashboardSystemVariable> variables,
+      })
+    >
+    state,
   ) {
     if (state.hasError) {
       return UserDashboardWidgetError(
@@ -268,8 +272,9 @@ class _UserSendCommandDashboardWidgetState
     final selectedCommandId = selectedCommand?.id;
     final defaults = _systemVariableDefaults(data.variables);
     final commandText = _commandController.text;
-    final detectedVariables =
-        _templateVariables(commandText).toList(growable: false);
+    final detectedVariables = _templateVariables(
+      commandText,
+    ).toList(growable: false);
     final resolvedPreview = vehicle == null
         ? commandText.trim()
         : _resolveCommand(
@@ -286,8 +291,8 @@ class _UserSendCommandDashboardWidgetState
         if (data.vehicles.isEmpty)
           UserDashboardWidgetEmpty(
             message: blockedCount > 0
-                ? 'No operational vehicles available.'
-                : 'No vehicles available.',
+                ? context.mobileText('No operational vehicles available.')
+                : context.mobileText('No vehicles available.'),
             icon: Icons.no_transfer_rounded,
           )
         else ...[
@@ -300,16 +305,20 @@ class _UserSendCommandDashboardWidgetState
             const SizedBox(height: OpenVtsSpacing.xs),
             _CompactNotice(
               icon: Icons.lock_outline_rounded,
-              text:
-                  '$blockedCount blocked vehicle${blockedCount == 1 ? '' : 's'} excluded.',
+              text: context
+                  .mobileText("{value1} blocked vehicle{value2} excluded.", {
+                    'value1': (blockedCount).toString(),
+                    'value2': (blockedCount == 1 ? '' : 's').toString(),
+                  }),
             ),
           ],
           const SizedBox(height: OpenVtsSpacing.sm),
           _CommandSelector(
             commands: data.commands,
             value: selectedCommandId,
-            onChanged:
-                _isSending ? null : (value) => _selectCommand(value, data),
+            onChanged: _isSending
+                ? null
+                : (value) => _selectCommand(value, data),
           ),
           const SizedBox(height: OpenVtsSpacing.sm),
           TextField(
@@ -324,8 +333,8 @@ class _UserSendCommandDashboardWidgetState
               fontWeight: FontWeight.w700,
             ),
             decoration: InputDecoration(
-              labelText: 'Command Text',
-              hintText: 'Type command payload',
+              labelText: context.mobileText('Command Text'),
+              hintText: context.mobileText('Type command payload'),
               isDense: true,
               counterStyle: OpenVtsTypography.meta.copyWith(
                 color: Theme.of(context).colorScheme.outline,
@@ -352,7 +361,8 @@ class _UserSendCommandDashboardWidgetState
           if (_sendError != null) ...[
             const SizedBox(height: OpenVtsSpacing.sm),
             UserDashboardWidgetError(
-                message: userDashboardErrorText(_sendError!)),
+              message: userDashboardErrorText(_sendError!),
+            ),
           ],
           if (_result != null) ...[
             const SizedBox(height: OpenVtsSpacing.sm),
@@ -367,7 +377,11 @@ class _UserSendCommandDashboardWidgetState
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Icon(Icons.send_rounded, size: 17),
-            label: Text(_isSending ? 'Sending' : 'Send command'),
+            label: Text(
+              _isSending
+                  ? context.mobileText('Sending')
+                  : context.mobileText('Send command'),
+            ),
           ),
         ],
       ],
@@ -393,7 +407,7 @@ class _VehicleSelector extends StatelessWidget {
       initialValue: value,
       isExpanded: true,
       decoration: InputDecoration(
-        labelText: 'Vehicle',
+        labelText: context.mobileText('Vehicle'),
         isDense: true,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: OpenVtsSpacing.sm,
@@ -401,8 +415,9 @@ class _VehicleSelector extends StatelessWidget {
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(OpenVtsRadius.md),
-          borderSide:
-              BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
+          borderSide: BorderSide(
+            color: Theme.of(context).colorScheme.outlineVariant,
+          ),
         ),
       ),
       items: [
@@ -439,7 +454,7 @@ class _CommandSelector extends StatelessWidget {
       initialValue: commands.isEmpty ? null : value,
       isExpanded: true,
       decoration: InputDecoration(
-        labelText: 'Custom Command',
+        labelText: context.mobileText('Custom Command'),
         isDense: true,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: OpenVtsSpacing.sm,
@@ -447,11 +462,12 @@ class _CommandSelector extends StatelessWidget {
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(OpenVtsRadius.md),
-          borderSide:
-              BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
+          borderSide: BorderSide(
+            color: Theme.of(context).colorScheme.outlineVariant,
+          ),
         ),
       ),
-      hint: const Text('Type manually'),
+      hint: Text(context.mobileText('Type manually')),
       items: [
         for (final command in commands)
           DropdownMenuItem<String>(
@@ -502,7 +518,7 @@ class _VariablePreview extends StatelessWidget {
               ),
               const SizedBox(width: OpenVtsSpacing.xs),
               Text(
-                'Variable Preview',
+                context.mobileText('Variable Preview'),
                 style: OpenVtsTypography.meta.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                   fontWeight: FontWeight.w800,
@@ -629,21 +645,21 @@ class _SendResultSummary extends StatelessWidget {
             children: [
               Expanded(
                 child: UserDashboardMetricTile(
-                  label: 'Sent',
+                  label: context.mobileText('Sent'),
                   value: userDashboardFormatNumber(result.sentNow),
                 ),
               ),
               const SizedBox(width: OpenVtsSpacing.xs),
               Expanded(
                 child: UserDashboardMetricTile(
-                  label: 'Queued',
+                  label: context.mobileText('Queued'),
                   value: userDashboardFormatNumber(result.queued),
                 ),
               ),
               const SizedBox(width: OpenVtsSpacing.xs),
               Expanded(
                 child: UserDashboardMetricTile(
-                  label: 'Failed',
+                  label: context.mobileText('Failed'),
                   value: userDashboardFormatNumber(result.invalid),
                 ),
               ),
@@ -676,22 +692,22 @@ class _CommandResultRow extends StatelessWidget {
     final statusLabel = failed
         ? 'Failed'
         : queued
-            ? 'Queued'
-            : sent
-                ? 'Sent'
-                : 'Requested';
+        ? 'Queued'
+        : sent
+        ? 'Sent'
+        : 'Requested';
     final statusColor = failed
         ? OpenVtsColors.error
         : queued
-            ? OpenVtsColors.warning
-            : sent
-                ? OpenVtsColors.success
-                : Theme.of(context).colorScheme.onSurfaceVariant;
+        ? OpenVtsColors.warning
+        : sent
+        ? OpenVtsColors.success
+        : Theme.of(context).colorScheme.onSurfaceVariant;
     final vehicleLabel = (result.vehicleName ?? '').trim().isNotEmpty
         ? result.vehicleName!
         : (result.plateNumber ?? '').trim().isNotEmpty
-            ? result.plateNumber!
-            : result.vehicleId ?? 'Vehicle';
+        ? result.plateNumber!
+        : result.vehicleId ?? 'Vehicle';
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,

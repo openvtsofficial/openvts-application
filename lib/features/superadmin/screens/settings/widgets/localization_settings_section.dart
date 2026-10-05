@@ -7,6 +7,7 @@ import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../l10n/app_localizations.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
@@ -69,28 +70,47 @@ class _LocalizationSettingsSectionState
     if (loc == null) return;
     _language = loc.language.isNotEmpty ? loc.language : 'en';
     _direction = loc.layoutDirection;
+    if (ref.exists(appLocalizationPreferencesProvider)) {
+      final device = ref
+          .read(appLocalizationPreferencesProvider.notifier)
+          .languageOverride;
+      if (device != null) {
+        _language = device.languageCode;
+        _direction = device.isRtl
+            ? SuperadminLayoutDirection.rtl
+            : SuperadminLayoutDirection.ltr;
+      }
+    }
     _dateFormat = loc.dateFormat.isNotEmpty ? loc.dateFormat : 'YYYY-MM-DD';
     _use24Hour = loc.use24Hour;
     _theme = loc.theme;
     _timezone = loc.timezoneOffset.isNotEmpty ? loc.timezoneOffset : '+05:30';
     _units = loc.units;
-    _latCtrl.text = loc.defaultLat == 0 ? '' : loc.defaultLat.toString();
-    _lonCtrl.text = loc.defaultLon == 0 ? '' : loc.defaultLon.toString();
-    _zoomCtrl.text = loc.mapZoom.toString();
+    _latCtrl.text = loc.defaultLat?.toString() ?? '';
+    _lonCtrl.text = loc.defaultLon?.toString() ?? '';
+    _zoomCtrl.text = loc.mapZoom?.toString() ?? '';
     _hydrated = true;
   }
 
   void _syncToGlobalPreferences(SuperadminLocalizationSettings loc) {
-    final prefNotifier = ref.read(appLocalizationPreferencesProvider.notifier);
-    prefNotifier.applyFromSuperadminSettings(
-      language: loc.language,
-      dateFormat: loc.dateFormat,
-      use24Hour: loc.use24Hour,
-      theme: loc.theme.apiValue,
-      timezoneOffset: loc.timezoneOffset,
-      layoutDirection: loc.layoutDirection.apiValue,
-      units: loc.units.apiValue,
-    );
+    // Initial form hydration runs during build; publish app-wide preferences
+    // after the frame so Riverpod listeners can rebuild safely.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final prefNotifier = ref.read(
+        appLocalizationPreferencesProvider.notifier,
+      );
+      prefNotifier.applyFromSuperadminSettings(
+        preserveAppLanguage: true,
+        language: loc.language,
+        dateFormat: loc.dateFormat,
+        use24Hour: loc.use24Hour,
+        theme: loc.theme.apiValue,
+        timezoneOffset: loc.timezoneOffset,
+        layoutDirection: loc.layoutDirection.apiValue,
+        units: loc.units.apiValue,
+      );
+    });
   }
 
   @override
@@ -124,9 +144,9 @@ class _LocalizationSettingsSectionState
       theme: _theme,
       timezoneOffset: _timezone,
       units: _units,
-      defaultLat: lat ?? 0,
-      defaultLon: lon ?? 0,
-      mapZoom: zoom ?? 10,
+      defaultLat: lat,
+      defaultLon: lon,
+      mapZoom: zoom,
     );
 
     final ok = await _controller.updateLocalization(request);
@@ -163,11 +183,9 @@ class _LocalizationSettingsSectionState
           _theme = request.theme;
           _timezone = request.timezoneOffset;
           _units = request.units;
-          _latCtrl.text =
-              request.defaultLat == 0 ? '' : request.defaultLat.toString();
-          _lonCtrl.text =
-              request.defaultLon == 0 ? '' : request.defaultLon.toString();
-          _zoomCtrl.text = request.mapZoom.toString();
+          _latCtrl.text = request.defaultLat?.toString() ?? '';
+          _lonCtrl.text = request.defaultLon?.toString() ?? '';
+          _zoomCtrl.text = request.mapZoom?.toString() ?? '';
         });
       }
     } else {
@@ -335,9 +353,15 @@ class _LocalizationSettingsSectionState
                 label: l10n.units,
                 child: _SegmentedControl<SuperadminUnits>(
                   value: _units,
-                  segments: const [
-                    _Seg(value: SuperadminUnits.km, label: 'KM'),
-                    _Seg(value: SuperadminUnits.miles, label: 'MILES'),
+                  segments: [
+                    _Seg(
+                      value: SuperadminUnits.km,
+                      label: context.mobileText('km'),
+                    ),
+                    _Seg(
+                      value: SuperadminUnits.miles,
+                      label: context.mobileText('Miles'),
+                    ),
                   ],
                   onChanged: (v) => setState(() => _units = v),
                 ),
@@ -379,7 +403,7 @@ class _LocalizationSettingsSectionState
                         final s = (v ?? '').trim();
                         if (s.isEmpty) return null;
                         final n = double.tryParse(s);
-                        if (n == null) return 'Invalid number';
+                        if (n == null || !n.isFinite) return 'Invalid number';
                         if (n < -90 || n > 90) return '-90 to 90';
                         return null;
                       },
@@ -399,7 +423,7 @@ class _LocalizationSettingsSectionState
                         final s = (v ?? '').trim();
                         if (s.isEmpty) return null;
                         final n = double.tryParse(s);
-                        if (n == null) return 'Invalid number';
+                        if (n == null || !n.isFinite) return 'Invalid number';
                         if (n < -180 || n > 180) return '-180 to 180';
                         return null;
                       },
@@ -409,7 +433,7 @@ class _LocalizationSettingsSectionState
               ),
               const SizedBox(height: OpenVtsSpacing.sm),
               OpenVtsTextField(
-                label: 'Zoom',
+                label: context.mobileText('Zoom'),
                 controller: _zoomCtrl,
                 keyboardType: TextInputType.number,
                 hintText: '10',
@@ -423,10 +447,7 @@ class _LocalizationSettingsSectionState
                 },
               ),
               const SizedBox(height: OpenVtsSpacing.sm),
-              _PresetsRow(
-                label: l10n.quickPresets,
-                onPick: _applyPreset,
-              ),
+              _PresetsRow(label: l10n.quickPresets, onPick: _applyPreset),
             ],
           ),
           const SizedBox(height: OpenVtsSpacing.md),
@@ -498,7 +519,7 @@ class _PreviewCard extends StatelessWidget {
               ),
               const SizedBox(width: 6),
               Text(
-                'PREVIEW',
+                context.mobileText('Preview'),
                 style: TextStyle(
                   fontFamily: OpenVtsTypography.primaryFontFamily,
                   fontSize: 10.5,
@@ -513,17 +534,11 @@ class _PreviewCard extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: _PreviewTile(
-                  label: l10n.date,
-                  value: dateString,
-                ),
+                child: _PreviewTile(label: l10n.date, value: dateString),
               ),
               const SizedBox(width: OpenVtsSpacing.xs),
               Expanded(
-                child: _PreviewTile(
-                  label: l10n.time,
-                  value: timeString,
-                ),
+                child: _PreviewTile(label: l10n.time, value: timeString),
               ),
             ],
           ),
@@ -531,15 +546,12 @@ class _PreviewCard extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: _PreviewTile(
-                  label: l10n.timezone,
-                  value: timezone,
-                ),
+                child: _PreviewTile(label: l10n.timezone, value: timezone),
               ),
               const SizedBox(width: OpenVtsSpacing.xs),
               Expanded(
                 child: _PreviewTile(
-                  label: 'Distance',
+                  label: context.mobileText('Distance'),
                   value: '1,234 $distanceLabel',
                 ),
               ),
@@ -577,10 +589,7 @@ class _PreviewTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 10,
-        vertical: 8,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
@@ -646,16 +655,18 @@ class _LanguageDropdown extends StatelessWidget {
     for (final o in options) {
       final normalized = _normalizeLangCode(o.code);
       if (seen.add(normalized)) {
-        filtered
-            .add(SuperadminLanguageOption(code: normalized, label: o.label));
+        filtered.add(
+          SuperadminLanguageOption(code: normalized, label: o.label),
+        );
       }
     }
 
     // Ensure the current value is representable; fall back to a placeholder entry.
     final normalizedValue = _normalizeLangCode(value);
     final hasValue = filtered.any((o) => o.code == normalizedValue);
-    final effectiveValue =
-        hasValue ? normalizedValue : (value.isEmpty ? null : value);
+    final effectiveValue = hasValue
+        ? normalizedValue
+        : (value.isEmpty ? null : value);
 
     final items = <DropdownMenuItem<String>>[
       if (!hasValue && value.isNotEmpty)
@@ -887,7 +898,7 @@ class _SegBtn extends StatelessWidget {
 
 class _LabeledRow extends StatelessWidget {
   const _LabeledRow({required this.label, this.child, this.trailing})
-      : assert(child != null || trailing != null);
+    : assert(child != null || trailing != null);
 
   final String label;
   final Widget? child;
@@ -944,10 +955,7 @@ class _PresetsRow extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: OpenVtsTypography.label,
-        ),
+        Text(label, style: OpenVtsTypography.label),
         const SizedBox(height: OpenVtsSpacing.xs),
         Wrap(
           spacing: 6,
@@ -977,8 +985,9 @@ class _PresetChip extends StatelessWidget {
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
-          border:
-              Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+          border: Border.all(
+            color: Theme.of(context).colorScheme.outlineVariant,
+          ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -1035,10 +1044,14 @@ class _SectionHeader extends StatelessWidget {
               color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
               border: Border.all(
-                  color: Theme.of(context).colorScheme.outlineVariant),
+                color: Theme.of(context).colorScheme.outlineVariant,
+              ),
             ),
-            child: Icon(icon,
-                size: 16, color: Theme.of(context).colorScheme.onSurface),
+            child: Icon(
+              icon,
+              size: 16,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
           ),
           const SizedBox(width: OpenVtsSpacing.xs),
           Expanded(
@@ -1104,9 +1117,11 @@ class _GroupedCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(icon,
-                  size: 16,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant),
+              Icon(
+                icon,
+                size: 16,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Column(

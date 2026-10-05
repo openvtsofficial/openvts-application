@@ -10,7 +10,9 @@ import '../../../core/theme/open_vts_colors.dart';
 import '../../../core/theme/open_vts_radius.dart';
 import '../../../core/theme/open_vts_spacing.dart';
 import '../../../core/theme/open_vts_typography.dart';
+import '../../../shared/helpers/mobile_text.dart';
 import '../../../shared/helpers/toast_helper.dart';
+import '../../../shared/models/user_role.dart';
 import '../../../shared/widgets/open_vts_button.dart';
 import '../../../shared/widgets/open_vts_card.dart';
 import '../../../shared/widgets/open_vts_error_view.dart';
@@ -51,16 +53,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     });
 
     final profileState = ref.watch(profileControllerProvider);
-    final authUser =
-        ref.watch(authControllerProvider.select((state) => state.user));
+    final authUser = ref.watch(
+      authControllerProvider.select((state) => state.user),
+    );
     final user = profileState.user ?? authUser;
     final baseUrl = ref.watch(apiBaseUrlProvider);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor:
-          isDark ? OpenVtsColors.darkBackground : OpenVtsColors.background,
+      backgroundColor: isDark
+          ? OpenVtsColors.darkBackground
+          : OpenVtsColors.background,
       body: DecoratedBox(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -102,7 +106,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           _ProfileHeader(
-                              onBack: () => _handleBack(context, user)),
+                            onBack: () => _handleBack(context, user),
+                          ),
                           const SizedBox(height: OpenVtsSpacing.sm),
                           OpenVtsCard(
                             padding: const EdgeInsets.fromLTRB(
@@ -123,13 +128,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                     user.profileUrl,
                                   ),
                                   isUploading: profileState.isUploadingPhoto,
-                                  onEditPhoto: _pickProfilePhoto,
+                                  onEditPhoto:
+                                      user.role == UserRole.team ||
+                                          user.role == UserRole.driver
+                                      ? null
+                                      : _pickProfilePhoto,
                                 ),
                                 const SizedBox(height: OpenVtsSpacing.md),
                                 Text(
                                   user.name.trim().isNotEmpty
                                       ? user.name.trim()
-                                      : 'OpenVTS User',
+                                      : context.mobileText('OpenVTS User'),
                                   textAlign: TextAlign.center,
                                   style: OpenVtsTypography.titleLarge.copyWith(
                                     color: theme.colorScheme.onSurface,
@@ -177,7 +186,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                               children: [
                                 _ProfileInfoRow(
                                   icon: Icons.smartphone_rounded,
-                                  title: 'Mobile',
+                                  title: context.mobileText('Mobile'),
                                   value: _fallbackText(
                                     user.resolvedPhoneNumber,
                                     fallback: 'Not available',
@@ -191,8 +200,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                 ),
                                 _ProfileInfoRow(
                                   icon: Icons.shield_outlined,
-                                  title: 'Account Status',
-                                  value: _humanizeText(user.accountStatus) ??
+                                  title: context.mobileText('Account Status'),
+                                  value:
+                                      _humanizeText(user.accountStatus) ??
                                       'Active',
                                 ),
                               ],
@@ -200,7 +210,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           ),
                           const SizedBox(height: OpenVtsSpacing.lg),
                           OpenVtsButton(
-                            label: 'Logout',
+                            label: context.mobileText('Logout'),
                             height: 54,
                             trailingIcon: Icons.logout_rounded,
                             onPressed: profileState.isUploadingPhoto
@@ -212,12 +222,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                     final loggedOutRole = await ref
                                         .read(authControllerProvider.notifier)
                                         .logout();
+                                    if (!context.mounted) return;
                                     final roleLabel =
                                         (loggedOutRole ?? activeRole)
                                             ?.displayLabel;
                                     if (roleLabel != null) {
                                       ToastHelper.showInfo(
-                                        'Logged out from $roleLabel',
+                                        context.mobileText(
+                                          "Logged out from {value1}",
+                                          {'value1': (roleLabel).toString()},
+                                        ),
                                       );
                                     }
                                   },
@@ -255,33 +269,39 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       maxWidth: 1200,
       imageQuality: 90,
     );
-    if (image == null) {
+    if (!mounted || image == null) {
       return;
     }
 
     final bytes = await image.readAsBytes();
+    if (!mounted) return;
     if (bytes.isEmpty) {
-      ToastHelper.showError('Unable to read the selected image.');
+      ToastHelper.showError(
+        context.mobileText('Unable to read the selected image.'),
+      );
       return;
     }
 
     try {
-      final updatedUser =
-          await ref.read(profileControllerProvider.notifier).uploadPhoto(
-                bytes: bytes,
-                fileName: image.name.isNotEmpty ? image.name : 'profile.jpg',
-              );
+      final updatedUser = await ref
+          .read(profileControllerProvider.notifier)
+          .uploadPhoto(
+            bytes: bytes,
+            fileName: image.name.isNotEmpty ? image.name : 'profile.jpg',
+          );
       if (!mounted) {
         return;
       }
 
       if (_didProfilePhotoRefresh(previousProfileUrl, updatedUser.profileUrl)) {
-        ToastHelper.showInfo('Profile photo updated');
+        ToastHelper.showInfo(context.mobileText('Profile photo updated'));
         return;
       }
 
       ToastHelper.showError(
-        'The upload finished, but the new profile photo was not returned by the server.',
+        context.mobileText(
+          'The upload finished, but the new profile photo was not returned by the server.',
+        ),
       );
     } catch (_) {
       // Error toast is handled by the controller listener.
@@ -322,9 +342,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         .split(RegExp(r'[_\s-]+'))
         .where((segment) => segment.isNotEmpty)
         .map((segment) {
-      final lower = segment.toLowerCase();
-      return '${lower[0].toUpperCase()}${lower.substring(1)}';
-    }).join(' ');
+          final lower = segment.toLowerCase();
+          return '${lower[0].toUpperCase()}${lower.substring(1)}';
+        })
+        .join(' ');
   }
 
   static String _verificationLabel(CurrentUser user) {
@@ -391,8 +412,9 @@ class _ProfileHeader extends StatelessWidget {
         IconButton(
           onPressed: onBack,
           style: IconButton.styleFrom(
-            backgroundColor:
-                isDark ? OpenVtsColors.darkSurface : OpenVtsColors.white,
+            backgroundColor: isDark
+                ? OpenVtsColors.darkSurface
+                : OpenVtsColors.white,
             foregroundColor: theme.colorScheme.onSurface,
             minimumSize: const Size.square(42),
             shape: RoundedRectangleBorder(
@@ -406,7 +428,7 @@ class _ProfileHeader extends StatelessWidget {
         ),
         const SizedBox(width: OpenVtsSpacing.sm),
         Text(
-          'Profile',
+          context.mobileText('Profile'),
           style: OpenVtsTypography.titleSmall.copyWith(
             color: theme.colorScheme.onSurface,
             fontWeight: FontWeight.w700,
@@ -430,7 +452,7 @@ class _ProfileAvatar extends StatelessWidget {
   final List<int>? localPhotoBytes;
   final String? profileImageUrl;
   final bool isUploading;
-  final VoidCallback onEditPhoto;
+  final VoidCallback? onEditPhoto;
 
   @override
   Widget build(BuildContext context) {
@@ -463,64 +485,65 @@ class _ProfileAvatar extends StatelessWidget {
                       fit: BoxFit.cover,
                     )
                   : profileImageUrl == null
-                      ? Center(
-                          child: Text(
-                            _initials(displayName),
-                            style: OpenVtsTypography.titleMedium.copyWith(
-                              color: theme.colorScheme.onSurface,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        )
-                      : Image.network(
-                          key: ValueKey(profileImageUrl),
-                          profileImageUrl!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) {
-                            return Icon(
-                              Icons.person_outline_rounded,
-                              size: 40,
-                              color: theme.colorScheme.onSurface,
-                            );
-                          },
+                  ? Center(
+                      child: Text(
+                        _initials(displayName),
+                        style: OpenVtsTypography.titleMedium.copyWith(
+                          color: theme.colorScheme.onSurface,
+                          fontWeight: FontWeight.w700,
                         ),
+                      ),
+                    )
+                  : Image.network(
+                      key: ValueKey(profileImageUrl),
+                      profileImageUrl!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) {
+                        return Icon(
+                          Icons.person_outline_rounded,
+                          size: 40,
+                          color: theme.colorScheme.onSurface,
+                        );
+                      },
+                    ),
             ),
           ),
-          PositionedDirectional(
-            end: 0,
-            bottom: 6,
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                customBorder: const CircleBorder(),
-                onTap: isUploading ? null : onEditPhoto,
-                child: Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: OpenVtsColors.brandInk,
-                    border: Border.all(color: OpenVtsColors.white, width: 2),
-                  ),
-                  child: isUploading
-                      ? const Padding(
-                          padding: EdgeInsets.all(10),
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              OpenVtsColors.white,
+          if (onEditPhoto != null)
+            PositionedDirectional(
+              end: 0,
+              bottom: 6,
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  customBorder: const CircleBorder(),
+                  onTap: isUploading ? null : onEditPhoto,
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: OpenVtsColors.brandInk,
+                      border: Border.all(color: OpenVtsColors.white, width: 2),
+                    ),
+                    child: isUploading
+                        ? const Padding(
+                            padding: EdgeInsets.all(10),
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                OpenVtsColors.white,
+                              ),
                             ),
+                          )
+                        : const Icon(
+                            Icons.photo_camera_outlined,
+                            size: 16,
+                            color: OpenVtsColors.white,
                           ),
-                        )
-                      : const Icon(
-                          Icons.photo_camera_outlined,
-                          size: 16,
-                          color: OpenVtsColors.white,
-                        ),
+                  ),
                 ),
               ),
             ),
-          ),
         ],
       ),
     );
@@ -558,13 +581,14 @@ class _VerificationPill extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    final backgroundColor =
-        isDark ? color.withValues(alpha: 0.15) : color.withValues(alpha: 0.08);
+    final backgroundColor = isDark
+        ? color.withValues(alpha: 0.15)
+        : color.withValues(alpha: 0.08);
 
     final textColor = isDark
         ? (color == OpenVtsColors.brandInk
-            ? theme.colorScheme.onSurface
-            : color)
+              ? theme.colorScheme.onSurface
+              : color)
         : color;
 
     return DecoratedBox(
@@ -573,7 +597,8 @@ class _VerificationPill extends StatelessWidget {
         borderRadius: BorderRadius.circular(OpenVtsRadius.md),
         border: isDark && color == OpenVtsColors.brandInk
             ? Border.all(
-                color: theme.colorScheme.outline.withValues(alpha: 0.3))
+                color: theme.colorScheme.outline.withValues(alpha: 0.3),
+              )
             : null,
       ),
       child: Padding(

@@ -6,6 +6,7 @@ import '../../../../../core/router/route_paths.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../models/admin_dashboard_model.dart';
 
@@ -29,8 +30,8 @@ class AdminVehicleExpiryCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _SectionHeading(
-            title: 'Vehicle Expiry',
+          _SectionHeading(
+            title: context.mobileText('Vehicle Expiry'),
             icon: Icons.calendar_month_outlined,
           ),
           const SizedBox(height: OpenVtsSpacing.sm),
@@ -38,14 +39,14 @@ class AdminVehicleExpiryCard extends StatelessWidget {
             children: [
               Expanded(
                 child: _MiniMetric(
-                  label: 'This Week',
+                  label: context.mobileText('This Week'),
                   value: _formatCompactNumber(expiry.thisWeek),
                 ),
               ),
               const SizedBox(width: OpenVtsSpacing.xs),
               Expanded(
                 child: _MiniMetric(
-                  label: 'This Month',
+                  label: context.mobileText('This Month'),
                   value: _formatCompactNumber(expiry.thisMonth),
                 ),
               ),
@@ -54,7 +55,7 @@ class AdminVehicleExpiryCard extends StatelessWidget {
           if (preview.isNotEmpty) ...[
             const SizedBox(height: OpenVtsSpacing.sm),
             Text(
-              'Expiring soon',
+              context.mobileText('Expiring soon'),
               style: OpenVtsTypography.meta.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
                 fontWeight: FontWeight.w800,
@@ -83,13 +84,14 @@ class AdminVehicleExpiryCard extends StatelessWidget {
                 ),
                 foregroundColor: Theme.of(context).colorScheme.onSurface,
                 side: BorderSide(
-                    color: Theme.of(context).colorScheme.outlineVariant),
+                  color: Theme.of(context).colorScheme.outlineVariant,
+                ),
                 textStyle: OpenVtsTypography.meta.copyWith(
                   fontWeight: FontWeight.w800,
                 ),
               ),
               icon: const Icon(Icons.arrow_forward_rounded, size: 15),
-              label: const Text('Open Vehicles'),
+              label: Text(context.mobileText('Open Vehicles')),
             ),
           ),
         ],
@@ -115,11 +117,15 @@ class _SectionHeading extends StatelessWidget {
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-            border:
-                Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+            border: Border.all(
+              color: Theme.of(context).colorScheme.outlineVariant,
+            ),
           ),
-          child: Icon(icon,
-              size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
+          child: Icon(
+            icon,
+            size: 16,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
         ),
         const SizedBox(width: OpenVtsSpacing.xs),
         Flexible(
@@ -208,7 +214,8 @@ class _ExpiryPreviewRow extends StatelessWidget {
               color: Theme.of(context).colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
               border: Border.all(
-                  color: Theme.of(context).colorScheme.outlineVariant),
+                color: Theme.of(context).colorScheme.outlineVariant,
+              ),
             ),
             child: Icon(
               Icons.directions_car_outlined,
@@ -293,9 +300,9 @@ int? _daysLeft(DateTime? expiry, DateTime now) {
     return -1;
   }
 
-  return DateUtils.dateOnly(localExpiry)
-      .difference(DateUtils.dateOnly(localNow))
-      .inDays;
+  return DateUtils.dateOnly(
+    localExpiry,
+  ).difference(DateUtils.dateOnly(localNow)).inDays;
 }
 
 String _daysLabel(int? days) {

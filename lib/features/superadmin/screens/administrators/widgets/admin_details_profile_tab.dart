@@ -8,7 +8,9 @@ import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../core/utils/date_time_formatter.dart';
 import '../../../../../core/utils/validators.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
+import '../../../../../shared/helpers/validation_localizations.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../../../shared/widgets/open_vts_loader.dart';
@@ -59,7 +61,8 @@ class _AdminDetailsProfileTabState
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref
           .read(
-              superadminAdminDetailsControllerProvider(widget.adminId).notifier)
+            superadminAdminDetailsControllerProvider(widget.adminId).notifier,
+          )
           .ensureVehicleCountLoaded();
     });
   }
@@ -68,10 +71,12 @@ class _AdminDetailsProfileTabState
   Widget build(BuildContext context) {
     final provider = superadminAdminDetailsControllerProvider(widget.adminId);
     final admin = ref.watch(provider.select((s) => s.admin));
-    final effectiveIsActive =
-        ref.watch(provider.select((s) => s.effectiveIsActive));
-    final isUpdatingStatus =
-        ref.watch(provider.select((s) => s.isUpdatingStatus));
+    final effectiveIsActive = ref.watch(
+      provider.select((s) => s.effectiveIsActive),
+    );
+    final isUpdatingStatus = ref.watch(
+      provider.select((s) => s.isUpdatingStatus),
+    );
     final isBusy = ref.watch(
       provider.select(
         (s) => s.isSavingProfile || s.isChangingPassword || s.isSavingCompany,
@@ -129,11 +134,16 @@ class _AdminDetailsProfileTabState
     if (!context.mounted) return;
     if (ok) {
       ToastHelper.showSuccess(
-        next ? 'Administrator activated.' : 'Administrator deactivated.',
+        next
+            ? context.mobileText('Administrator activated.')
+            : context.mobileText('Administrator deactivated.'),
         context: context,
       );
     } else {
-      ToastHelper.showError('Failed to update status.', context: context);
+      ToastHelper.showError(
+        context.mobileText('Failed to update status.'),
+        context: context,
+      );
     }
   }
 
@@ -214,10 +224,12 @@ class _AdminPersonalCard extends ConsumerWidget {
     );
     final resolvedLastLogin =
         controllerState.resolvedLastLogin ?? admin.recentLogin;
-    final lastLogin =
-        resolvedLastLogin != null ? fmt.formatDate(resolvedLastLogin) : 'Never';
-    final created =
-        admin.createdAt != null ? fmt.formatDate(admin.createdAt!) : '—';
+    final lastLogin = resolvedLastLogin != null
+        ? fmt.formatDate(resolvedLastLogin)
+        : 'Never';
+    final created = admin.createdAt != null
+        ? fmt.formatDate(admin.createdAt!)
+        : '—';
 
     return _SectionCard(
       title: 'ACCOUNT',
@@ -277,21 +289,30 @@ class _AdminPersonalCard extends ConsumerWidget {
           ),
         ),
         _InfoRow(
-            label: 'Address', value: addressLine, icon: Icons.home_outlined),
+          label: context.mobileText('Address'),
+          value: addressLine,
+          icon: Icons.home_outlined,
+        ),
         _InfoRow(
-            label: 'Country',
-            value: _resolveProfileCountry(admin, address),
-            icon: Icons.public_outlined),
+          label: context.mobileText('Country'),
+          value: _resolveProfileCountry(admin, address),
+          icon: Icons.public_outlined,
+        ),
         _InfoRow(
-            label: 'State',
-            value: _resolveProfileState(admin, address),
-            icon: Icons.map_outlined),
+          label: context.mobileText('State (optional)'),
+          value: _resolveProfileState(admin, address),
+          icon: Icons.map_outlined,
+        ),
         _InfoRow(
-            label: 'City', value: city, icon: Icons.location_city_outlined),
+          label: context.mobileText('City (optional)'),
+          value: city,
+          icon: Icons.location_city_outlined,
+        ),
         _InfoRow(
-            label: 'Pincode',
-            value: pincode,
-            icon: Icons.local_post_office_outlined),
+          label: context.mobileText('Pincode'),
+          value: pincode,
+          icon: Icons.local_post_office_outlined,
+        ),
         // Compact created & last login row
         Padding(
           padding: const EdgeInsets.only(top: OpenVtsSpacing.xs),
@@ -307,7 +328,7 @@ class _AdminPersonalCard extends ConsumerWidget {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      'Created: ',
+                      context.mobileText('Created: '),
                       style: OpenVtsTypography.meta.copyWith(
                         color: scheme.onSurface.withValues(alpha: 0.6),
                         fontSize: 10,
@@ -340,7 +361,7 @@ class _AdminPersonalCard extends ConsumerWidget {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      'Last login: ',
+                      context.mobileText('Last login: '),
                       style: OpenVtsTypography.meta.copyWith(
                         color: scheme.onSurface.withValues(alpha: 0.6),
                         fontSize: 10,
@@ -415,20 +436,28 @@ class _CompanyCard extends StatelessWidget {
             size: 16,
             color: scheme.onSurface.withValues(alpha: 0.7),
           ),
-          tooltip: 'Edit company',
+          tooltip: context.mobileText('Edit company'),
           onPressed: isBusy ? null : onEditCompany,
         ),
       ),
       children: [
         _InfoRow(
-            label: 'Company',
-            value: companyName,
-            icon: Icons.business_outlined),
+          label: context.mobileText('Company'),
+          value: companyName,
+          icon: Icons.business_outlined,
+        ),
         _InfoRow(
-            label: 'Website', value: website, icon: Icons.language_outlined),
-        _InfoRow(label: 'Domain', value: domain, icon: Icons.dns_outlined),
+          label: context.mobileText('Website'),
+          value: website,
+          icon: Icons.language_outlined,
+        ),
         _InfoRow(
-          label: 'Brand color',
+          label: context.mobileText('Domain'),
+          value: domain,
+          icon: Icons.dns_outlined,
+        ),
+        _InfoRow(
+          label: context.mobileText('Brand color'),
           value: color,
           icon: Icons.palette_outlined,
           trailing: color.trim().isNotEmpty
@@ -441,7 +470,8 @@ class _CompanyCard extends StatelessWidget {
                       color: _colorFromName(color),
                       shape: BoxShape.circle,
                       border: Border.all(
-                          color: scheme.outline.withValues(alpha: 0.5)),
+                        color: scheme.outline.withValues(alpha: 0.5),
+                      ),
                     ),
                   ),
                 )
@@ -500,7 +530,7 @@ class _BottomActions extends StatelessWidget {
       children: [
         Expanded(
           child: OpenVtsButton(
-            label: 'Edit Profile',
+            label: context.mobileText('Edit Profile'),
             variant: OpenVtsButtonVariant.secondary,
             onPressed: isBusy ? null : onEditProfile,
           ),
@@ -508,7 +538,7 @@ class _BottomActions extends StatelessWidget {
         const SizedBox(width: OpenVtsSpacing.sm),
         Expanded(
           child: OpenVtsButton(
-            label: 'Change Password',
+            label: context.mobileText('Change Password'),
             variant: OpenVtsButtonVariant.secondary,
             onPressed: isBusy ? null : onChangePassword,
           ),
@@ -523,8 +553,11 @@ class _BottomActions extends StatelessWidget {
 // =============================================================================
 
 class _SectionCard extends StatelessWidget {
-  const _SectionCard(
-      {required this.title, required this.children, this.trailing});
+  const _SectionCard({
+    required this.title,
+    required this.children,
+    this.trailing,
+  });
 
   final String title;
   final List<Widget> children;
@@ -588,8 +621,9 @@ class _Avatar extends StatelessWidget {
       child: Text(
         _initials(name),
         style: OpenVtsTypography.label.copyWith(
-          color:
-              isDark ? Colors.white : Theme.of(context).colorScheme.onPrimary,
+          color: isDark
+              ? Colors.white
+              : Theme.of(context).colorScheme.onPrimary,
           fontWeight: FontWeight.w700,
         ),
       ),
@@ -597,8 +631,11 @@ class _Avatar extends StatelessWidget {
   }
 
   static String _initials(String value) {
-    final parts =
-        value.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
+    final parts = value
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((p) => p.isNotEmpty)
+        .toList();
     if (parts.isEmpty) return 'OV';
     if (parts.length == 1) {
       return parts.first
@@ -633,8 +670,11 @@ class _InfoRow extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (icon != null) ...[
-            Icon(icon,
-                size: 14, color: scheme.onSurface.withValues(alpha: 0.6)),
+            Icon(
+              icon,
+              size: 14,
+              color: scheme.onSurface.withValues(alpha: 0.6),
+            ),
             const SizedBox(width: 8),
           ],
           SizedBox(
@@ -650,7 +690,8 @@ class _InfoRow extends StatelessWidget {
           ),
           const SizedBox(width: OpenVtsSpacing.xs),
           Expanded(
-            child: valueWidget ??
+            child:
+                valueWidget ??
                 Text(
                   _displayValue(value ?? ''),
                   style: OpenVtsTypography.label.copyWith(
@@ -682,13 +723,14 @@ String _resolveProfileCountry(
   final name = address?.countryName.trim().isNotEmpty == true
       ? address!.countryName.trim()
       : admin.countryName.trim().isNotEmpty
-          ? admin.countryName.trim()
-          : null;
+      ? admin.countryName.trim()
+      : null;
   if (name != null) return name;
-  final code = (address?.countryCode.trim().isNotEmpty == true
-          ? address!.countryCode
-          : admin.countryCode)
-      .trim();
+  final code =
+      (address?.countryCode.trim().isNotEmpty == true
+              ? address!.countryCode
+              : admin.countryCode)
+          .trim();
   if (code.isEmpty) return '—';
   return LocationLabelResolver.resolveCountry(code);
 }
@@ -700,17 +742,19 @@ String _resolveProfileState(
   final name = address?.stateName.trim().isNotEmpty == true
       ? address!.stateName.trim()
       : admin.stateName.trim().isNotEmpty
-          ? admin.stateName.trim()
-          : null;
+      ? admin.stateName.trim()
+      : null;
   if (name != null) return name;
-  final countryCode = (address?.countryCode.trim().isNotEmpty == true
-          ? address!.countryCode
-          : admin.countryCode)
-      .trim();
-  final stateCode = (address?.stateCode.trim().isNotEmpty == true
-          ? address!.stateCode
-          : admin.stateCode)
-      .trim();
+  final countryCode =
+      (address?.countryCode.trim().isNotEmpty == true
+              ? address!.countryCode
+              : admin.countryCode)
+          .trim();
+  final stateCode =
+      (address?.stateCode.trim().isNotEmpty == true
+              ? address!.stateCode
+              : admin.stateCode)
+          .trim();
   if (stateCode.isEmpty) return '—';
   return LocationLabelResolver.resolveState(countryCode, stateCode);
 }
@@ -754,12 +798,14 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
     _addressLine = TextEditingController(text: addr?.addressLine ?? a.location);
     _pincode = TextEditingController(text: addr?.pincode ?? a.pincode);
     _mobilePrefix = a.mobilePrefix.isEmpty ? null : a.mobilePrefix;
-    _countryCode = (addr?.countryCode.isNotEmpty == true
-            ? addr!.countryCode
-            : a.countryCode)
-        .toUpperCase();
-    _stateCode =
-        (addr?.stateCode.isNotEmpty == true ? addr!.stateCode : a.stateCode);
+    _countryCode =
+        (addr?.countryCode.isNotEmpty == true
+                ? addr!.countryCode
+                : a.countryCode)
+            .toUpperCase();
+    _stateCode = (addr?.stateCode.isNotEmpty == true
+        ? addr!.stateCode
+        : a.stateCode);
     _cityName =
         (addr?.cityName.isNotEmpty == true ? addr!.cityName : a.cityName)
             .trim();
@@ -781,8 +827,9 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
   }
 
   Future<void> _prepareCatalog() async {
-    final controller =
-        ref.read(superadminAdministratorsControllerProvider.notifier);
+    final controller = ref.read(
+      superadminAdministratorsControllerProvider.notifier,
+    );
     try {
       await controller.prepareCreateForm();
       if (_countryCode != null && _countryCode!.isNotEmpty) {
@@ -798,8 +845,9 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(superadminAdministratorsControllerProvider);
-    final detailsState =
-        ref.watch(superadminAdminDetailsControllerProvider(widget.adminId));
+    final detailsState = ref.watch(
+      superadminAdminDetailsControllerProvider(widget.adminId),
+    );
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
 
     final countries = state.countries;
@@ -832,10 +880,7 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
       if (_stateCode != null &&
           _stateCode!.isNotEmpty &&
           !states.any((s) => s.code == _stateCode))
-        OpenVtsDropdownOption<String>(
-          value: _stateCode!,
-          label: _stateCode!,
-        ),
+        OpenVtsDropdownOption<String>(value: _stateCode!, label: _stateCode!),
     ];
     final cityOptions = [
       for (final c in cities)
@@ -847,10 +892,7 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
       if (_cityName != null &&
           _cityName!.isNotEmpty &&
           !cities.any((c) => c.name == _cityName))
-        OpenVtsDropdownOption<String>(
-          value: _cityName!,
-          label: _cityName!,
-        ),
+        OpenVtsDropdownOption<String>(value: _cityName!, label: _cityName!),
     ];
     final prefixOptions = [
       for (final p in prefixes)
@@ -881,7 +923,7 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
             mainAxisSize: MainAxisSize.min,
             children: [
               const _SheetHandle(),
-              const _SheetTitle(title: 'Edit profile'),
+              _SheetTitle(title: context.mobileText('Edit profile')),
               Flexible(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.fromLTRB(
@@ -905,14 +947,14 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
                         const _FormSectionLabel(label: 'CONTACT'),
                         const SizedBox(height: OpenVtsSpacing.xs),
                         OpenVtsTextField(
-                          label: 'Name',
+                          label: context.mobileText('Name'),
                           controller: _name,
                           textInputAction: TextInputAction.next,
-                          validator: Validators.adminNameOptional,
+                          validator: Validators.adminName,
                         ),
                         const SizedBox(height: OpenVtsSpacing.sm),
                         OpenVtsTextField(
-                          label: 'Email',
+                          label: context.mobileText('Email'),
                           controller: _email,
                           keyboardType: TextInputType.emailAddress,
                           textInputAction: TextInputAction.next,
@@ -925,8 +967,8 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
                             Expanded(
                               flex: 4,
                               child: OpenVtsSearchableDropdown<String>(
-                                label: 'Prefix',
-                                hintText: 'Select',
+                                label: context.mobileText('Prefix'),
+                                hintText: context.mobileText('Select'),
                                 searchHintText: 'Search dial code or country',
                                 sheetTitle: 'Mobile Prefix',
                                 value: _mobilePrefix,
@@ -940,7 +982,7 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
                             Expanded(
                               flex: 6,
                               child: OpenVtsTextField(
-                                label: 'Mobile number',
+                                label: context.mobileText('Mobile number'),
                                 controller: _mobileNumber,
                                 keyboardType: TextInputType.phone,
                                 textInputAction: TextInputAction.next,
@@ -953,7 +995,7 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
                         const _FormSectionLabel(label: 'ADDRESS'),
                         const SizedBox(height: OpenVtsSpacing.xs),
                         OpenVtsTextField(
-                          label: 'Address',
+                          label: context.mobileText('Address'),
                           controller: _addressLine,
                           maxLines: 2,
                           textInputAction: TextInputAction.next,
@@ -961,7 +1003,7 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
                         ),
                         const SizedBox(height: OpenVtsSpacing.sm),
                         OpenVtsTextField(
-                          label: 'Pincode',
+                          label: context.mobileText('Pincode'),
                           controller: _pincode,
                           keyboardType: TextInputType.number,
                           textInputAction: TextInputAction.done,
@@ -974,8 +1016,8 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
                         const _FormSectionLabel(label: 'LOCATION'),
                         const SizedBox(height: OpenVtsSpacing.xs),
                         OpenVtsSearchableDropdown<String>(
-                          label: 'Country',
-                          hintText: 'Select country',
+                          label: context.mobileText('Country'),
+                          hintText: context.mobileText('Select country'),
                           searchHintText: 'Search country name or code',
                           sheetTitle: 'Country',
                           value: _countryCode,
@@ -1004,8 +1046,8 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
                         ),
                         const SizedBox(height: OpenVtsSpacing.sm),
                         OpenVtsSearchableDropdown<String>(
-                          label: 'State',
-                          hintText: 'Select state',
+                          label: context.mobileText('State (optional)'),
+                          hintText: context.mobileText('Select state'),
                           searchHintText: 'Search state name or code',
                           sheetTitle: 'State',
                           value: _stateCode,
@@ -1030,8 +1072,8 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
                         ),
                         const SizedBox(height: OpenVtsSpacing.sm),
                         OpenVtsSearchableDropdown<String>(
-                          label: 'City',
-                          hintText: 'Select city',
+                          label: context.mobileText('City (optional)'),
+                          hintText: context.mobileText('Select city'),
                           searchHintText: 'Search city',
                           sheetTitle: 'City',
                           value: _cityName,
@@ -1060,7 +1102,8 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     final controller = ref.read(
-        superadminAdminDetailsControllerProvider(widget.adminId).notifier);
+      superadminAdminDetailsControllerProvider(widget.adminId).notifier,
+    );
     final ok = await controller.updateProfile(
       SuperadminUpdateAdminRequest(
         name: _name.text,
@@ -1077,9 +1120,13 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
     if (!mounted) return;
     if (ok) {
       Navigator.of(context).maybePop();
-      ToastHelper.showSuccess('Profile updated.', context: context);
+      ToastHelper.showSuccess(
+        context.mobileText('Profile updated.'),
+        context: context,
+      );
     } else {
-      final msg = ref
+      final msg =
+          ref
               .read(superadminAdminDetailsControllerProvider(widget.adminId))
               .sectionErrorMessage ??
           'Failed to update profile.';
@@ -1117,8 +1164,9 @@ class _ChangePasswordSheetState extends ConsumerState<_ChangePasswordSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final state =
-        ref.watch(superadminAdminDetailsControllerProvider(widget.adminId));
+    final state = ref.watch(
+      superadminAdminDetailsControllerProvider(widget.adminId),
+    );
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
     return Padding(
       padding: EdgeInsets.only(bottom: bottomInset),
@@ -1128,7 +1176,7 @@ class _ChangePasswordSheetState extends ConsumerState<_ChangePasswordSheet> {
           mainAxisSize: MainAxisSize.min,
           children: [
             const _SheetHandle(),
-            const _SheetTitle(title: 'Change password'),
+            _SheetTitle(title: context.mobileText('Change password')),
             Padding(
               padding: const EdgeInsets.fromLTRB(
                 OpenVtsSpacing.md,
@@ -1142,7 +1190,7 @@ class _ChangePasswordSheetState extends ConsumerState<_ChangePasswordSheet> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     OpenVtsTextField(
-                      label: 'New password',
+                      label: context.mobileText('New password'),
                       controller: _password,
                       obscureText: _obscure1,
                       textInputAction: TextInputAction.next,
@@ -1160,7 +1208,7 @@ class _ChangePasswordSheetState extends ConsumerState<_ChangePasswordSheet> {
                     ),
                     const SizedBox(height: OpenVtsSpacing.sm),
                     OpenVtsTextField(
-                      label: 'Confirm password',
+                      label: context.mobileText('Confirm password'),
                       controller: _confirm,
                       obscureText: _obscure2,
                       textInputAction: TextInputAction.done,
@@ -1174,10 +1222,8 @@ class _ChangePasswordSheetState extends ConsumerState<_ChangePasswordSheet> {
                         ),
                         onPressed: () => setState(() => _obscure2 = !_obscure2),
                       ),
-                      validator: (v) => Validators.adminConfirmPassword(
-                        v,
-                        _password.text,
-                      ),
+                      validator: (v) =>
+                          Validators.adminConfirmPassword(v, _password.text),
                     ),
                   ],
                 ),
@@ -1198,19 +1244,24 @@ class _ChangePasswordSheetState extends ConsumerState<_ChangePasswordSheet> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     final controller = ref.read(
-        superadminAdminDetailsControllerProvider(widget.adminId).notifier);
+      superadminAdminDetailsControllerProvider(widget.adminId).notifier,
+    );
     final ok = await controller.changePassword(
-      newPassword: _password.text.trim(),
-      confirmPassword: _confirm.text.trim(),
+      newPassword: _password.text,
+      confirmPassword: _confirm.text,
     );
     if (!mounted) return;
     if (ok) {
       _password.clear();
       _confirm.clear();
       Navigator.of(context).maybePop();
-      ToastHelper.showSuccess('Password updated.', context: context);
+      ToastHelper.showSuccess(
+        context.mobileText('Password updated.'),
+        context: context,
+      );
     } else {
-      final msg = ref
+      final msg =
+          ref
               .read(superadminAdminDetailsControllerProvider(widget.adminId))
               .sectionErrorMessage ??
           'Failed to update password.';
@@ -1276,8 +1327,9 @@ class _EditCompanySheetState extends ConsumerState<_EditCompanySheet> {
 
   @override
   Widget build(BuildContext context) {
-    final state =
-        ref.watch(superadminAdminDetailsControllerProvider(widget.adminId));
+    final state = ref.watch(
+      superadminAdminDetailsControllerProvider(widget.adminId),
+    );
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
 
     final scheme = Theme.of(context).colorScheme;
@@ -1293,8 +1345,9 @@ class _EditCompanySheetState extends ConsumerState<_EditCompanySheet> {
                 decoration: BoxDecoration(
                   color: _colorFromName(c),
                   shape: BoxShape.circle,
-                  border:
-                      Border.all(color: scheme.outline.withValues(alpha: 0.5)),
+                  border: Border.all(
+                    color: scheme.outline.withValues(alpha: 0.5),
+                  ),
                 ),
               ),
               const SizedBox(width: 8),
@@ -1331,7 +1384,7 @@ class _EditCompanySheetState extends ConsumerState<_EditCompanySheet> {
             mainAxisSize: MainAxisSize.min,
             children: [
               const _SheetHandle(),
-              const _SheetTitle(title: 'Edit company'),
+              _SheetTitle(title: context.mobileText('Edit company')),
               Flexible(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.fromLTRB(
@@ -1346,14 +1399,14 @@ class _EditCompanySheetState extends ConsumerState<_EditCompanySheet> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         OpenVtsTextField(
-                          label: 'Company name',
+                          label: context.mobileText('Company name'),
                           controller: _name,
                           textInputAction: TextInputAction.next,
                           validator: Validators.companyName,
                         ),
                         const SizedBox(height: OpenVtsSpacing.sm),
                         OpenVtsTextField(
-                          label: 'Website URL',
+                          label: context.mobileText('Website URL'),
                           controller: _website,
                           keyboardType: TextInputType.url,
                           textInputAction: TextInputAction.next,
@@ -1363,8 +1416,8 @@ class _EditCompanySheetState extends ConsumerState<_EditCompanySheet> {
                             if (s.isEmpty) return null;
                             final normalized =
                                 s.startsWith(RegExp(r'https?://'))
-                                    ? s
-                                    : 'https://$s';
+                                ? s
+                                : 'https://$s';
                             final uri = Uri.tryParse(normalized);
                             if (uri == null ||
                                 !(uri.hasScheme &&
@@ -1377,7 +1430,7 @@ class _EditCompanySheetState extends ConsumerState<_EditCompanySheet> {
                         ),
                         const SizedBox(height: OpenVtsSpacing.sm),
                         OpenVtsTextField(
-                          label: 'Custom domain',
+                          label: context.mobileText('Custom domain'),
                           controller: _domain,
                           keyboardType: TextInputType.url,
                           textInputAction: TextInputAction.next,
@@ -1394,7 +1447,7 @@ class _EditCompanySheetState extends ConsumerState<_EditCompanySheet> {
                         ),
                         const SizedBox(height: OpenVtsSpacing.sm),
                         _DropdownField<String>(
-                          label: 'Primary color',
+                          label: context.mobileText('Primary color'),
                           value: _primaryColor,
                           items: colorItems,
                           onChanged: (v) => setState(() => _primaryColor = v),
@@ -1413,8 +1466,8 @@ class _EditCompanySheetState extends ConsumerState<_EditCompanySheet> {
                               if (s.isEmpty) return null;
                               final normalized =
                                   s.startsWith(RegExp(r'https?://'))
-                                      ? s
-                                      : 'https://$s';
+                                  ? s
+                                  : 'https://$s';
                               final uri = Uri.tryParse(normalized);
                               if (uri == null ||
                                   !(uri.hasScheme &&
@@ -1474,7 +1527,8 @@ class _EditCompanySheetState extends ConsumerState<_EditCompanySheet> {
     }
 
     final controller = ref.read(
-        superadminAdminDetailsControllerProvider(widget.adminId).notifier);
+      superadminAdminDetailsControllerProvider(widget.adminId).notifier,
+    );
     final ok = await controller.updateCompany(
       SuperadminAdminCompanyUpdateRequest(
         name: _name.text.trim(),
@@ -1487,15 +1541,20 @@ class _EditCompanySheetState extends ConsumerState<_EditCompanySheet> {
     if (!mounted) return;
     if (ok) {
       Navigator.of(context).maybePop();
-      ToastHelper.showSuccess('Company updated.', context: context);
+      ToastHelper.showSuccess(
+        context.mobileText('Company updated.'),
+        context: context,
+      );
     } else {
-      final backendMsg = ref
+      final backendMsg =
+          ref
               .read(superadminAdminDetailsControllerProvider(widget.adminId))
               .sectionErrorMessage
               ?.trim() ??
           '';
-      final msg =
-          backendMsg.isNotEmpty ? backendMsg : 'Failed to update company.';
+      final msg = backendMsg.isNotEmpty
+          ? backendMsg
+          : 'Failed to update company.';
       ToastHelper.showError(msg, context: context);
     }
   }
@@ -1553,10 +1612,13 @@ class _SheetTitle extends StatelessWidget {
                 ),
               ),
               IconButton(
-                icon: Icon(Icons.close_rounded,
-                    size: 20, color: scheme.onSurface),
+                icon: Icon(
+                  Icons.close_rounded,
+                  size: 20,
+                  color: scheme.onSurface,
+                ),
                 onPressed: () => Navigator.of(context).maybePop(),
-                tooltip: 'Close',
+                tooltip: context.mobileText('Close'),
               ),
             ],
           ),
@@ -1586,7 +1648,8 @@ class _SheetActions extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         border: Border(
-            top: BorderSide(color: scheme.outline.withValues(alpha: 0.5))),
+          top: BorderSide(color: scheme.outline.withValues(alpha: 0.5)),
+        ),
       ),
       padding: const EdgeInsets.fromLTRB(
         OpenVtsSpacing.md,
@@ -1598,7 +1661,7 @@ class _SheetActions extends StatelessWidget {
         children: [
           Expanded(
             child: OpenVtsButton(
-              label: 'Cancel',
+              label: context.mobileText('Cancel'),
               variant: OpenVtsButtonVariant.secondary,
               onPressed: isLoading ? null : onCancel,
             ),
@@ -1672,7 +1735,7 @@ class _DropdownField<T> extends StatelessWidget {
         DropdownButtonFormField<T>(
           initialValue: value,
           items: items,
-          validator: validator,
+          validator: context.localizedValidator(validator),
           onChanged: onChanged,
           isExpanded: true,
           menuMaxHeight: 320,

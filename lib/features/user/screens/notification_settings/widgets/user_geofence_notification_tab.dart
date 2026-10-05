@@ -4,6 +4,7 @@ import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../../../shared/widgets/open_vts_empty_state.dart';
 import '../../../models/user_notification_settings_model.dart';
@@ -25,9 +26,9 @@ class UserGeofenceNotificationTab extends StatelessWidget {
   final UserNotificationPreferences preferences;
   final UserNotificationChannelFlags channelFlags;
   final void Function(UserNotificationChannel channel, bool value)
-      onChannelChanged;
+  onChannelChanged;
   final void Function(int vehicleId, int geofenceId, bool value)
-      onGeofenceToggle;
+  onGeofenceToggle;
 
   @override
   Widget build(BuildContext context) {
@@ -40,9 +41,11 @@ class UserGeofenceNotificationTab extends StatelessWidget {
             onChanged: onChannelChanged,
           ),
           const SizedBox(height: OpenVtsSpacing.sm),
-          const OpenVtsEmptyState(
-            title: 'No geofences available.',
-            message: 'Create geofences to configure geofence notifications.',
+          OpenVtsEmptyState(
+            title: context.mobileText('No geofences available.'),
+            message: context.mobileText(
+              'Create geofences to configure geofence notifications.',
+            ),
           ),
         ],
       );
@@ -57,9 +60,11 @@ class UserGeofenceNotificationTab extends StatelessWidget {
             onChanged: onChannelChanged,
           ),
           const SizedBox(height: OpenVtsSpacing.sm),
-          const OpenVtsEmptyState(
-            title: 'No vehicles assigned yet.',
-            message: 'Assign vehicles to configure geofence notifications.',
+          OpenVtsEmptyState(
+            title: context.mobileText('No vehicles assigned yet.'),
+            message: context.mobileText(
+              'Assign vehicles to configure geofence notifications.',
+            ),
           ),
         ],
       );
@@ -90,7 +95,8 @@ class UserGeofenceNotificationTab extends StatelessWidget {
         const SizedBox(height: OpenVtsSpacing.sm),
         LayoutBuilder(
           builder: (context, constraints) {
-            final useMatrix = constraints.maxWidth >= _matrixBreakpoint &&
+            final useMatrix =
+                constraints.maxWidth >= _matrixBreakpoint &&
                 preferences.geofences.length <= _maxMatrixGeofences;
 
             if (useMatrix) {
@@ -103,20 +109,22 @@ class UserGeofenceNotificationTab extends StatelessWidget {
             }
 
             return Column(
-              children: preferences.vehicles.map((vehicle) {
-                final enabledCount = enabledCountByVehicle[vehicle.id] ?? 0;
+              children: preferences.vehicles
+                  .map((vehicle) {
+                    final enabledCount = enabledCountByVehicle[vehicle.id] ?? 0;
 
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: OpenVtsSpacing.sm),
-                  child: _VehicleGeofenceCard(
-                    vehicle: vehicle,
-                    geofences: preferences.geofences,
-                    enabledCount: enabledCount,
-                    enabledLookup: enabledLookup,
-                    onToggle: onGeofenceToggle,
-                  ),
-                );
-              }).toList(growable: false),
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: OpenVtsSpacing.sm),
+                      child: _VehicleGeofenceCard(
+                        vehicle: vehicle,
+                        geofences: preferences.geofences,
+                        enabledCount: enabledCount,
+                        enabledLookup: enabledLookup,
+                        onToggle: onGeofenceToggle,
+                      ),
+                    );
+                  })
+                  .toList(growable: false),
             );
           },
         ),
@@ -170,8 +178,8 @@ class _VehicleGeofenceCard extends StatelessWidget {
                   color: isDark ? Colors.black : OpenVtsColors.surface,
                   borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
                   border: Border.all(
-                      color:
-                          isDark ? OpenVtsColors.white : OpenVtsColors.border),
+                    color: isDark ? OpenVtsColors.white : OpenVtsColors.border,
+                  ),
                 ),
                 child: Icon(
                   Icons.directions_car_outlined,
@@ -216,7 +224,7 @@ class _VehicleGeofenceCard extends StatelessWidget {
           subtitle: Padding(
             padding: const EdgeInsets.only(top: OpenVtsSpacing.xxs),
             child: Text(
-              'Tap to edit geofence notifications',
+              context.mobileText('Tap to edit geofence notifications'),
               style: OpenVtsTypography.meta.copyWith(
                 color: isDark
                     ? OpenVtsColors.white.withValues(alpha: 0.5)
@@ -238,8 +246,10 @@ class _VehicleGeofenceCard extends StatelessWidget {
                 child: Column(
                   children: [
                     _GeofenceToggleRow(
-                      vehicleLabel:
-                          userNotificationVehicleName(vehicle.name, vehicle.id),
+                      vehicleLabel: userNotificationVehicleName(
+                        vehicle.name,
+                        vehicle.id,
+                      ),
                       geofence: geofence,
                       enabled: enabled,
                       onChanged: (value) {
@@ -249,8 +259,9 @@ class _VehicleGeofenceCard extends StatelessWidget {
                     if (index != geofences.length - 1)
                       Divider(
                         height: OpenVtsSpacing.sm,
-                        color:
-                            isDark ? OpenVtsColors.white : OpenVtsColors.border,
+                        color: isDark
+                            ? OpenVtsColors.white
+                            : OpenVtsColors.border,
                       ),
                   ],
                 ),
@@ -281,8 +292,9 @@ class _GeofenceToggleRow extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final normalizedName = geofence.name.trim();
-    final name =
-        normalizedName.isEmpty ? 'Geofence #${geofence.id}' : normalizedName;
+    final name = normalizedName.isEmpty
+        ? 'Geofence #${geofence.id}'
+        : normalizedName;
     final type = geofence.type.trim().isEmpty ? '-' : geofence.type.trim();
 
     return Row(
@@ -306,8 +318,9 @@ class _GeofenceToggleRow extends StatelessWidget {
               Text(
                 name,
                 style: OpenVtsTypography.meta.copyWith(
-                  color:
-                      isDark ? OpenVtsColors.white : OpenVtsColors.textPrimary,
+                  color: isDark
+                      ? OpenVtsColors.white
+                      : OpenVtsColors.textPrimary,
                   fontWeight: FontWeight.w600,
                 ),
                 maxLines: 1,
@@ -318,13 +331,11 @@ class _GeofenceToggleRow extends StatelessWidget {
                 spacing: OpenVtsSpacing.xs,
                 runSpacing: OpenVtsSpacing.xxs,
                 children: [
+                  _MetaChip(label: type, isActive: false, isStatus: false),
                   _MetaChip(
-                    label: type,
-                    isActive: false,
-                    isStatus: false,
-                  ),
-                  _MetaChip(
-                    label: geofence.isActive ? 'Active' : 'Inactive',
+                    label: geofence.isActive
+                        ? context.mobileText('Active')
+                        : context.mobileText('Inactive'),
                     isActive: geofence.isActive,
                     isStatus: true,
                   ),
@@ -334,12 +345,12 @@ class _GeofenceToggleRow extends StatelessWidget {
           ),
         ),
         Semantics(
-          label: 'Geofence $name for $vehicleLabel',
+          label: context.mobileText("Geofence {value1} for {value2}", {
+            'value1': (name).toString(),
+            'value2': (vehicleLabel).toString(),
+          }),
           toggled: enabled,
-          child: Switch.adaptive(
-            value: enabled,
-            onChanged: onChanged,
-          ),
+          child: Switch.adaptive(value: enabled, onChanged: onChanged),
         ),
       ],
     );
@@ -363,17 +374,17 @@ class _MetaChip extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
     final textColor = isStatus
         ? (isActive
-            ? OpenVtsColors.success
-            : (isDark
-                ? OpenVtsColors.white.withValues(alpha: 0.7)
-                : OpenVtsColors.textSecondary))
+              ? OpenVtsColors.success
+              : (isDark
+                    ? OpenVtsColors.white.withValues(alpha: 0.7)
+                    : OpenVtsColors.textSecondary))
         : (isDark
-            ? OpenVtsColors.white.withValues(alpha: 0.7)
-            : OpenVtsColors.textSecondary);
+              ? OpenVtsColors.white.withValues(alpha: 0.7)
+              : OpenVtsColors.textSecondary);
     final borderColor = isStatus
         ? (isActive
-            ? OpenVtsColors.success.withValues(alpha: 0.28)
-            : (isDark ? OpenVtsColors.white : OpenVtsColors.border))
+              ? OpenVtsColors.success.withValues(alpha: 0.28)
+              : (isDark ? OpenVtsColors.white : OpenVtsColors.border))
         : (isDark ? OpenVtsColors.white : OpenVtsColors.border);
 
     return Container(
@@ -416,10 +427,13 @@ class _EnabledCountChip extends StatelessWidget {
         color: isDark ? Colors.black : OpenVtsColors.surfaceElevated,
         borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
         border: Border.all(
-            color: isDark ? OpenVtsColors.white : OpenVtsColors.border),
+          color: isDark ? OpenVtsColors.white : OpenVtsColors.border,
+        ),
       ),
       child: Text(
-        '$enabledCount enabled',
+        context.mobileText("{value1} enabled", {
+          'value1': (enabledCount).toString(),
+        }),
         style: OpenVtsTypography.meta.copyWith(
           color: isDark
               ? OpenVtsColors.white.withValues(alpha: 0.7)
@@ -460,7 +474,7 @@ class _WideGeofenceMatrix extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Vehicle-Geofence Matrix',
+            context.mobileText('Vehicle-Geofence Matrix'),
             style: OpenVtsTypography.meta.copyWith(
               color: isDark
                   ? OpenVtsColors.white.withValues(alpha: 0.7)
@@ -475,7 +489,7 @@ class _WideGeofenceMatrix extends StatelessWidget {
             children: [
               TableRow(
                 children: [
-                  const _MatrixHeaderCell(label: 'Vehicle'),
+                  _MatrixHeaderCell(label: context.mobileText('Vehicle')),
                   ...geofences.map(
                     (geofence) => _MatrixHeaderCell(
                       label: _shortName(geofence.name, geofence.id),
@@ -496,8 +510,17 @@ class _WideGeofenceMatrix extends StatelessWidget {
 
                       return Center(
                         child: Semantics(
-                          label:
-                              'Geofence ${_shortName(geofence.name, geofence.id)} for ${userNotificationVehicleName(vehicle.name, vehicle.id)}',
+                          label: context
+                              .mobileText("Geofence {value1} for {value2}", {
+                                'value1': (_shortName(
+                                  geofence.name,
+                                  geofence.id,
+                                )).toString(),
+                                'value2': (userNotificationVehicleName(
+                                  vehicle.name,
+                                  vehicle.id,
+                                )).toString(),
+                              }),
                           toggled: enabled,
                           child: Switch.adaptive(
                             value: enabled,
@@ -533,10 +556,7 @@ class _WideGeofenceMatrix extends StatelessWidget {
 }
 
 class _MatrixHeaderCell extends StatelessWidget {
-  const _MatrixHeaderCell({
-    required this.label,
-    this.tooltip,
-  });
+  const _MatrixHeaderCell({required this.label, this.tooltip});
 
   final String label;
   final String? tooltip;

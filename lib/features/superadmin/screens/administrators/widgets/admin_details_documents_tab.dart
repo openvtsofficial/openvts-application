@@ -9,7 +9,9 @@ import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/utils/date_time_formatter.dart';
 import '../../../../../core/utils/validators.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
+import '../../../../../shared/helpers/validation_localizations.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../../../shared/widgets/open_vts_error_view.dart';
@@ -55,14 +57,18 @@ class _AdminDetailsDocumentsTabState
     final docs = ref.watch(provider.select((s) => s.documents));
     final isLoading = ref.watch(provider.select((s) => s.isLoadingDocuments));
     final hasLoaded = ref.watch(provider.select((s) => s.hasLoadedDocuments));
-    final isUploading =
-        ref.watch(provider.select((s) => s.isUploadingDocument));
-    final errorMessage =
-        ref.watch(provider.select((s) => s.documentsErrorMessage));
-    final isLoadingTypes =
-        ref.watch(provider.select((s) => s.isLoadingDocumentTypes));
-    final typesError =
-        ref.watch(provider.select((s) => s.documentTypesErrorMessage));
+    final isUploading = ref.watch(
+      provider.select((s) => s.isUploadingDocument),
+    );
+    final errorMessage = ref.watch(
+      provider.select((s) => s.documentsErrorMessage),
+    );
+    final isLoadingTypes = ref.watch(
+      provider.select((s) => s.isLoadingDocumentTypes),
+    );
+    final typesError = ref.watch(
+      provider.select((s) => s.documentTypesErrorMessage),
+    );
     final controller = ref.read(provider.notifier);
 
     if (isLoading && !hasLoaded) {
@@ -78,7 +84,7 @@ class _AdminDetailsDocumentsTabState
           padding: const EdgeInsets.symmetric(vertical: OpenVtsSpacing.md),
           child: OpenVtsErrorView(
             message: errorMessage.trim().isEmpty
-                ? 'Unable to load documents. Retry.'
+                ? context.mobileText('Unable to load documents. Retry.')
                 : errorMessage,
             onRetry: () => controller.loadDocuments(force: true),
           ),
@@ -97,7 +103,9 @@ class _AdminDetailsDocumentsTabState
                 builder: (ctx) {
                   final theme = Theme.of(ctx);
                   return Text(
-                    'Documents (${docs.length})',
+                    context.mobileText("Documents ({value1})", {
+                      'value1': (docs.length).toString(),
+                    }),
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
@@ -111,7 +119,7 @@ class _AdminDetailsDocumentsTabState
         ),
         const SizedBox(height: OpenVtsSpacing.xs),
         OpenVtsButton(
-          label: 'Upload document',
+          label: context.mobileText('Upload document'),
           onPressed: (isUploading || isLoading)
               ? null
               : () => _openUploadSheet(context),
@@ -130,7 +138,7 @@ class _AdminDetailsDocumentsTabState
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'Loading document types…',
+                    context.mobileText('Loading document types…'),
                     style: TextStyle(
                       fontSize: 11,
                       color: theme.colorScheme.onSurfaceVariant,
@@ -148,7 +156,9 @@ class _AdminDetailsDocumentsTabState
               padding: const EdgeInsets.symmetric(vertical: OpenVtsSpacing.sm),
               child: OpenVtsErrorView(
                 message: typesError.trim().isEmpty
-                    ? 'Unable to load document types. Retry.'
+                    ? context.mobileText(
+                        'Unable to load document types. Retry.',
+                      )
                     : typesError,
                 onRetry: () => controller.loadDocumentTypes(force: true),
               ),
@@ -162,19 +172,16 @@ class _AdminDetailsDocumentsTabState
               final theme = Theme.of(ctx);
               return Text(
                 errorMessage.trim().isEmpty
-                    ? 'Unable to refresh documents.'
+                    ? context.mobileText('Unable to refresh documents.')
                     : errorMessage,
-                style: TextStyle(
-                  fontSize: 11,
-                  color: theme.colorScheme.error,
-                ),
+                style: TextStyle(fontSize: 11, color: theme.colorScheme.error),
               );
             },
           ),
         ],
         const SizedBox(height: OpenVtsSpacing.sm),
         if (docs.isEmpty)
-          const _EmptyState(message: 'No documents uploaded yet.')
+          _EmptyState(message: context.mobileText('No documents uploaded yet.'))
         else
           ListView.separated(
             shrinkWrap: true,
@@ -203,18 +210,27 @@ class _AdminDetailsDocumentsTabState
   ) async {
     final url = _resolveFileUrl(doc);
     if (url == null) {
-      ToastHelper.showError('File URL is not available.', context: context);
+      ToastHelper.showError(
+        context.mobileText('File URL is not available.'),
+        context: context,
+      );
       return;
     }
     try {
       final uri = Uri.parse(url);
       final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
       if (!ok && context.mounted) {
-        ToastHelper.showError('Could not open file.', context: context);
+        ToastHelper.showError(
+          context.mobileText('Could not open file.'),
+          context: context,
+        );
       }
     } catch (_) {
       if (context.mounted) {
-        ToastHelper.showError('Could not open file.', context: context);
+        ToastHelper.showError(
+          context.mobileText('Could not open file.'),
+          context: context,
+        );
       }
     }
   }
@@ -235,8 +251,8 @@ class _AdminDetailsDocumentsTabState
       final typeError = state.documentTypesErrorMessage?.trim();
       ToastHelper.showError(
         (typeError == null || typeError.isEmpty)
-            ? 'No USER document types configured.'
-            : 'Unable to load document types. Retry.',
+            ? context.mobileText('No USER document types configured.')
+            : context.mobileText('Unable to load document types. Retry.'),
         context: context,
       );
       return;
@@ -250,10 +266,7 @@ class _AdminDetailsDocumentsTabState
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (_) => _DocumentSheet(
-        adminId: widget.adminId,
-        existing: null,
-      ),
+      builder: (_) => _DocumentSheet(adminId: widget.adminId, existing: null),
     );
   }
 
@@ -276,10 +289,7 @@ class _AdminDetailsDocumentsTabState
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (_) => _DocumentSheet(
-        adminId: widget.adminId,
-        existing: doc,
-      ),
+      builder: (_) => _DocumentSheet(adminId: widget.adminId, existing: doc),
     );
   }
 
@@ -296,7 +306,7 @@ class _AdminDetailsDocumentsTabState
           borderRadius: BorderRadius.circular(OpenVtsRadius.md),
         ),
         title: Text(
-          'Delete this document?',
+          context.mobileText('Delete this document?'),
           style: TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w700,
@@ -313,14 +323,17 @@ class _AdminDetailsDocumentsTabState
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: Text('Cancel',
-                style: TextStyle(color: theme.colorScheme.onSurface)),
+            child: Text(
+              context.mobileText('Cancel'),
+              style: TextStyle(color: theme.colorScheme.onSurface),
+            ),
           ),
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            style:
-                TextButton.styleFrom(foregroundColor: theme.colorScheme.error),
-            child: const Text('Delete'),
+            style: TextButton.styleFrom(
+              foregroundColor: theme.colorScheme.error,
+            ),
+            child: Text(context.mobileText('Delete')),
           ),
         ],
       ),
@@ -330,9 +343,13 @@ class _AdminDetailsDocumentsTabState
     final ok = await ref.read(provider.notifier).deleteDocument(doc.id);
     if (!mounted) return;
     if (ok) {
-      ToastHelper.showSuccess('Document deleted.', context: this.context);
+      ToastHelper.showSuccess(
+        this.context.mobileText('Document deleted.'),
+        context: this.context,
+      );
     } else {
-      final message = ref.read(provider).documentMutationErrorMessage ??
+      final message =
+          ref.read(provider).documentMutationErrorMessage ??
           'Failed to delete document.';
       ToastHelper.showError(message, context: this.context);
     }
@@ -433,32 +450,22 @@ class _DocumentCard extends StatelessWidget {
                     Text(
                       document.docTypeName.isNotEmpty
                           ? document.docTypeName
-                          : 'Document',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: onSurfaceVariant,
-                      ),
+                          : context.mobileText('Document'),
+                      style: TextStyle(fontSize: 11, color: onSurfaceVariant),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
               ),
-              _ActionsMenu(
-                onView: onView,
-                onEdit: onEdit,
-                onDelete: onDelete,
-              ),
+              _ActionsMenu(onView: onView, onEdit: onEdit, onDelete: onDelete),
             ],
           ),
           if (document.fileName.isNotEmpty) ...[
             const SizedBox(height: 6),
             Text(
               document.fileName,
-              style: TextStyle(
-                fontSize: 11,
-                color: onSurfaceVariant,
-              ),
+              style: TextStyle(fontSize: 11, color: onSurfaceVariant),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
@@ -471,7 +478,9 @@ class _DocumentCard extends StatelessWidget {
               if (created != null)
                 _MetaChip(
                   icon: Icons.calendar_today_outlined,
-                  label: 'Added ${fmt.formatDate(created)}',
+                  label: context.mobileText("Added {value1}", {
+                    'value1': (fmt.formatDate(created)).toString(),
+                  }),
                 ),
               if (expiry != null) _ExpiryChip(expiryAt: expiry, formatter: fmt),
               _VisibilityChip(isVisible: document.isVisible),
@@ -537,12 +546,8 @@ class _ActionsMenu extends StatelessWidget {
     final error = theme.colorScheme.error;
 
     return PopupMenuButton<_DocAction>(
-      tooltip: 'Actions',
-      icon: Icon(
-        Icons.more_vert,
-        size: 18,
-        color: onSurfaceVariant,
-      ),
+      tooltip: context.mobileText('Actions'),
+      icon: Icon(Icons.more_vert, size: 18, color: onSurfaceVariant),
       onSelected: (action) {
         switch (action) {
           case _DocAction.view:
@@ -557,22 +562,24 @@ class _ActionsMenu extends StatelessWidget {
         PopupMenuItem(
           value: _DocAction.view,
           height: 36,
-          child: Text('View',
-              style:
-                  TextStyle(fontSize: 12, color: theme.colorScheme.onSurface)),
+          child: Text(
+            context.mobileText('View'),
+            style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurface),
+          ),
         ),
         PopupMenuItem(
           value: _DocAction.edit,
           height: 36,
-          child: Text('Edit',
-              style:
-                  TextStyle(fontSize: 12, color: theme.colorScheme.onSurface)),
+          child: Text(
+            context.mobileText('Edit'),
+            style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurface),
+          ),
         ),
         PopupMenuItem(
           value: _DocAction.delete,
           height: 36,
           child: Text(
-            'Delete',
+            context.mobileText('Delete'),
             style: TextStyle(fontSize: 12, color: error),
           ),
         ),
@@ -606,10 +613,7 @@ class _MetaChip extends StatelessWidget {
         children: [
           Icon(icon, size: 11, color: fg),
           const SizedBox(width: 4),
-          Text(
-            label,
-            style: TextStyle(fontSize: 10, color: fg),
-          ),
+          Text(label, style: TextStyle(fontSize: 10, color: fg)),
         ],
       ),
     );
@@ -638,11 +642,7 @@ class _ExpiryChip extends StatelessWidget {
       color = OpenVtsColors.success;
       label = 'Expires ${formatter.formatDate(expiryAt)}';
     }
-    return _MetaChip(
-      icon: Icons.schedule_outlined,
-      label: label,
-      color: color,
-    );
+    return _MetaChip(icon: Icons.schedule_outlined, label: label, color: color);
   }
 }
 
@@ -653,9 +653,12 @@ class _VisibilityChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _MetaChip(
-      icon:
-          isVisible ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-      label: isVisible ? 'Visible' : 'Hidden',
+      icon: isVisible
+          ? Icons.visibility_outlined
+          : Icons.visibility_off_outlined,
+      label: isVisible
+          ? context.mobileText('Visible')
+          : context.mobileText('Hidden'),
       color: isVisible ? OpenVtsColors.success : OpenVtsColors.textSecondary,
     );
   }
@@ -749,7 +752,7 @@ class _DocumentSheetState extends ConsumerState<_DocumentSheet> {
       if (_kBlockedExtensions.contains(ext)) {
         if (mounted) {
           ToastHelper.showError(
-            'This file type is not allowed.',
+            context.mobileText('This file type is not allowed.'),
             context: context,
           );
         }
@@ -758,7 +761,7 @@ class _DocumentSheetState extends ConsumerState<_DocumentSheet> {
       if (file.size > _kMaxFileSizeBytes) {
         if (mounted) {
           ToastHelper.showError(
-            'File exceeds 10MB limit.',
+            context.mobileText('File exceeds 10MB limit.'),
             context: context,
           );
         }
@@ -770,7 +773,10 @@ class _DocumentSheetState extends ConsumerState<_DocumentSheet> {
       });
     } catch (_) {
       if (mounted) {
-        ToastHelper.showError('Could not pick file.', context: context);
+        ToastHelper.showError(
+          context.mobileText('Could not pick file.'),
+          context: context,
+        );
       }
     } finally {
       if (mounted) setState(() => _picking = false);
@@ -837,12 +843,15 @@ class _DocumentSheetState extends ConsumerState<_DocumentSheet> {
     if (!mounted) return;
     if (ok) {
       ToastHelper.showSuccess(
-        _isEdit ? 'Document updated.' : 'Document uploaded.',
+        _isEdit
+            ? context.mobileText('Document updated.')
+            : context.mobileText('Document uploaded.'),
         context: context,
       );
       Navigator.of(context).maybePop();
     } else {
-      final message = ref.read(provider).documentMutationErrorMessage ??
+      final message =
+          ref.read(provider).documentMutationErrorMessage ??
           (_isEdit
               ? 'Failed to update document.'
               : 'Failed to upload document.');
@@ -854,11 +863,15 @@ class _DocumentSheetState extends ConsumerState<_DocumentSheet> {
   Widget build(BuildContext context) {
     final provider = superadminAdminDetailsControllerProvider(widget.adminId);
     final isLoading = ref.watch(provider.select((s) => s.isUploadingDocument));
-    final docTypes = ref.watch(provider.select(
-      (s) => s.documentTypes.where((t) => t.isForUser).toList(growable: false),
-    ));
-    final isLoadingTypes =
-        ref.watch(provider.select((s) => s.isLoadingDocumentTypes));
+    final docTypes = ref.watch(
+      provider.select(
+        (s) =>
+            s.documentTypes.where((t) => t.isForUser).toList(growable: false),
+      ),
+    );
+    final isLoadingTypes = ref.watch(
+      provider.select((s) => s.isLoadingDocumentTypes),
+    );
     final viewInsets = MediaQuery.of(context).viewInsets;
 
     return Padding(
@@ -869,7 +882,9 @@ class _DocumentSheetState extends ConsumerState<_DocumentSheet> {
           mainAxisSize: MainAxisSize.min,
           children: [
             _SheetHeader(
-              title: _isEdit ? 'Edit document' : 'Upload document',
+              title: _isEdit
+                  ? context.mobileText('Edit document')
+                  : context.mobileText('Upload document'),
             ),
             Flexible(
               child: SingleChildScrollView(
@@ -898,9 +913,9 @@ class _DocumentSheetState extends ConsumerState<_DocumentSheet> {
                       ),
                       const SizedBox(height: OpenVtsSpacing.sm),
                       OpenVtsTextField(
-                        label: 'Title',
+                        label: context.mobileText('Title'),
                         controller: _title,
-                        hintText: 'Document title',
+                        hintText: context.mobileText('Document title'),
                         textInputAction: TextInputAction.next,
                         prefixIcon: Icons.title,
                         validator: Validators.documentTitle,
@@ -908,8 +923,9 @@ class _DocumentSheetState extends ConsumerState<_DocumentSheet> {
                       const SizedBox(height: OpenVtsSpacing.sm),
                       _FilePickerField(
                         pickedFile: _pickedFile,
-                        existingFileName:
-                            _isEdit ? widget.existing!.fileName : null,
+                        existingFileName: _isEdit
+                            ? widget.existing!.fileName
+                            : null,
                         onPick: _pickFile,
                         isPicking: _picking,
                         showError: _fileError,
@@ -922,17 +938,19 @@ class _DocumentSheetState extends ConsumerState<_DocumentSheet> {
                       ),
                       const SizedBox(height: OpenVtsSpacing.sm),
                       OpenVtsTextField(
-                        label: 'Tags (comma separated)',
+                        label: context.mobileText('Tags (comma separated)'),
                         controller: _tags,
-                        hintText: 'license, insurance',
+                        hintText: context.mobileText('license, insurance'),
                         textInputAction: TextInputAction.next,
                         prefixIcon: Icons.label_outline,
                       ),
                       const SizedBox(height: OpenVtsSpacing.sm),
                       OpenVtsTextField(
-                        label: 'Description (optional)',
+                        label: context.mobileText('Description (optional)'),
                         controller: _description,
-                        hintText: 'Notes about this document',
+                        hintText: context.mobileText(
+                          'Notes about this document',
+                        ),
                         maxLines: 3,
                         prefixIcon: Icons.notes,
                       ),
@@ -993,7 +1011,7 @@ class _DocTypeDropdown extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                'Loading document types…',
+                context.mobileText('Loading document types…'),
                 style: TextStyle(
                   fontSize: 12,
                   color: theme.colorScheme.onSurfaceVariant,
@@ -1018,7 +1036,7 @@ class _DocTypeDropdown extends StatelessWidget {
           border: Border.all(color: theme.colorScheme.outlineVariant),
         ),
         child: Text(
-          'No USER document types configured.',
+          context.mobileText('No USER document types configured.'),
           style: TextStyle(
             fontSize: 12,
             color: theme.colorScheme.onSurfaceVariant,
@@ -1039,22 +1057,18 @@ class _DocTypeDropdown extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Document type',
-          style: TextStyle(
-            fontSize: 11,
-            color: onSurfaceVariant,
-          ),
+          context.mobileText('Document type'),
+          style: TextStyle(fontSize: 11, color: onSurfaceVariant),
         ),
         const SizedBox(height: 4),
         DropdownButtonFormField<String>(
           initialValue: hasValue ? value : null,
           isDense: true,
           hint: Text(
-            isLoading ? 'Loading…' : 'Select type',
-            style: TextStyle(
-              fontSize: 13,
-              color: onSurfaceVariant,
-            ),
+            isLoading
+                ? context.mobileText('Loading…')
+                : context.mobileText('Select type'),
+            style: TextStyle(fontSize: 13, color: onSurfaceVariant),
           ),
           decoration: InputDecoration(
             isDense: true,
@@ -1087,16 +1101,13 @@ class _DocTypeDropdown extends StatelessWidget {
                   value: o.id,
                   child: Text(
                     o.name,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: onSurface,
-                    ),
+                    style: TextStyle(fontSize: 13, color: onSurface),
                   ),
                 ),
               )
               .toList(growable: false),
           onChanged: onChanged,
-          validator: validator,
+          validator: context.localizedValidator(validator),
         ),
       ],
     );
@@ -1141,11 +1152,8 @@ class _FilePickerField extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'File',
-          style: TextStyle(
-            fontSize: 11,
-            color: onSurfaceVariant,
-          ),
+          context.mobileText('File'),
+          style: TextStyle(fontSize: 11, color: onSurfaceVariant),
         ),
         const SizedBox(height: 4),
         InkWell(
@@ -1163,19 +1171,12 @@ class _FilePickerField extends StatelessWidget {
             ),
             child: Row(
               children: [
-                Icon(
-                  Icons.attach_file,
-                  size: 16,
-                  color: onSurfaceVariant,
-                ),
+                Icon(Icons.attach_file, size: 16, color: onSurfaceVariant),
                 const SizedBox(width: OpenVtsSpacing.xs),
                 Expanded(
                   child: Text(
                     label,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: onSurface,
-                    ),
+                    style: TextStyle(fontSize: 12, color: onSurface),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -1188,7 +1189,7 @@ class _FilePickerField extends StatelessWidget {
                   )
                 else
                   Text(
-                    'Browse',
+                    context.mobileText('Browse'),
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
@@ -1203,7 +1204,7 @@ class _FilePickerField extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(top: 4),
             child: Text(
-              'Please select a file.',
+              context.mobileText('Please select a file.'),
               style: TextStyle(fontSize: 11, color: error),
             ),
           )
@@ -1211,7 +1212,7 @@ class _FilePickerField extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(top: 4),
             child: Text(
-              'Max 10MB. Blocked: exe, js, html, htm.',
+              context.mobileText('Max 10MB. Blocked: exe, js, html, htm.'),
               style: TextStyle(fontSize: 10, color: onSurfaceVariant),
             ),
           ),
@@ -1246,11 +1247,8 @@ class _ExpiryField extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Expiry date (optional)',
-          style: TextStyle(
-            fontSize: 11,
-            color: onSurfaceVariant,
-          ),
+          context.mobileText('Expiry date (optional)'),
+          style: TextStyle(fontSize: 11, color: onSurfaceVariant),
         ),
         const SizedBox(height: 4),
         InkWell(
@@ -1268,11 +1266,7 @@ class _ExpiryField extends StatelessWidget {
             ),
             child: Row(
               children: [
-                Icon(
-                  Icons.event_outlined,
-                  size: 16,
-                  color: onSurfaceVariant,
-                ),
+                Icon(Icons.event_outlined, size: 16, color: onSurfaceVariant),
                 const SizedBox(width: OpenVtsSpacing.xs),
                 Expanded(
                   child: Text(
@@ -1286,11 +1280,7 @@ class _ExpiryField extends StatelessWidget {
                 if (value != null)
                   GestureDetector(
                     onTap: onClear,
-                    child: Icon(
-                      Icons.close,
-                      size: 16,
-                      color: onSurfaceVariant,
-                    ),
+                    child: Icon(Icons.close, size: 16, color: onSurfaceVariant),
                   ),
               ],
             ),
@@ -1327,19 +1317,12 @@ class _VisibilityToggle extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(
-            Icons.visibility_outlined,
-            size: 16,
-            color: onSurfaceVariant,
-          ),
+          Icon(Icons.visibility_outlined, size: 16, color: onSurfaceVariant),
           const SizedBox(width: OpenVtsSpacing.xs),
           Expanded(
             child: Text(
-              'Visible to admin',
-              style: TextStyle(
-                fontSize: 12,
-                color: onSurface,
-              ),
+              context.mobileText('Visible to admin'),
+              style: TextStyle(fontSize: 12, color: onSurface),
             ),
           ),
           Switch.adaptive(
@@ -1400,7 +1383,7 @@ class _SheetHeader extends StatelessWidget {
               IconButton(
                 icon: const Icon(Icons.close_rounded, size: 20),
                 onPressed: () => Navigator.of(context).maybePop(),
-                tooltip: 'Close',
+                tooltip: context.mobileText('Close'),
               ),
             ],
           ),
@@ -1445,7 +1428,7 @@ class _SheetFooter extends StatelessWidget {
         children: [
           Expanded(
             child: OpenVtsButton(
-              label: 'Cancel',
+              label: context.mobileText('Cancel'),
               variant: OpenVtsButtonVariant.secondary,
               onPressed: isLoading ? null : onCancel,
             ),

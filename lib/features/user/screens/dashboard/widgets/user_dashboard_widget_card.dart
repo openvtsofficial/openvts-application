@@ -7,6 +7,7 @@ import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../core/utils/date_time_formatter.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 
 class UserDashboardWidgetCard extends StatelessWidget {
   const UserDashboardWidgetCard({
@@ -93,7 +94,7 @@ class UserDashboardWidgetCard extends StatelessWidget {
                   if (trailing != null) trailing!,
                   if (onRefresh != null)
                     IconButton(
-                      tooltip: 'Refresh widget',
+                      tooltip: context.mobileText('Refresh widget'),
                       onPressed: isLoading ? null : onRefresh,
                       style: IconButton.styleFrom(
                         minimumSize: const Size.square(32),
@@ -143,11 +144,7 @@ class UserDashboardWidgetError extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            Icons.error_outline_rounded,
-            size: 17,
-            color: colorScheme.error,
-          ),
+          Icon(Icons.error_outline_rounded, size: 17, color: colorScheme.error),
           const SizedBox(width: OpenVtsSpacing.xs),
           Expanded(
             child: Text(
@@ -169,7 +166,7 @@ class UserDashboardWidgetError extends StatelessWidget {
                   horizontal: OpenVtsSpacing.xs,
                 ),
               ),
-              child: const Text('Retry'),
+              child: Text(context.mobileText('Retry')),
             ),
           ],
         ],
@@ -363,15 +360,19 @@ String userDashboardFormatHours(num hours) {
   return '${userDashboardFormatDecimal(hours)} h';
 }
 
-String userDashboardFormatDateTime(DateTime? value,
-    {AppDateFormatter? formatter}) {
+String userDashboardFormatDateTime(
+  DateTime? value, {
+  AppDateFormatter? formatter,
+}) {
   if (value == null) return 'Not updated yet';
   if (formatter != null) return formatter.formatDateTime(value);
   return DateFormat('dd MMM yyyy, hh:mm a').format(value);
 }
 
-String userDashboardFormatShortTime(DateTime? value,
-    {AppDateFormatter? formatter}) {
+String userDashboardFormatShortTime(
+  DateTime? value, {
+  AppDateFormatter? formatter,
+}) {
   if (value == null) return 'No time';
   if (formatter != null) return formatter.formatDate(value);
   return DateFormat('dd MMM, hh:mm a').format(value);
@@ -385,10 +386,7 @@ String userDashboardErrorText(Object error) {
   return text.isEmpty ? 'Widget could not be loaded.' : text;
 }
 
-String? userDashboardPropString(
-  Map<String, dynamic> props,
-  List<String> keys,
-) {
+String? userDashboardPropString(Map<String, dynamic> props, List<String> keys) {
   for (final key in keys) {
     final value = props[key];
     if (value == null) continue;

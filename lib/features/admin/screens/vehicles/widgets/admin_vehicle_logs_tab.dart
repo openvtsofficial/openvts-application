@@ -9,6 +9,7 @@ import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../core/utils/date_time_formatter.dart';
 import '../../../../../core/utils/unit_formatter.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/widgets/open_vts_bottom_sheet.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
@@ -59,9 +60,9 @@ class _AdminVehicleLogsTabState extends ConsumerState<AdminVehicleLogsTab> {
     _unitFormatter = ref.watch(unitFormatterProvider);
     ref.watch(appDateFormatterProvider);
     if (widget.imei.trim().isEmpty) {
-      return const OpenVtsEmptyState(
-        title: 'IMEI missing',
-        message: 'IMEI is required to load telemetry logs.',
+      return OpenVtsEmptyState(
+        title: context.mobileText('IMEI missing'),
+        message: context.mobileText('IMEI is required to load telemetry logs.'),
       );
     }
 
@@ -74,41 +75,43 @@ class _AdminVehicleLogsTabState extends ConsumerState<AdminVehicleLogsTab> {
               Expanded(
                 child: Text(
                   _range == null
-                      ? 'All dates'
+                      ? context.mobileText('All dates')
                       : '${_fmtDate(_range!.start)} → ${_fmtDate(_range!.end)}',
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
               ),
               IconButton(
-                tooltip: 'Date range',
+                tooltip: context.mobileText('Date range'),
                 onPressed: _pickRange,
                 icon: const Icon(Icons.date_range_rounded, size: 18),
               ),
               TextButton(
                 onPressed: widget.onLoad,
-                child: const Text('Reset'),
+                child: Text(context.mobileText('Reset')),
               ),
             ],
           ),
         ),
         const SizedBox(height: OpenVtsSpacing.sm),
         OpenVtsSearchField(
-          hintText: 'Search loaded logs',
+          hintText: context.mobileText('Search loaded logs'),
           onChanged: widget.onSearchChanged,
         ),
         const SizedBox(height: OpenVtsSpacing.sm),
         if (widget.isLoading)
           const OpenVtsLoader()
         else if (!widget.hasLoadedLogs)
-          const OpenVtsEmptyState(
-            title: 'No logs found for this vehicle',
-            message: 'Vehicle activity and system logs will appear here.',
+          OpenVtsEmptyState(
+            title: context.mobileText('No logs found for this vehicle'),
+            message: context.mobileText(
+              'Vehicle activity and system logs will appear here.',
+            ),
           )
         else ...[
           if (widget.logs.isEmpty && widget.searchQuery.trim().isNotEmpty)
-            const OpenVtsEmptyState(
-              title: 'No matching logs',
-              message: 'Try a different search term.',
+            OpenVtsEmptyState(
+              title: context.mobileText('No matching logs'),
+              message: context.mobileText('Try a different search term.'),
             )
           else
             ...widget.logs.map(
@@ -123,7 +126,7 @@ class _AdminVehicleLogsTabState extends ConsumerState<AdminVehicleLogsTab> {
             ),
           if ((widget.nextCursor ?? '').trim().isNotEmpty)
             OpenVtsButton(
-              label: 'Load older',
+              label: context.mobileText('Load older'),
               isLoading: widget.isLoadingMore,
               onPressed: widget.isLoadingMore ? null : widget.onLoadMore,
               variant: OpenVtsButtonVariant.secondary,
@@ -149,7 +152,7 @@ class _AdminVehicleLogsTabState extends ConsumerState<AdminVehicleLogsTab> {
   Future<void> _openDetails(AdminVehicleLogItem log) {
     return OpenVtsBottomSheet.show<void>(
       context: context,
-      title: 'Log Details',
+      title: context.mobileText('Log Details'),
       initialChildSize: 0.8,
       minChildSize: 0.5,
       maxChildSize: 0.95,
@@ -176,7 +179,10 @@ class _AdminVehicleLogsTabState extends ConsumerState<AdminVehicleLogsTab> {
           _line('Total Engine Hours', _num(log.totalEngineHours)),
           _line('Raw Packet', _safe(log.rawPacket)),
           const SizedBox(height: OpenVtsSpacing.sm),
-          Text('Attributes', style: Theme.of(context).textTheme.titleSmall),
+          Text(
+            context.mobileText('Attributes'),
+            style: Theme.of(context).textTheme.titleSmall,
+          ),
           const SizedBox(height: OpenVtsSpacing.xs),
           SelectableText(_json(log.attributes)),
         ],
@@ -185,9 +191,9 @@ class _AdminVehicleLogsTabState extends ConsumerState<AdminVehicleLogsTab> {
   }
 
   Widget _line(String label, String value) => Padding(
-        padding: const EdgeInsets.only(bottom: 4),
-        child: Text('$label: $value'),
-      );
+    padding: const EdgeInsets.only(bottom: 4),
+    child: Text('$label: $value'),
+  );
 
   String _json(Object? value) {
     if (value == null) return '{}';
@@ -246,11 +252,11 @@ class _LogCard extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Telemetry Log',
+                      context.mobileText('Telemetry Log'),
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: -0.2,
-                          ),
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -0.2,
+                      ),
                     ),
                     if (log.packetType.trim().isNotEmpty) ...[
                       const SizedBox(height: 2),
@@ -277,7 +283,7 @@ class _LogCard extends ConsumerWidget {
               Expanded(
                 child: _InfoItem(
                   icon: Icons.access_time_rounded,
-                  label: 'Time',
+                  label: context.mobileText('Time'),
                   value: displayTime == null
                       ? '-'
                       : formatter.formatDateTime(displayTime),
@@ -287,7 +293,7 @@ class _LogCard extends ConsumerWidget {
               Expanded(
                 child: _InfoItem(
                   icon: Icons.speed_rounded,
-                  label: 'Speed',
+                  label: context.mobileText('Speed'),
                   value: speedLabel,
                 ),
               ),
@@ -299,7 +305,7 @@ class _LogCard extends ConsumerWidget {
               Expanded(
                 child: _InfoItem(
                   icon: Icons.location_on_rounded,
-                  label: 'Latitude',
+                  label: context.mobileText('Latitude'),
                   value: _coord(log.latitude),
                 ),
               ),
@@ -307,7 +313,7 @@ class _LogCard extends ConsumerWidget {
               Expanded(
                 child: _InfoItem(
                   icon: Icons.location_on_rounded,
-                  label: 'Longitude',
+                  label: context.mobileText('Longitude'),
                   value: _coord(log.longitude),
                 ),
               ),
@@ -320,7 +326,7 @@ class _LogCard extends ConsumerWidget {
                 if (log.ignition != null)
                   Expanded(
                     child: _StatusChip(
-                      label: 'Ignition',
+                      label: context.mobileText('Ignition'),
                       value: log.ignition!,
                     ),
                   ),
@@ -328,10 +334,7 @@ class _LogCard extends ConsumerWidget {
                   if (log.ignition != null)
                     const SizedBox(width: OpenVtsSpacing.sm),
                   Expanded(
-                    child: _StatusChip(
-                      label: 'ACC',
-                      value: log.acc!,
-                    ),
+                    child: _StatusChip(label: 'ACC', value: log.acc!),
                   ),
                 ],
               ],
@@ -395,10 +398,7 @@ class _InfoItem extends StatelessWidget {
 }
 
 class _StatusChip extends StatelessWidget {
-  const _StatusChip({
-    required this.label,
-    required this.value,
-  });
+  const _StatusChip({required this.label, required this.value});
 
   final String label;
   final bool value;
@@ -428,15 +428,17 @@ class _StatusChip extends StatelessWidget {
           Icon(
             isActive ? Icons.check_circle_rounded : Icons.cancel_rounded,
             size: 12,
-            color:
-                isActive ? OpenVtsColors.success : OpenVtsColors.textTertiary,
+            color: isActive
+                ? OpenVtsColors.success
+                : OpenVtsColors.textTertiary,
           ),
           const SizedBox(width: 4),
           Text(
             label,
             style: OpenVtsTypography.meta.copyWith(
-              color:
-                  isActive ? OpenVtsColors.success : OpenVtsColors.textTertiary,
+              color: isActive
+                  ? OpenVtsColors.success
+                  : OpenVtsColors.textTertiary,
               fontSize: 10,
               fontWeight: FontWeight.w600,
             ),

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
-import '../../core/widgets/map_attribution.dart';
 import '../models/vehicle_summary.dart';
 
 class OpenVtsMapPreview extends StatelessWidget {
@@ -43,7 +42,6 @@ class OpenVtsMapPreview extends StatelessWidget {
                 )
                 .toList(),
           ),
-          const OpenVtsMapAttribution(layerId: 'osm'),
         ],
       ),
     );

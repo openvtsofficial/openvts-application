@@ -7,6 +7,7 @@ import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../../../shared/widgets/open_vts_error_view.dart';
 import '../../../../../shared/widgets/open_vts_loader.dart';
@@ -15,13 +16,17 @@ import '../../../controllers/user_providers.dart';
 import '../../../controllers/user_subuser_details_controller.dart';
 import '../../../models/user_subuser_model.dart';
 import '../../../models/user_subusers_state.dart';
+import 'widgets/user_subuser_permissions_tab.dart';
 import 'widgets/user_subuser_profile_tab.dart';
 import 'widgets/user_subuser_vehicles_tab.dart';
 
-enum _UserSubUserDetailsTab { profile, vehicles }
+enum _UserSubUserDetailsTab { profile, vehicles, permissions }
 
-typedef UserSubUserDetailsProvider = AutoDisposeStateNotifierProvider<
-    UserSubUserDetailsController, UserSubUserDetailsState>;
+typedef UserSubUserDetailsProvider =
+    AutoDisposeStateNotifierProvider<
+      UserSubUserDetailsController,
+      UserSubUserDetailsState
+    >;
 
 class UserSubUserDetailsScreen extends ConsumerStatefulWidget {
   const UserSubUserDetailsScreen({
@@ -41,6 +46,7 @@ class UserSubUserDetailsScreen extends ConsumerStatefulWidget {
 class _UserSubUserDetailsScreenState
     extends ConsumerState<UserSubUserDetailsScreen> {
   var _selectedTab = _UserSubUserDetailsTab.profile;
+  int _permissionsRevision = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -58,13 +64,13 @@ class _UserSubUserDetailsScreenState
       title: _subUserTitle(subUser),
       padding: EdgeInsets.zero,
       leading: IconButton(
-        tooltip: 'Back',
+        tooltip: context.mobileText('Back'),
         onPressed: () => _close(context),
         icon: const Icon(Icons.arrow_back_rounded, size: 20),
       ),
       actions: [
         _HeaderIconButton(
-          tooltip: 'Refresh',
+          tooltip: context.mobileText('Refresh'),
           onPressed: _isRefreshingCurrentTab(state)
               ? null
               : () => _refreshCurrentTab(provider),
@@ -120,7 +126,12 @@ class _UserSubUserDetailsScreenState
             onSelect: (tab) => setState(() => _selectedTab = tab),
           ),
           const SizedBox(height: OpenVtsSpacing.sm),
-          _TabContent(provider: provider, selectedTab: _selectedTab),
+          _TabContent(
+            key: ValueKey(_permissionsRevision),
+            provider: provider,
+            selectedTab: _selectedTab,
+            subUserId: widget.subUserId,
+          ),
           const SizedBox(height: OpenVtsSpacing.lg),
         ],
       ),
@@ -130,6 +141,9 @@ class _UserSubUserDetailsScreenState
   Future<void> _refreshCurrentTab(UserSubUserDetailsProvider provider) async {
     final controller = ref.read(provider.notifier);
     switch (_selectedTab) {
+      case _UserSubUserDetailsTab.permissions:
+        setState(() => _permissionsRevision++);
+        break;
       case _UserSubUserDetailsTab.profile:
         await controller.refresh();
         break;
@@ -141,6 +155,8 @@ class _UserSubUserDetailsScreenState
 
   bool _isRefreshingCurrentTab(UserSubUserDetailsState state) {
     switch (_selectedTab) {
+      case _UserSubUserDetailsTab.permissions:
+        return false;
       case _UserSubUserDetailsTab.profile:
         return state.isLoading || state.isSaving || state.isTogglingStatus;
       case _UserSubUserDetailsTab.vehicles:
@@ -162,20 +178,28 @@ class _UserSubUserDetailsScreenState
 
 class _TabContent extends StatelessWidget {
   const _TabContent({
+    super.key,
+    required this.subUserId,
     required this.provider,
     required this.selectedTab,
   });
 
   final UserSubUserDetailsProvider provider;
   final _UserSubUserDetailsTab selectedTab;
+  final String subUserId;
 
   @override
   Widget build(BuildContext context) {
     return switch (selectedTab) {
-      _UserSubUserDetailsTab.profile =>
-        UserSubUserProfileTab(provider: provider),
-      _UserSubUserDetailsTab.vehicles =>
-        UserSubUserVehiclesTab(provider: provider),
+      _UserSubUserDetailsTab.permissions => UserSubUserPermissionsTab(
+        subUserId: subUserId,
+      ),
+      _UserSubUserDetailsTab.profile => UserSubUserProfileTab(
+        provider: provider,
+      ),
+      _UserSubUserDetailsTab.vehicles => UserSubUserVehiclesTab(
+        provider: provider,
+      ),
     };
   }
 }
@@ -224,8 +248,9 @@ class _SubUserSummaryCard extends StatelessWidget {
                       _subUserTitle(subUser),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style:
-                          OpenVtsTypography.titleSmall.copyWith(fontSize: 16),
+                      style: OpenVtsTypography.titleSmall.copyWith(
+                        fontSize: 16,
+                      ),
                     ),
                     const SizedBox(height: 3),
                     Text(
@@ -248,7 +273,9 @@ class _SubUserSummaryCard extends StatelessWidget {
             runSpacing: OpenVtsSpacing.xs,
             children: [
               _StatusPill(
-                label: isActive ? 'Active' : 'Inactive',
+                label: isActive
+                    ? context.mobileText('Active')
+                    : context.mobileText('Inactive'),
                 color: isActive
                     ? OpenVtsColors.textSecondary
                     : OpenVtsColors.textTertiary,
@@ -257,7 +284,9 @@ class _SubUserSummaryCard extends StatelessWidget {
                     : Icons.pause_circle_outline_rounded,
               ),
               _StatusPill(
-                label: '$assignedCount assigned vehicles',
+                label: context.mobileText("{value1} assigned vehicles", {
+                  'value1': (assignedCount).toString(),
+                }),
                 color: OpenVtsColors.brandInk,
                 icon: Icons.directions_car_outlined,
               ),
@@ -280,30 +309,32 @@ class _TabChips extends StatelessWidget {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
-        children: _UserSubUserDetailsTab.values.map((tab) {
-          final isSelected = tab == selectedTab;
-          return Padding(
-            padding: const EdgeInsets.only(right: OpenVtsSpacing.xs),
-            child: ChoiceChip(
-              selected: isSelected,
-              label: Text(_tabLabel(tab)),
-              onSelected: (_) => onSelect(tab),
-              showCheckmark: false,
-              labelStyle: OpenVtsTypography.meta.copyWith(
-                fontWeight: FontWeight.w800,
-                color: isSelected
-                    ? OpenVtsColors.white
-                    : OpenVtsColors.textPrimary,
-              ),
-              selectedColor: OpenVtsColors.brandInk,
-              backgroundColor: OpenVtsColors.white,
-              side: const BorderSide(color: OpenVtsColors.border),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
-              ),
-            ),
-          );
-        }).toList(growable: false),
+        children: _UserSubUserDetailsTab.values
+            .map((tab) {
+              final isSelected = tab == selectedTab;
+              return Padding(
+                padding: const EdgeInsets.only(right: OpenVtsSpacing.xs),
+                child: ChoiceChip(
+                  selected: isSelected,
+                  label: Text(_tabLabel(tab)),
+                  onSelected: (_) => onSelect(tab),
+                  showCheckmark: false,
+                  labelStyle: OpenVtsTypography.meta.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: isSelected
+                        ? OpenVtsColors.white
+                        : OpenVtsColors.textPrimary,
+                  ),
+                  selectedColor: OpenVtsColors.brandInk,
+                  backgroundColor: OpenVtsColors.white,
+                  side: const BorderSide(color: OpenVtsColors.border),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
+                  ),
+                ),
+              );
+            })
+            .toList(growable: false),
       ),
     );
   }
@@ -323,8 +354,9 @@ class _StatusPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final displayColor =
-        isDarkMode && color == OpenVtsColors.brandInk ? Colors.white : color;
+    final displayColor = isDarkMode && color == OpenVtsColors.brandInk
+        ? Colors.white
+        : color;
     return Container(
       constraints: const BoxConstraints(maxWidth: 280),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -423,6 +455,7 @@ String _tabLabel(_UserSubUserDetailsTab tab) {
   return switch (tab) {
     _UserSubUserDetailsTab.profile => 'Profile',
     _UserSubUserDetailsTab.vehicles => 'Vehicles',
+    _UserSubUserDetailsTab.permissions => 'Permissions',
   };
 }
 

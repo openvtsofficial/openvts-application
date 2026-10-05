@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/open_vts_colors.dart';
 import '../../../../core/theme/open_vts_spacing.dart';
 import '../../../../core/theme/open_vts_typography.dart';
+import '../../../../shared/helpers/mobile_text.dart';
 import '../../../../shared/widgets/open_vts_bottom_sheet.dart';
 import '../../../../shared/widgets/open_vts_card.dart';
 import '../../../../shared/widgets/open_vts_empty_state.dart';
@@ -27,7 +28,7 @@ class AdminPlansScreen extends ConsumerWidget {
     final controller = ref.read(adminPlansControllerProvider.notifier);
 
     return OpenVtsPageScaffold(
-      title: 'Plans',
+      title: context.mobileText('Plans'),
       headerMode: OpenVtsPageHeaderMode.closeable,
       padding: EdgeInsets.zero,
       body: RefreshIndicator(
@@ -55,7 +56,9 @@ class AdminPlansScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: OpenVtsSpacing.xs),
                   OpenVtsSearchField(
-                    hintText: 'Search plans, currency, duration, price...',
+                    hintText: context.mobileText(
+                      'Search plans, currency, duration, price...',
+                    ),
                     onChanged: controller.setSearchQuery,
                   ),
                   const SizedBox(height: OpenVtsSpacing.sm),
@@ -96,11 +99,11 @@ class AdminPlansScreen extends ConsumerWidget {
     }
 
     if (state.filteredPlans.isEmpty) {
-      return const SliverFillRemaining(
+      return SliverFillRemaining(
         hasScrollBody: false,
         child: OpenVtsEmptyState(
-          title: 'No plans found',
-          message: 'Add a new plan or change your search.',
+          title: context.mobileText('No plans found'),
+          message: context.mobileText('Add a new plan or change your search.'),
         ),
       );
     }
@@ -126,7 +129,7 @@ class AdminPlansScreen extends ConsumerWidget {
   Future<void> _showCreatePlanSheet(BuildContext context) {
     return OpenVtsBottomSheet.show<void>(
       context: context,
-      title: 'Add Plan',
+      title: context.mobileText('Add Plan'),
       initialChildSize: 0.82,
       minChildSize: 0.45,
       maxChildSize: 0.96,
@@ -137,7 +140,7 @@ class AdminPlansScreen extends ConsumerWidget {
   Future<void> _showEditPlanSheet(BuildContext context, AdminPlan plan) {
     return OpenVtsBottomSheet.show<void>(
       context: context,
-      title: 'Edit Plan',
+      title: context.mobileText('Edit Plan'),
       initialChildSize: 0.82,
       minChildSize: 0.45,
       maxChildSize: 0.96,
@@ -169,7 +172,7 @@ class _PlansHeaderCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Plans',
+                  context.mobileText('Plans'),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: OpenVtsTypography.titleSmall.copyWith(
@@ -178,7 +181,7 @@ class _PlansHeaderCard extends StatelessWidget {
                 ),
                 const SizedBox(height: OpenVtsSpacing.xxs),
                 Text(
-                  'Manage subscription pricing plans.',
+                  context.mobileText('Manage subscription pricing plans.'),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: OpenVtsTypography.meta.copyWith(
@@ -199,7 +202,7 @@ class _PlansHeaderCard extends StatelessWidget {
                 side: const BorderSide(color: OpenVtsColors.white, width: 0.8),
               ),
               icon: const Icon(Icons.add_rounded, size: 16),
-              label: const Text('Add Plan'),
+              label: Text(context.mobileText('Add Plan')),
             ),
           ),
         ],
@@ -217,7 +220,10 @@ class _CountText extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Text(
-      '$filteredCount of $totalCount plans',
+      context.mobileText("{value1} of {value2} plans", {
+        'value1': (filteredCount).toString(),
+        'value2': (totalCount).toString(),
+      }),
       style: OpenVtsTypography.meta.copyWith(
         color: Theme.of(context).colorScheme.onSurfaceVariant,
         fontWeight: FontWeight.w600,

@@ -1,18 +1,12 @@
 import 'package:dio/dio.dart';
 
 class SafeLoggingInterceptor extends Interceptor {
-  String _safeUrl(RequestOptions options) {
-    final uri = options.uri;
-    final port = uri.hasPort ? ':${uri.port}' : '';
-    return '${uri.scheme}://${uri.host}$port${uri.path}';
-  }
-
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
     assert(() {
       // Keep logging minimal. Never print tokens or passwords.
       // ignore: avoid_print
-      print('[API] ${options.method} ${_safeUrl(options)}');
+      print('[API] ${options.method} ${options.uri.path}');
       return true;
     }());
     handler.next(options);
@@ -23,7 +17,7 @@ class SafeLoggingInterceptor extends Interceptor {
       Response<dynamic> response, ResponseInterceptorHandler handler) {
     assert(() {
       // ignore: avoid_print
-      print('[API] ${response.statusCode} ${_safeUrl(response.requestOptions)}');
+      print('[API] ${response.statusCode} ${response.requestOptions.uri.path}');
       return true;
     }());
     handler.next(response);
@@ -34,8 +28,9 @@ class SafeLoggingInterceptor extends Interceptor {
     assert(() {
       final statusCode = err.response?.statusCode;
       final prefix = statusCode == null ? '[API] ERROR' : '[API] $statusCode';
+      final suffix = err.type.name;
       // ignore: avoid_print
-      print('$prefix ${_safeUrl(err.requestOptions)} (${err.type.name})');
+      print('$prefix ${err.requestOptions.uri.path} ($suffix)');
       return true;
     }());
     handler.next(err);

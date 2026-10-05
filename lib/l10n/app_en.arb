@@ -202,7 +202,19 @@
   "reportsRowDetailsNoGps": "No GPS data available for this segment.",
   "reportsWarningBanner": "Warning: {message}",
   "reportsSourceLabel": "Source: {source}",
-  "adminRole": "Admin", "users": "Users", "vehicles": "Vehicles", "drivers": "Drivers", "team": "Team", "inventory": "Inventory", "map": "Map", "transactions": "Transactions", "calendar": "Calendar", "logs": "Logs", "plans": "Plans", "roles": "Roles", "smtp": "SMTP",
+  "adminRole": "Admin",
+  "users": "Users",
+  "vehicles": "Vehicles",
+  "drivers": "Drivers",
+  "team": "Team",
+  "inventory": "Inventory",
+  "map": "Map",
+  "transactions": "Transactions",
+  "calendar": "Calendar",
+  "logs": "Logs",
+  "plans": "Plans",
+  "roles": "Roles",
+  "smtp": "SMTP",
   "settingsDescription": "Manage profile, localization and SMTP settings.",
   "localizationDescription": "Language, date/time, units, and default map focus.",
   "whiteLabel": "White Label",
@@ -220,5 +232,4601 @@
   "localizationSaved": "Localization saved",
   "quickPresets": "Quick presets",
   "settingsHeaderSubtitle": "Profile, branding, mail, localization, and platform preferences.",
-  "localizationPreview": "Localization Preview", "latitude": "Latitude", "longitude": "Longitude", "mapZoom": "Map Zoom", "mapCenter": "Map Center", "kilometers": "Kilometers", "miles": "Miles", "latitudeRequired": "Latitude is required.", "validLatitude": "Enter a valid latitude.", "latitudeRange": "Latitude must be between -90 and 90.", "longitudeRequired": "Longitude is required.", "validLongitude": "Enter a valid longitude.", "longitudeRange": "Longitude must be between -180 and 180.", "mapZoomRequired": "Map zoom is required.", "validMapZoom": "Enter a valid zoom level.", "mapZoomRange": "Map zoom must be between 1 and 22.", "unsupportedLanguageFallback": "The saved language is not available in the app. Select a supported language; English is used for now."
+  "localizationPreview": "Localization Preview",
+  "latitude": "Latitude",
+  "longitude": "Longitude",
+  "mapZoom": "Map Zoom",
+  "mapCenter": "Map Center",
+  "kilometers": "Kilometers",
+  "miles": "Miles",
+  "latitudeRequired": "Latitude is required.",
+  "validLatitude": "Enter a valid latitude.",
+  "latitudeRange": "Latitude must be between -90 and 90.",
+  "longitudeRequired": "Longitude is required.",
+  "validLongitude": "Enter a valid longitude.",
+  "longitudeRange": "Longitude must be between -180 and 180.",
+  "mapZoomRequired": "Map zoom is required.",
+  "validMapZoom": "Enter a valid zoom level.",
+  "mapZoomRange": "Map zoom must be between 1 and 22.",
+  "unsupportedLanguageFallback": "The saved language is not available in the app. Select a supported language; English is used for now.",
+  "@reportsScopeNVehiclesSelected": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "@reportsDateMaxDays": {
+    "placeholders": {
+      "days": {
+        "type": "Object"
+      }
+    }
+  },
+  "@reportsValidationMaxDays": {
+    "placeholders": {
+      "days": {
+        "type": "Object"
+      }
+    }
+  },
+  "@reportsWarningBanner": {
+    "placeholders": {
+      "message": {
+        "type": "Object"
+      }
+    }
+  },
+  "@reportsSourceLabel": {
+    "placeholders": {
+      "source": {
+        "type": "Object"
+      }
+    }
+  },
+  "homeWorkspace": "{role} workspace",
+  "@homeWorkspace": {
+    "placeholders": {
+      "role": {
+        "type": "Object"
+      }
+    }
+  },
+  "homeAccessUnavailable": "Workspace access could not be refreshed. Pull down to retry.",
+  "homeCopyright": "© 2026 Open VTS All rights reserved.",
+  "lightMode": "Light mode",
+  "darkMode": "Dark mode",
+  "landmarksStudio": "Landmarks Studio",
+  "trackLinks": "Track Links",
+  "messages": "Messages",
+  "accounts": "Accounts",
+  "notifications": "Notifications",
+  "operations": "Operations",
+  "server": "Server",
+  "trips": "Trips",
+  "documents": "Documents",
+  "userRole": "User",
+  "subuserRole": "Subuser",
+  "driverRole": "Driver",
+  "superadminRole": "Superadmin",
+  "demoReadOnly": "Demo • Read-only",
+  "security": "Security",
+  "routeBuilderCreate": "Create route",
+  "routeBuilderEdit": "Edit route",
+  "routeBuilderName": "Route name",
+  "routeBuilderNameHint": "For example, morning deliveries",
+  "routeBuilderNameError": "Enter a route name with at least 2 characters.",
+  "routeBuilderStops": "Stops",
+  "routeBuilderAddStop": "Add stop",
+  "routeBuilderEditStop": "Edit stop",
+  "routeBuilderStopName": "Stop name",
+  "routeBuilderStopNameError": "Enter a name between 1 and 160 characters.",
+  "routeBuilderAddress": "Address (optional)",
+  "routeBuilderCoordinates": "Coordinates",
+  "routeBuilderLatitude": "Latitude",
+  "routeBuilderLongitude": "Longitude",
+  "routeBuilderCoordinateError": "Enter a valid latitude (−90 to 90) and longitude (−180 to 180).",
+  "routeBuilderMap": "Choose on map",
+  "routeBuilderMapHint": "Tap the map to choose a stop location.",
+  "routeBuilderUseLocation": "Use location",
+  "routeBuilderPoi": "Point of interest",
+  "routeBuilderGeofence": "Geofence",
+  "routeBuilderLandmarkSearch": "Search saved landmarks",
+  "routeBuilderNoLandmarks": "No matching landmarks with valid coordinates.",
+  "routeBuilderLandmarkError": "Could not load saved landmarks. Please try again.",
+  "routeBuilderStopLimit": "A route can contain up to 100 stops, including the return stop.",
+  "routeBuilderMinimumStops": "Add at least 2 distinct stops.",
+  "routeBuilderRoundTrip": "Return to start",
+  "routeBuilderRoundTripHint": "Add the starting point as the final destination.",
+  "routeBuilderOptimize": "Optimize order",
+  "routeBuilderOptimizeHint": "Reorders stops using geographic distance, keeping your start and destination. Road distance is calculated separately.",
+  "routeBuilderRoadPath": "Preview road path",
+  "routeBuilderRouting": "Calculating driving route…",
+  "routeBuilderRoutingError": "No driving route is available. Check the stop locations or your connection, then try again.",
+  "routeBuilderReady": "Driving route ready",
+  "routeBuilderChanged": "Stops changed. Preview the new driving route before saving.",
+  "routeBuilderSaveError": "Could not save the route. Please try again.",
+  "routeBuilderAccessDenied": "You do not have permission to create or edit routes.",
+  "routeBuilderOrigin": "Start",
+  "routeBuilderDestination": "Destination",
+  "routeBuilderWaypoint": "Stop",
+  "routeBuilderShapePoint": "Route shape",
+  "routeBuilderMoveUp": "Move earlier",
+  "routeBuilderMoveDown": "Move later",
+  "routeBuilderRemove": "Remove stop",
+  "routeBuilderNoStops": "Add your starting point and destination, then any stops along the way.",
+  "routeBuilderSavedGeometry": "Saved route path",
+  "routeBuilderEditingLoadError": "Could not load the complete route. Go back and try again.",
+  "routeBuilderDiscardTitle": "Discard route changes?",
+  "routeBuilderDiscardMessage": "Your unsaved route changes will be lost.",
+  "routeBuilderDiscard": "Discard",
+  "routeBuilderKeepEditing": "Keep editing",
+  "routeBuilderClose": "Close",
+  "routeBuilderRetry": "Try again",
+  "routeBuilderMapAttribution": "© OpenStreetMap contributors · Routing: OSRM",
+  "routeBuilderRouteDetails": "Route details",
+  "routeBuilderMinutes": "min",
+  "routeBuilderDistanceUnit": "km",
+  "routeBuilderChooseSource": "Add a stop from",
+  "routeBuilderLandmarksPermission": "Saved landmarks require the Landmarks permission.",
+  "routeBuilderShapeHint": "Shape points guide the road path. They are not delivery stops. Optimizing removes shape points.",
+  "routeBuilderGeofenceHint": "Uses the geofence centre. Confirm that it is reachable by road.",
+  "selectField": "Select {field}",
+  "@selectField": {
+    "placeholders": {
+      "field": {
+        "type": "Object"
+      }
+    }
+  },
+  "searchField": "Search {field}",
+  "@searchField": {
+    "placeholders": {
+      "field": {
+        "type": "Object"
+      }
+    }
+  },
+  "noMatchingField": "No matching {field}",
+  "@noMatchingField": {
+    "placeholders": {
+      "field": {
+        "type": "Object"
+      }
+    }
+  },
+  "fieldRequired": "{field} is required.",
+  "@fieldRequired": {
+    "placeholders": {
+      "field": {
+        "type": "Object"
+      }
+    }
+  },
+  "clearSelection": "Clear",
+  "clearSearch": "Clear search",
+  "noResults": "No results",
+  "select": "Select",
+  "unableToLoad": "Unable to load",
+  "mobileApiToken": "API token",
+  "mobileTokenOnce": "This token is shown only once. Store it securely. Anyone with it can access the selected API permissions.",
+  "mobileSaveRecovery": "Save your recovery codes",
+  "mobileRecoveryHelp": "Each code works once if you lose your authenticator. These replace previous recovery codes. Keep them in a safe place.",
+  "mobileCopiedSecurely": "Copied. Store this securely.",
+  "mobileSavedSecurely": "I have saved this securely",
+  "mobileDone": "Done",
+  "mobileRevokeTokenQuestion": "Revoke API token?",
+  "mobileTokenStops": "{name} will stop working immediately.",
+  "@mobileTokenStops": {
+    "placeholders": {
+      "name": {
+        "type": "Object"
+      }
+    }
+  },
+  "mobileRevoke": "Revoke",
+  "mobileMfa": "Multi-factor authentication",
+  "mobileMfaOn": "MFA is on",
+  "mobileMfaOff": "MFA is off",
+  "mobileMfaHelp": "Protect sign-in with your authenticator app.",
+  "mobileSecuritySessions": "Security changes sign out other sessions and invalidate existing API tokens.",
+  "mobileAddedDate": "Added {date}",
+  "@mobileAddedDate": {
+    "placeholders": {
+      "date": {
+        "type": "Object"
+      }
+    }
+  },
+  "mobileRemoveAuthenticator": "Remove authenticator",
+  "mobileAddAuthenticator": "Add authenticator",
+  "mobileSetupMfa": "Set up MFA",
+  "mobileRecoveryRemaining": "{count} unused recovery codes",
+  "@mobileRecoveryRemaining": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "mobileReplaceRecovery": "Replace recovery codes",
+  "mobileTurnOffMfa": "Turn off MFA",
+  "mobileApiAccess": "API access",
+  "mobileApiHelp": "Create credentials for integrations with the permissions of your account.",
+  "mobileReadWrite": "Read and write",
+  "mobileReadOnly": "Read only",
+  "mobileExpires": "Expires",
+  "mobileInactive": "Inactive",
+  "mobileRevokeToken": "Revoke token",
+  "mobileCreateToken": "Create API token",
+  "mobileDeleteAccount": "Delete account",
+  "mobileDeleteWorkspaceHelp": "Delete your account and its workspace access, including subusers. All sessions will end. This action cannot be undone in the app.",
+  "mobileDeleteSelfHelp": "Delete your account and end its sessions. This action cannot be undone in the app.",
+  "mobileDeleteMyAccount": "Delete my account",
+  "mobilePasswordOnly": "Future sign-ins will need only your password.",
+  "mobileRecoveryReplaced": "Your previous recovery codes will stop working.",
+  "mobileTokenName": "Token name",
+  "mobileAuthenticatorName": "Authenticator name",
+  "mobileEnterName": "Enter a name.",
+  "mobileAccess": "Access",
+  "mobileExpiresAfter": "Expires after",
+  "mobileDays": "{count} days",
+  "@mobileDays": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "mobileCurrentPassword": "Current password",
+  "mobileEnterPassword": "Enter your password.",
+  "mobileAuthenticatorOrRecovery": "Authenticator or recovery code",
+  "mobileEnterVerification": "Enter your verification code.",
+  "mobileDeleteConfirmation": "I understand that my account and workspace access will be deleted.",
+  "mobileContinue": "Continue",
+  "mobileSixDigits": "Enter all six digits.",
+  "mobileConnectAuthenticator": "Connect your authenticator",
+  "mobileScanQrHelp": "Scan the QR code on another device, or copy the setup key into your authenticator app. Setup expires in 10 minutes.",
+  "mobileCopySetup": "Copy setup key",
+  "mobileNewAuthenticatorCode": "New authenticator code",
+  "mobileVerifying": "Verifying…",
+  "mobileConfirm": "Confirm",
+  "mobileVerifySignIn": "Verify your sign-in",
+  "mobileUnusedRecovery": "Enter one of your unused recovery codes.",
+  "mobileAuthenticatorInstructions": "Enter the six-digit code from your authenticator app.",
+  "mobileRecoveryCode": "Recovery code",
+  "mobileAuthenticatorCode": "Authenticator code",
+  "mobileCompleteRecovery": "Enter a complete recovery code.",
+  "mobileVerifyAndSignIn": "Verify and sign in",
+  "mobileUseAuthenticator": "Use authenticator code",
+  "mobileUseRecovery": "Use recovery code",
+  "mobileBackSignIn": "Back to sign in",
+  "mobileName": "Name",
+  "mobileCallingCode": "Country calling code",
+  "mobileMobileNumber": "Mobile number",
+  "mobileAddress": "Address",
+  "mobileCountry": "Country",
+  "mobileState": "State / Province",
+  "mobileCity": "City",
+  "mobilePostcode": "Postal code",
+  "mobileChangePassword": "Change password",
+  "mobileRequired": "This field is required.",
+  "mobileValidEmail": "Enter a valid English email address.",
+  "mobilePasswordSessions": "Changing your password signs you out of all sessions.",
+  "mobileNewPassword": "New password",
+  "mobilePasswordCharacters": "Use 6–72 English characters.",
+  "mobileDifferentPassword": "Choose a different password.",
+  "mobileConfirmPassword": "Confirm new password",
+  "mobilePasswordMismatch": "Passwords do not match.",
+  "mobileChangesSaved": "Changes saved",
+  "mobileLanguageCodeHelp": "Enter a language code such as en or hi.",
+  "mobileReload": "Reload",
+  "mobileEnterYourName": "Enter your name.",
+  "mobileEnterCallingCode": "Enter a calling code.",
+  "mobileValidMobile": "Enter a valid mobile number.",
+  "mobileSaveProfile": "Save profile",
+  "mobileDisplayPreferences": "Display preferences",
+  "mobileDateFormat": "Date format",
+  "mobileTimeFormat": "Time format",
+  "mobileDistanceUnit": "Distance unit",
+  "mobileTextDirection": "Text direction",
+  "mobileTimeOffset": "Time zone offset",
+  "mobileLanguageCode": "Language code",
+  "mobileSavePreferences": "Save preferences",
+  "mobileProofAccountChanged": "Account access changed. Reopen this trip proof.",
+  "mobileActivity": "Activity",
+  "mobileAllStatuses": "All statuses",
+  "mobileApproximateRoute": "Approximate stop sequence • numbered stops",
+  "mobileAttention": "Attention",
+  "mobileChooseRoute": "Choose a route",
+  "mobileValidSchedule": "Choose a valid schedule.",
+  "mobileValidStartTime": "Choose a valid start time.",
+  "mobileChooseVehicle": "Choose a vehicle",
+  "mobileChooseVehicleRoute": "Choose a vehicle and route.",
+  "mobileChooseEligibleVehicle": "Choose an eligible vehicle",
+  "mobileEndDateAfterStart": "Choose an end date on or after the start date.",
+  "mobileChooseWeekday": "Choose at least one weekday.",
+  "mobileChooseDate": "Choose date",
+  "mobileChooseDateRange": "Choose date range",
+  "mobileChooseDay": "Choose day",
+  "mobileMultiDayHelp": "Choose the start and completion date and time for a multi-day trip.",
+  "mobileFutureDate": "Choose today or a later date.",
+  "mobileCompleted": "Completed",
+  "mobileCompletionAfterStart": "Completion must be after the start.",
+  "mobileCreateRouteFirst": "Create a route to start planning.",
+  "mobileCreateSchedule": "Create schedule",
+  "mobileCreateTrip": "Create trip",
+  "mobileDeleteSchedule": "Delete schedule",
+  "mobileDiscardChanges": "Discard changes",
+  "mobileDiscardTrip": "Discard trip changes?",
+  "mobileEditRecurring": "Edit recurring schedule",
+  "mobileEditSchedule": "Edit schedule",
+  "mobileEndDate": "End date",
+  "mobileEndSchedule": "End schedule",
+  "mobileEndTime": "End time",
+  "mobileEndTimeAfterStart": "End time must be later than start time.",
+  "mobileEndsOptional": "Ends (optional)",
+  "mobileTripTitleLength": "Enter a title between 2 and 120 characters.",
+  "mobileAtLeastTwo": "Enter at least 2 characters",
+  "mobileAtLeastThree": "Enter at least 3 characters",
+  "mobileExpandRoute": "Expand route map",
+  "mobileFitRoute": "Fit route",
+  "mobileNoGpsPlanning": "GPS is not linked. The trip can be planned, but live tracking will be unavailable.",
+  "mobileKeepEditing": "Keep editing",
+  "mobileKeepSchedule": "Keep schedule",
+  "mobileLastKnownPosition": "Last known vehicle position",
+  "mobileLatestStart": "Latest start time",
+  "mobileNextMonth": "Next month",
+  "mobileNoEligible": "No eligible vehicle is available.",
+  "mobileNoEligibleHelp": "No eligible vehicle is available. Assign an active driver to an active vehicle before planning.",
+  "mobileNoRecordsView": "No records for this view.",
+  "mobileNoRouteGps": "No route or GPS coordinates are available for this trip.",
+  "mobileStopsWithoutGeometry": "Numbered stops • route geometry unavailable",
+  "mobilePause": "Pause",
+  "mobilePlanTrip": "Plan trip",
+  "mobilePlannedNumbered": "Planned route • numbered stops",
+  "mobilePreviousMonth": "Previous month",
+  "mobileReasonRemark": "Reason / remark",
+  "mobileRecurring": "Recurring",
+  "mobileRecurringSchedule": "Recurring schedule",
+  "mobileRecurringActions": "Recurring schedule actions",
+  "mobileRefreshPlanning": "Refresh planning options",
+  "mobileRefreshSchedule": "Refresh this schedule before editing it.",
+  "mobileRemarkOptional": "Remark (optional)",
+  "mobileRemoveEndDate": "Remove end date",
+  "mobileRepeatOn": "Repeat on",
+  "mobileResume": "Resume",
+  "mobileRoute": "Route",
+  "mobileRunning": "Running",
+  "mobileSaveShareProof": "Save or share proof",
+  "mobileSaveSchedule": "Save schedule",
+  "mobileSchedule": "Schedule",
+  "mobileScheduleSaved": "Schedule saved",
+  "mobileSearchRoutes": "Search routes",
+  "mobileSearchVehicleDriver": "Search vehicle, plate or driver",
+  "mobileSkipDates": "Skip dates (optional)",
+  "mobileSkipDatesRange": "Skip dates must be inside the schedule date range.",
+  "mobileStartTime": "Start time",
+  "mobileStarts": "Starts",
+  "mobileStatus": "Status",
+  "mobileSubmittedProofs": "Submitted proofs",
+  "mobileAnyTimeDay": "The driver can start any time on the selected day.",
+  "mobileStartWindowHelp": "The driver can start within this time window. The end of the window is not the trip completion time.",
+  "mobileRequestFailed": "The request could not be completed. Please refresh and try again.",
+  "mobileRouteUnavailable": "The saved route is unavailable for planning. Refresh routes and try again.",
+  "mobileAccountTimeHelp": "The trip starts at a specific time in the account timezone.",
+  "mobilePdfPreviewFailed": "This PDF could not be previewed. Use Save or share to open it in another app.",
+  "mobileImagePreviewFailed": "This image could not be previewed. Use Save or share to open it in another app.",
+  "mobileToday": "Today",
+  "mobileTripCreated": "Trip created",
+  "mobileTripDetails": "Trip details",
+  "mobileTripRoute": "Trip route",
+  "mobileTripTitle": "Trip title",
+  "mobileProofShareFailed": "Unable to share this proof. Please try again.",
+  "mobileUnavailableVehicles": "Unavailable vehicles",
+  "mobileMaxSkipDates": "Use at most 100 skip dates",
+  "mobileRemarkLength": "Use at most 600 characters for the remark.",
+  "mobileValidDates": "Use valid dates in YYYY-MM-DD format",
+  "mobileVehicleGpsPosition": "Vehicle GPS position",
+  "mobileVehicleDriver": "Vehicle and driver",
+  "mobileVehicleRoute": "Vehicle and route",
+  "mobileViewTrip": "View trip",
+  "mobileDatesPerLine": "YYYY-MM-DD, one date per line",
+  "mobileDiscardPlanningHelp": "Your unsaved planning changes will be lost. Saved routes will remain available.",
+  "mobileTimesTimezone": "Times use {timezone}.",
+  "@mobileTimesTimezone": {
+    "placeholders": {
+      "timezone": {
+        "type": "Object"
+      }
+    }
+  },
+  "mobileStopsCount": "{count} stops",
+  "@mobileStopsCount": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "mobileTripsCount": "{count} trips",
+  "@mobileTripsCount": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "mobileLoadMoreCount": "Load more ({loaded} of {total})",
+  "@mobileLoadMoreCount": {
+    "placeholders": {
+      "loaded": {
+        "type": "Object"
+      },
+      "total": {
+        "type": "Object"
+      }
+    }
+  },
+  "mobileScheduledDate": "Scheduled: {date}",
+  "@mobileScheduledDate": {
+    "placeholders": {
+      "date": {
+        "type": "Object"
+      }
+    }
+  },
+  "mobileEndsDate": "Ends: {date}",
+  "@mobileEndsDate": {
+    "placeholders": {
+      "date": {
+        "type": "Object"
+      }
+    }
+  },
+  "mobileNextDate": "Next: {date}",
+  "@mobileNextDate": {
+    "placeholders": {
+      "date": {
+        "type": "Object"
+      }
+    }
+  },
+  "mobileGpsStatus": "Vehicle GPS: {status}",
+  "@mobileGpsStatus": {
+    "placeholders": {
+      "status": {
+        "type": "Object"
+      }
+    }
+  },
+  "mobileLastPosition": "Last position: {date}",
+  "@mobileLastPosition": {
+    "placeholders": {
+      "date": {
+        "type": "Object"
+      }
+    }
+  },
+  "mobileActualDistance": "Actual distance: {distance} km",
+  "@mobileActualDistance": {
+    "placeholders": {
+      "distance": {
+        "type": "Object"
+      }
+    }
+  },
+  "mobileTripScore": "Trip score: {value}",
+  "@mobileTripScore": {
+    "placeholders": {
+      "value": {
+        "type": "Object"
+      }
+    }
+  },
+  "mobileStopsProgress": "{completed}/{total} stops",
+  "@mobileStopsProgress": {
+    "placeholders": {
+      "completed": {
+        "type": "Object"
+      },
+      "total": {
+        "type": "Object"
+      }
+    }
+  },
+  "mobileScheduleAction": "{action} recurring schedule?",
+  "@mobileScheduleAction": {
+    "placeholders": {
+      "action": {
+        "type": "Object"
+      }
+    }
+  },
+  "dateRangeSelect": "Select date range",
+  "dateRangeChoose": "Choose Date Range",
+  "dateTimeRangeChoose": "Choose Date & Time Range",
+  "dateRangeFrom": "From",
+  "dateRangeTo": "To",
+  "dateRangeSelected": "Selected Range",
+  "dateRangeStartTime": "Start Time",
+  "dateRangeEndTime": "End Time",
+  "dateRangeSelectStartTime": "Select start time",
+  "dateRangeSelectEndTime": "Select end time",
+  "dateRangeInvalidTime": "End time must be after start time.",
+  "dateRangeCustom": "Custom",
+  "dateRangeLastHour": "Last Hour",
+  "dateRangeLast3Hours": "Last 3 Hours",
+  "dateRangeLast6Hours": "Last 6 Hours",
+  "dateRangeLast12Hours": "Last 12 Hours",
+  "dateRangeLast24Hours": "Last 24 Hours",
+  "dateRangeToday": "Today",
+  "dateRangeYesterday": "Yesterday",
+  "dateRangeThisWeek": "This Week",
+  "dateRangeLastWeek": "Last Week",
+  "dateRangeLast7Days": "Last 7 Days",
+  "dateRangeLast30Days": "Last 30 Days",
+  "apply": "Apply",
+  "calendarToday": "Today",
+  "calendarPreviousMonth": "Previous month",
+  "calendarNextMonth": "Next month",
+  "calendarExpiry": "Expiry",
+  "legacyUi869d62ddcd": " to enable the button.",
+  "legacyUi7f4f41c8c3": "#RRGGBB",
+  "legacyUi9515360684": "+ Add new device",
+  "legacyUi6116c134de": "+ Create new plan",
+  "legacyUic10e9a1c41": "+ Create new user",
+  "legacyUi5e9a7040e4": "2 digits",
+  "legacyUia0483eec37": "3 digits",
+  "legacyUi3994dbd48e": "6–35 characters",
+  "legacyUi250e268e83": "7 to 15 digits",
+  "legacyUie69a9a5ee9": "7-Day Usage",
+  "legacyUib8cee60c75": "A sub user can only use features and reports available to your account. Settings and account security remain available.",
+  "legacyUif0ee13e963": "Access restricted",
+  "legacyUi6e702cb4e0": "Account Status",
+  "legacyUi6d6eba9279": "Account access",
+  "legacyUi82cf8a5fc7": "Account settings",
+  "legacyUi9beb96dac8": "Acknowledge",
+  "legacyUibf539b1d10": "Acme Logistics Pvt. Ltd.",
+  "legacyUic3cd636a58": "Actions",
+  "legacyUia733b809d2": "Active",
+  "legacyUi15cf579b89": "Active Duration",
+  "legacyUifaa171bc07": "Active Vehicle",
+  "legacyUibde34d0278": "Active status",
+  "legacyUi14c5b09cd4": "Activity Detail",
+  "legacyUifbed23bc25": "Activity Logs",
+  "legacyUie35effbf63": "Activity date range",
+  "legacyUicbd19b5c39": "Actor",
+  "legacyUi7980ca2475": "Actor User",
+  "legacyUi4ac5084db4": "Add Device or SIM",
+  "legacyUiaa752d14b8": "Add Driver",
+  "legacyUi224f2486e6": "Add Inventory",
+  "legacyUi1836b111cd": "Add Meta Row",
+  "legacyUi31dd5bb29e": "Add New Team",
+  "legacyUi47b2149c9c": "Add Plan",
+  "legacyUic08d1e9d3f": "Add Sensor",
+  "legacyUi12071f1c87": "Add a new plan or change your search.",
+  "legacyUic0c181937e": "Add attribute",
+  "legacyUi5367d642e2": "Add credits",
+  "legacyUi1fa55e4562": "Add metadata row",
+  "legacyUi7be087b7a7": "Add proof",
+  "legacyUib68734c259": "Added",
+  "legacyUi41b5f2e6ae": "Additional notes",
+  "legacyUid5e920a5cb": "Address Line",
+  "legacyUi7748043229": "Address and geography details.",
+  "legacyUi4faa35048a": "Admin login request completed.",
+  "legacyUi1eda23758b": "Administrator",
+  "legacyUi3df513225f": "Administrator created.",
+  "legacyUif981236722": "Affected vehicles",
+  "legacyUib7fb586ff2": "Airport",
+  "legacyUi25f8c55de8": "Alarm",
+  "legacyUib5faca3a78": "Alert Type",
+  "legacyUic03d80790d": "All Admins",
+  "legacyUi0b313a76be": "All Countries",
+  "legacyUiffeed47b5a": "All Providers",
+  "legacyUi4745c5dce5": "All Time",
+  "legacyUieb672cb3ba": "All Types",
+  "legacyUib4f25a1426": "All Users",
+  "legacyUidd9eb32418": "All Vehicles",
+  "legacyUi060be00f4f": "All categories",
+  "legacyUi0aaede0bb1": "All notifications marked as read.",
+  "legacyUi30c8a0fc9c": "All types",
+  "legacyUice832d9b31": "All users",
+  "legacyUie512a2f10a": "Allow History",
+  "legacyUif8f993b052": "Allow route history access.",
+  "legacyUi1ffee134b1": "Allow visitors to log in to a demo workspace.",
+  "legacyUie5d30dc481": "Allowed range: 10–300",
+  "legacyUi22786d42cc": "Altitude",
+  "legacyUi43dc8532f7": "Amount",
+  "legacyUi76aa32f207": "Amount *",
+  "legacyUia01154a861": "Amount Override",
+  "legacyUi7d66157b06": "Amount must be between 0.01 and 9999999.99",
+  "legacyUib34440b2cd": "Amount override",
+  "legacyUib757c50159": "Amount supports up to 2 decimal places",
+  "legacyUic8c3ba95bb": "Analytics will appear once payments are available.",
+  "legacyUif6c665f4fe": "Analytics will appear once transactions are available.",
+  "legacyUi6b2a78a8f7": "Apply Filters",
+  "legacyUi2444928438": "Assign",
+  "legacyUi561f6317fe": "Assign Driver",
+  "legacyUi3d2183f9ae": "Assign Selected",
+  "legacyUi5e97289597": "Assign User",
+  "legacyUib8db201262": "Assign Vehicle",
+  "legacyUi20b5675c39": "Assign Vehicles",
+  "legacyUic403a13c66": "Assign one or more vehicles to this sub user.",
+  "legacyUie12261bf18": "Assign users to this driver.",
+  "legacyUi41c90cdeef": "Assign users to this vehicle.",
+  "legacyUi32265d6dad": "Assign vehicles to configure basic notifications.",
+  "legacyUi117326ffd2": "Assign vehicles to configure duration notifications.",
+  "legacyUi74dfd6593f": "Assign vehicles to configure geofence notifications.",
+  "legacyUi8c6586176a": "Assign vehicles to configure overspeed notifications.",
+  "legacyUi086854873d": "Assign vehicles to configure route notifications.",
+  "legacyUie24e824b68": "Assigned",
+  "legacyUie94ba984c3": "Assigned vehicles",
+  "legacyUie55df441e8": "Assignment",
+  "legacyUi0c686b74d7": "At least 5 characters. Changes are audited.",
+  "legacyUi1afff0157c": "Attach",
+  "legacyUi0c431f4969": "Attach file",
+  "legacyUi137135dbf6": "Attach files",
+  "legacyUi2286866966": "Attachment URL is not available.",
+  "legacyUib6b6277691": "Attachment path is not available.",
+  "legacyUi1b30607d41": "Attribute keys must be unique.",
+  "legacyUia6652617f2": "Attributes",
+  "legacyUi7c62a14244": "Available",
+  "legacyUicdc93143c6": "Avg",
+  "legacyUib1ff8731de": "Avg Speed",
+  "legacyUi3e6e9b59e4": "Backend Tokens",
+  "legacyUib15950ccc9": "Backend tokens",
+  "legacyUief5c48114b": "Backend verified",
+  "legacyUidd96994d01": "Backup",
+  "legacyUi775fe0e609": "Backup / Data Retention",
+  "legacyUi17ef50d8f8": "Bank Transfer",
+  "legacyUi1007a1a728": "Bank ref / UTR / transaction ID",
+  "legacyUi5be1ae92e8": "Bank transfer note / UTR / transaction ref",
+  "legacyUi6b57349e97": "Base URL settings",
+  "legacyUiaa2c96dacf": "Basic",
+  "legacyUic73c27be48": "Basic account credentials for driver login.",
+  "legacyUi904d23cb6a": "Basic identification for the new vehicle.",
+  "legacyUi99613c74ce": "Blocked",
+  "legacyUi584522b903": "Brand and contact details",
+  "legacyUibfc8921ede": "Brand color",
+  "legacyUi54a2cf5e63": "Browser",
+  "legacyUi73e0b16797": "Browser tab icon. ICO, PNG or SVG. Max 2 MB.",
+  "legacyUicfadbd7a57": "By",
+  "legacyUi42878ce3fa": "CPU Usage",
+  "legacyUi37efa8a990": "Cafe",
+  "legacyUi26b937c51d": "Cancel renewal request?",
+  "legacyUi84837a2168": "Cancel request",
+  "legacyUi2738a0a1db": "Cannot load commands without vehicle details.",
+  "legacyUi4d4ce73b15": "Card",
+  "legacyUi758ec54e43": "Cash",
+  "legacyUi6ccb60071b": "Categories",
+  "legacyUi49289db43e": "Change Password",
+  "legacyUi6fc0529f2d": "Change status",
+  "legacyUica5df1dad1": "Choose Date Time Range",
+  "legacyUid2174d8075": "Choose Replay Range",
+  "legacyUi66542fe55c": "Choose a plan, registration date and reason of 5–500 characters.",
+  "legacyUi7db804aa37": "Choose vehicles, expiry, and sharing options.",
+  "legacyUi037c5eba86": "City (optional)",
+  "legacyUief153831d1": "City is required.",
+  "legacyUi8da6bb0466": "Cleanup completed",
+  "legacyUi381c4bf1d4": "Clear Filters",
+  "legacyUicdb64ef80e": "Clear date range",
+  "legacyUid3c69afc35": "Clear dates",
+  "legacyUi1bf7452cd6": "Clear expiry",
+  "legacyUi40b66a41b8": "Clear expiry date",
+  "legacyUi92e60a4db3": "Clear replay",
+  "legacyUi53dde4f2c0": "Client revenue will appear after payments are recorded.",
+  "legacyUide4e7f6fad": "Close drawer",
+  "legacyUi3dc631324c": "Close map",
+  "legacyUid75dc68bbd": "Cluster",
+  "legacyUiadac69379a": "Code",
+  "legacyUiea6ac41a6a": "Code is required.",
+  "legacyUi5b0f7590d0": "Collected",
+  "legacyUi8901895fb1": "Command",
+  "legacyUif7e08456d0": "Command Details",
+  "legacyUi6c4cb3de03": "Command Text",
+  "legacyUibfed234d46": "Command unavailable",
+  "legacyUi45e5f3f72e": "Commands",
+  "legacyUi7a1994999d": "Company",
+  "legacyUi8599f5cc48": "Company Name",
+  "legacyUi1e5f7dc45c": "Company name",
+  "legacyUib55887f633": "Company updated",
+  "legacyUi657063c67c": "Company updated.",
+  "legacyUif1ab0a6f4e": "Complete manually",
+  "legacyUif14ebb39ce": "Config Version",
+  "legacyUi755bea99c0": "Config updated.",
+  "legacyUic69463a5a9": "Configure outgoing mail delivery.",
+  "legacyUic2d404cb7b": "Confirm Password",
+  "legacyUiea3723a45c": "Confirm increased access",
+  "legacyUi4a7c565d4c": "Confirm password",
+  "legacyUi5febc18b54": "Confirm payment",
+  "legacyUi05a7fffae1": "Confirm received payment",
+  "legacyUi90d96c7cec": "Confirmation phrase",
+  "legacyUic2f9b7b489": "Connected",
+  "legacyUib37456c453": "Contact",
+  "legacyUicc11b3a28f": "Context",
+  "legacyUi3cf29aa7f5": "Continuous Idle",
+  "legacyUic352b92e1f": "Continuous Running",
+  "legacyUi347d3dbf17": "Continuous Stop",
+  "legacyUi49fdb038f4": "Control what viewers can see.",
+  "legacyUi02c6c04dec": "Copy KML",
+  "legacyUi44fe06869f": "Copy header",
+  "legacyUi3a9d77c901": "Could not open URL",
+  "legacyUi0c09a7eccc": "Could not open attachment.",
+  "legacyUif2344997aa": "Could not open document.",
+  "legacyUi2209ab63ce": "Could not open file.",
+  "legacyUi5905ce4109": "Could not open file. Link copied.",
+  "legacyUi9b09f53bdd": "Could not open link.",
+  "legacyUi72be0e8616": "Could not pick file",
+  "legacyUi76e835f8c3": "Could not pick file.",
+  "legacyUiaef46d6729": "Could not read selected file",
+  "legacyUi280c98ccef": "Country filter",
+  "legacyUi1c9a9315c9": "Country is required.",
+  "legacyUid82b56cad9": "Course",
+  "legacyUi6e157c5da4": "Create",
+  "legacyUi318d1da4e0": "Create Admin",
+  "legacyUi0a62dd4d37": "Create Driver",
+  "legacyUie3429ab78d": "Create Geofence",
+  "legacyUidb7c457634": "Create POI",
+  "legacyUicdd060d443": "Create Pricing Plan",
+  "legacyUi5d16c5ffd7": "Create Sub User",
+  "legacyUiafe9a7ae15": "Create Ticket",
+  "legacyUib25c91fe61": "Create User",
+  "legacyUi705b0946b2": "Create Vehicle",
+  "legacyUi22a6b9d964": "Create a dashboard from the web application to view it here.",
+  "legacyUi769479a4d5": "Create a public track link to share live vehicle tracking.",
+  "legacyUi50aab1f7b5": "Create a sensor for this vehicle.",
+  "legacyUi0d2cd08b59": "Create administrator",
+  "legacyUi6f876ff9c0": "Create at least one item before exporting.",
+  "legacyUic42adee4d7": "Create device without leaving this form",
+  "legacyUiaba922c9b5": "Create driver",
+  "legacyUi6efd8652f4": "Create drivers, manage assigned vehicles, documents, and driver activity.",
+  "legacyUiba98384ac3": "Create geofences to configure geofence notifications.",
+  "legacyUif7b868f7d4": "Create points of interest with category, icon, color, and tolerance radius.",
+  "legacyUie42ed33e33": "Create pricing plan without leaving this form",
+  "legacyUie40f966076": "Create route lines manually or from source and destination where supported.",
+  "legacyUi567e040ce2": "Create routes to configure route deviation notifications.",
+  "legacyUica09bbf34d": "Create sub users and control which vehicles they can access.",
+  "legacyUi3afcbed7e6": "Create ticket",
+  "legacyUibdbcfa0af0": "Create user",
+  "legacyUie7358de58e": "Create user without leaving this vehicle form",
+  "legacyUi505a950fbb": "Create vehicle",
+  "legacyUi1ef0c932b3": "Create your first driver to start assignments.",
+  "legacyUi7d3ca14313": "Create your first geofence to define operational boundaries.",
+  "legacyUi60a39e1fde": "Create your first place to track operational points.",
+  "legacyUi4fbf4f09cd": "Create your first sub user to share selected access.",
+  "legacyUiaccf40c89b": "Created",
+  "legacyUia5682ef199": "Created : ",
+  "legacyUi5db1542e68": "Created At",
+  "legacyUif1c69716be": "Created at",
+  "legacyUidd097a2297": "Credentials",
+  "legacyUi9f58b9e39b": "Credentials the administrator will use to sign into OpenVTS.",
+  "legacyUiec535bab6f": "Credentials the user will use to sign into OpenVTS.",
+  "legacyUi8a45d339a6": "Credit",
+  "legacyUic3dc6e3ef9": "Credit, payment, or billing updates will appear here.",
+  "legacyUibfac50d642": "Credits",
+  "legacyUie070de2244": "Currency",
+  "legacyUiea4b114ac6": "Current State",
+  "legacyUieeed986410": "Current credits",
+  "legacyUibe1ac4e322": "Current step",
+  "legacyUi9c378938cd": "Custom Command",
+  "legacyUi28be3fd018": "Custom Domain",
+  "legacyUif130609dfc": "Custom Range",
+  "legacyUia9d9e61bf2": "Custom category (e.g. \"vendor\")",
+  "legacyUi0354c8896b": "Custom domain",
+  "legacyUi3a55eba66f": "Custom domain and brand color.",
+  "legacyUi9f1d0368da": "Customer expiry",
+  "legacyUi1588fe44aa": "Customer expiry date",
+  "legacyUib13a49701d": "Customer renewal requests",
+  "legacyUi0c919bd08d": "Customer service expires",
+  "legacyUidce04fd315": "Custom…",
+  "legacyUi118de3988f": "Cutoff",
+  "legacyUi5c487cb2d8": "Daily revenue points are not available for this range.",
+  "legacyUi99c0019cc6": "Dark Logo",
+  "legacyUia167278399": "Dark logo updated",
+  "legacyUi2b197ef6be": "Database and live telemetry logs will appear here.",
+  "legacyUi6bb4b674b3": "Date Range",
+  "legacyUie3d06ca6a1": "Date Time Range",
+  "legacyUic65ea4ae01": "Date range",
+  "legacyUi853aab7f56": "Date/Time",
+  "legacyUi842b7b5d71": "Dates",
+  "legacyUi987b9ced08": "Day",
+  "legacyUi82c29dd5fa": "Day / Night Comparison",
+  "legacyUibfb1ba6e3e": "Day / Night Range",
+  "legacyUicf558941e0": "Debit",
+  "legacyUibb3cec5175": "Deduct credits",
+  "legacyUi6bccca646f": "Deducted",
+  "legacyUi1dcab135ef": "Dedupe",
+  "legacyUi15462a4954": "Dedupe duplicate events",
+  "legacyUi6184deb041": "Default plan",
+  "legacyUiee1b9a9f23": "Delete Account",
+  "legacyUie81c14c990": "Delete Driver",
+  "legacyUi749f8e14e3": "Delete Sub User",
+  "legacyUi0a0a90f6c5": "Delete User",
+  "legacyUi4bcd1233a1": "Delete admin",
+  "legacyUi6fd38c1fb9": "Delete administrator",
+  "legacyUie8df0b7902": "Delete document",
+  "legacyUi4ecae3e148": "Delete document?",
+  "legacyUid1571af327": "Delete driver account",
+  "legacyUia34ada32da": "Delete sensor",
+  "legacyUi1ce5593800": "Delete this document?",
+  "legacyUi6a58093cab": "Delete track link",
+  "legacyUi9afe6c7b95": "Delete user",
+  "legacyUif7ff7065a9": "Delete vehicle",
+  "legacyUi441bda6cd8": "Deleted",
+  "legacyUif7c094a571": "Deleted rows",
+  "legacyUic6bdaac949": "Delhi",
+  "legacyUibc4f986ecb": "Deliveries",
+  "legacyUi921a6f6b55": "Delivery Logs",
+  "legacyUib2c4e6cb46": "Demo Login",
+  "legacyUi4675a25777": "Demo login",
+  "legacyUi59013d16af": "Describe the request or issue",
+  "legacyUi55f8ebc805": "Description",
+  "legacyUi388de6fa3a": "Description (optional)",
+  "legacyUi763630a9ce": "Description is required.",
+  "legacyUi8a96cce5e5": "Description must contain at least one letter or number.",
+  "legacyUidc3decbb93": "Details",
+  "legacyUia5a74a6df0": "Device",
+  "legacyUid69ba8a9eb": "Device + SIM",
+  "legacyUic587837fda": "Device IMEI",
+  "legacyUif59a7a21bb": "Device Installs",
+  "legacyUi219288726d": "Device Only",
+  "legacyUi554dd558bd": "Device Summary",
+  "legacyUi20d5df8b4a": "Device Type",
+  "legacyUi30de920ef1": "Device created and selected",
+  "legacyUi3c47b57c83": "Device response",
+  "legacyUi6d2870160a": "Device time",
+  "legacyUi21fe5a18d0": "Device updated.",
+  "legacyUidf485c8713": "Devices",
+  "legacyUibb73469225": "Disable without deleting the link.",
+  "legacyUid3e4b30e10": "Discard & Refresh",
+  "legacyUi427dc4f0cd": "Discard new administrator?",
+  "legacyUid1b8679c63": "Discard new user?",
+  "legacyUi6012a2d760": "Discard new vehicle?",
+  "legacyUifb0a3e6787": "Disk Usage",
+  "legacyUi70afe9eff3": "Dismiss",
+  "legacyUi515aa7ad86": "Display assigned geofence context.",
+  "legacyUi37bbdde1a6": "Display geofence boundaries on the map",
+  "legacyUi2eebf5225a": "Display saved routes on the map",
+  "legacyUifb71a3779e": "Distance Multiplier",
+  "legacyUib3262ecb53": "Distance Variation",
+  "legacyUiac3f0eb0ea": "Distance/Hours",
+  "legacyUi2c21f68832": "Document Type",
+  "legacyUi7615530d7a": "Document URL is unavailable.",
+  "legacyUi6dad05c10e": "Document actions",
+  "legacyUibd9a0f027e": "Document deleted.",
+  "legacyUi3859bdaa8c": "Document title",
+  "legacyUi300b6ef0cd": "Document type",
+  "legacyUi9b10914d8b": "Domain",
+  "legacyUifb349182fc": "Domain & Color",
+  "legacyUi8b58eea04e": "Domain and brand color saved",
+  "legacyUi0ec2ae5cda": "Domain, logos, favicon, and brand color.",
+  "legacyUibfa50c7a38": "Draw",
+  "legacyUi2e617aeb36": "Draw circles, polygons, rectangles, and line boundaries on the map.",
+  "legacyUid952b9d3da": "Draw your first route corridor to start tracking.",
+  "legacyUi0ecf1d5bc0": "Driven",
+  "legacyUi845a6bd3ab": "Driver Profile",
+  "legacyUi450d68e4fe": "Driver actions",
+  "legacyUid1ba6aea38": "Driver assigned.",
+  "legacyUifbaa386fbc": "Driver assignment and profile activity will appear here.",
+  "legacyUi017bb97653": "Driver created.",
+  "legacyUif8acdd5348": "Driver creation or driver updates will appear here.",
+  "legacyUib057fefdc2": "Driver deleted.",
+  "legacyUi63a7342acd": "Driver name",
+  "legacyUi8d30cc59a1": "Driver unassigned.",
+  "legacyUia010b0a25f": "Driver updated.",
+  "legacyUifdd68e9960": "Driver workspace",
+  "legacyUi3d14659ca9": "Dry-run",
+  "legacyUi87bd16c150": "Dry-run completed",
+  "legacyUi91310be76f": "Dubai",
+  "legacyUi1370004da7": "Duration",
+  "legacyUia051787af6": "Each attachment must be 5MB or smaller.",
+  "legacyUi9bb58b2d1b": "East",
+  "legacyUi7de491bedc": "Edit Company",
+  "legacyUi5b7faa9d61": "Edit Device",
+  "legacyUicf5ddc10b3": "Edit Driver",
+  "legacyUi13a7a7c3a7": "Edit Plan",
+  "legacyUicd280a41f7": "Edit Profile",
+  "legacyUi19d57bd021": "Edit SIM",
+  "legacyUi4a0fe224b9": "Edit Sensor",
+  "legacyUic8e262db5b": "Edit Sub User",
+  "legacyUi38a1cb0f89": "Edit Team Member",
+  "legacyUi0e457253ad": "Edit User",
+  "legacyUib213eb6d7b": "Edit Vehicle",
+  "legacyUid03750ccbf": "Edit company",
+  "legacyUi15141eab3a": "Edit profile",
+  "legacyUi84add5b295": "Email",
+  "legacyUi5c10b588a9": "Email (optional)",
+  "legacyUi094f6a5934": "Email or username",
+  "legacyUi79d1feaf62": "Email status",
+  "legacyUia674e88b73": "Email verification",
+  "legacyUic1feb155ec": "Enable demo login",
+  "legacyUi7cf7a0d02a": "Enable public signup",
+  "legacyUif6321257f1": "Enable this public link.",
+  "legacyUid093b28018": "Enable/Refresh",
+  "legacyUi0af149c2ed": "Encryption",
+  "legacyUic1f65ddb75": "Engine",
+  "legacyUi49dda3d71a": "Engine hours",
+  "legacyUi4c9c7856d1": "Enter 6-digit code",
+  "legacyUibc96ad8350": "Enter a decimal amount with at most 2 decimal places",
+  "legacyUib0e59c93d7": "Enter a valid amount.",
+  "legacyUi6d59e6aee7": "Enter an override reason of 5–500 characters",
+  "legacyUi571c7347b7": "Enter an override reason of 5–500 characters.",
+  "legacyUi18b809c9fb": "Enter command text",
+  "legacyUid5cd51c7b9": "Enter credit amount",
+  "legacyUibe7572b6c5": "Enter state or territory",
+  "legacyUid148321ad7": "Enter the 6-digit code",
+  "legacyUi0d639c50f1": "Enter the 6-digit code we sent you",
+  "legacyUi6d1e849865": "Enter the OTP sent to your registered contact.",
+  "legacyUied634c4edc": "Enter the email address or username used to sign in. If the account exists, we will send a time-limited reset link.",
+  "legacyUi1378167d52": "Enter your password",
+  "legacyUib6334ab817": "Enter your username or email",
+  "legacyUic7fb317725": "Entity",
+  "legacyUi04d694e298": "Entity ID",
+  "legacyUi948542c1d6": "Error/Critical",
+  "legacyUic250d77524": "Event Details",
+  "legacyUi894b1c749d": "Event ID",
+  "legacyUif8e451a5d0": "Events unavailable",
+  "legacyUief09596668": "Exit Demo",
+  "legacyUia689a999a5": "Expired",
+  "legacyUib98d67213b": "Expiring",
+  "legacyUi57fe01159c": "Expiry Date (Optional)",
+  "legacyUi1275b51587": "Expiry Date/Time",
+  "legacyUi6b440cd506": "Expiry date",
+  "legacyUic9f6710324": "Expiry must be in the future.",
+  "legacyUif3e4fadb9e": "Export",
+  "legacyUi416a52a386": "Export KML",
+  "legacyUi09b28aeb8d": "FCM Token",
+  "legacyUic2bf1a9df5": "FCM token last 10",
+  "legacyUi82da67b211": "Facebook",
+  "legacyUi09fef5d8d9": "Failed",
+  "legacyUid68666787d": "Failed tables",
+  "legacyUi706b9a59b6": "Failed to load cities",
+  "legacyUi6eb9516fdf": "Failed to load countries",
+  "legacyUi4bc4b2e555": "Failed to load details",
+  "legacyUia7bc426a05": "Failed to load full vehicle details.",
+  "legacyUia17267ffa7": "Failed to load states",
+  "legacyUi6bb1f1d9fb": "Failed to update status.",
+  "legacyUi1656649117": "Failure",
+  "legacyUib7ef43c84d": "Failure Code",
+  "legacyUi41510b1b21": "Failure Message",
+  "legacyUi8db6a2f1d3": "Fast",
+  "legacyUiadc7ac2ae5": "Faster",
+  "legacyUib0f47aaf77": "Favicon",
+  "legacyUi7d9baea15f": "Favicon updated",
+  "legacyUi2c3cafa4db": "File",
+  "legacyUi55fee60744": "File URL is not available.",
+  "legacyUif76f22f075": "File exceeds 10MB limit.",
+  "legacyUi7e184124be": "File is required.",
+  "legacyUi36f2202687": "File must be 10MB or smaller.",
+  "legacyUi937fd74b36": "Filter SIM cards",
+  "legacyUi15db08d15e": "Filter activity logs",
+  "legacyUi582198fab2": "Filter administrators",
+  "legacyUi9911a4c0ed": "Filter devices",
+  "legacyUi6a7fe2dc2c": "Filter drivers",
+  "legacyUi5439ccf95d": "Filter geofences",
+  "legacyUif1fe9835a2": "Filter team",
+  "legacyUi8cfc14a859": "Filter users",
+  "legacyUia9d1432d0d": "Filter vehicles",
+  "legacyUiaa234fb61d": "Firebase",
+  "legacyUib15839eae8": "Firebase initialized",
+  "legacyUi916a78d701": "First",
+  "legacyUic617ebad3b": "Fix validation issues before testing",
+  "legacyUi4d4e9621c4": "Fleet Status",
+  "legacyUi1cc8d18151": "Forgot Password?",
+  "legacyUibaa0e2872d": "Free signup credits",
+  "legacyUi236ddee138": "From Admin",
+  "legacyUi19fe826cc8": "From Email",
+  "legacyUi64346b483c": "Full Name",
+  "legacyUi9f8ce19bf4": "Full address",
+  "legacyUieeb692087d": "Full name",
+  "legacyUifcee5b52cc": "GMT Offset",
+  "legacyUi590df4df1f": "GMT offset must use +05:30 format.",
+  "legacyUi0933ed5657": "GPS Model",
+  "legacyUicbb0014411": "Gas Station",
+  "legacyUifc45f9b7a9": "Generate",
+  "legacyUi549f31c53e": "Generate route",
+  "legacyUidfde035f40": "Geocoding",
+  "legacyUi5cdf1dbd7e": "Geofences",
+  "legacyUic09b487feb": "Get Replay",
+  "legacyUi5442e2b64f": "GitHub",
+  "legacyUi1efbf15894": "Group nearby vehicles into clusters at lower zoom",
+  "legacyUiac69db7d02": "Growth Chart",
+  "legacyUibc4359231d": "Gym",
+  "legacyUifa8a6b01e3": "Header copied",
+  "legacyUi071c1366b0": "Higher precision uses more lookups.",
+  "legacyUi90ccd64974": "History",
+  "legacyUic3669ffe53": "History needs a vehicle with an IMEI from live telemetry.",
+  "legacyUi8d4a22ea2b": "History values are not numeric.",
+  "legacyUidbb927867e": "Hospital",
+  "legacyUi3960ec4ca5": "Host",
+  "legacyUiadd03be31a": "Host, port and encryption.",
+  "legacyUi9c4ba7d047": "Hotel",
+  "legacyUi1e3beed01c": "How long historical data is kept before cleanup.",
+  "legacyUi2635a51635": "How the administrator will be identified on the platform.",
+  "legacyUi0f053057ee": "How the user will be identified on the platform.",
+  "legacyUi077f5f9dad": "I already have a reset link",
+  "legacyUibff7cfa991": "ICCID (optional)",
+  "legacyUidc7458a51a": "IMEI is required to load telemetry logs.",
+  "legacyUif4c88fb92e": "IMEI is required to load vehicle events.",
+  "legacyUi7e77081c51": "IMEI is required to send commands.",
+  "legacyUif44426c787": "IMEI is unavailable for this vehicle. Showing the live map summary only.",
+  "legacyUi8a4b9cf4a9": "IMEI missing",
+  "legacyUi11da2cb7f0": "IMSI (optional)",
+  "legacyUi716f63b96e": "Icon",
+  "legacyUi7e5a975b6a": "Identity",
+  "legacyUi2d40c36445": "Ignition",
+  "legacyUif2d738d99c": "Ignition Source",
+  "legacyUi4157fc56ab": "Image too large. Max 2 MB.",
+  "legacyUifcf7141427": "Image too large. Max 5 MB.",
+  "legacyUieeec98db23": "Import CSV",
+  "legacyUieebd26ef51": "Inactive - 48H",
+  "legacyUi4b631f6984": "Info",
+  "legacyUi29981bf033": "Initial credit balance assigned to this administrator account.",
+  "legacyUi58984ab1ac": "Initial credits",
+  "legacyUi5721bbef40": "Instagram",
+  "legacyUi9b5ca633e8": "Insufficient account credits",
+  "legacyUi2ab95a4afe": "Invalid administrator id.",
+  "legacyUicfa3e9c7e1": "Inventory item created.",
+  "legacyUi32091e3797": "Inventory status",
+  "legacyUia430dcf58c": "Jane Smith",
+  "legacyUi049874e4f7": "KML copied to clipboard",
+  "legacyUi62fc561458": "Keep request",
+  "legacyUic67dd20ee8": "Key",
+  "legacyUi52c4afe84f": "Landmark Studio",
+  "legacyUid1c69a859a": "Last",
+  "legacyUi43df3046ba": "Last Change",
+  "legacyUi7a78ad49d8": "Last Month Revenue",
+  "legacyUicec3d948d9": "Last Payment",
+  "legacyUiada1b72559": "Last checked",
+  "legacyUi43dab84ff6": "Last login",
+  "legacyUib916a123cc": "Last month revenue",
+  "legacyUi76c1ed9309": "Last week",
+  "legacyUieb3a622ae8": "Lat / Long",
+  "legacyUi1e5421b5bc": "Lat/Lng",
+  "legacyUidecd7ca800": "Latest",
+  "legacyUiefaed3a1b0": "Leave blank to keep current password",
+  "legacyUib8100f5ba8": "Library",
+  "legacyUi3229609e15": "License",
+  "legacyUi99929a05d8": "License Blocked",
+  "legacyUi7452738cf9": "License Issued",
+  "legacyUibbe96bcfaa": "License Used",
+  "legacyUib957e7bd7b": "License blocked",
+  "legacyUiee92c8a4b6": "Licenses",
+  "legacyUi6731d7cd1a": "Light Logo",
+  "legacyUi6a1c6c8807": "Light logo updated",
+  "legacyUi24d948e4bd": "Limit",
+  "legacyUied1ed2b68d": "Link copied.",
+  "legacyUi36d1b59b88": "Link the vehicle to a primary user, GPS device, and pricing plan.",
+  "legacyUi6b6390a441": "LinkedIn",
+  "legacyUi4ac08d16b8": "Load earlier messages",
+  "legacyUidfe60ca92e": "Load more",
+  "legacyUifc53db81a0": "Load more from server",
+  "legacyUi949d7ee41c": "Load older",
+  "legacyUi6db90a0ab6": "Loaded",
+  "legacyUi326ad2f9f8": "Loading assigned vehicles",
+  "legacyUi8936529136": "Loading available vehicles",
+  "legacyUi9f1e0ce448": "Loading documents",
+  "legacyUide261e9b89": "Loading logs",
+  "legacyUi324989adf0": "Loading sensors",
+  "legacyUid219c68101": "Location",
+  "legacyUi2350df02c2": "Log Details",
+  "legacyUiaacbd6aa68": "Log ID",
+  "legacyUia3d749050e": "Login as User",
+  "legacyUi31a519ee99": "Login, password, or account status changes will appear here.",
+  "legacyUi16b583cf21": "Logs unavailable",
+  "legacyUi4c57f0c88d": "London",
+  "legacyUi3bf98fa618": "Mark read",
+  "legacyUia95e85aed5": "Max",
+  "legacyUi35f72dc38d": "Max Speed",
+  "legacyUi03a68b7d8b": "Memory Usage",
+  "legacyUi68f4145fee": "Message",
+  "legacyUi54a144c1dd": "Message dispatch",
+  "legacyUi23b9e4546e": "Message your fleet manager here.",
+  "legacyUi8d546a6dea": "Meta",
+  "legacyUi251edc0eb5": "Metadata",
+  "legacyUic0b8960edf": "Metadata copied",
+  "legacyUi7eb0cee888": "Min",
+  "legacyUib6bcd4535a": "Min 3 characters…",
+  "legacyUi925c181c00": "Minimum 6 characters",
+  "legacyUi092f99ea11": "Minutes",
+  "legacyUib1d7024593": "Mobile",
+  "legacyUia0d9c28a1e": "Mobile (optional)",
+  "legacyUi5968acfb01": "Mobile Number",
+  "legacyUic242b24d94": "Mobile Prefix",
+  "legacyUi802cdad736": "Mobile Push",
+  "legacyUi00618b3856": "Mobile and email used for communication.",
+  "legacyUi5d96299833": "Mobile number (optional)",
+  "legacyUi2ab961738f": "Mobile prefix",
+  "legacyUi90ee975346": "Mobile prefix (optional)",
+  "legacyUiaa6630b79b": "Mobile push registration retried.",
+  "legacyUia1e34f9157": "More actions",
+  "legacyUi86c0a35ec8": "More options",
+  "legacyUi69d9f3e5ae": "Museum",
+  "legacyUi4ff2aa7688": "My Tickets",
+  "legacyUi2e65b706ae": "Name and code are required.",
+  "legacyUi1eee3afea2": "Navigate",
+  "legacyUiccfb5f0286": "New POI",
+  "legacyUi4894cb39ee": "New Password",
+  "legacyUidcaa5db473": "New Ticket",
+  "legacyUib85e445f60": "New User",
+  "legacyUia273c96341": "New Vehicle",
+  "legacyUie0725b6664": "New geofence",
+  "legacyUif39fa269a9": "New route",
+  "legacyUi395e182389": "New users will appear here.",
+  "legacyUi2213317245": "New vehicles will appear here.",
+  "legacyUi4bfc194b68": "Next page",
+  "legacyUi1097b553dc": "Night",
+  "legacyUi4276e6ab2a": "No Data",
+  "legacyUi3de93f521b": "No Device",
+  "legacyUi79858167e6": "No POIs yet",
+  "legacyUia434e9985c": "No Provider",
+  "legacyUi7094ba4f01": "No active assignment. New trips appear here when dispatch assigns them.",
+  "legacyUia9206f399a": "No activity logs",
+  "legacyUi8bd5b910e5": "No activity logs found",
+  "legacyUic38a37a193": "No activity matches your filters.",
+  "legacyUibff9905096": "No activity recorded yet.",
+  "legacyUi0f5cca70f8": "No administrators found",
+  "legacyUi31d3df94ab": "No administrators found.",
+  "legacyUic0d322c2b0": "No adoption data",
+  "legacyUie5d64448e5": "No alerts",
+  "legacyUi501176c9f8": "No analytics data",
+  "legacyUi63f5349bb8": "No assigned users",
+  "legacyUi852751d61f": "No assigned vehicles",
+  "legacyUi7546829892": "No billing activity found.",
+  "legacyUi657275c0c1": "No cities available for this state",
+  "legacyUia130e0f01b": "No command history",
+  "legacyUi92db635f14": "No commands yet",
+  "legacyUi14a4bfc72c": "No completed trips this month.",
+  "legacyUiee9c2e1df0": "No config",
+  "legacyUic3017a3316": "No conversation yet",
+  "legacyUic140165b8f": "No credit history yet.",
+  "legacyUic8114767e8": "No dashboard configured",
+  "legacyUi7be70212b0": "No day or night data for this range.",
+  "legacyUi2a4eb69350": "No details",
+  "legacyUi03ca0261ac": "No device",
+  "legacyUi893d388d16": "No device assigned to this vehicle.",
+  "legacyUi8386fe15ef": "No documents",
+  "legacyUi017ce6604c": "No documents uploaded",
+  "legacyUiec7eb3c93e": "No documents uploaded yet.",
+  "legacyUi54e1079e44": "No documents yet. Upload your first document using the upload button.",
+  "legacyUia419748e62": "No driver activity found.",
+  "legacyUi98e6629503": "No driver document types are configured. Ask your administrator to add one.",
+  "legacyUi36f5cbf894": "No driver documents",
+  "legacyUic5dc9718a6": "No drivers",
+  "legacyUi7a127d70b3": "No drivers available",
+  "legacyUi9c8198d34d": "No drivers found",
+  "legacyUi208ffc64d1": "No event detail found",
+  "legacyUiec11a02374": "No events exist for the selected date range and filters.",
+  "legacyUia48cbba615": "No events found",
+  "legacyUi81ab95b9f0": "No events yet",
+  "legacyUi774a252215": "No file available.",
+  "legacyUi35f65e1e57": "No geofences available.",
+  "legacyUi019549899f": "No geofences yet",
+  "legacyUi5358cec56d": "No history points",
+  "legacyUia0ed9c8031": "No history points for this range.",
+  "legacyUi8bf09d954a": "No linked vehicles available",
+  "legacyUif48787eb30": "No logs found",
+  "legacyUi6b68d448a0": "No logs found for this vehicle",
+  "legacyUic7462a9dac": "No logs yet",
+  "legacyUi1db215fbaa": "No matches for your search.",
+  "legacyUia734fde29a": "No matching POIs",
+  "legacyUi2d928306c1": "No matching drivers",
+  "legacyUid6e8839481": "No matching geofences",
+  "legacyUif6830db2e7": "No matching logs",
+  "legacyUi748bd377da": "No matching records",
+  "legacyUi6590e5eab8": "No matching routes",
+  "legacyUid17e9558cf": "No matching sub users",
+  "legacyUif1d8690cd7": "No matching vehicles found. Try a different search or filter.",
+  "legacyUic04921f8d9": "No messages yet",
+  "legacyUi2449a03436": "No mode data",
+  "legacyUi50806db52e": "No notification settings found",
+  "legacyUic1f531f996": "No payments found",
+  "legacyUiaf4a7f06d0": "No plans found",
+  "legacyUi4ae157aff3": "No recent alerts.",
+  "legacyUi26776d0320": "No recent users",
+  "legacyUi42ec1ecf96": "No recent vehicles",
+  "legacyUi9833364a35": "No routes available.",
+  "legacyUid233dd5d9f": "No routes yet",
+  "legacyUic9bfb1492b": "No security activity found.",
+  "legacyUid07b6b93d6": "No selectable vehicles",
+  "legacyUi5653bf7251": "No sensor points for this range.",
+  "legacyUi1ef59c9c2b": "No sensors",
+  "legacyUi3c30b80f16": "No sensors configured for this vehicle.",
+  "legacyUicbae766d34": "No settings activity found.",
+  "legacyUicd0c79d188": "No share links",
+  "legacyUi9eac2f6695": "No states available for this country",
+  "legacyUid05ab60501": "No status data",
+  "legacyUi4b78e836ec": "No sub users",
+  "legacyUib30adf9758": "No sub users available",
+  "legacyUi3a1fa8f145": "No team members found",
+  "legacyUi12c6f10a41": "No telemetry detail found",
+  "legacyUi429d6e6ece": "No telemetry logs found",
+  "legacyUiea04e18b66": "No top assets for this range.",
+  "legacyUi48d2d8da35": "No transactions",
+  "legacyUid60c045dd2": "No transactions found",
+  "legacyUif794b6c6d1": "No transactions yet.",
+  "legacyUi8d92589518": "No trend data",
+  "legacyUi7d3e5f72b8": "No trips in this view.",
+  "legacyUib4c96ae04e": "No unlinked users found.",
+  "legacyUi4b3155e704": "No unlinked users match your search.",
+  "legacyUid9c71203a5": "No usage data for the selected range.",
+  "legacyUic4b060bd59": "No users",
+  "legacyUi5cc2b29f54": "No users assigned",
+  "legacyUi3b614a59c7": "No users available",
+  "legacyUi612eb3c64c": "No users found",
+  "legacyUie611ef5702": "No users found.",
+  "legacyUif800dfd722": "No valid GPS path or stop markers were returned.",
+  "legacyUib96ee669b0": "No vehicle activity found.",
+  "legacyUi748eafd21d": "No vehicles",
+  "legacyUi8fbc8deb7a": "No vehicles are visible on the map right now.",
+  "legacyUi72ed5bbcdf": "No vehicles assigned yet.",
+  "legacyUi7223e6b8cb": "No vehicles assigned.",
+  "legacyUiac0e4dbd5b": "No vehicles available",
+  "legacyUic578cfdbd5": "No vehicles found",
+  "legacyUie1de5f8ce2": "No vehicles match your search.",
+  "legacyUia41b297cf1": "No weekly comparison data.",
+  "legacyUi35163920f3": "No widgets configured",
+  "legacyUi45e118d056": "Normal",
+  "legacyUif8e45b2be2": "North",
+  "legacyUi2c924e3088": "Note",
+  "legacyUi2fd5716446": "Notes (Optional)",
+  "legacyUicf62dbc83d": "Notes / Description",
+  "legacyUi3e56dbb775": "Notes about this document",
+  "legacyUi7faf33fcca": "Nothing to export",
+  "legacyUi76544814eb": "Notification actions",
+  "legacyUi4eb32de6c9": "Notification settings saved successfully.",
+  "legacyUi8ca2cb9290": "Odometer",
+  "legacyUi6c3a72eaf6": "Office",
+  "legacyUi63f34dd211": "Older",
+  "legacyUi35c5d4307a": "Older rows",
+  "legacyUi9f8f7411e8": "One or more selected vehicles are invalid.",
+  "legacyUie81cd61ea1": "Only assigned user vehicles can be shared.",
+  "legacyUicf9b77061f": "Open",
+  "legacyUi8f5f529938": "Open / save",
+  "legacyUi55d00c31ab": "Open Vehicles",
+  "legacyUicc6b7ec50c": "Open failed rows CSV",
+  "legacyUi99bd9c01d7": "OpenVTS Notifications",
+  "legacyUic1b94f880c": "Optional amount",
+  "legacyUi7afdcf3257": "Optional email",
+  "legacyUic553137ef5": "Optional mobile",
+  "legacyUi410d481882": "Optional notes",
+  "legacyUi4f8f9c2bba": "Optional receipt or note",
+  "legacyUi3494a60f96": "Optional username",
+  "legacyUia493c04fb5": "Optional; enter at least 3 characters",
+  "legacyUi6bf5da9c08": "Options",
+  "legacyUidefe0db589": "Order by",
+  "legacyUi6e6a6f2086": "Other",
+  "legacyUi4bed336194": "Output",
+  "legacyUi9e339da256": "Overspeed Enabled",
+  "legacyUi0efc2e6be4": "Overview",
+  "legacyUi3e90e4cbf4": "Ownership",
+  "legacyUi07afcc61d8": "Packet type",
+  "legacyUif92c24e8df": "Park",
+  "legacyUi07ba1bef85": "Parties",
+  "legacyUi8be3c943b1": "Password",
+  "legacyUi408255ed02": "Password (optional)",
+  "legacyUi092a16e7af": "Password changed",
+  "legacyUi47fa528931": "Password changed.",
+  "legacyUi3efdbb2011": "Password updated.",
+  "legacyUi8ac0c75d5e": "Paste the complete reset link or token from your email. Reset links are single-use and expire automatically.",
+  "legacyUi5616b61bb7": "Payload JSON",
+  "legacyUif8c3596eab": "Payload must be valid JSON object.",
+  "legacyUi23b35c414a": "Payment Mode",
+  "legacyUi670d2a76c7": "Payment Mode *",
+  "legacyUi662210d869": "Payment Mode Breakdown",
+  "legacyUia629fd8a2e": "Payment Type",
+  "legacyUi43f8c9c90f": "Payment activity will appear here.",
+  "legacyUi8fbf2ec0dd": "Payment mode",
+  "legacyUi653c04fc42": "Payment mode breakdown is not available for this range.",
+  "legacyUidbc3c0ca72": "Payment recorded",
+  "legacyUi197b45d161": "Payment reference",
+  "legacyUi96f608c16c": "Pending",
+  "legacyUid1240d2832": "Pending / Failed",
+  "legacyUi9126c119ae": "Pending Payments",
+  "legacyUib4ebfb2f75": "Pending payments",
+  "legacyUi167a47ff3e": "Performed by",
+  "legacyUi1785713451": "Permission",
+  "legacyUid06d555709": "Permissions",
+  "legacyUi1e99c04657": "Permissions updated",
+  "legacyUi0219adf447": "Personal details and address",
+  "legacyUib1b9e59387": "Personal information",
+  "legacyUi77064d5265": "Phone",
+  "legacyUi26730cddc4": "Pick CSV",
+  "legacyUif2c5ca7b8c": "Pincode",
+  "legacyUifd25c49d56": "Pincode (optional)",
+  "legacyUiae2f98a099": "Plan",
+  "legacyUiec0632cbbf": "Plan Name",
+  "legacyUi2b366a2f95": "Plan Price",
+  "legacyUi7f97f6a268": "Plan created and selected",
+  "legacyUi2db331cefa": "Plate",
+  "legacyUi7d86677521": "Plate Number",
+  "legacyUia6b7aa4d9c": "Plate Number (optional)",
+  "legacyUif2ce282e2d": "Plate number",
+  "legacyUi09d9c23846": "Plate number (optional)",
+  "legacyUi123a7f2fcc": "Platform",
+  "legacyUi16596c477e": "Platform behavior, signup, geocoding, and retention.",
+  "legacyUid095e279b3": "Please fix the highlighted fields before continuing.",
+  "legacyUi51668149ea": "Please select an administrator.",
+  "legacyUife035157cd": "Port",
+  "legacyUi16c2eb4dbb": "Ports",
+  "legacyUib629d4165b": "Postal / ZIP code",
+  "legacyUib86b6a2b3b": "Postal code (optional)",
+  "legacyUi90eceb016c": "Prefix",
+  "legacyUif1fbb2b43d": "Preview",
+  "legacyUiba3e0b4a86": "Preview updated",
+  "legacyUi81f547195b": "Previous page",
+  "legacyUi3e8248e32e": "Price",
+  "legacyUi15ac0c0a27": "Pricing plan",
+  "legacyUid3dcce7d10": "Primary Color",
+  "legacyUi170f443f36": "Primary User",
+  "legacyUia1055f11a9": "Primary color",
+  "legacyUic1ee865b42": "Primary color (hex)",
+  "legacyUi0554f68465": "Primary user",
+  "legacyUi1e5947a051": "Primary user, device, vehicle type, and pricing plan are required.",
+  "legacyUi886cbff9d9": "Priority",
+  "legacyUi7e7302bb73": "Profile not loaded yet.",
+  "legacyUi5049e8f42b": "Profile photo updated",
+  "legacyUi49ba5b4d7b": "Profile settings unavailable",
+  "legacyUibcf7629607": "Profile updated.",
+  "legacyUibda244507b": "Profile, company, or configuration changes will appear here.",
+  "legacyUi204be1a53a": "Projected",
+  "legacyUi5c620cdb78": "Proof type",
+  "legacyUi1ed77c3f7f": "Protocol",
+  "legacyUi7ceee3f361": "Provider",
+  "legacyUi767359109d": "Provider Ref",
+  "legacyUi8d80f9c731": "Provider coverage expires",
+  "legacyUi8a87202949": "Public URL is not available.",
+  "legacyUi411c13db3b": "Public signup and welcome credits.",
+  "legacyUicf0a64d03d": "Pull to refresh and try loading your profile again.",
+  "legacyUic8f58b21ae": "Pull to refresh or add a new driver.",
+  "legacyUi011bc421c2": "Pull to refresh or create a new sub user.",
+  "legacyUi6a599877d7": "Queued",
+  "legacyUia16c5bbe4b": "Range",
+  "legacyUida433cd41e": "Raw",
+  "legacyUice09c15f57": "Raw packet",
+  "legacyUia3ccb33027": "Razorpay",
+  "legacyUi2af51c3e17": "Re-enter the password",
+  "legacyUi852b438f91": "Read",
+  "legacyUid14d593883": "Read all",
+  "legacyUi00db810078": "Reason for adjustment",
+  "legacyUid4835a2d13": "Reason for amount override (5–500 characters)",
+  "legacyUi03c3ccd3ff": "Recent Alerts",
+  "legacyUi3abf211c93": "Recent Payments",
+  "legacyUi93c62de33f": "Recent Users",
+  "legacyUi6b33999078": "Recent Vehicles",
+  "legacyUi790a1b9e7b": "Recent activity will appear here once the backend returns it.",
+  "legacyUic1541851a1": "Recent service activity",
+  "legacyUi204110a010": "Recent users will appear here when the dashboard overview returns them.",
+  "legacyUida67fde0f7": "Recenter",
+  "legacyUi7df7c0bb40": "Recipient email",
+  "legacyUi8ee92c936a": "Recipient/User",
+  "legacyUi6577ced3c0": "Record Payment",
+  "legacyUib19313692e": "Recorded By",
+  "legacyUi471b94d402": "Redo",
+  "legacyUidb1c784524": "Reference",
+  "legacyUic9dc8442d5": "Reference (Optional)",
+  "legacyUie3039b8476": "Reference (optional)",
+  "legacyUid8b2ee1dcd": "Reference max length is 200",
+  "legacyUi7a8e2a362c": "Reference must be 100 characters or less.",
+  "legacyUi483e715402": "Refresh administrators",
+  "legacyUif2b5787c06": "Refresh dashboard",
+  "legacyUie75f05fced": "Refresh drivers",
+  "legacyUiebbc55f9ce": "Refresh history",
+  "legacyUid0512701b2": "Refresh inventory",
+  "legacyUif6cf59106a": "Refresh messages",
+  "legacyUid7cb2b4eea": "Refresh report options",
+  "legacyUi323540a087": "Refresh settings",
+  "legacyUiade15a52e2": "Refresh status",
+  "legacyUie4d3b8b5ff": "Refresh team",
+  "legacyUi12f92ceb6e": "Refresh tickets",
+  "legacyUi3367ca735f": "Refresh transactions",
+  "legacyUi892f6f322d": "Refresh users",
+  "legacyUidf50facb6a": "Refresh vehicles",
+  "legacyUid42d9c1932": "Refresh widget",
+  "legacyUia844fcf834": "Registered",
+  "legacyUi9aba73febb": "Registered token last 10",
+  "legacyUic498221a5a": "Registration date",
+  "legacyUi20e264f6a1": "Related stop",
+  "legacyUi62d14389b3": "Reload document types",
+  "legacyUia2653dac4a": "Remark",
+  "legacyUie963907dac": "Remove",
+  "legacyUi0fcc6594fc": "Remove attachment",
+  "legacyUi48666118ca": "Remove metadata row",
+  "legacyUif96ba1e583": "Remove vehicle assignment from this driver?",
+  "legacyUi0165f7088a": "Renew",
+  "legacyUib219a06163": "Renew Vehicle",
+  "legacyUi4913250b6c": "Renew annual coverage",
+  "legacyUif192fe3e94": "Renew annual coverage?",
+  "legacyUi1cce449350": "Renew up to 100 vehicles at a time",
+  "legacyUi714c2b126f": "Renew up to 100 vehicles at a time.",
+  "legacyUibb47b991fe": "Renewal requests",
+  "legacyUiac2377c0dd": "Replay speed",
+  "legacyUi5cc45fda55": "Replies will appear here once the conversation starts.",
+  "legacyUid7a41420c8": "Replies will appear here once the ticket conversation starts.",
+  "legacyUi1f21d9edca": "Reply is too long.",
+  "legacyUi4c7c79f6a9": "Reply message is required.",
+  "legacyUic9e8dd4159": "Reply sent successfully.",
+  "legacyUi5ce1bacd48": "Reply sent.",
+  "legacyUi49072e5767": "Reply-To (optional)",
+  "legacyUi6e2c712363": "Report issue",
+  "legacyUi0ca4fce136": "Report type",
+  "legacyUi4857497af3": "Request a new reset link",
+  "legacyUida30a140cc": "Request vehicle renewal?",
+  "legacyUic26bf60fed": "Requested",
+  "legacyUi1d3cb8a962": "Resend code",
+  "legacyUi56553100b0": "Reset filters",
+  "legacyUibb02ea158c": "Reset link or token",
+  "legacyUi3ddc852b26": "Reset north",
+  "legacyUi5c4bc97ee5": "Reset password",
+  "legacyUi4f21821190": "Responded",
+  "legacyUi966ea65ee9": "Response hex",
+  "legacyUi3585d7553d": "Restaurant",
+  "legacyUiab6d02bfbb": "Restricted by your administrator",
+  "legacyUic7199d9e95": "Retention",
+  "legacyUi9393bfa8e2": "Retention period",
+  "legacyUibf1c27deea": "Retry loading currencies",
+  "legacyUi2e84dd3c7d": "Retry registration",
+  "legacyUic507a566fc": "Reverse Geocoding Precision",
+  "legacyUi7148d08646": "Ripple",
+  "legacyUic3f104d136": "Role",
+  "legacyUib1b392607d": "Run",
+  "legacyUi26c35575bf": "Run Sensor",
+  "legacyUiba51f0a9fa": "Run a history search",
+  "legacyUia84c30c93c": "Run cleanup",
+  "legacyUibd4e4bc9f2": "SIM Number",
+  "legacyUi135447fb8f": "SIM Only",
+  "legacyUi3454bbef7f": "SIM Provider",
+  "legacyUi0366e95ddf": "SIM Provider (optional)",
+  "legacyUi4636ab9e9a": "SIM card updated.",
+  "legacyUi12897d0b88": "SIM status",
+  "legacyUi1f4f5e7e3c": "SMTP account login.",
+  "legacyUi7d08205aa6": "SMTP settings saved",
+  "legacyUia70c3bcf1d": "San Francisco",
+  "legacyUi340bbc7875": "Satellites",
+  "legacyUidb95397447": "Save .kml",
+  "legacyUifa2984b367": "Save Changes",
+  "legacyUi78fe0922d6": "Save Company",
+  "legacyUic6606cd51c": "Save Config",
+  "legacyUi909bf3e807": "Save Profile",
+  "legacyUif2f3d66a79": "School",
+  "legacyUid09c8bca28": "Search SIM number…",
+  "legacyUiabddbf1811": "Search activity logs...",
+  "legacyUi9a99566535": "Search activity…",
+  "legacyUi1321daf435": "Search assigned drivers",
+  "legacyUie6ac2b6800": "Search assigned vehicles",
+  "legacyUi3a97577679": "Search available drivers",
+  "legacyUiacd1382ab4": "Search available vehicles",
+  "legacyUi03ef7546a9": "Search by IMEI...",
+  "legacyUia8854d5f97": "Search by code...",
+  "legacyUi411482b8e7": "Search by date, activity, credits, vehicle…",
+  "legacyUi28abc0313d": "Search by name",
+  "legacyUi28f3d064ea": "Search by name or category",
+  "legacyUi4120e178da": "Search by name or plate…",
+  "legacyUibb6cfd804d": "Search by name, email…",
+  "legacyUi1c1d641fe8": "Search by name, plate, IMEI, or VIN",
+  "legacyUife32b8f32a": "Search by name, plate, IMEI…",
+  "legacyUibdc6551409": "Search by name, plate, VIN, IMEI, SIM...",
+  "legacyUiba20cfd893": "Search by reference or admin...",
+  "legacyUi45b6baaad3": "Search daily records...",
+  "legacyUie43926680a": "Search device logs",
+  "legacyUi26eb1d222b": "Search device type…",
+  "legacyUi98110e65a0": "Search loaded logs",
+  "legacyUi48225af1f4": "Search logs",
+  "legacyUi20f28ed35b": "Search name, IMEI, SIM, type",
+  "legacyUic60723c651": "Search name, plate or IMEI",
+  "legacyUi3dadc5cddf": "Search name, username, email, mobile, vehicle, plate...",
+  "legacyUi0417c5f97b": "Search name, username, email, mobile...",
+  "legacyUi5196e5c8da": "Search place or address...",
+  "legacyUic3290fb221": "Search place...",
+  "legacyUi60c8ce351b": "Search plans, currency, duration, price...",
+  "legacyUie5483c71e7": "Search provider…",
+  "legacyUi98e27d7b41": "Search reference, provider, counterparty...",
+  "legacyUidd77f6ecc1": "Search reference, provider, user, vehicle",
+  "legacyUi0066a752cb": "Search routes by name",
+  "legacyUi502e6eaf2c": "Search sensors",
+  "legacyUi0cfffb61af": "Search sensors...",
+  "legacyUi233ad2b14f": "Search subject, number, status",
+  "legacyUid320d41a03": "Search tickets",
+  "legacyUi65da39d5f0": "Search transactions...",
+  "legacyUi25dfae4e3a": "Search trips",
+  "legacyUida80ead473": "Search unlinked users...",
+  "legacyUie5b2404515": "Search users, vehicles…",
+  "legacyUi8cdc4c0930": "Search users...",
+  "legacyUi2e4b72c10c": "Search vehicle",
+  "legacyUi1bd54471c2": "Search vehicle events...",
+  "legacyUiba537c59ae": "Search vehicle, plate, VIN, IMEI, SIM, user…",
+  "legacyUi4a54a9e6db": "Search vehicle, plate, VIN, IMEI, SIM...",
+  "legacyUi5780b5d6bf": "Search vehicles",
+  "legacyUi50efae1b5f": "Search vehicles by name, plate, plan...",
+  "legacyUib09b43245d": "Search vehicles...",
+  "legacyUif54fbca187": "Search…",
+  "legacyUifaaee5e23e": "Select SIM",
+  "legacyUi69cc521201": "Select a country",
+  "legacyUi400a58f1cc": "Select a range to load history.",
+  "legacyUie216b735f0": "Select a user first.",
+  "legacyUie965317576": "Select a vehicle first.",
+  "legacyUia72bd23c12": "Select a vehicle, stop threshold, and date time range.",
+  "legacyUi29c9360313": "Select administrator",
+  "legacyUi8a152d2c3f": "Select at least one renewable vehicle",
+  "legacyUi5573da8514": "Select at least one vehicle.",
+  "legacyUi42303635fc": "Select city",
+  "legacyUi9915f6e5c2": "Select color",
+  "legacyUia96ce92893": "Select command template",
+  "legacyUi59ee76bad1": "Select country",
+  "legacyUi74c388ab91": "Select date time range",
+  "legacyUi46bfa11b12": "Select device type",
+  "legacyUidba2e6bd04": "Select document type",
+  "legacyUi386f8ba9d0": "Select primary user",
+  "legacyUic7a9e8ea6a": "Select provider",
+  "legacyUib350802ae1": "Select state",
+  "legacyUi905d012288": "Select type",
+  "legacyUib8a1d9de7d": "Select user",
+  "legacyUie574e3a29d": "Select vehicles with the same plan currency",
+  "legacyUi07f0f61db9": "Selected file is empty.",
+  "legacyUi9bc2575c39": "Send",
+  "legacyUi0ad7c21624": "Send Command",
+  "legacyUi9b48248439": "Send a command to see history.",
+  "legacyUi724aa54b02": "Send command to vehicle?",
+  "legacyUic70a890d14": "Send message",
+  "legacyUia89d641794": "Send request",
+  "legacyUib8ec554332": "Send reset link",
+  "legacyUi1aba33d6c2": "Send test",
+  "legacyUifc552c754d": "Send test email",
+  "legacyUi17b874d289": "Sender",
+  "legacyUi679e8f61b9": "Sender Name",
+  "legacyUi73dcba5635": "Sensor History",
+  "legacyUia14460cfb3": "Sensor History Range",
+  "legacyUia9bc44292f": "Sensor actions",
+  "legacyUi18d80b838f": "Sensor deleted.",
+  "legacyUi711bf35988": "Sensors",
+  "legacyUi48380dd0e2": "Sensors unavailable",
+  "legacyUi35f49dcfbf": "Sent",
+  "legacyUi2d7bb03171": "Sent commands and device responses appear here.",
+  "legacyUi1d5d1effa9": "Server URL",
+  "legacyUif85e6f1bdc": "Server Uptime",
+  "legacyUi10802e852c": "Server time",
+  "legacyUi7ef53dd844": "Service expiry must follow registration.",
+  "legacyUi2ad34ef4cf": "Service plan",
+  "legacyUi2bacd5f581": "Service starts",
+  "legacyUiaa02a8d843": "Set Engine Hours",
+  "legacyUi837c0d47b5": "Set Odometer",
+  "legacyUiaef97bb06a": "Settings saved",
+  "legacyUi96a0dc481b": "Shopping",
+  "legacyUi5e65ca08ed": "Short issue title",
+  "legacyUi4c742d5133": "Show Geofence",
+  "legacyUi5abbf34ba3": "Show History",
+  "legacyUi8268618610": "Show animated pulse around running vehicles",
+  "legacyUi25911d48e0": "Show more",
+  "legacyUi50b47f1483": "Show points of interest markers",
+  "legacyUib7f93469b9": "Show route trail",
+  "legacyUi510904927e": "Show vehicle name next to the icon on the map",
+  "legacyUi6e61e47d5c": "Shown on dark backgrounds. PNG, JPG, SVG, WEBP. Max 5 MB.",
+  "legacyUi39e4052ecf": "Shown on light backgrounds. PNG, JPG, SVG, WEBP. Max 5 MB.",
+  "legacyUi894bc414e6": "Signup",
+  "legacyUi69c2037890": "Skip end",
+  "legacyUia8522e4c9d": "Skip start",
+  "legacyUi33dcec9ce4": "Slow",
+  "legacyUicf606d0913": "Slower",
+  "legacyUi339c1ea94b": "Social Links",
+  "legacyUi3db7211438": "Sort SIM cards",
+  "legacyUi66758a74bc": "Sort administrators",
+  "legacyUi3655295cb4": "Sort devices",
+  "legacyUi3a21e72182": "Sort drivers",
+  "legacyUi1e891a0102": "Sort team",
+  "legacyUi6d1ba980e8": "Sort users",
+  "legacyUi2512bda9e7": "Sort vehicles",
+  "legacyUi6da13addb0": "Source",
+  "legacyUi6ace449732": "South",
+  "legacyUi2d2cb022bc": "Speed",
+  "legacyUi8a14aeec13": "Speed Multiplier",
+  "legacyUid6a0aaa660": "Speed Variation",
+  "legacyUi09a7707087": "Start manually",
+  "legacyUi7e244fee11": "Start time must be before end time.",
+  "legacyUia725020675": "State",
+  "legacyUi4e5c9805af": "State (optional)",
+  "legacyUic01247416e": "State is required.",
+  "legacyUiedde30a0b6": "Status : ",
+  "legacyUia0539c7e7a": "Status distribution is not available for this range.",
+  "legacyUie4fe064446": "Stop Minutes",
+  "legacyUif32715a2f1": "Stoppage marker",
+  "legacyUi5ca845e914": "Street, building, area…",
+  "legacyUi4d08ec5874": "Stripe",
+  "legacyUi8de713bd12": "Sub Users",
+  "legacyUi97a0373212": "Sub user created.",
+  "legacyUi5cae4f427b": "Sub user deleted.",
+  "legacyUi2cc74ff5c3": "Sub user name",
+  "legacyUie44d50f72d": "Sub user updated.",
+  "legacyUibd3159ff21": "Subject is required.",
+  "legacyUi6844979e4f": "Subject must contain at least one letter or number.",
+  "legacyUid6981f7476": "Subscribe",
+  "legacyUia547aab586": "Subscribed to email updates",
+  "legacyUid7932a2917": "Successful",
+  "legacyUib879505819": "Support Ticket",
+  "legacyUi848eed0fbd": "Tags",
+  "legacyUi8c7e01ee22": "Tags (comma separated)",
+  "legacyUi1df356a49e": "Tap the map or enter coordinates to place the POI.",
+  "legacyUi61ad50a9b9": "Target",
+  "legacyUi78560d88ef": "Team activated.",
+  "legacyUid8f82f6030": "Team activity",
+  "legacyUi8aef227384": "Team deactivated.",
+  "legacyUi72df525608": "Team member created.",
+  "legacyUi07fed9d9b3": "Team member updated.",
+  "legacyUi0194c31b6d": "Team permissions updated",
+  "legacyUi6730423d83": "Telemetry Detail",
+  "legacyUieef4095d19": "Telemetry Logs",
+  "legacyUif8d42e6122": "Telemetry date range",
+  "legacyUi3ec1ae061c": "Template",
+  "legacyUi7200f86ae5": "Test Mobile Push",
+  "legacyUi8b9bbdf230": "Test Push",
+  "legacyUi8135cd8fa3": "The customer can create a fresh request. No vehicle service is extended.",
+  "legacyUidc46c2859b": "The link expires automatically.",
+  "legacyUic77eaa41ef": "The organisation this administrator manages within OpenVTS.",
+  "legacyUi461197e42e": "The organisation this user belongs to within OpenVTS.",
+  "legacyUia491398fbb": "The overview response does not include chart points yet.",
+  "legacyUi214cddfadb": "The overview response does not include recent vehicles yet.",
+  "legacyUi9e4a7b1c4c": "The permission catalog is unavailable. Editing is disabled.",
+  "legacyUiac4a475bbb": "The server returned an unsupported permission catalog. Editing is disabled.",
+  "legacyUi8895c1d4b6": "The upload finished, but the new profile photo was not returned by the server.",
+  "legacyUidbc2f6bd85": "There are no alerts available right now.",
+  "legacyUi9b519b14b9": "There are no events on this day",
+  "legacyUi354cfe028c": "These changes grant global or delete access. Apply them to this team member?",
+  "legacyUi0f6cc3a89c": "This Month",
+  "legacyUi77528c94d9": "This Year",
+  "legacyUi951f495b34": "This action cannot be undone.",
+  "legacyUi9b646010b8": "This file type is not allowed.",
+  "legacyUi1b4785331d": "This month",
+  "legacyUi0e606e3993": "This saved dashboard has no widgets yet.",
+  "legacyUi1e191e95f4": "This ticket is closed.",
+  "legacyUi8866cb1e0a": "This uses one account credit when the vehicle is eligible.",
+  "legacyUi7b72883e07": "This week",
+  "legacyUi261bd2f51b": "Ticket Conversation",
+  "legacyUie1b858991f": "Ticket created.",
+  "legacyUi61322c9a86": "Ticket details",
+  "legacyUif1e8e34245": "Ticket details are not available",
+  "legacyUiaa27494c39": "Ticket status updated.",
+  "legacyUiedcd363083": "Timed out",
+  "legacyUi768e0c1c69": "Title",
+  "legacyUie39bf0152d": "Today Distance",
+  "legacyUif43482f042": "Today Eng. Hours",
+  "legacyUi7adacb5405": "Toggle Status",
+  "legacyUi6d91e0bb03": "Tolerance",
+  "legacyUid1bbcb6c01": "Tolerance (meters)",
+  "legacyUi63cfb27f40": "Top Clients",
+  "legacyUibc6debbc28": "Top Performing Assets",
+  "legacyUib25928c699": "Total",
+  "legacyUia672e7faed": "Total Eng. Hours",
+  "legacyUie9511a6560": "Total Received",
+  "legacyUia028fce203": "Total Users",
+  "legacyUi5bcce6c936": "Total Vehicles",
+  "legacyUi7b777b27e0": "Total engine hours",
+  "legacyUi8578188376": "Total logs",
+  "legacyUi0538b10824": "Track Link QR",
+  "legacyUi070fb0b6ea": "Track link deleted.",
+  "legacyUief1f899cb2": "Transaction Details",
+  "legacyUi06d8ffe653": "Transaction ID",
+  "legacyUi105b1510d9": "Transaction activity will appear here when available.",
+  "legacyUid016e453e5": "Transaction details",
+  "legacyUiab39260fea": "Transitions",
+  "legacyUic10d76c9a4": "Transport",
+  "legacyUie82c27ca1d": "Trip cancelled",
+  "legacyUi4a9e77914e": "Try a different name or plate.",
+  "legacyUi4e653834fa": "Try a different search or filter.",
+  "legacyUi39d6420eaa": "Try a different search term",
+  "legacyUi0ba628a33e": "Try a different search term.",
+  "legacyUi10239b38b5": "Try adjusting the current filters or search query.",
+  "legacyUi2253479cff": "Try adjusting your filters.",
+  "legacyUie3f4c649b5": "Try another name or plate number.",
+  "legacyUi10f570e880": "Try changing filters or search query.",
+  "legacyUif28432df1f": "Try changing filters.",
+  "legacyUi3c86b09439": "Try changing search or filters.",
+  "legacyUi0ba0bd18bf": "Try clearing search or status filters.",
+  "legacyUi7a2fe508f6": "Try refreshing. If this persists, your account may not have notification preferences yet.",
+  "legacyUia0b470cb00": "Twitter / X",
+  "legacyUi8981df4d6a": "Twitter/X",
+  "legacyUi3deb745651": "Type",
+  "legacyUie298b0ec36": "Type ",
+  "legacyUi4b3072dd4e": "Type command payload",
+  "legacyUi5712bb4ea1": "Type manually",
+  "legacyUi968be8d576": "Unable to change password.",
+  "legacyUi1da33a6b30": "Unable to load cities.",
+  "legacyUia4c5468d38": "Unable to load company details.",
+  "legacyUicbae41853b": "Unable to load form options.",
+  "legacyUid06763ac1a": "Unable to load states.",
+  "legacyUia471ebf750": "Unable to load users.",
+  "legacyUibf0bc28bdb": "Unable to load vehicles.",
+  "legacyUid73d7a7c96": "Unable to open file.",
+  "legacyUi8ace6e9280": "Unable to open image picker.",
+  "legacyUidcbaa0588e": "Unable to open navigation for this vehicle.",
+  "legacyUi14fdbab84b": "Unable to open this attachment.",
+  "legacyUia457295e9f": "Unable to read the selected image.",
+  "legacyUi9e97e5bfed": "Unable to refresh users.",
+  "legacyUi800f200671": "Unable to update status.",
+  "legacyUice1c9c972b": "Unable to update team member status.",
+  "legacyUib5f12c7d4f": "Unable to update team member.",
+  "legacyUia046b8ac56": "Unable to update the server URL.",
+  "legacyUi896bfd3a9a": "Unassign",
+  "legacyUi7be6acc7f8": "Unassign User?",
+  "legacyUi05027a8753": "Unassign user",
+  "legacyUi2d5a96092e": "Unassign vehicle",
+  "legacyUi39fc721248": "Undo",
+  "legacyUice77c2f42c": "Unique code",
+  "legacyUif6b935ab33": "Unit",
+  "legacyUi07b032b56f": "Unread",
+  "legacyUi100cb4d890": "Unsupported file type.",
+  "legacyUicb9925a338": "Unsupported format. Use PNG, JPG, JPEG or WEBP.",
+  "legacyUi99974d3476": "Unsupported widget",
+  "legacyUieb27a190c0": "Unverified",
+  "legacyUi61dcf34e70": "Update Password",
+  "legacyUieae1f5caf5": "Update status",
+  "legacyUif2f8570ddd": "Updated",
+  "legacyUi22714274a4": "Updated At",
+  "legacyUi8bdf057f91": "Upload",
+  "legacyUi9e2628eec4": "Upload Document",
+  "legacyUidcad7d982a": "Upload a document to get started.",
+  "legacyUi73183a7050": "Upload document",
+  "legacyUid714896782": "Upload documents for this vehicle.",
+  "legacyUi4b87ccd949": "Upload driver files like license or identity proofs.",
+  "legacyUi6aafa80cab": "Uptime",
+  "legacyUif1f71137de": "Use a strong, unique password",
+  "legacyUid81b6af542": "Use all",
+  "legacyUi5895bc72eb": "Used for regional defaults like currency, timezone, and routing.",
+  "legacyUi81c9245d46": "User Tickets",
+  "legacyUi81939432dd": "User actions",
+  "legacyUi0abfc13cb8": "User assigned.",
+  "legacyUi6188702f9e": "User created and selected",
+  "legacyUi0ba72d0bce": "User deleted.",
+  "legacyUi8fd72dd6f9": "User is required",
+  "legacyUi5ed13310cc": "User is required.",
+  "legacyUib0b238b57a": "User permissions updated",
+  "legacyUia42cd2f9d5": "User unassigned.",
+  "legacyUi2355aced23": "User updated.",
+  "legacyUi84c29015de": "Username",
+  "legacyUib1974b83bc": "Username (optional)",
+  "legacyUi2c7ab350b3": "Username or email",
+  "legacyUi73dbef356e": "VIN (optional)",
+  "legacyUi39852971ee": "VIN Number",
+  "legacyUia4aefa35c3": "Valid",
+  "legacyUi8dce170de2": "Value",
+  "legacyUi7bac966778": "Vehicle / Plan",
+  "legacyUi43188a5960": "Vehicle Event Detail",
+  "legacyUi2d80c33ed3": "Vehicle Events",
+  "legacyUi4d461104bf": "Vehicle Expiry",
+  "legacyUi9e47ccbff4": "Vehicle IMEI is required to load events.",
+  "legacyUi2b51e72835": "Vehicle IMEI is required to load sensors.",
+  "legacyUief04c2235a": "Vehicle IMEI is required to load telemetry logs.",
+  "legacyUi62dc158d0e": "Vehicle Label",
+  "legacyUicb4e4154e4": "Vehicle Meta",
+  "legacyUi92dc53a1bc": "Vehicle Name",
+  "legacyUi441399c250": "Vehicle Selection",
+  "legacyUi2d6ca00998": "Vehicle Type",
+  "legacyUi5c931770ef": "Vehicle actions",
+  "legacyUi6ac26355c9": "Vehicle activity and system logs will appear here.",
+  "legacyUi4e4942337f": "Vehicle and Plan",
+  "legacyUi6ec60a25f7": "Vehicle assigned.",
+  "legacyUia31471cef9": "Vehicle assignment or vehicle updates will appear here.",
+  "legacyUib7975a2537": "Vehicle deleted.",
+  "legacyUiff47117f38": "Vehicle details",
+  "legacyUia1fbfba50c": "Vehicle details are unavailable.",
+  "legacyUi79c500fa20": "Vehicle event date range",
+  "legacyUie981db4fa0": "Vehicle events will appear here.",
+  "legacyUi7eefc642f4": "Vehicle group",
+  "legacyUi5cd0230ee5": "Vehicle id is missing.",
+  "legacyUi39ea43c097": "Vehicle identification number",
+  "legacyUida83429197": "Vehicle name",
+  "legacyUi750a5503ac": "Vehicle position",
+  "legacyUi40a1e7dd80": "Vehicle record is not available.",
+  "legacyUi686853d97d": "Vehicle renew payment submitted",
+  "legacyUie1071916e2": "Vehicle renewal recorded.",
+  "legacyUibf31403ac2": "Vehicle scope",
+  "legacyUi3c760a5151": "Vehicle service",
+  "legacyUi9aafada9ec": "Vehicle service revision unavailable. Reload before editing.",
+  "legacyUia0d9ad9324": "Vehicle service updated",
+  "legacyUi97d4120359": "Vehicle services",
+  "legacyUif9709ba7c4": "Vehicle telemetry updates progress automatically. Manual completion is available for the current stop only.",
+  "legacyUi9644381920": "Vehicle type",
+  "legacyUi8b26242493": "Vehicle type filter",
+  "legacyUi2a37343d0a": "Vehicle unassigned.",
+  "legacyUif28657d034": "Vehicle unavailable",
+  "legacyUi917981e400": "Vehicle updated.",
+  "legacyUi02236966b5": "Vehicles Affected",
+  "legacyUi776abb6631": "Vehicles assigned.",
+  "legacyUi433457e28d": "Vehicles could not be loaded.",
+  "legacyUi03128bed90": "Verification",
+  "legacyUiaed3b8c6a7": "Verified",
+  "legacyUidda6ac27b9": "Verify",
+  "legacyUi69bd4ef9fb": "View",
+  "legacyUi5b9306d29c": "View Payments",
+  "legacyUie3c9374cd6": "View all trips",
+  "legacyUib1614cb4e6": "View/Download",
+  "legacyUi1b6cc58781": "Violations by Severity",
+  "legacyUi1fe59390ac": "Visible",
+  "legacyUi4fc5a421da": "Visible To Admin",
+  "legacyUi1448afee1d": "Visible To Driver",
+  "legacyUib60862f485": "Wallet",
+  "legacyUic4fe2a7498": "Web Push",
+  "legacyUi2e8a57cc5c": "Website",
+  "legacyUib32233ad82": "Website URL",
+  "legacyUica976c5dc6": "Weekly Comparison",
+  "legacyUidd322f2dc7": "West",
+  "legacyUib336fc5587": "WhatsApp",
+  "legacyUi16ec75e229": "Who recipients see in the inbox.",
+  "legacyUi682d44be54": "With device",
+  "legacyUi0a58e1d0a2": "Write a reply",
+  "legacyUi126cd2cd36": "Write a reply...",
+  "legacyUib58c0082b4": "You are all caught up.",
+  "legacyUi558865a16f": "YouTube",
+  "legacyUid3639ca4df": "Your account does not have permission to view this section.",
+  "legacyUice100fe123": "Your changes will be lost. This action cannot be undone.",
+  "legacyUi9b3cbed5c4": "Zoom",
+  "legacyUi4fc05f2763": "Zoom in",
+  "legacyUia4ae4b24a1": "Zoom out",
+  "legacyUib6958e3c52": "apikey or username",
+  "legacyUib5f203a910": "cmdId",
+  "legacyUif05135d639": "insurance, permit",
+  "legacyUid127ec8ef2": "jane@company.com",
+  "legacyUi216fb6179a": "km/h, C, V",
+  "legacyUi7252f9e8d5": "last 7 days",
+  "legacyUibbdead93fb": "license, identity, permit",
+  "legacyUid7cb0327fd": "license, insurance",
+  "legacyUica62660225": "noreply@example.com",
+  "legacyUid043e53c7d": "queueId",
+  "legacyUi11c8ce1244": "recipient@example.com",
+  "legacyUi4b329f8934": "speed, fuel",
+  "legacyUi65e012062c": "support@example.com",
+  "legacyUi0bd41b4761": "this month",
+  "legacyUie92d4d638a": "wk / mo",
+  "legacyUia126722ec0": "Needs attention",
+  "legacyUi51eab2420d": "Dispatcher actions",
+  "legacyUi8bdea32153": "No activity yet.",
+  "legacyUi05e3a866c3": "The schedule was saved, but some trips could not be generated.",
+  "legacyUi2924d70976": "Date Only",
+  "legacyUi63f39eeeb7": "Fixed Time",
+  "legacyUi6930391c64": "Time Slot",
+  "legacyUi601d153162": "Multi Day",
+  "legacyUif61eadaf15": "In Progress",
+  "legacyUia1bf92eff4": "Cancelled",
+  "legacyUic7dfb6f1d9": "Paused",
+  "legacyUi90303d8df2": "Ended",
+  "legacyUi59f1111618": "On Trip",
+  "legacyUi2b613fb829": "No Assignment",
+  "legacyUib564001a58": "Missed",
+  "legacyUi736d1eee8e": "Vehicle Inactive",
+  "legacyUif4330844fd": "Vehicle License Blocked",
+  "legacyUiabf81c35d4": "Driver Required",
+  "legacyUi2c9c1f7914": "Unavailable",
+  "legacyUi8e9f1d6e54": "Not Started",
+  "legacyUi4310ed540c": "Late",
+  "legacyUiaccac60339": "Driver Exception",
+  "legacyUi6b535fa681": "No Telemetry",
+  "legacyUi38a9e21ed9": "Route Deviation",
+  "legacyUi1f5a1abf2f": "Complete",
+  "legacyUi5a436b7939": "Add Remark",
+  "legacyUi65c821a596": "Live",
+  "legacyUi189cc40c22": "Stale",
+  "legacyUi41c8e43d9e": "Vehicle Gps",
+  "legacyUic1220e845b": "Fleet Manager",
+  "legacyUi601f5ff70b": "System Automation",
+  "legacyUi8b57ec8c92": "Assignment Created",
+  "legacyUi368e5b125f": "Assignment Acknowledged",
+  "legacyUid00c8926f5": "Trip Auto Started",
+  "legacyUic4b75c3924": "Trip Auto Completed",
+  "legacyUif98c835c4f": "Trip Driver Completed",
+  "legacyUi4bb573b356": "Stop Auto Arrived",
+  "legacyUi52cd528ad4": "Stop Auto Completed",
+  "legacyUicf338ebe5c": "Stop Driver Completed",
+  "legacyUi7ef2940c95": "Route Deviation Started",
+  "legacyUi55d93aed45": "Route Deviation Cleared",
+  "legacyUi654c568718": "No Telemetry Started",
+  "legacyUi66676d64b0": "No Telemetry Cleared",
+  "legacyUi2a398797b5": "Overspeed Started",
+  "legacyUif7d315eb62": "Overspeed Cleared",
+  "legacyUia22d66c857": "Arrived",
+  "legacyUi5a000ad7bd": "Skipped",
+  "legacyUi4028c0c8b4": "Not Available",
+  "legacyUi5f174de1cc": "Proof",
+  "legacyUi4e91ee6122": "Account timezone",
+  "legacyUi4dda6a4505": "Total Trips",
+  "legacyUi523baab918": "Upcoming",
+  "legacyUicc6e7b6a29": "Delayed",
+  "legacyUie9fab1cf3a": "On Time Completed Trips",
+  "legacyUibbb47a7157": "On Time Percent",
+  "legacyUi944b223791": "Distance Km",
+  "legacyUi7c9352eed6": "A short message will be sent using the current SMTP config.",
+  "legacyUid173234df0": "ACC means wire/ACC. MOTION means motion fallback.",
+  "legacyUi598ed2889b": "Access permissions",
+  "legacyUi9a6d95b0c5": "Active account",
+  "legacyUi8d00c06a55": "Activity, vehicle event, and telemetry logs",
+  "legacyUi61cc55aa04": "Add",
+  "legacyUiee01d7c402": "Add a new administrator",
+  "legacyUib9b1e23f27": "Add a new user",
+  "legacyUif2f8674f8a": "Add a new vehicle",
+  "legacyUi23a75918ab": "Adoption & Growth",
+  "legacyUi80643ec204": "Advanced Cleanup",
+  "legacyUicf963e5241": "Advanced Filters",
+  "legacyUi3aea7b29d9": "Advanced reporting features are not available in the public demo. Sign in with an OpenVTS account to run, page, visualise, and export fleet reports.",
+  "legacyUi056677c12f": "Alerts by Severity",
+  "legacyUif89ae580e8": "All actors",
+  "legacyUiaeae2d71be": "All alerts",
+  "legacyUic0e8e58c1a": "All sources",
+  "legacyUic1cbbe0c5d": "Allowed deviation",
+  "legacyUi826499f6b1": "Annual coverage and customer service are separate.",
+  "legacyUi40e69b5db3": "Assigned Vehicle",
+  "legacyUi6771ade6e8": "Attachments",
+  "legacyUi52b258c824": "Briefly describe the issue and attach files if needed.",
+  "legacyUi2f3b5c55bc": "Browse",
+  "legacyUi00189ab9b2": "CSV template",
+  "legacyUi19db82215d": "Change your password to secure account access.",
+  "legacyUi3f657f29e6": "Choose a new password",
+  "legacyUicbd1538094": "Choose how vehicle alerts, overspeed events, and geofence events reach you.",
+  "legacyUic7cd13c042": "Choose the pages and reports available to this user. Changes also limit the access they can grant to subusers.",
+  "legacyUibe10f5c042": "Choose what this member can view, edit and delete. Own applies to their records; Global applies across your account.",
+  "legacyUi7834f4a6f4": "Choose where alerts are delivered for this notification group.",
+  "legacyUic23350ccde": "Command details",
+  "legacyUib2c253ba1c": "Complete the sections below. Required fields are marked with an asterisk (*).",
+  "legacyUia2b4ac96b2": "Completed trips by service date. Upcoming assignments are available in Trips.",
+  "legacyUib3feb31fcb": "Configure your report",
+  "legacyUi878b163022": "Confirm cleanup",
+  "legacyUi9041d3c666": "Contact your administrator to assign vehicles.",
+  "legacyUi8e2fc0ffdc": "Create a compact login profile with controlled access.",
+  "legacyUi93c1ed632d": "Create and manage geofences, points of interest, and routes.",
+  "legacyUie4781f0bde": "Create and manage operational route corridors.",
+  "legacyUi6571e94148": "Create secure public links for live vehicle tracking.",
+  "legacyUie09271eeb7": "Created: ",
+  "legacyUidb0d2488de": "Current assignment",
+  "legacyUif8ece934c7": "Daily Distance Totals",
+  "legacyUicb47dca7e3": "Daily totals for selected range",
+  "legacyUi71d6e89bcc": "Day vs Night Driving",
+  "legacyUi2f3c38363d": "Delete POI?",
+  "legacyUi30c6c6352a": "Delete geofence?",
+  "legacyUic6f82fca90": "Delete route?",
+  "legacyUie543c4fd0c": "Demo workspace • Read-only",
+  "legacyUi50dd7fb720": "Device Config",
+  "legacyUi0cf40756a6": "Draw and manage operational boundaries.",
+  "legacyUi243f6cfeec": "Driven KM",
+  "legacyUie30d463652": "Driver details are unavailable.",
+  "legacyUi251b80c58c": "Email Subscription",
+  "legacyUibe482973b9": "Enable SMTP",
+  "legacyUi21685f000f": "End this session on this device.",
+  "legacyUide4f0c9387": "Event Filters",
+  "legacyUi6e74f5ccbd": "Events by Type",
+  "legacyUi74bbe75120": "Expiring soon",
+  "legacyUi8d00705083": "Expiry Date",
+  "legacyUi0da7bfa1a0": "Expiry date (optional)",
+  "legacyUi86baf678e1": "Failed rows",
+  "legacyUi2b1d93a2c6": "Filter Activity Logs",
+  "legacyUi9a4184cef3": "Filter by administrator and date range.",
+  "legacyUi96e578211a": "Filters",
+  "legacyUi5360d40661": "Fleet OS",
+  "legacyUi03d25e01e5": "Generate from search",
+  "legacyUi4d8abbdc5d": "Generate report",
+  "legacyUie16305f8b0": "Generation failed",
+  "legacyUid81feb6ae1": "Get History",
+  "legacyUi6fa6308619": "Get notified when assigned vehicles deviate.",
+  "legacyUi4b6d6a3015": "Important",
+  "legacyUic5288872fd": "Inactive routes stay archived but visible.",
+  "legacyUi44caf74675": "Inbox",
+  "legacyUi3f33f2e865": "Include the full path, e.g. http://192.168.1.10:3000/api",
+  "legacyUi1919090902": "Last login: ",
+  "legacyUi1c747b4f98": "Latest Server Action",
+  "legacyUi9e1bba7129": "Latest period",
+  "legacyUi72da77c7b7": "Live coordinates are unavailable for this vehicle.",
+  "legacyUi3e893cdfd5": "Loading device types and providers...",
+  "legacyUi93fe7c05af": "Loading document types…",
+  "legacyUi75e940ee30": "Loading history",
+  "legacyUi59c3981787": "Loading history...",
+  "legacyUibbe4cbd55c": "Loading profile",
+  "legacyUica88017dfa": "Loading subscription status...",
+  "legacyUid1ccf4c3e4": "Loading vehicles…",
+  "legacyUif4e14815b1": "Login as admin",
+  "legacyUi353bd1ef01": "Logs by Category",
+  "legacyUib2af2f11de": "Logs by Level",
+  "legacyUi8c97e4f07d": "Manage drivers and sub users linked to your fleet.",
+  "legacyUi41948edc3a": "Manage drivers, assignments, documents, and activity.",
+  "legacyUi93b23afae0": "Manage important places and operational points.",
+  "legacyUi68669149c0": "Manage sub users and vehicle access.",
+  "legacyUi9fcd87c64d": "Manage subscription pricing plans.",
+  "legacyUi274ef56d8e": "Manage transactions and renew vehicle subscriptions",
+  "legacyUiff92dafaaf": "Manage users, login access, contacts, and assigned vehicles.",
+  "legacyUib42578bf99": "Manual payments update transactions and analytics after successful submission.",
+  "legacyUi421878a774": "Map data © Google",
+  "legacyUi2cf55e0f5b": "Map details",
+  "legacyUi9a3aa11de5": "Map type",
+  "legacyUi09d3670056": "Max 10MB. Blocked: exe, js, html, htm.",
+  "legacyUife0c6bc7dd": "Mobile Push Diagnostics",
+  "legacyUif6f444180f": "Monitor uptime, dependencies, and safe service actions",
+  "legacyUi1a63cbf994": "New Link",
+  "legacyUia40ad15529": "New support ticket",
+  "legacyUi9f2d2d7331": "No USER document types configured.",
+  "legacyUi9ec5ec0752": "No active geofences — all geofences included.",
+  "legacyUi0a181de203": "No administrators available. Pull to refresh and try again.",
+  "legacyUi43f32b9b9d": "No contact information",
+  "legacyUie55a0728f0": "No geofences to preview",
+  "legacyUi115fe0fac7": "No groups found",
+  "legacyUida501f43fd": "No growth data yet.",
+  "legacyUi454fe267a7": "No metadata",
+  "legacyUi2540cc1f1a": "No pending renewal requests.",
+  "legacyUi7cd1d44b3c": "No records found.",
+  "legacyUi658e79f9dc": "No results found",
+  "legacyUif018f94f6e": "No rows matched the selected report filters.",
+  "legacyUibddbb17fc4": "No selection = all",
+  "legacyUi9aba7bbe44": "No selection = all geofences.",
+  "legacyUifd548f1c32": "No sensors configured for this vehicle",
+  "legacyUi162d1ddec0": "No team activity found.",
+  "legacyUi8f91f15684": "No valid GPS location",
+  "legacyUi74ac3b3d0d": "No vehicle assigned.",
+  "legacyUia26d9edac3": "No vehicles assigned to your account",
+  "legacyUie4b1dbf423": "No vehicles found.",
+  "legacyUi6eef664840": "None",
+  "legacyUif8ae6c8bbe": "Not acknowledged",
+  "legacyUia92e15bc0a": "Notification Preferences",
+  "legacyUic71ffe5d22": "Notification cooldown",
+  "legacyUicb88cbc310": "Notify when vehicle leaves route",
+  "legacyUi0049196b0b": "Nudge 10 m",
+  "legacyUia49d76ddc1": "One vehicle",
+  "legacyUi0080aaa977": "Open VTS",
+  "legacyUi032a6dcfd8": "Open a support ticket to review the full conversation.",
+  "legacyUi50f8c47b2b": "Open in Navigation",
+  "legacyUi89202c7fd8": "Other document",
+  "legacyUi27b4bf6d1b": "Outgoing mail uses this server when active.",
+  "legacyUi619d7adc2c": "Payment will appear immediately in transaction list.",
+  "legacyUidc32a816e9": "Permanently remove historical rows older than the retention period.",
+  "legacyUic2ff2762ca": "Please select a file.",
+  "legacyUi3585d74456": "Preserve current expiry",
+  "legacyUia9a96ec019": "Primary",
+  "legacyUi668c4636aa": "Proof of delivery",
+  "legacyUif702b26481": "Ranked by transaction count",
+  "legacyUid03c65244f": "Recalculate from plan",
+  "legacyUi72d5617f3f": "Recent activity",
+  "legacyUi255e5788a2": "Recover your account",
+  "legacyUi505dddc915": "Refreshing",
+  "legacyUi54dd5046d0": "Refreshing will replace your current unsaved notification edits with the latest server settings.",
+  "legacyUi199ed09ba9": "Report access",
+  "legacyUibd7b4f006d": "Report an issue",
+  "legacyUi8115c55b47": "Reports are restricted in demo mode",
+  "legacyUi6b5890ba0b": "Request and confirm OTP to verify email and WhatsApp number.",
+  "legacyUif7194e6a0d": "Requests",
+  "legacyUif25bbab45d": "Revenue Forecast",
+  "legacyUiec40affa3e": "Revenue Trend",
+  "legacyUic53c3605a0": "Review customer renewal requests. Confirm only payments actually received outside the app.",
+  "legacyUiffbfe1e822": "Route stops",
+  "legacyUi50eec1a359": "Run Result",
+  "legacyUi339225895f": "Running cleanup deletes data permanently. Always preview first.",
+  "legacyUifee1dff0c6": "Running vs Stopped",
+  "legacyUi0fb59422f6": "Samples",
+  "legacyUide6472b8d3": "Select Date Range",
+  "legacyUia35cfe395a": "Select Group",
+  "legacyUi2564e1a2c5": "Select Sensor",
+  "legacyUifea7a520f3": "Select Vehicle",
+  "legacyUi70037936c0": "Select a ticket",
+  "legacyUieeaf903bb8": "Select a vehicle first",
+  "legacyUiad7a8a1750": "Select an administrator, describe the issue, and attach files if needed.",
+  "legacyUi9bb7b69035": "Select at least one state",
+  "legacyUifcfe92e583": "Select dashboard",
+  "legacyUif9f50c1c30": "Select vehicles, date range, and filters, then generate to view results.",
+  "legacyUi0e40d8b0bf": "Selected vehicles",
+  "legacyUi43e146fb62": "Server Health Monitoring",
+  "legacyUi644899c565": "Service expiry controls live tracking. Contact your administrator for renewal. A renewal request does not extend service until payment is confirmed.",
+  "legacyUi5cbd584046": "Services",
+  "legacyUi758d7f7281": "Set Active",
+  "legacyUi7c9275ee4b": "Set Inactive",
+  "legacyUiddbe3ed1a3": "Set custom expiry",
+  "legacyUi7b53693e94": "Share Track Links",
+  "legacyUidc1649a16c": "Sign out",
+  "legacyUi2f32be1dc7": "Signature",
+  "legacyUi51070e69d1": "Site photo",
+  "legacyUi93773568cf": "Speed Limit",
+  "legacyUicb672694bb": "State Filter",
+  "legacyUi511404ce3b": "Status Distribution",
+  "legacyUie54e98e0cb": "Stoppage",
+  "legacyUie48d04b2b6": "Stopping Frontend/Backend/Listener can lock you out of the application. This page allows Start and Restart for those services, but Stop is disabled.",
+  "legacyUi16b45ef102": "Success, pending, and failed share",
+  "legacyUi12b71c3e0f": "Summary",
+  "legacyUied9177cab1": "System Metrics",
+  "legacyUie20a879f45": "Tap to edit geofence notifications",
+  "legacyUiac8b906fca": "Target Vehicle",
+  "legacyUib644561145": "Telemetry Log",
+  "legacyUi7840676a23": "Telemetry log",
+  "legacyUi4ee3736ca6": "This action cannot be undone. The driver and related assignments will be removed.",
+  "legacyUi3575c0aec8": "This action permanently removes the sub user and revokes vehicle access. This cannot be undone.",
+  "legacyUi7f3d98b829": "This link cannot be deleted because its id is missing.",
+  "legacyUi4e81e87c37": "This permanently deletes data older than the retention period. It cannot be undone.",
+  "legacyUid8b029df5c": "This public tracking link will stop working immediately. This action cannot be undone.",
+  "legacyUida735ce16c": "This report is not available for your account.",
+  "legacyUidf3e8a5fdd": "This ticket is closed or resolved. Replies are disabled.",
+  "legacyUif9c732c3c6": "This ticket is closed. Reply may reopen or move it to In Progress based on backend behavior.",
+  "legacyUif3a8370f38": "Total Revenue",
+  "legacyUie273941b29": "Totals by currency",
+  "legacyUiaa7d3d7dd9": "Transaction history",
+  "legacyUib174443b0e": "Transactions and revenue",
+  "legacyUi9dda9aa776": "Trip",
+  "legacyUic948ed8076": "Trip proofs",
+  "legacyUid67a44f68d": "Try adjusting your filters or date range.",
+  "legacyUi078f02fe7b": "Unable to load documents",
+  "legacyUi3b37311cd6": "Unable to load history",
+  "legacyUicaa5bd27e5": "Unable to load logs",
+  "legacyUi92078d350e": "Unable to load payments",
+  "legacyUi5db77ece1a": "Unable to load profile",
+  "legacyUi081863e321": "Unable to load tickets",
+  "legacyUi11f14b7638": "Update company identity and social links.",
+  "legacyUieb58c61a89": "Update personal and address details. Changes are saved only when you confirm.",
+  "legacyUid19cf73ae1": "Updated: ",
+  "legacyUi9db8e8ec0b": "Use the live map vehicle list, then choose the stop threshold and date time range.",
+  "legacyUid337d1a0d6": "Variable Preview",
+  "legacyUi63dfad55e0": "Vehicle Information",
+  "legacyUi7f4567c8c2": "Vehicle Live Status",
+  "legacyUiceedc505bd": "Vehicle Status",
+  "legacyUi1f41948d84": "Vehicle event",
+  "legacyUid3aee04e65": "Vehicle-Geofence Matrix",
+  "legacyUiefd8355920": "View All",
+  "legacyUi50ad3280e1": "View Vehicle",
+  "legacyUi2c3c7c93f8": "View payments, credits, debits, and billing records.",
+  "legacyUi7d9ff4f0de": "Visibility",
+  "legacyUi79c6a6033a": "Visible to admin",
+  "legacyUied0069155f": "Visible to user",
+  "legacyUia56d85fb20": "Web browsers require the server to allow cross-origin requests (CORS). If login fails with a connection error, enable CORS on your server.",
+  "legacyUi4dd079044f": "Whole trip",
+  "legacyUi4515b6c7b7": "Your day",
+  "legacyUi50f19ac0b4": "Your documents and documents shared by your fleet manager.",
+  "legacyUi4e697d55ce": "Your transactions with the software owner.",
+  "legacyUi678830983a": "— payload truncated for display —",
+  "legacyUi1e22f79cd9": "Loading {value1}",
+  "@legacyUi1e22f79cd9": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi57fdb35e30": "{value1} unavailable",
+  "@legacyUi57fdb35e30": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi1fd3e5084a": "No {value1} found",
+  "@legacyUi1fd3e5084a": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUie16f97dcfd": "Clear History",
+  "legacyUiabd4cd39b9": "{value1} points",
+  "@legacyUiabd4cd39b9": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi90eaac7e8b": "{value1} stops",
+  "@legacyUi90eaac7e8b": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi865d65baea": "{value1} overspeed",
+  "@legacyUi865d65baea": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi7326be7e87": "{value1} {value2} max",
+  "@legacyUi7326be7e87": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      },
+      "value2": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi5fd7f54937": "{value1} {value2} avg",
+  "@legacyUi5fd7f54937": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      },
+      "value2": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi5f2ee53a4c": "{value1} running",
+  "@legacyUi5f2ee53a4c": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi5c24a04874": "{value1} stopped",
+  "@legacyUi5c24a04874": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi2b4b82c8bb": "Duration: {value1}",
+  "@legacyUi2b4b82c8bb": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi27a82a7136": "{value1} driving",
+  "@legacyUi27a82a7136": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi92edf7854b": "{value1} vehicles",
+  "@legacyUi92edf7854b": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi5d12bd5355": "Play",
+  "legacyUi4e39567064": "Note (optional)",
+  "legacyUi932fc13e7f": "Title (optional)",
+  "legacyUi2c904359f5": "File exceeds {value1} MB limit",
+  "@legacyUi2c904359f5": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi66db457b99": "Unsupported format. Allowed: {value1}",
+  "@legacyUi66db457b99": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUia7cf7b25a7": "Replace",
+  "legacyUidf1d5f2730": "Test email sent to {value1}",
+  "@legacyUidf1d5f2730": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi044b852f30": "Show password",
+  "legacyUie40123b4e7": "Hide password",
+  "legacyUi82f47c3d4d": "Email verified",
+  "legacyUib1a273086c": "WhatsApp verified",
+  "legacyUi908e5c8ce5": "Logged out from {value1}",
+  "@legacyUi908e5c8ce5": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi33ce417454": "Loading…",
+  "legacyUi71ae0ec96e": "Failed to load — retry",
+  "legacyUi67c4d0506a": "Not applicable",
+  "legacyUia0b1fb2afb": "Show confirm password",
+  "legacyUie2196c3942": "Hide confirm password",
+  "legacyUi7c073937c6": "OTP sent to your email",
+  "legacyUi8532209c49": "OTP sent via WhatsApp",
+  "legacyUi0d455a4e26": "Verify Email",
+  "legacyUi9cb68a6dd3": "Verify WhatsApp",
+  "legacyUi8cf58d99c1": "From {value1}",
+  "@legacyUi8cf58d99c1": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUif41a1a65a6": "To {value1}",
+  "@legacyUif41a1a65a6": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUia801634da8": "{value1} deleted.",
+  "@legacyUia801634da8": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi73f15343e6": "Signed in as {value1}.",
+  "@legacyUi73f15343e6": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi48138f08cd": "Deactivate administrator",
+  "legacyUif9494a277e": "Activate administrator",
+  "legacyUi13a84a7390": "Administrator activated.",
+  "legacyUi8181bbb7c7": "Administrator deactivated.",
+  "legacyUid65ded9428": "Deactivate",
+  "legacyUi92ef08325a": "Activate",
+  "legacyUiacfd05ab80": "Email unverified",
+  "legacyUi23c9dd8809": "Unable to load vehicles. Retry.",
+  "legacyUib089c07088": "GMT {value1}",
+  "@legacyUib089c07088": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi73585fdb6f": "Added {value1}",
+  "@legacyUi73585fdb6f": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi410bebb5ea": "Unable to load documents. Retry.",
+  "legacyUi7f10270c45": "Unable to load document types. Retry.",
+  "legacyUid4c2792a72": "Hidden",
+  "legacyUi1b7cd8a9bf": "Document updated.",
+  "legacyUi895a77b095": "Document uploaded.",
+  "legacyUief6604a13d": "Edit document",
+  "legacyUif6769b696e": "Credits added.",
+  "legacyUib16dd3b790": "Credits deducted.",
+  "legacyUie890b12b34": "No transactions match your filters",
+  "legacyUib71113c83a": "No payments found for this admin. Try clearing filters.",
+  "legacyUi472af48c6d": "Record a manual payment to get started.",
+  "legacyUi46f7e02bd0": "{value1} copied",
+  "@legacyUi46f7e02bd0": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi70d9eead51": "Subject must be {value1} characters or less.",
+  "@legacyUi70d9eead51": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUifee6584f1b": "Description must be {value1} characters or less.",
+  "@legacyUifee6584f1b": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi830e676993": "You can upload up to {value1} files.",
+  "@legacyUi830e676993": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi4e5f407ec5": "Blocked file removed: {value1}",
+  "@legacyUi4e5f407ec5": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUib5d0b873d0": "Unsupported file removed: {value1}",
+  "@legacyUib5d0b873d0": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUid1740cec1d": "File exceeds 5MB: {value1}",
+  "@legacyUid1740cec1d": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUie33e0ec27a": "Reply must be {value1} characters or less.",
+  "@legacyUie33e0ec27a": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUid9e484645b": "Ticket status is already {value1}.",
+  "@legacyUid9e484645b": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUiebbf66ef0e": "From: {value1}{value2}",
+  "@legacyUiebbf66ef0e": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      },
+      "value2": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi94cf932307": "Created {value1}",
+  "@legacyUi94cf932307": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUib5ae5701b9": "Updated {value1}",
+  "@legacyUib5ae5701b9": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi1a150ff203": "Closed {value1}",
+  "@legacyUi1a150ff203": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUiec6952e09b": "Updating",
+  "legacyUi190040d9d3": "Some files are over 5MB and were removed{value1}.",
+  "@legacyUi190040d9d3": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi2a432bdd06": "Local agent: {value1}",
+  "@legacyUi2a432bdd06": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi3adb8e50db": "Create a team member to get started.",
+  "legacyUiabad5c010f": "{value1} · Permissions",
+  "@legacyUiabad5c010f": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUifb91e24fa5": "Update",
+  "legacyUia9d4f0d3b6": "Unable to update permissions",
+  "legacyUi918bffea2f": "Show current password",
+  "legacyUifa0245c379": "Hide current password",
+  "legacyUi9a569782b5": "Show new password",
+  "legacyUiaa10918381": "Hide new password",
+  "legacyUi39b0c83afa": "Show confirm new password",
+  "legacyUiea6f8ea221": "Hide confirm new password",
+  "legacyUie30362677c": "{value1} registered",
+  "@legacyUie30362677c": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi060250e9ba": "{value1} invoices",
+  "@legacyUi060250e9ba": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi53e337d44c": "Save Plan",
+  "legacyUi4fc636d1bb": "Plan updated.",
+  "legacyUidc5a367e83": "Plan created.",
+  "legacyUi2325fc9152": "No vehicle types available",
+  "legacyUi4e4664e8e9": "Select vehicle type",
+  "legacyUi37282b63dd": "Loading users...",
+  "legacyUide2b4561e4": "Failed to load users",
+  "legacyUif1b918acaf": "Create or select primary user",
+  "legacyUic96ec8c8a6": "No devices available",
+  "legacyUieeed87c94b": "Select GPS device",
+  "legacyUie5a3dc6c41": "No plans available",
+  "legacyUi509d83b55f": "Select pricing plan",
+  "legacyUi91c69c8c0d": "Vehicle \"{value1}\" created.",
+  "@legacyUi91c69c8c0d": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi048e2d12ad": "Vehicle deactivated.",
+  "legacyUib042915cc0": "Vehicle activated.",
+  "legacyUi3741f56c60": "Create Sensor",
+  "legacyUi996e719712": "Save Sensor",
+  "legacyUiaa9bf6a127": "Service could not be updated",
+  "legacyUif17fe09e18": "{value1} annual coverage renewed",
+  "@legacyUif17fe09e18": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUid55d13471f": "Annual renewal failed",
+  "legacyUi2caa5892b7": "Polling status...",
+  "legacyUid56ae084ba": "Edit Document",
+  "legacyUi47396c4fcf": "Create a driver to get started.",
+  "legacyUie4c5584c2a": "Driver activated.",
+  "legacyUi255f9b5d50": "Driver deactivated.",
+  "legacyUi2c5ad08780": "Exp: {value1}",
+  "@legacyUi2c5ad08780": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUifc3606d535": "Deactivate driver",
+  "legacyUic82a768102": "Activate driver",
+  "legacyUi3c2dd46009": "{value1} (current)",
+  "@legacyUi3c2dd46009": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi9e9d25ea74": "Select country first",
+  "legacyUi789073b300": "Select state first",
+  "legacyUie0c7a349f8": "Deselect all filtered",
+  "legacyUi30a4c62f4d": "Select all filtered",
+  "legacyUi303e32bfd9": "Payment confirmed and service renewed",
+  "legacyUiad3c7489f5": "Renewal request cancelled",
+  "legacyUi91027c0a9a": "Request could not be updated",
+  "legacyUi3fb82cbe4b": "Search user tickets",
+  "legacyUi3263ab8929": "Search my tickets",
+  "legacyUi24cae41f13": "User activated.",
+  "legacyUi48d348ab09": "User deactivated.",
+  "legacyUi515200de54": "Minimum {value1} characters",
+  "@legacyUi515200de54": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUiea03fca475": "Select a country first",
+  "legacyUi01d9797a19": "No states available",
+  "legacyUic234150a07": "Select a state",
+  "legacyUida9ca145a1": "Select a state first",
+  "legacyUi12fb8b7d21": "No cities available",
+  "legacyUia8ab373cf7": "Select a city",
+  "legacyUi99c1db6636": "User \"{value1}\" created.",
+  "@legacyUi99c1db6636": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi6ea66e7cf8": "No assigned drivers",
+  "legacyUi6b4d2e8347": "No drivers match your search",
+  "legacyUic7a9755928": "License {value1}",
+  "@legacyUic7a9755928": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi530530a405": "No available drivers",
+  "legacyUied9f265a0a": "Search {value1}…",
+  "@legacyUied9f265a0a": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUia269afc99c": "No tickets found",
+  "legacyUifd0ab9a284": "No tickets match your search",
+  "legacyUic93cd16b9b": "Last {value1}",
+  "@legacyUic93cd16b9b": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUib68af38cf0": "Ticket is already {value1}.",
+  "@legacyUib68af38cf0": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi9ddc709693": "Deactivate user",
+  "legacyUiaebaaf50f8": "Activate user",
+  "legacyUi8ed321fdf0": "Unable to save permissions",
+  "legacyUi51c4b07667": "No vehicles match your search",
+  "legacyUi83f7990857": "IMEI {value1}",
+  "@legacyUi83f7990857": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUid3544dd1fc": "SIM {value1}",
+  "@legacyUid3544dd1fc": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUiaed1ab73c8": "VIN {value1}",
+  "@legacyUiaed1ab73c8": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi20400601e8": "Expiry {value1}",
+  "@legacyUi20400601e8": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUif0dc6b09f8": "No available vehicles",
+  "legacyUi39d436aaba": "No expiry",
+  "legacyUic15c47e4c9": "Search IMEI, device type, SIM number…",
+  "legacyUibc139b1c14": "Search SIM, IMSI, ICCID, provider…",
+  "legacyUiaa729739dd": "No devices found",
+  "legacyUi679d782d32": "No SIM cards found",
+  "legacyUi613b9215a5": "Add inventory to get started.",
+  "legacyUi9f91b0dc33": "Loading device types...",
+  "legacyUi9ba6bfee17": "Using safe defaults. {value1}",
+  "@legacyUi9ba6bfee17": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi2919b3cdf5": "Email pending",
+  "legacyUidfd4099c87": "WhatsApp pending",
+  "legacyUif0dd87cef8": "Switch to {value1} tab",
+  "@legacyUif0dd87cef8": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi364cdce6f9": "{value1} credits",
+  "@legacyUi364cdce6f9": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi070e328ec8": "Uploading...",
+  "legacyUie8d33553f6": "Change Avatar",
+  "legacyUi56b3825e50": "Apply preset {value1}",
+  "@legacyUi56b3825e50": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi28e40daab7": "Resending...",
+  "legacyUib707b694b2": "Resend OTP",
+  "legacyUia648c7bbe2": "{value1} picker",
+  "@legacyUia648c7bbe2": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUidd1242a8fc": "Subscribed",
+  "legacyUibbf5d78203": "Not subscribed",
+  "legacyUi0e42454279": "all vehicles",
+  "legacyUi12e7d6beac": "Source unknown",
+  "legacyUifb2269d326": "No operational vehicles available.",
+  "legacyUi9dd705b078": "No vehicles available.",
+  "legacyUi8879fce2e7": "{value1} blocked vehicle{value2} excluded.",
+  "@legacyUi8879fce2e7": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      },
+      "value2": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUif039d146e6": "{value1} assigned vehicles",
+  "@legacyUif039d146e6": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi02b460b2cf": "No matching vehicles",
+  "legacyUi537da7f70e": "All vehicles are already assigned to this sub user.",
+  "legacyUif614a2e6b5": "Try a different search query.",
+  "legacyUi28516f977e": "Sub user deactivated.",
+  "legacyUi7841e93192": "Sub user activated.",
+  "legacyUi87e328dc94": "Clear Search",
+  "legacyUi72556ffa55": "Visible to Driver",
+  "legacyUi355f129929": "Hidden from Driver",
+  "legacyUib68e795ff9": "Change Vehicle",
+  "legacyUi0cb329674a": "Visible in user documents",
+  "legacyUi7ab98ca9b9": "Hidden from user documents",
+  "legacyUi5f22178640": "Driver can see this document",
+  "legacyUiaf7ad5ad5c": "Driver cannot see this document",
+  "legacyUib544cc3e95": "No unassigned vehicles",
+  "legacyUidf10a27148": "All vehicles are already assigned.",
+  "legacyUic3763af773": "Not updated",
+  "legacyUia1f5a8dbd3": "No sensors found",
+  "legacyUi6a3625800c": "No sensors are configured for this vehicle.",
+  "legacyUi5fdd1b0855": "Sensor Settings",
+  "legacyUi2524c34a0d": "New Sensor",
+  "legacyUiae7e887517": "Saving...",
+  "legacyUi126eda8b21": "Running...",
+  "legacyUi7745774c38": "Sensor created.",
+  "legacyUi2a367dafb5": "Sensor updated.",
+  "legacyUi4abc320492": "Loading config",
+  "legacyUic0ae8f6ea8": "Saved",
+  "legacyUif352418f58": "Loading types…",
+  "legacyUi82385d8917": "Loading timezones…",
+  "legacyUi22e6340f2c": "Select timezone",
+  "legacyUicc4889261c": "Reload History",
+  "legacyUi9e8a1c5b7b": "Loading sensors…",
+  "legacyUic0a743750e": "Select {value1} report range",
+  "@legacyUic0a743750e": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi26362a69a0": "Running: {value1}",
+  "@legacyUi26362a69a0": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUicbbef93382": "Stopped: {value1}",
+  "@legacyUicbbef93382": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUic1d252d58b": "{value1} — Overspeed",
+  "@legacyUic1d252d58b": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUidf3ab0c2d9": "Day: {value1}",
+  "@legacyUidf3ab0c2d9": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi20076143b6": "Night: {value1}",
+  "@legacyUi20076143b6": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUie296339b1e": "{value1} trip{value2}",
+  "@legacyUie296339b1e": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      },
+      "value2": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUib4c5c14ddb": "Max {value1} km/h",
+  "@legacyUib4c5c14ddb": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi491fa657c5": "{value1}: {value2} km",
+  "@legacyUi491fa657c5": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      },
+      "value2": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUia6587e8e7b": "Distance by Vehicle (top {value1})",
+  "@legacyUia6587e8e7b": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi6eca89289b": "{value1} km/h",
+  "@legacyUi6eca89289b": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUib9a5d6824c": "Geofence {value1} for {value2}",
+  "@legacyUib9a5d6824c": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      },
+      "value2": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi4d24bcb058": "Overspeed limit ({value1}) for {value2}",
+  "@legacyUi4d24bcb058": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      },
+      "value2": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi56a2285c5b": "Saving…",
+  "legacyUia1f38b12bb": "{value1} toggle",
+  "@legacyUia1f38b12bb": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUic3b516d33c": "{value1} geofences",
+  "@legacyUic3b516d33c": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi010f99630a": "Edit Track Link",
+  "legacyUibb53b1c483": "New Track Link",
+  "legacyUi9287b718c6": "{value1} selected",
+  "@legacyUi9287b718c6": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUib948ff19e4": "Unlock square",
+  "legacyUi85a3ef0c3f": "Lock square",
+  "legacyUi9dd7a6b201": "Create geofence",
+  "legacyUidccb573a71": "Draw route",
+  "legacyUi4c91961249": "Upload {value1} rows",
+  "@legacyUi4c91961249": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi0ff9c73519": "{value1} valid",
+  "@legacyUi0ff9c73519": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUifa7ec0ed62": "{value1} invalid",
+  "@legacyUifa7ec0ed62": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi1483db1240": "{value1} ok",
+  "@legacyUi1483db1240": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi2c661fac7f": "{value1} failed",
+  "@legacyUi2c661fac7f": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi7e613c0b85": "Place POI",
+  "legacyUi4405592a72": "Move POI",
+  "legacyUi91fbb41bfb": "Use this location",
+  "legacyUif05f282071": "Tap map to place POI",
+  "legacyUie8f485c68a": "Try adjusting the filters or date range.",
+  "legacyUia0c0bb9e85": "No transactions available for this period.",
+  "legacyUid7d6dade2a": "Success {value1}",
+  "@legacyUid7d6dade2a": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi3a0d457cee": "Pending {value1}",
+  "@legacyUi3a0d457cee": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi07d104432b": "Failed {value1}",
+  "@legacyUi07d104432b": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi3fb75e3bfe": "Reset Password",
+  "legacyUif99d98e85f": "Forgot Password",
+  "legacyUi0d2afda86b": "Demo workspace opened",
+  "legacyUif06ccf010d": "Login successful",
+  "legacyUifc45091249": "Switch to light mode",
+  "legacyUic29220f958": "Switch to dark mode",
+  "legacyUi257616b8e4": "No unread notifications",
+  "legacyUid2609b6af1": "No notifications yet",
+  "legacyUi04d956a670": "Everything is marked as read. New alerts will appear here as they arrive.",
+  "legacyUi7fe220bd95": "Vehicle alerts, system events, and operational updates will appear here.",
+  "legacyUib2f3a86e84": "All read",
+  "legacyUicbf6939e9e": "Marking…",
+  "legacyUi8958e22c23": "Mark all read",
+  "legacyUicb9ae54e8a": "Showing {value1} of {value2}",
+  "@legacyUicb9ae54e8a": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      },
+      "value2": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUie5b28b8ae4": "Page {value1} of {value2}",
+  "@legacyUie5b28b8ae4": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      },
+      "value2": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUic1d317a815": "No matching tickets",
+  "legacyUiae9e814889": "No tickets",
+  "legacyUicc80739f43": "Try a different search or status filter.",
+  "legacyUib1ac2d29f2": "Create a ticket and the team will follow up here.",
+  "legacyUia6864fdac8": "{value1} rows",
+  "@legacyUia6864fdac8": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi8f26c6520d": "Loading",
+  "legacyUie7a93c340a": "{value1} events",
+  "@legacyUie7a93c340a": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUia4ab77ad86": "OpenVTS event",
+  "legacyUif55aae5a86": "IMEI unavailable",
+  "legacyUib8eb4a7ee3": "Loading commands…",
+  "legacyUif7933da683": "No compatible commands",
+  "legacyUi4be4430e57": "Select command",
+  "legacyUi70ac5dd63e": "TIMELINE ({value1})",
+  "@legacyUi70ac5dd63e": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi24d8fbef9d": "{value1} {value2}x",
+  "@legacyUi24d8fbef9d": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      },
+      "value2": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUibde2a7e880": "Page {value1} of {value2} · {value3} trips",
+  "@legacyUibde2a7e880": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      },
+      "value2": {
+        "type": "Object"
+      },
+      "value3": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi08343b3fe7": "{value1} remaining",
+  "@legacyUi08343b3fe7": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi843b148bbc": "ETA {value1}",
+  "@legacyUi843b148bbc": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi46d11990c5": "Position updated {value1}",
+  "@legacyUi46d11990c5": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUiecd87f34a4": "Delete {value1}?",
+  "@legacyUiecd87f34a4": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi666b616488": "Expires {value1}",
+  "@legacyUi666b616488": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUic7ac551ef0": "Deleting…",
+  "legacyUi27015ac78b": "{value1} unread · Latest {value2} notifications",
+  "@legacyUi27015ac78b": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      },
+      "value2": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi46b0a7d4ca": "{value1} / {value2} stops completed",
+  "@legacyUi46b0a7d4ca": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      },
+      "value2": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUidc7f2c3785": "Date unavailable",
+  "legacyUib11b062b52": "Upload trip proof",
+  "legacyUi8f1a9ca44a": "PDF, JPG, PNG or WebP · Up to 5 MB",
+  "legacyUi91df716a6b": "PDF, JPG, PNG, WebP, DOC or DOCX · Up to 5 MB",
+  "legacyUid921a79afa": "Uploading…",
+  "legacyUiba9b85b92a": "Last update {value1}",
+  "@legacyUiba9b85b92a": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUib9f8dfe265": "Distance today: {value1}",
+  "@legacyUib9f8dfe265": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUif0ea529a1a": "{value1} days",
+  "@legacyUif0ea529a1a": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi387c4ee271": "{value1}  ·  {value2} days",
+  "@legacyUi387c4ee271": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      },
+      "value2": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUideba3e1d0f": "Dry-run summary",
+  "legacyUia7d0c36803": "Last cleanup",
+  "legacyUia24243eb0c": "Tables ({value1})",
+  "@legacyUia24243eb0c": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUic74a3012a0": "Checking status…",
+  "legacyUie991a76914": "Status unknown",
+  "legacyUia722bd6476": "Platform growth across users, vehicles, and licenses.",
+  "legacyUi852c487a99": "License peak {value1}",
+  "@legacyUi852c487a99": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUic44efcae53": "Remove {value1} from the platform? This action cannot be undone.",
+  "@legacyUic44efcae53": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUicac4f1ac56": "{value1} Admin",
+  "@legacyUicac4f1ac56": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi68401f3c9e": "Avg {value1} {value2} per transaction",
+  "@legacyUi68401f3c9e": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      },
+      "value2": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi526698fef7": "Unable to refresh vehicles.",
+  "legacyUie9b7179dd3": "Documents ({value1})",
+  "@legacyUie9b7179dd3": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUiefd8314874": "Unable to refresh documents.",
+  "legacyUie214b8a299": "Document",
+  "legacyUidb4675bc22": "Balance {value1}",
+  "@legacyUidb4675bc22": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi16be827cb6": "Vehicle {value1}",
+  "@legacyUi16be827cb6": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUibd5caf1601": "Tracking is blocked by the software license limit.",
+  "legacyUid8663517be": "Last check: —",
+  "legacyUi1be0035c25": "Own",
+  "legacyUi5f1184f7df": "Global",
+  "legacyUif5f940cfe2": "Save permissions",
+  "legacyUi8a9135d5ad": "{value1}% collected",
+  "@legacyUi8a9135d5ad": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi3b0c54fa00": "Projected {value1}",
+  "@legacyUi3b0c54fa00": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi16ff2e7fa9": "Delta {value1}",
+  "@legacyUi16ff2e7fa9": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi4956298616": "{value1} veh · {value2}",
+  "@legacyUi4956298616": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      },
+      "value2": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi120d777276": "Paid {value1}",
+  "@legacyUi120d777276": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi617d0ebe3d": "{value1} of {value2} plans",
+  "@legacyUi617d0ebe3d": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      },
+      "value2": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi25422daedb": "Untitled Vehicle",
+  "legacyUicbbe928bb9": "Annual coverage: {value1}",
+  "@legacyUicbbe928bb9": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUiec60ebb81f": "Customer service: {value1}",
+  "@legacyUiec60ebb81f": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUiced28bc228": "Account credits: {value1}",
+  "@legacyUiced28bc228": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUic1a90693df": "Live tracking active",
+  "legacyUi4bdc33e519": "{value1} · {value2} days",
+  "@legacyUi4bdc33e519": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      },
+      "value2": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi889f282a7d": "Choose date and time",
+  "legacyUi83cbbbc297": "Save service changes",
+  "legacyUi69feaaf8cd": "All dates",
+  "legacyUi0c6c4102d4": "Optional",
+  "legacyUic57882f9c9": "Status: {value1}",
+  "@legacyUic57882f9c9": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUiae3c1f8817": "Send this command to {value1}?",
+  "@legacyUiae3c1f8817": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUic51f739b4e": "Assigned Users ({value1})",
+  "@legacyUic51f739b4e": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUibc7819b34f": "Unknown",
+  "legacyUi46aece3259": "Remove {value1} from this vehicle?",
+  "@legacyUi46aece3259": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi3d2bb84b75": "Live Value: {value1} {value2}",
+  "@legacyUi3d2bb84b75": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      },
+      "value2": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUieb3a3daafa": "Code: {value1}",
+  "@legacyUieb3a3daafa": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi93aa5178d6": "Document type: {value1}",
+  "@legacyUi93aa5178d6": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi0e12da1c5e": "File: {value1}",
+  "@legacyUi0e12da1c5e": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi3ce1585208": "Expiry: {value1}",
+  "@legacyUi3ce1585208": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUiaeafae8a12": "Visibility: {value1}",
+  "@legacyUiaeafae8a12": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi39d7217391": "Tags: {value1}",
+  "@legacyUi39d7217391": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi4439ddf5a2": "Created: {value1}",
+  "@legacyUi4439ddf5a2": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUid5c6adaee3": "Remove {value1} from this driver?",
+  "@legacyUid5c6adaee3": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUieb7eb7a819": "Choose file",
+  "legacyUi8f8dd8dbd3": "Hidden from admin",
+  "legacyUi65d06317e9": "Admin users can see this document",
+  "legacyUic0e9577a75": "Only owner can see",
+  "legacyUi864cf8bc08": "Attributes: {value1}",
+  "@legacyUi864cf8bc08": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi90d40c4249": "Raw: {value1}",
+  "@legacyUi90d40c4249": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUia4d06ed284": "Vehicle Event",
+  "legacyUifba61e1a50": "{value1} • {value2} • sent {value3} • delivered {value4} • retry {value5}{value6}",
+  "@legacyUifba61e1a50": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      },
+      "value2": {
+        "type": "Object"
+      },
+      "value3": {
+        "type": "Object"
+      },
+      "value4": {
+        "type": "Object"
+      },
+      "value5": {
+        "type": "Object"
+      },
+      "value6": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi9c07a085f8": "{value1} of {value2} transactions",
+  "@legacyUi9c07a085f8": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      },
+      "value2": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi26b3b5dfb3": "{value1} Retry",
+  "@legacyUi26b3b5dfb3": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi05563fda41": "Plan: {value1} • {value2} {value3}",
+  "@legacyUi05563fda41": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      },
+      "value2": {
+        "type": "Object"
+      },
+      "value3": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi26400a7353": "{value1} vehicle{value2} selected",
+  "@legacyUi26400a7353": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      },
+      "value2": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi8f4ab245d3": "Auto Total: {value1} {value2}",
+  "@legacyUi8f4ab245d3": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      },
+      "value2": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi493de0b548": "Quote expired",
+  "legacyUi78218dbd5f": "{value1} · {value2} · {value3} days",
+  "@legacyUi78218dbd5f": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      },
+      "value2": {
+        "type": "Object"
+      },
+      "value3": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi13e7357d18": "I received {value1}",
+  "@legacyUi13e7357d18": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi7e72a446c4": "Hide payment filters",
+  "legacyUi8f642c1d28": "Show payment filters",
+  "legacyUi184c3f0cbb": "Transaction ID: {value1}",
+  "@legacyUi184c3f0cbb": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi281961b9ee": "Amount: {value1}",
+  "@legacyUi281961b9ee": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUib40416c0af": "Payment Type: {value1}",
+  "@legacyUib40416c0af": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUia0d65517a6": "Payment Mode: {value1}",
+  "@legacyUia0d65517a6": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUic2d62e9f71": "Reference: {value1}",
+  "@legacyUic2d62e9f71": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUib0f627962a": "Provider: {value1}",
+  "@legacyUib0f627962a": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUie802a1b0a0": "Provider Ref: {value1}",
+  "@legacyUie802a1b0a0": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi2751887374": "From: {value1}",
+  "@legacyUi2751887374": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi250106ee83": "To: {value1}",
+  "@legacyUi250106ee83": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi5ff8e9357b": "Recorded By: {value1}",
+  "@legacyUi5ff8e9357b": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi7565bbdff9": "Vehicle: {value1}",
+  "@legacyUi7565bbdff9": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi2b542f8050": "IMEI: {value1}",
+  "@legacyUi2b542f8050": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi76e24a00cf": "Plan: {value1}",
+  "@legacyUi76e24a00cf": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi972db7d65e": "Failure Code: {value1}",
+  "@legacyUi972db7d65e": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUif147c11396": "Failure Message: {value1}",
+  "@legacyUif147c11396": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUic3146cdbec": "Create a ticket to start a support conversation.",
+  "legacyUi2cbdc50885": "Remove {value1} from this administrator account?",
+  "@legacyUi2cbdc50885": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi073ab8a05c": "{value1} assigned - {value2} available",
+  "@legacyUi073ab8a05c": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      },
+      "value2": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUidcc59f9fcf": "Select {value1}",
+  "@legacyUidcc59f9fcf": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi7a19b6deae": "No options available",
+  "legacyUif28cfb8eb0": "1 ticket",
+  "legacyUidf08f563b7": "Optional files, up to {value1}.",
+  "@legacyUidf08f563b7": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi5f2b4010d1": "1 payment",
+  "legacyUi876081608a": "Renewal — 1 vehicle",
+  "legacyUia034f3f5e5": "Estimated total {value1}",
+  "@legacyUia034f3f5e5": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUic07d143675": "Renewed Vehicles ({value1})",
+  "@legacyUic07d143675": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUiff384c8aa4": "Remove {value1} from this user?",
+  "@legacyUiff384c8aa4": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUicb6d241451": "{value1} files - {value2} user types",
+  "@legacyUicb6d241451": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      },
+      "value2": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUif63f04564a": "Loading user types",
+  "legacyUi74b1d89d85": "Choose a file",
+  "legacyUi62783d600b": "Shown in user documents",
+  "legacyUi38fc177e28": "Hidden from user",
+  "legacyUibce346e856": "{value1} User{value2}",
+  "@legacyUibce346e856": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      },
+      "value2": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi674b652fca": "Change dates",
+  "legacyUi08d0e4f72a": "Loading transactions…",
+  "legacyUib3a56d64d2": "No transactions match these filters.",
+  "legacyUi049ac820da": "Working...",
+  "legacyUie783127bc1": "Joined {value1}",
+  "@legacyUie783127bc1": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUieb587f7802": "Profile updated {value1}",
+  "@legacyUieb587f7802": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi1dfc507715": "Country and mobile prefix references are unavailable. You can still edit manually.",
+  "legacyUia7c1498ab2": "You are subscribed to profile email notifications.",
+  "legacyUi77653a7db4": "Subscribe to receive profile and account email updates.",
+  "legacyUid3b8add13e": "Options unavailable.",
+  "legacyUi08b544b680": "Driven {value1}",
+  "@legacyUi08b544b680": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi6c783ae69f": "Showing 10 of {value1} latest alerts",
+  "@legacyUi6c783ae69f": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi45ef37a941": "No message provided.",
+  "legacyUia2ae39a298": "Channel unknown",
+  "legacyUiceafde86d6": "Sending",
+  "legacyUi46cefb25e2": "Send command",
+  "legacyUib3d1704245": "Day window: {value1}",
+  "@legacyUib3d1704245": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi735f148a9a": "type: {value1}",
+  "@legacyUi735f148a9a": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi828a91effc": "{value1} of {value2} vehicles • {value3} selected",
+  "@legacyUi828a91effc": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      },
+      "value2": {
+        "type": "Object"
+      },
+      "value3": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUia0ebdc2307": "{value1} visible • {value2}/{value3} loaded",
+  "@legacyUia0ebdc2307": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      },
+      "value2": {
+        "type": "Object"
+      },
+      "value3": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi1d483a1343": "Remove {value1} from this sub user?",
+  "@legacyUi1d483a1343": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi02b84d460d": "{value1} available to assign",
+  "@legacyUi02b84d460d": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi65ad788d45": "Plate unavailable",
+  "legacyUi7bb4f2808b": "Sub user can access assigned vehicles",
+  "legacyUi26b21a0d91": "Sub user is disabled",
+  "legacyUibceb1630f0": "{value1} files - {value2} document types",
+  "@legacyUibceb1630f0": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      },
+      "value2": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi107b9056eb": "Loading driver types",
+  "legacyUifd7e37cf51": "{value1} of {value2} drivers",
+  "@legacyUifd7e37cf51": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      },
+      "value2": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi14b274c7ae": "{value1} of {value2} vehicles",
+  "@legacyUi14b274c7ae": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      },
+      "value2": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi79a100acf7": "Remove {value1}?",
+  "@legacyUi79a100acf7": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi26875fe2e3": "{value1} files - {value2} vehicle types",
+  "@legacyUi26875fe2e3": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      },
+      "value2": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi7970bd3e0b": "{value1} could not be loaded.",
+  "@legacyUi7970bd3e0b": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi5eaf2646c3": "Loading vehicle types",
+  "legacyUi6ca60537ae": "Shown in vehicle documents",
+  "legacyUi4e3d045a97": "Hidden from users",
+  "legacyUid3ce77345e": "Sensor history",
+  "legacyUi5aba89cd2f": "{value1} numeric points",
+  "@legacyUi5aba89cd2f": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUie86a33f16a": "All geofences",
+  "legacyUi5321a316d0": "Source: {value1}",
+  "@legacyUi5321a316d0": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUifabeb88d9c": "Use {value1} selected",
+  "@legacyUifabeb88d9c": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi343ceded71": "Events by Geofence (top {value1})",
+  "@legacyUi343ceded71": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUide36170209": "Alert Types (top {value1})",
+  "@legacyUide36170209": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi019e5212ef": "{value1} km/h (limit {value2})",
+  "@legacyUi019e5212ef": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      },
+      "value2": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUicaae0add4a": "{value1} active day{value2}",
+  "@legacyUicaae0add4a": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      },
+      "value2": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi7911e1ad0c": "{value1} result{value2}",
+  "@legacyUi7911e1ad0c": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      },
+      "value2": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi15b175bbc9": "Generated at {value1}",
+  "@legacyUi15b175bbc9": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi92a50db48d": "Export {value1} Report",
+  "@legacyUi92a50db48d": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUida6472ea1a": "All {value1} vehicles will be included",
+  "@legacyUida6472ea1a": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUib0c379b2f8": "Select a vehicle group",
+  "legacyUi23d6943e8b": "Select Vehicles",
+  "legacyUi47b7508acb": "Done ({value1})",
+  "@legacyUi47b7508acb": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUid495bed9d8": "Select all visible ({value1})",
+  "@legacyUid495bed9d8": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi096909f019": "{value1} vehicle{value2}",
+  "@legacyUi096909f019": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      },
+      "value2": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUie003b8a491": "Max {value1} days for this report type",
+  "@legacyUie003b8a491": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUif386fe6e70": "Clear ({value1})",
+  "@legacyUif386fe6e70": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi706049c6a9": "Select a sensor",
+  "legacyUi2841c7f501": "No reports found for \"{value1}\"",
+  "@legacyUi2841c7f501": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi8002c1aa36": "Times use {value1}.",
+  "@legacyUi8002c1aa36": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUieaa190f343": "{value1} enabled",
+  "@legacyUieaa190f343": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUidc179fe07f": "Speed limit must be at least 1 {value1}.",
+  "@legacyUidc179fe07f": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi11003e8471": "{value1} Delivery Channels",
+  "@legacyUi11003e8471": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUidc7454d672": "Last saved {value1}",
+  "@legacyUidc7454d672": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi7968beb979": "Code -",
+  "legacyUi0528ad37c9": "{value1} of {value2} links",
+  "@legacyUi0528ad37c9": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      },
+      "value2": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUiac2a036e38": "No activity yet",
+  "legacyUi3a4361ec75": "\"{value1}\" will be permanently removed.",
+  "@legacyUi3a4361ec75": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi50a9e13fce": "Untitled geofence",
+  "legacyUi760cb5d683": "{value1} point{value2}",
+  "@legacyUi760cb5d683": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      },
+      "value2": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUifa6e784713": "Remove #{value1}",
+  "@legacyUifa6e784713": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi27a25269f5": "Fine-adjust ({value1} m)",
+  "@legacyUi27a25269f5": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi39706b5a17": "No geometry yet",
+  "legacyUi1bf6cb6c45": "Geometry ready",
+  "legacyUi5d437ca98b": "Events will trigger for this geofence.",
+  "legacyUi6d8b4724c6": "Geofence is paused.",
+  "legacyUi7e9f5c3026": "Draw at least 2 points on the map.",
+  "legacyUi28134edb87": "Edit on map",
+  "legacyUi0f873fbc31": "Draw on map",
+  "legacyUi48f6c8c8ac": "{value1}m",
+  "@legacyUi48f6c8c8ac": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUicde59da67c": "{value1}min",
+  "@legacyUicde59da67c": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi4bd1e22ea7": "Untitled route",
+  "legacyUi198f442dfb": "Vertex {value1}",
+  "@legacyUi198f442dfb": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUibae08b3767": "Row {value1}: {value2}",
+  "@legacyUibae08b3767": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      },
+      "value2": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi93039e609d": "Not set",
+  "legacyUid33a96e366": "Pick on map",
+  "legacyUiecd575d434": "Visible on live map and proximity alerts.",
+  "legacyUi92a172ce15": "Hidden from alerts; stays in the list.",
+  "legacyUi8019307fe5": "Untitled POI",
+  "legacyUid14e0c02a9": "Live tracking available",
+  "legacyUic814ea2b6e": "Service starts: {value1}",
+  "@legacyUic814ea2b6e": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUic926abedfd": "Customer service expires: {value1}",
+  "@legacyUic926abedfd": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUiae0052da76": "Provider coverage expires: {value1}",
+  "@legacyUiae0052da76": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi633ec01c21": "{value1} • {value2} days",
+  "@legacyUi633ec01c21": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      },
+      "value2": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUicf765512cc": "Sending…",
+  "legacyUi50756f98a3": "Request renewal",
+  "legacyUid52adacef9": "Request #{value1}",
+  "@legacyUid52adacef9": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUicfeb791a76": "Expired request",
+  "legacyUif0d8958371": "{value1}\n{value2} • {value3} days\n{value4} {value5}\n\nYour administrator must confirm payment before service is extended.",
+  "@legacyUif0d8958371": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      },
+      "value2": {
+        "type": "Object"
+      },
+      "value3": {
+        "type": "Object"
+      },
+      "value4": {
+        "type": "Object"
+      },
+      "value5": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUifdb17036d5": "OpenVTS User",
+  "legacyUif7e83b3f19": "Reset to default ({value1})",
+  "@legacyUif7e83b3f19": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi54e519da7f": "Error: {value1}",
+  "@legacyUi54e519da7f": {
+    "placeholders": {
+      "value1": {
+        "type": "Object"
+      }
+    }
+  },
+  "legacyUi7eb29d3565": "Date & time",
+  "legacyUib1deb07e61": "Open Geofence",
+  "legacyUi1dce4bf43b": "Open POI",
+  "legacyUi4a0d050737": "Open Route",
+  "legacyUib6bd42e4e7": "In progress",
+  "legacyUi91edf8aff9": "On a trip",
+  "legacyUi20c7c5522f": "Ready",
+  "legacyUi0a2b58e839": "No assignment",
+  "legacyUi6cf3d41f08": "All trips",
+  "legacyUif7a616a336": "Access blocked",
+  "legacyUiac7b5dd3a8": "Recipient unavailable",
+  "legacyUi936d2e8552": "Vehicle issue",
+  "legacyUi51cea59031": "Route issue",
+  "legacyUia972b55b1a": "Describe the issue for dispatch.",
+  "legacyUie0cdc02f99": "12-hour time",
+  "legacyUif910251f7c": "24-hour time",
+  "legacyUi34ce147724": "Left to right",
+  "legacyUida502a644e": "Right to left",
+  "legacyUiec45717e13": "Contact dispatch for details.",
+  "legacyUi8a783eb3d6": "Assignment acknowledged.",
+  "legacyUi00e1e19595": "Start trip",
+  "legacyUi0015b1903d": "Trips normally start from vehicle telemetry. Use this manual fallback only when beginning the trip.",
+  "legacyUib20bd98ae2": "Add remark",
+  "legacyUi42477e82cf": "Unable to open navigation.",
+  "legacyUiea0bd6ff3d": "Complete stop",
+  "legacyUi3d93beaa39": "Select a non-empty file up to 5 MB.",
+  "legacyUid2085cce0d": "Select a file to upload.",
+  "legacyUid0193e6956": "Select a document type.",
+  "legacyUif378218081": "Enter at least 2 characters.",
+  "legacyUi63f72dce85": "Select file",
+  "legacyUi1255774559": "Assignments today",
+  "legacyUi3528465759": "Completed trips",
+  "legacyUi28793a4155": "Completed stops",
+  "legacyUi1683af6ce8": "Pending stops",
+  "mobilePluralTrips": "{count, plural, one{{count} trip} other{{count} trips}}",
+  "@mobilePluralTrips": {
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
+  },
+  "mobilePluralBlockedVehicles": "{count, plural, one{{count} blocked vehicle excluded.} other{{count} blocked vehicles excluded.}}",
+  "@mobilePluralBlockedVehicles": {
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
+  },
+  "mobilePluralSelectedVehicles": "{count, plural, one{{count} vehicle selected} other{{count} vehicles selected}}",
+  "@mobilePluralSelectedVehicles": {
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
+  },
+  "mobilePluralUsers": "{count, plural, one{{count} User} other{{count} Users}}",
+  "@mobilePluralUsers": {
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
+  },
+  "mobilePluralActiveDays": "{count, plural, one{{count} active day} other{{count} active days}}",
+  "@mobilePluralActiveDays": {
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
+  },
+  "mobilePluralResults": "{count, plural, one{{count} result} other{{count} results}}",
+  "@mobilePluralResults": {
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
+  },
+  "mobilePluralVehicles": "{count, plural, one{{count} vehicle} other{{count} vehicles}}",
+  "@mobilePluralVehicles": {
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
+  },
+  "mobilePluralPoints": "{count, plural, one{{count} point} other{{count} points}}",
+  "@mobilePluralPoints": {
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
+  },
+  "relativeJustNow": "just now",
+  "relativeMinutesAgo": "{count}m ago",
+  "@relativeMinutesAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "relativeHoursAgo": "{count}h ago",
+  "@relativeHoursAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "relativeDaysAgo": "{count}d ago",
+  "@relativeDaysAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "relativeYesterday": "yesterday",
+  "savingChangesForTab": "Saving {tab} changes...",
+  "@savingChangesForTab": {
+    "placeholders": {
+      "tab": {
+        "type": "String"
+      }
+    }
+  },
+  "unsavedChangesForTab": "You have unsaved {tab} changes.",
+  "@unsavedChangesForTab": {
+    "placeholders": {
+      "tab": {
+        "type": "String"
+      }
+    }
+  },
+  "saving": "Saving…",
+  "validationRequired": "{field} is required",
+  "@validationRequired": {
+    "placeholders": {
+      "field": {
+        "type": "String"
+      }
+    }
+  },
+  "validationAscii": "{field} must contain ASCII characters only",
+  "@validationAscii": {
+    "placeholders": {
+      "field": {
+        "type": "String"
+      }
+    }
+  },
+  "validationMinCharacters": "{field} must be at least {count} characters",
+  "@validationMinCharacters": {
+    "placeholders": {
+      "field": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "validationMaxCharacters": "{field} must be {count} characters or fewer",
+  "@validationMaxCharacters": {
+    "placeholders": {
+      "field": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "validationMinDigits": "{field} must be at least {count} digits",
+  "@validationMinDigits": {
+    "placeholders": {
+      "field": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "validationMaxDigits": "{field} must be {count} digits or fewer",
+  "@validationMaxDigits": {
+    "placeholders": {
+      "field": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "validationNumeric": "{field} must be numeric",
+  "@validationNumeric": {
+    "placeholders": {
+      "field": {
+        "type": "String"
+      }
+    }
+  },
+  "validationMinimumCharacters": "Minimum {count} characters",
+  "@validationMinimumCharacters": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "validationValidEmail": "Enter a valid email address",
+  "validationValidNumber": "Enter a valid number",
+  "validationNonnegativeCredits": "Credits cannot be negative",
+  "validationConfirmPassword": "Please confirm the password",
+  "validationPasswordsMismatch": "Passwords do not match",
+  "validationStandardVin": "VIN must be 17 alphanumeric characters (excluding I, O, Q)",
+  "validationVinAlphanumeric": "VIN must contain only letters and numbers",
+  "validationThisField": "This field",
+  "validationFieldSimNumber": "SIM number"
 }

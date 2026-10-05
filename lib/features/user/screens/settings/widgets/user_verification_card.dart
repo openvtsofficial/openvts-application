@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../../../shared/widgets/open_vts_status_chip.dart';
 
@@ -39,7 +39,7 @@ class UserVerificationCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Verification',
+            context.mobileText('Verification'),
             style: OpenVtsTypography.label.copyWith(
               color: Theme.of(context).colorScheme.onSurface,
               fontWeight: FontWeight.w700,
@@ -51,14 +51,17 @@ class UserVerificationCard extends StatelessWidget {
             runSpacing: OpenVtsSpacing.xs,
             children: [
               OpenVtsStatusChip(
-                label: isEmailVerified ? 'Email verified' : 'Email pending',
+                label: isEmailVerified
+                    ? context.mobileText('Email verified')
+                    : context.mobileText('Email pending'),
                 type: isEmailVerified
                     ? OpenVtsStatusType.success
                     : OpenVtsStatusType.warning,
               ),
               OpenVtsStatusChip(
-                label:
-                    isMobileVerified ? 'WhatsApp verified' : 'WhatsApp pending',
+                label: isMobileVerified
+                    ? context.mobileText('WhatsApp verified')
+                    : context.mobileText('WhatsApp pending'),
                 type: isMobileVerified
                     ? OpenVtsStatusType.success
                     : OpenVtsStatusType.warning,
@@ -67,7 +70,9 @@ class UserVerificationCard extends StatelessWidget {
           ),
           const SizedBox(height: OpenVtsSpacing.xs),
           Text(
-            'Request and confirm OTP to verify email and WhatsApp number.',
+            context.mobileText(
+              'Request and confirm OTP to verify email and WhatsApp number.',
+            ),
             style: OpenVtsTypography.meta.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
@@ -85,24 +90,29 @@ class UserVerificationCard extends StatelessWidget {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.mark_email_read_outlined, size: 14),
-                label: Text(emailBusy ? 'Working...' : 'Verify Email'),
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size(0, 44),
+                label: Text(
+                  emailBusy
+                      ? context.mobileText('Working...')
+                      : context.mobileText('Verify Email'),
                 ),
+                style: OutlinedButton.styleFrom(minimumSize: const Size(0, 44)),
               ),
               OutlinedButton.icon(
-                onPressed:
-                    isMobileVerified || whatsappBusy ? null : onVerifyWhatsApp,
+                onPressed: isMobileVerified || whatsappBusy
+                    ? null
+                    : onVerifyWhatsApp,
                 icon: whatsappBusy
                     ? const SizedBox.square(
                         dimension: 12,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.chat_outlined, size: 14),
-                label: Text(whatsappBusy ? 'Working...' : 'Verify WhatsApp'),
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size(0, 44),
+                label: Text(
+                  whatsappBusy
+                      ? context.mobileText('Working...')
+                      : context.mobileText('Verify WhatsApp'),
                 ),
+                style: OutlinedButton.styleFrom(minimumSize: const Size(0, 44)),
               ),
             ],
           ),

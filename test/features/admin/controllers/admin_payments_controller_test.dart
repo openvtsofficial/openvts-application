@@ -19,13 +19,6 @@ AdminPaymentTransaction _mkTx(String id, {String status = 'SUCCESS'}) =>
       'createdAt': '2026-08-01T10:00:00.000Z',
     });
 
-AdminPaymentsPage _emptyPage({int page = 1}) => AdminPaymentsPage(
-      page: page,
-      limit: 100,
-      total: 0,
-      items: const <AdminPaymentTransaction>[],
-    );
-
 // ---------------------------------------------------------------------------
 // Fake service
 // ---------------------------------------------------------------------------
@@ -111,11 +104,6 @@ void main() {
     });
 
     test('error during load sets errorMessage', () async {
-      final svc = _FakePaymentsService();
-      // Make getPayments throw after first call (initial load).
-      var callCount = 0;
-      svc.items = const []; // not used; override via subclass trick below
-
       final throwSvc = _ThrowingPaymentsService();
       final controller = AdminPaymentsController(service: throwSvc);
       await controller.load();

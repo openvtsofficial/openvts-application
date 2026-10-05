@@ -9,6 +9,7 @@ import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../shared/widgets/open_vts_bottom_sheet.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
@@ -47,10 +48,7 @@ class UserLandmarkExportSheet {
 }
 
 class _ExportBody extends ConsumerWidget {
-  const _ExportBody({
-    required this.entityType,
-    required this.scrollController,
-  });
+  const _ExportBody({required this.entityType, required this.scrollController});
 
   final UserLandmarkEntityType entityType;
   final ScrollController scrollController;
@@ -63,10 +61,12 @@ class _ExportBody extends ConsumerWidget {
       return ListView(
         controller: scrollController,
         padding: const EdgeInsets.all(OpenVtsSpacing.md),
-        children: const [
+        children: [
           OpenVtsEmptyState(
-            title: 'Nothing to export',
-            message: 'Create at least one item before exporting.',
+            title: context.mobileText('Nothing to export'),
+            message: context.mobileText(
+              'Create at least one item before exporting.',
+            ),
           ),
         ],
       );
@@ -160,8 +160,11 @@ class _SummaryRow extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.file_download_outlined,
-              size: 18, color: OpenVtsColors.brandInk),
+          const Icon(
+            Icons.file_download_outlined,
+            size: 18,
+            color: OpenVtsColors.brandInk,
+          ),
           const SizedBox(width: OpenVtsSpacing.sm),
           Expanded(
             child: Column(
@@ -272,7 +275,10 @@ class _ActionRowState extends State<_ActionRow> {
   Future<void> _copy() async {
     await Clipboard.setData(ClipboardData(text: widget.payload.kml));
     if (!mounted) return;
-    ToastHelper.showSuccess('KML copied to clipboard', context: context);
+    ToastHelper.showSuccess(
+      context.mobileText('KML copied to clipboard'),
+      context: context,
+    );
   }
 
   @override
@@ -281,7 +287,7 @@ class _ActionRowState extends State<_ActionRow> {
       children: [
         Expanded(
           child: OpenVtsButton(
-            label: 'Copy KML',
+            label: context.mobileText('Copy KML'),
             onPressed: _copy,
             variant: OpenVtsButtonVariant.secondary,
             trailingIcon: Icons.copy_outlined,
@@ -290,7 +296,7 @@ class _ActionRowState extends State<_ActionRow> {
         const SizedBox(width: OpenVtsSpacing.sm),
         Expanded(
           child: OpenVtsButton(
-            label: 'Save .kml',
+            label: context.mobileText('Save .kml'),
             onPressed: _save,
             isLoading: _saving,
             trailingIcon: Icons.save_alt_outlined,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/theme/open_vts_spacing.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../shared/widgets/open_vts_bottom_sheet.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
@@ -11,13 +12,15 @@ import '../../../models/admin_driver_details_state.dart';
 
 Future<void> showDriverPasswordSheet({
   required BuildContext context,
-  required AutoDisposeStateNotifierProvider<AdminDriverDetailsController,
-          AdminDriverDetailsState>
-      provider,
+  required AutoDisposeStateNotifierProvider<
+    AdminDriverDetailsController,
+    AdminDriverDetailsState
+  >
+  provider,
 }) {
   return OpenVtsBottomSheet.show<void>(
     context: context,
-    title: 'Update Password',
+    title: context.mobileText('Update Password'),
     initialChildSize: 0.46,
     minChildSize: 0.34,
     maxChildSize: 0.72,
@@ -28,8 +31,11 @@ Future<void> showDriverPasswordSheet({
 class _DriverPasswordSheet extends ConsumerStatefulWidget {
   const _DriverPasswordSheet({required this.provider});
 
-  final AutoDisposeStateNotifierProvider<AdminDriverDetailsController,
-      AdminDriverDetailsState> provider;
+  final AutoDisposeStateNotifierProvider<
+    AdminDriverDetailsController,
+    AdminDriverDetailsState
+  >
+  provider;
 
   @override
   ConsumerState<_DriverPasswordSheet> createState() =>
@@ -61,11 +67,13 @@ class _DriverPasswordSheetState extends ConsumerState<_DriverPasswordSheet> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             OpenVtsTextField(
-              label: 'New Password',
+              label: context.mobileText('New Password'),
               controller: _newPassword,
               obscureText: _obscureNew,
               suffixIcon: IconButton(
-                tooltip: _obscureNew ? 'Show password' : 'Hide password',
+                tooltip: _obscureNew
+                    ? context.mobileText('Show password')
+                    : context.mobileText('Hide password'),
                 onPressed: () => setState(() => _obscureNew = !_obscureNew),
                 icon: Icon(
                   _obscureNew
@@ -80,11 +88,13 @@ class _DriverPasswordSheetState extends ConsumerState<_DriverPasswordSheet> {
             ),
             const SizedBox(height: OpenVtsSpacing.sm),
             OpenVtsTextField(
-              label: 'Confirm Password',
+              label: context.mobileText('Confirm Password'),
               controller: _confirmPassword,
               obscureText: _obscureConfirm,
               suffixIcon: IconButton(
-                tooltip: _obscureConfirm ? 'Show password' : 'Hide password',
+                tooltip: _obscureConfirm
+                    ? context.mobileText('Show password')
+                    : context.mobileText('Hide password'),
                 onPressed: () =>
                     setState(() => _obscureConfirm = !_obscureConfirm),
                 icon: Icon(
@@ -99,7 +109,7 @@ class _DriverPasswordSheetState extends ConsumerState<_DriverPasswordSheet> {
             ),
             const SizedBox(height: OpenVtsSpacing.sm),
             OpenVtsButton(
-              label: 'Update Password',
+              label: context.mobileText('Update Password'),
               isLoading: state.isUpdatingPassword,
               onPressed: state.isUpdatingPassword ? null : _submit,
             ),
@@ -117,7 +127,10 @@ class _DriverPasswordSheetState extends ConsumerState<_DriverPasswordSheet> {
     if (!mounted) return;
     if (ok) {
       Navigator.of(context).pop();
-      ToastHelper.showSuccess('Password updated.', context: context);
+      ToastHelper.showSuccess(
+        context.mobileText('Password updated.'),
+        context: context,
+      );
     } else {
       ToastHelper.showError(
         ref.read(widget.provider).sectionErrorMessage ??

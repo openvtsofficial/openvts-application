@@ -4,6 +4,7 @@ import '../../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../../shared/widgets/open_vts_card.dart';
 import '../../../../../../shared/widgets/open_vts_search_field.dart';
 import '../../../../models/user_drivers_state.dart';
@@ -37,7 +38,10 @@ class UserDriversFilterBar extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  '${state.filteredDrivers.length} of ${state.drivers.length} drivers',
+                  context.mobileText("{value1} of {value2} drivers", {
+                    'value1': (state.filteredDrivers.length).toString(),
+                    'value2': (state.drivers.length).toString(),
+                  }),
                   style: OpenVtsTypography.label.copyWith(
                     color: Theme.of(context).brightness == Brightness.dark
                         ? Colors.white
@@ -51,7 +55,7 @@ class UserDriversFilterBar extends StatelessWidget {
                   onPressed: onClearFilters,
                   icon: const Icon(Icons.filter_alt_off_outlined, size: 15),
                   label: Text(
-                    'Clear',
+                    context.mobileText('Clear'),
                     style: OpenVtsTypography.meta.copyWith(
                       fontWeight: FontWeight.w800,
                     ),
@@ -61,7 +65,9 @@ class UserDriversFilterBar extends StatelessWidget {
           ),
           const SizedBox(height: OpenVtsSpacing.xs),
           OpenVtsSearchField(
-            hintText: 'Search name, username, email, mobile, vehicle, plate...',
+            hintText: context.mobileText(
+              'Search name, username, email, mobile, vehicle, plate...',
+            ),
             onChanged: onSearchChanged,
           ),
           const SizedBox(height: OpenVtsSpacing.sm),
@@ -71,7 +77,7 @@ class UserDriversFilterBar extends StatelessWidget {
             children: [
               _FilterMenuButton<UserDriverStatusFilter>(
                 icon: Icons.toggle_on_outlined,
-                title: 'Status',
+                title: context.mobileText('Status'),
                 selectedLabel: _statusLabel(state.selectedStatusFilter),
                 highlighted:
                     state.selectedStatusFilter != UserDriverStatusFilter.all,
@@ -85,9 +91,10 @@ class UserDriversFilterBar extends StatelessWidget {
               ),
               _FilterMenuButton<UserDriverAssignmentFilter>(
                 icon: Icons.link_outlined,
-                title: 'Assignment',
+                title: context.mobileText('Assignment'),
                 selectedLabel: _assignmentLabel(state.selectedAssignmentFilter),
-                highlighted: state.selectedAssignmentFilter !=
+                highlighted:
+                    state.selectedAssignmentFilter !=
                     UserDriverAssignmentFilter.all,
                 items: const [
                   UserDriverAssignmentFilter.all,
@@ -99,10 +106,12 @@ class UserDriversFilterBar extends StatelessWidget {
               ),
               _FilterMenuButton<UserDriverVerificationFilter>(
                 icon: Icons.verified_outlined,
-                title: 'Verified',
-                selectedLabel:
-                    _verificationLabel(state.selectedVerificationFilter),
-                highlighted: state.selectedVerificationFilter !=
+                title: context.mobileText('Verified'),
+                selectedLabel: _verificationLabel(
+                  state.selectedVerificationFilter,
+                ),
+                highlighted:
+                    state.selectedVerificationFilter !=
                     UserDriverVerificationFilter.all,
                 items: const [
                   UserDriverVerificationFilter.all,
@@ -155,10 +164,7 @@ class _FilterMenuButton<T> extends StatelessWidget {
       itemBuilder: (context) {
         return [
           for (final item in items)
-            PopupMenuItem<T>(
-              value: item,
-              child: Text(labelFor(item)),
-            ),
+            PopupMenuItem<T>(value: item, child: Text(labelFor(item))),
         ];
       },
       child: Container(

@@ -8,6 +8,7 @@ import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
@@ -140,13 +141,17 @@ class _AdminSupportTicketFormState
         return;
       }
 
-      ToastHelper.showSuccess('Ticket created.', context: context);
+      ToastHelper.showSuccess(
+        context.mobileText('Ticket created.'),
+        context: context,
+      );
       Navigator.of(context).pop(result.ticketId);
     } catch (_) {
       if (!mounted) {
         return;
       }
-      final error = ref.read(adminSupportControllerProvider).errorMessage ??
+      final error =
+          ref.read(adminSupportControllerProvider).errorMessage ??
           'Unable to create ticket.';
       ToastHelper.showError(error, context: context);
     }
@@ -155,11 +160,13 @@ class _AdminSupportTicketFormState
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(adminSupportControllerProvider);
-    final isCreating =
-        _isUserMode ? state.isCreatingUserTicket : state.isCreatingMyTicket;
+    final isCreating = _isUserMode
+        ? state.isCreatingUserTicket
+        : state.isCreatingMyTicket;
     final users = state.users;
-    final selectedUserId =
-        users.any((user) => user.id == _userId) ? _userId : null;
+    final selectedUserId = users.any((user) => user.id == _userId)
+        ? _userId
+        : null;
 
     return Column(
       children: [
@@ -173,8 +180,9 @@ class _AdminSupportTicketFormState
                   child: Align(
                     alignment: Alignment.topCenter,
                     child: ConstrainedBox(
-                      constraints:
-                          BoxConstraints(maxWidth: widget.maxContentWidth),
+                      constraints: BoxConstraints(
+                        maxWidth: widget.maxContentWidth,
+                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
@@ -240,7 +248,10 @@ class _AdminSupportTicketFormState
       return true;
     }
     if ((_userId ?? '').trim().isEmpty) {
-      ToastHelper.showError('User is required.', context: context);
+      ToastHelper.showError(
+        context.mobileText('User is required.'),
+        context: context,
+      );
       return false;
     }
     return true;
@@ -248,19 +259,26 @@ class _AdminSupportTicketFormState
 
   bool _validateTitle(String value) {
     if (value.trim().isEmpty) {
-      ToastHelper.showError('Subject is required.', context: context);
+      ToastHelper.showError(
+        context.mobileText('Subject is required.'),
+        context: context,
+      );
       return false;
     }
     if (value.length > AdminSupportService.maxTitleLength) {
       ToastHelper.showError(
-        'Subject must be ${AdminSupportService.maxTitleLength} characters or less.',
+        context.mobileText("Subject must be {value1} characters or less.", {
+          'value1': (AdminSupportService.maxTitleLength).toString(),
+        }),
         context: context,
       );
       return false;
     }
     if (!_containsLetterOrNumber(value)) {
       ToastHelper.showError(
-        'Subject must contain at least one letter or number.',
+        context.mobileText(
+          'Subject must contain at least one letter or number.',
+        ),
         context: context,
       );
       return false;
@@ -270,19 +288,26 @@ class _AdminSupportTicketFormState
 
   bool _validateMessage(String value) {
     if (value.trim().isEmpty) {
-      ToastHelper.showError('Description is required.', context: context);
+      ToastHelper.showError(
+        context.mobileText('Description is required.'),
+        context: context,
+      );
       return false;
     }
     if (value.length > AdminSupportService.maxMessageLength) {
       ToastHelper.showError(
-        'Description must be ${AdminSupportService.maxMessageLength} characters or less.',
+        context.mobileText("Description must be {value1} characters or less.", {
+          'value1': (AdminSupportService.maxMessageLength).toString(),
+        }),
         context: context,
       );
       return false;
     }
     if (!_containsLetterOrNumber(value)) {
       ToastHelper.showError(
-        'Description must contain at least one letter or number.',
+        context.mobileText(
+          'Description must contain at least one letter or number.',
+        ),
         context: context,
       );
       return false;
@@ -313,7 +338,7 @@ class _CreateTicketHelperCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'New support ticket',
+            context.mobileText('New support ticket'),
             style: OpenVtsTypography.titleSmall.copyWith(
               color: isDark
                   ? OpenVtsColors.darkTextPrimary
@@ -379,7 +404,7 @@ class _TicketFields extends StatelessWidget {
       children: [
         if (showUserFields) ...[
           OpenVtsSearchableDropdown<String>(
-            label: 'User',
+            label: context.mobileText('User'),
             value: selectedUserId,
             options: users
                 .map(
@@ -396,7 +421,7 @@ class _TicketFields extends StatelessWidget {
             enabled: !isCreating,
             sheetTitle: 'Select User',
             searchHintText: 'Search by name, username or email',
-            emptyMessage: 'No users found.',
+            emptyMessage: context.mobileText('No users found.'),
             required: true,
           ),
           const SizedBox(height: OpenVtsSpacing.sm),
@@ -414,36 +439,36 @@ class _TicketFields extends StatelessWidget {
             final stackFields = constraints.maxWidth < 460;
             final categoryField =
                 DropdownButtonFormField<AdminSupportTicketCategory>(
-              initialValue: category,
-              isDense: true,
-              isExpanded: true,
-              decoration: _fieldDecoration('Category'),
-              items: AdminSupportTicketCategory.values
-                  .map(
-                    (value) => DropdownMenuItem(
-                      value: value,
-                      child: Text(value.label),
-                    ),
-                  )
-                  .toList(growable: false),
-              onChanged: isCreating ? null : onCategoryChanged,
-            );
+                  initialValue: category,
+                  isDense: true,
+                  isExpanded: true,
+                  decoration: _fieldDecoration('Category'),
+                  items: AdminSupportTicketCategory.values
+                      .map(
+                        (value) => DropdownMenuItem(
+                          value: value,
+                          child: Text(value.label),
+                        ),
+                      )
+                      .toList(growable: false),
+                  onChanged: isCreating ? null : onCategoryChanged,
+                );
             final priorityField =
                 DropdownButtonFormField<AdminSupportTicketPriority>(
-              initialValue: priority,
-              isDense: true,
-              isExpanded: true,
-              decoration: _fieldDecoration('Priority'),
-              items: AdminSupportTicketPriority.values
-                  .map(
-                    (value) => DropdownMenuItem(
-                      value: value,
-                      child: Text(value.label),
-                    ),
-                  )
-                  .toList(growable: false),
-              onChanged: isCreating ? null : onPriorityChanged,
-            );
+                  initialValue: priority,
+                  isDense: true,
+                  isExpanded: true,
+                  decoration: _fieldDecoration('Priority'),
+                  items: AdminSupportTicketPriority.values
+                      .map(
+                        (value) => DropdownMenuItem(
+                          value: value,
+                          child: Text(value.label),
+                        ),
+                      )
+                      .toList(growable: false),
+                  onChanged: isCreating ? null : onPriorityChanged,
+                );
 
             if (stackFields) {
               return Column(
@@ -553,7 +578,7 @@ class _TicketFormActionBar extends StatelessWidget {
                     ),
                   ),
                   child: IconButton(
-                    tooltip: 'Attach files',
+                    tooltip: context.mobileText('Attach files'),
                     onPressed: onAttach,
                     icon: const Icon(
                       Icons.attach_file_rounded,
@@ -606,12 +631,14 @@ class _DraftAttachmentWrap extends StatelessWidget {
               ),
               decoration: BoxDecoration(
                 border: Border.all(
-                  color:
-                      isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border,
+                  color: isDark
+                      ? OpenVtsColors.darkBorder
+                      : OpenVtsColors.border,
                 ),
                 borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
-                color:
-                    isDark ? OpenVtsColors.darkSurface : OpenVtsColors.surface,
+                color: isDark
+                    ? OpenVtsColors.darkSurface
+                    : OpenVtsColors.surface,
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -635,7 +662,7 @@ class _DraftAttachmentWrap extends StatelessWidget {
                   ),
                   const SizedBox(width: OpenVtsSpacing.xxs),
                   IconButton(
-                    tooltip: 'Remove attachment',
+                    tooltip: context.mobileText('Remove attachment'),
                     constraints: const BoxConstraints(
                       minWidth: 36,
                       minHeight: 36,
@@ -661,7 +688,9 @@ Future<List<PlatformFile>?> _pickAdminSupportAttachments(
   final remaining = AdminSupportService.maxAttachmentCount - existing.length;
   if (remaining <= 0) {
     ToastHelper.showError(
-      'You can upload up to ${AdminSupportService.maxAttachmentCount} files.',
+      context.mobileText("You can upload up to {value1} files.", {
+        'value1': (AdminSupportService.maxAttachmentCount).toString(),
+      }),
       context: context,
     );
     return existing;
@@ -671,8 +700,9 @@ Future<List<PlatformFile>?> _pickAdminSupportAttachments(
     allowMultiple: true,
     withData: true,
     type: FileType.custom,
-    allowedExtensions:
-        AdminSupportService.allowedExtensions.toList(growable: false),
+    allowedExtensions: AdminSupportService.allowedExtensions.toList(
+      growable: false,
+    ),
   );
 
   if (!context.mounted || result == null || result.files.isEmpty) {
@@ -715,19 +745,25 @@ Future<List<PlatformFile>?> _pickAdminSupportAttachments(
 
   if (blocked.isNotEmpty) {
     ToastHelper.showError(
-      'Blocked file removed: ${_compactFileList(blocked)}',
+      context.mobileText("Blocked file removed: {value1}", {
+        'value1': (_compactFileList(blocked)).toString(),
+      }),
       context: context,
     );
   }
   if (unsupported.isNotEmpty) {
     ToastHelper.showError(
-      'Unsupported file removed: ${_compactFileList(unsupported)}',
+      context.mobileText("Unsupported file removed: {value1}", {
+        'value1': (_compactFileList(unsupported)).toString(),
+      }),
       context: context,
     );
   }
   if (oversized.isNotEmpty) {
     ToastHelper.showError(
-      'File exceeds 5MB: ${_compactFileList(oversized)}',
+      context.mobileText("File exceeds 5MB: {value1}", {
+        'value1': (_compactFileList(oversized)).toString(),
+      }),
       context: context,
     );
   }

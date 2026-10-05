@@ -12,12 +12,7 @@ import 'package:open_vts/features/admin/services/admin_settings_service.dart';
 import 'package:open_vts/l10n/app_localizations.dart';
 import 'package:open_vts/shared/widgets/open_vts_searchable_dropdown.dart';
 
-const _timezones = [
-  'Asia/Kolkata',
-  'America/New_York',
-  'UTC',
-  'Europe/London',
-];
+const _timezones = ['Asia/Kolkata', 'America/New_York', 'UTC', 'Europe/London'];
 
 AdminSettingsState _state({required String timezone}) {
   return const AdminSettingsState.initial().copyWith(
@@ -30,9 +25,8 @@ Widget _app(AdminSettingsState state) {
   return ProviderScope(
     overrides: [
       adminSettingsControllerProvider.overrideWith(
-        (ref) => AdminSettingsController(
-          AdminSettingsService(ApiClient(Dio())),
-        ),
+        (ref) =>
+            AdminSettingsController(AdminSettingsService(ApiClient(Dio()))),
       ),
     ],
     child: MaterialApp(
@@ -57,7 +51,7 @@ Finder _timezoneDropdown() {
 
 Finder _visibleOption(String value) {
   return find.descendant(
-    of: find.byType(ListView).last,
+    of: find.byType(SliverList).last,
     matching: find.text(value),
   );
 }

@@ -21,6 +21,7 @@ import '../../features/admin/screens/settings/admin_settings_screen.dart';
 import '../../features/admin/screens/support/admin_create_support_ticket_screen.dart';
 import '../../features/admin/screens/support/admin_support_screen.dart';
 import '../../features/admin/screens/team/admin_team_screen.dart';
+import '../../features/admin/screens/transactions/admin_transactions_screen.dart';
 import '../../features/admin/screens/users/admin_create_user_screen.dart';
 import '../../features/admin/screens/users/admin_user_details_screen.dart';
 import '../../features/admin/screens/users/admin_users_screen.dart';
@@ -30,10 +31,19 @@ import '../../features/admin/screens/vehicles/admin_vehicles_screen.dart';
 import '../../features/auth/controllers/auth_controller.dart';
 import '../../features/auth/controllers/auth_state.dart';
 import '../../features/auth/screens/api_base_url_settings_screen.dart';
+import '../../features/auth/screens/driver_settings_screen.dart';
 import '../../features/auth/screens/forgot_password_screen.dart';
 import '../../features/auth/screens/login_screen.dart';
 import '../../features/auth/screens/profile_screen.dart';
 import '../../features/auth/screens/splash_screen.dart';
+import '../../features/auth/screens/team_settings_screen.dart';
+import '../../features/driver/screens/driver_calendar_screen.dart';
+import '../../features/driver/screens/driver_dashboard_screen.dart';
+import '../../features/driver/screens/driver_documents_screen.dart';
+import '../../features/driver/screens/driver_home_screen.dart';
+import '../../features/driver/screens/driver_messages_screen.dart';
+import '../../features/driver/screens/driver_notifications_screen.dart';
+import '../../features/driver/screens/driver_trips_screen.dart';
 import '../../features/superadmin/models/superadmin_administrator_model.dart';
 import '../../features/superadmin/screens/administrators/superadmin_admin_details_screen.dart';
 import '../../features/superadmin/screens/administrators/superadmin_administrators_screen.dart';
@@ -50,7 +60,9 @@ import '../../features/superadmin/screens/superadmin_shell.dart';
 import '../../features/superadmin/screens/support/superadmin_create_support_ticket_screen.dart';
 import '../../features/superadmin/screens/support/superadmin_support_screen.dart';
 import '../../features/superadmin/screens/vehicles/superadmin_vehicles_screen.dart';
+import '../../features/user/messages/user_messages_screen.dart';
 import '../../features/user/models/user_driver_model.dart';
+import '../../features/user/models/user_report_model.dart';
 import '../../features/user/models/user_subuser_model.dart';
 import '../../features/user/models/user_vehicle_model.dart';
 import '../../features/user/screens/accounts/drivers/user_driver_details_screen.dart';
@@ -66,9 +78,9 @@ import '../../features/user/screens/landmarks/user_landmark_studio_screen.dart';
 import '../../features/user/screens/map/user_map_screen.dart';
 import '../../features/user/screens/notification_settings/user_notification_settings_screen.dart';
 import '../../features/user/screens/notifications/user_notification_center_screen.dart';
-import '../../features/user/models/user_report_model.dart';
-import '../../features/user/screens/reports/user_reports_catalog_screen.dart';
+import '../../features/user/screens/operations/user_operations_screen.dart';
 import '../../features/user/screens/reports/user_report_workspace_screen.dart';
+import '../../features/user/screens/reports/user_reports_catalog_screen.dart';
 import '../../features/user/screens/settings/user_settings_screen.dart';
 import '../../features/user/screens/support/user_create_support_ticket_screen.dart';
 import '../../features/user/screens/support/user_support_screen.dart';
@@ -78,6 +90,8 @@ import '../../features/user/screens/user_home_screen.dart';
 import '../../features/user/screens/user_shell.dart';
 import '../../features/user/screens/vehicles/user_vehicle_details_screen.dart';
 import '../../features/user/screens/vehicles/user_vehicles_screen.dart';
+import '../../shared/models/user_role.dart';
+import '../utils/permission_helper.dart';
 import 'route_paths.dart';
 
 final appRootNavigatorKey = GlobalKey<NavigatorState>();
@@ -95,6 +109,7 @@ final _appRouterRefreshProvider = Provider<ValueNotifier<int>>((ref) {
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final refreshNotifier = ref.watch(_appRouterRefreshProvider);
+  String? previousPrincipal;
 
   return GoRouter(
     navigatorKey: appRootNavigatorKey,
@@ -103,12 +118,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     redirect: (context, state) {
       final authState = ref.read(authControllerProvider);
       final path = state.uri.path;
-      final isAuthRoute = path == RoutePaths.login ||
+      final isAuthRoute =
+          path == RoutePaths.login ||
           path == RoutePaths.forgotPassword ||
           path == RoutePaths.apiBaseUrlSettings;
       final isSplash = path == RoutePaths.splash;
-      final emailedResetToken =
-          state.uri.queryParameters['reset-password']?.trim();
+      final emailedResetToken = state.uri.queryParameters['reset-password']
+          ?.trim();
       final routeToken = path == RoutePaths.forgotPassword
           ? state.uri.queryParameters['token']?.trim()
           : null;
@@ -127,37 +143,96 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         return null;
       }
 
-      if (authState.status == AuthStatus.initial ||
-          authState.status == AuthStatus.loading) {
+      if (authState.status == AuthStatus.initial) {
         return isSplash ? null : RoutePaths.splash;
+      }
+      if (authState.status == AuthStatus.loading) {
+        return isAuthRoute || isSplash ? null : RoutePaths.splash;
       }
 
       if (!authState.isAuthenticated) {
+        previousPrincipal = null;
         return isAuthRoute ? null : RoutePaths.login;
       }
 
       final activeRole = authState.activeRole;
-      if (activeRole == null) {
+      if (activeRole == null || activeRole == UserRole.unknown) {
         return RoutePaths.login;
       }
 
-      if (isSplash || isAuthRoute) {
+      final principal =
+          '${activeRole.apiValue}:${authState.user!.id}:${authState.isDemo}';
+      final principalChanged =
+          previousPrincipal != null && previousPrincipal != principal;
+      previousPrincipal = principal;
+      if (isSplash || isAuthRoute || principalChanged) {
         return activeRole.homePath;
       }
 
-      if (authState.user?.isSubuser == true &&
-          (path == RoutePaths.userSubUsers ||
-              path.startsWith('${RoutePaths.userSubUsers}/'))) {
-        return RoutePaths.userAccounts;
-      }
-
-      if (!path.startsWith(activeRole.routePrefix)) {
+      if (!PermissionHelper.canAccessUserPath(authState.user, path)) {
         return activeRole.homePath;
       }
 
       return null;
     },
     routes: [
+      for (final path in const [
+        RoutePaths.superadminSecurity,
+        RoutePaths.adminSecurity,
+        RoutePaths.userSecurity,
+        RoutePaths.driverSecurity,
+      ])
+        GoRoute(
+          path: path,
+          redirect: (context, state) =>
+              '${state.uri.path.replaceFirst(RegExp(r'/security$'), '/settings')}?tab=security',
+        ),
+      GoRoute(
+        path: RoutePaths.userOperations,
+        builder: (context, state) => const UserOperationsScreen(),
+      ),
+      GoRoute(
+        path: RoutePaths.userMessages,
+        builder: (context, state) => const UserMessagesScreen(),
+      ),
+      GoRoute(
+        path: RoutePaths.driverHome,
+        builder: (context, state) => const DriverHomeScreen(),
+      ),
+      GoRoute(
+        path: RoutePaths.driverDashboard,
+        builder: (context, state) => const DriverDashboardScreen(),
+      ),
+      GoRoute(
+        path: RoutePaths.driverTrips,
+        builder: (context, state) => const DriverTripsScreen(),
+      ),
+      GoRoute(
+        path: RoutePaths.driverCalendar,
+        builder: (context, state) => const DriverCalendarScreen(),
+      ),
+      GoRoute(
+        path: RoutePaths.driverDocuments,
+        builder: (context, state) => const DriverDocumentsScreen(),
+      ),
+      GoRoute(
+        path: RoutePaths.driverMessages,
+        builder: (context, state) => const DriverMessagesScreen(),
+      ),
+      GoRoute(
+        path: RoutePaths.driverNotifications,
+        builder: (context, state) => const DriverNotificationsScreen(),
+      ),
+      GoRoute(
+        path: RoutePaths.driverProfile,
+        builder: (context, state) => const ProfileScreen(),
+      ),
+      GoRoute(
+        path: RoutePaths.driverSettings,
+        builder: (context, state) => DriverSettingsScreen(
+          openSecurity: state.uri.queryParameters['tab'] == 'security',
+        ),
+      ),
       GoRoute(
         path: RoutePaths.splash,
         builder: (context, state) => const SplashScreen(),
@@ -169,7 +244,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: RoutePaths.forgotPassword,
         builder: (context, state) => ForgotPasswordScreen(
-          initialToken: state.uri.queryParameters['token'] ??
+          initialToken:
+              state.uri.queryParameters['token'] ??
               state.uri.queryParameters['reset-password'],
         ),
       ),
@@ -222,10 +298,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const SuperadminPaymentsScreen(),
           ),
           GoRoute(
-            path: RoutePaths.superadminDevices,
-            redirect: (context, state) => RoutePaths.superadminVehicles,
-          ),
-          GoRoute(
             path: RoutePaths.superadminNotifications,
             builder: (context, state) => const SuperadminNotificationsScreen(),
           ),
@@ -234,12 +306,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const ProfileScreen(),
           ),
           GoRoute(
-            path: RoutePaths.superadminReports,
-            redirect: (context, state) => RoutePaths.superadminDashboard,
-          ),
-          GoRoute(
             path: RoutePaths.superadminSettings,
-            builder: (context, state) => const SuperadminSettingsScreen(),
+            builder: (context, state) => SuperadminSettingsScreen(
+              openSecurity: state.uri.queryParameters['tab'] == 'security',
+            ),
           ),
         ],
       ),
@@ -361,16 +431,21 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const AdminPlansScreen(),
           ),
           GoRoute(
-            path: RoutePaths.adminReports,
-            redirect: (context, state) => RoutePaths.adminDashboard,
-          ),
-          GoRoute(
             path: RoutePaths.adminSettings,
-            builder: (context, state) => const AdminSettingsScreen(),
+            builder: (context, state) =>
+                ref.watch(authControllerProvider).role == UserRole.team
+                ? TeamSettingsScreen(
+                    openSecurity:
+                        state.uri.queryParameters['tab'] == 'security',
+                  )
+                : AdminSettingsScreen(
+                    openSecurity:
+                        state.uri.queryParameters['tab'] == 'security',
+                  ),
           ),
           GoRoute(
-            path: RoutePaths.adminRoles,
-            redirect: (context, state) => RoutePaths.adminDashboard,
+            path: RoutePaths.adminTransactions,
+            builder: (context, state) => const AdminTransactionsScreen(),
           ),
         ],
       ),
@@ -525,7 +600,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: RoutePaths.userSettings,
-            builder: (context, state) => const UserSettingsScreen(),
+            builder: (context, state) => UserSettingsScreen(
+              openSecurity: state.uri.queryParameters['tab'] == 'security',
+            ),
           ),
         ],
       ),

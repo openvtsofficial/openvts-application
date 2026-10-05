@@ -5,6 +5,7 @@ import '../../../../core/theme/open_vts_colors.dart';
 import '../../../../core/theme/open_vts_radius.dart';
 import '../../../../core/theme/open_vts_spacing.dart';
 import '../../../../core/theme/open_vts_typography.dart';
+import '../../../../shared/helpers/mobile_text.dart';
 import '../../../../shared/widgets/open_vts_card.dart';
 import '../../../../shared/widgets/open_vts_page_scaffold.dart';
 import '../../controllers/admin_providers.dart';
@@ -22,7 +23,7 @@ class AdminLogsScreen extends ConsumerWidget {
     final controller = ref.read(adminLogsControllerProvider.notifier);
 
     return OpenVtsPageScaffold(
-      title: 'Logs',
+      title: context.mobileText('Logs'),
       headerMode: OpenVtsPageHeaderMode.closeable,
       padding: EdgeInsets.zero,
       body: RefreshIndicator(
@@ -44,19 +45,25 @@ class AdminLogsScreen extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Logs', style: OpenVtsTypography.titleSmall),
+                        Text(
+                          context.mobileText('Logs'),
+                          style: OpenVtsTypography.titleSmall,
+                        ),
                         const SizedBox(height: OpenVtsSpacing.xxs),
                         Text(
-                          'Activity, vehicle event, and telemetry logs',
-                          style: OpenVtsTypography.meta
-                              .copyWith(color: OpenVtsColors.textSecondary),
+                          context.mobileText(
+                            'Activity, vehicle event, and telemetry logs',
+                          ),
+                          style: OpenVtsTypography.meta.copyWith(
+                            color: OpenVtsColors.textSecondary,
+                          ),
                         ),
                         const SizedBox(height: OpenVtsSpacing.sm),
                         Row(
                           children: [
                             Expanded(
                               child: _TabChip(
-                                label: 'Activity Logs',
+                                label: context.mobileText('Activity Logs'),
                                 selected:
                                     state.selectedTab == AdminLogsTab.activity,
                                 onTap: () =>
@@ -66,7 +73,7 @@ class AdminLogsScreen extends ConsumerWidget {
                             const SizedBox(width: OpenVtsSpacing.xs),
                             Expanded(
                               child: _TabChip(
-                                label: 'Vehicle Events',
+                                label: context.mobileText('Vehicle Events'),
                                 selected:
                                     state.selectedTab == AdminLogsTab.vehicle,
                                 onTap: () =>
@@ -76,11 +83,12 @@ class AdminLogsScreen extends ConsumerWidget {
                             const SizedBox(width: OpenVtsSpacing.xs),
                             Expanded(
                               child: _TabChip(
-                                label: 'Telemetry Logs',
+                                label: context.mobileText('Telemetry Logs'),
                                 selected:
                                     state.selectedTab == AdminLogsTab.telemetry,
-                                onTap: () => controller
-                                    .selectTab(AdminLogsTab.telemetry),
+                                onTap: () => controller.selectTab(
+                                  AdminLogsTab.telemetry,
+                                ),
                               ),
                             ),
                           ],
@@ -95,8 +103,9 @@ class AdminLogsScreen extends ConsumerWidget {
               ),
             ),
             SliverPadding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: OpenVtsSpacing.sm),
+              padding: const EdgeInsets.symmetric(
+                horizontal: OpenVtsSpacing.sm,
+              ),
               sliver: SliverToBoxAdapter(
                 child: SizedBox(
                   height: MediaQuery.of(context).size.height * 0.72,

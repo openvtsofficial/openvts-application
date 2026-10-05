@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:open_vts/features/admin/controllers/admin_logs_controller.dart';
 import 'package:open_vts/features/admin/models/admin_logs_model.dart';
-import 'package:open_vts/features/admin/models/admin_logs_state.dart';
 import 'package:open_vts/features/admin/services/admin_logs_service.dart';
 
 // ---------------------------------------------------------------------------
@@ -28,7 +27,7 @@ class _FakeService extends Fake implements AdminLogsService {
     String? to,
     String? cursorId,
   }) async =>
-      AdminActivityLogPage(items: const [], nextCursorId: null, hasMore: false);
+      const AdminActivityLogPage(items: [], nextCursorId: null, hasMore: false);
 
   @override
   Future<AdminVehicleEventLogPage> getVehicleEventLogs({
@@ -43,8 +42,7 @@ class _FakeService extends Fake implements AdminLogsService {
     String? q,
     bool? isRead,
     bool dedupe = true,
-  }) async =>
-      AdminVehicleEventLogPage(items: const [], nextCursorId: null);
+  }) async => const AdminVehicleEventLogPage(items: [], nextCursorId: null);
 
   @override
   Future<AdminTelemetryLogPage> getTelemetryLogs({
@@ -104,22 +102,27 @@ void main() {
       );
     });
 
-    test('initial load sends the visible telemetryFrom to the service',
-        () async {
-      final svc = _FakeService();
-      final ctrl = _build(svc);
-      await Future<void>.delayed(Duration.zero);
-      svc.telemetryCalls.clear();
+    test(
+      'initial load sends the visible telemetryFrom to the service',
+      () async {
+        final svc = _FakeService();
+        final ctrl = _build(svc);
+        await Future<void>.delayed(Duration.zero);
+        svc.telemetryCalls.clear();
 
-      await ctrl.loadTelemetryLogs();
+        await ctrl.loadTelemetryLogs();
 
-      expect(svc.telemetryCalls, hasLength(1));
-      final call = svc.telemetryCalls.first;
-      expect(call['from'], isNotNull,
+        expect(svc.telemetryCalls, hasLength(1));
+        final call = svc.telemetryCalls.first;
+        expect(
+          call['from'],
+          isNotNull,
           reason:
-              'the visible 1h default must be sent — no silent hidden override');
-      expect(call['from'], contains('T'));
-    });
+              'the visible 1h default must be sent — no silent hidden override',
+        );
+        expect(call['from'], contains('T'));
+      },
+    );
 
     // -----------------------------------------------------------------------
     // No hidden fallback when user clears the date range
@@ -134,8 +137,11 @@ void main() {
       ctrl.setTelemetryFilters(clearFrom: true);
       await ctrl.loadTelemetryLogs();
 
-      expect(svc.telemetryCalls.first['from'], isNull,
-          reason: 'clearing From must omit from entirely');
+      expect(
+        svc.telemetryCalls.first['from'],
+        isNull,
+        reason: 'clearing From must omit from entirely',
+      );
     });
 
     test('clearFrom + clearTo both null after clear', () {
@@ -166,8 +172,11 @@ void main() {
       expect(ctrl.state.telemetryVehicleId, '42');
 
       ctrl.setTelemetryFilters(clearVehicleId: true);
-      expect(ctrl.state.telemetryVehicleId, isNull,
-          reason: 'clearVehicleId must nullify telemetryVehicleId');
+      expect(
+        ctrl.state.telemetryVehicleId,
+        isNull,
+        reason: 'clearVehicleId must nullify telemetryVehicleId',
+      );
 
       await ctrl.loadTelemetryLogs();
       expect(svc.telemetryCalls.first['vehicleId'], isNull);
@@ -249,9 +258,7 @@ void main() {
       final svc = _FakeService();
       final ctrl = _build(svc);
 
-      ctrl.state = ctrl.state.copyWith(
-        telemetryNextCursor: 'old-cursor',
-      );
+      ctrl.state = ctrl.state.copyWith(telemetryNextCursor: 'old-cursor');
 
       ctrl.setTelemetryFilters(packetType: 'LOCATION');
 
@@ -263,83 +270,89 @@ void main() {
     // Load More preserves all active filters and sends beforeId cursor
     // -----------------------------------------------------------------------
 
-    test('loadMoreTelemetryLogs carries all filters and sends beforeId',
-        () async {
-      final svc = _FakeService();
-      final ctrl = _build(svc);
-      await Future<void>.delayed(Duration.zero);
-      svc.telemetryCalls.clear();
+    test(
+      'loadMoreTelemetryLogs carries all filters and sends beforeId',
+      () async {
+        final svc = _FakeService();
+        final ctrl = _build(svc);
+        await Future<void>.delayed(Duration.zero);
+        svc.telemetryCalls.clear();
 
-      final from = DateTime.utc(2026, 6, 1);
-      final to = DateTime.utc(2026, 6, 30, 23, 59, 59);
-      ctrl.setTelemetryFilters(
-        vehicleId: '11',
-        packetType: 'EVENT',
-        from: from,
-        to: to,
-      );
-      await ctrl.loadTelemetryLogs();
+        final from = DateTime.utc(2026, 6, 1);
+        final to = DateTime.utc(2026, 6, 30, 23, 59, 59);
+        ctrl.setTelemetryFilters(
+          vehicleId: '11',
+          packetType: 'EVENT',
+          from: from,
+          to: to,
+        );
+        await ctrl.loadTelemetryLogs();
 
-      ctrl.state = ctrl.state.copyWith(
-        telemetryNextCursor: 'abc-cursor',
-        isLoadingTelemetry: false,
-        isLoadingMoreTelemetry: false,
-      );
+        ctrl.state = ctrl.state.copyWith(
+          telemetryNextCursor: 'abc-cursor',
+          isLoadingTelemetry: false,
+          isLoadingMoreTelemetry: false,
+        );
 
-      await ctrl.loadMoreTelemetryLogs();
+        await ctrl.loadMoreTelemetryLogs();
 
-      expect(svc.telemetryCalls, hasLength(2));
-      final moreCall = svc.telemetryCalls[1];
-      expect(moreCall['beforeId'], 'abc-cursor');
-      expect(moreCall['vehicleId'], '11');
-      expect(moreCall['packetType'], 'EVENT');
-      expect(moreCall['from'], contains('T'));
-      expect(moreCall['to'], contains('T'));
-    });
+        expect(svc.telemetryCalls, hasLength(2));
+        final moreCall = svc.telemetryCalls[1];
+        expect(moreCall['beforeId'], 'abc-cursor');
+        expect(moreCall['vehicleId'], '11');
+        expect(moreCall['packetType'], 'EVENT');
+        expect(moreCall['from'], contains('T'));
+        expect(moreCall['to'], contains('T'));
+      },
+    );
 
     // -----------------------------------------------------------------------
     // Full reset sends null vehicleId and no from/to
     // -----------------------------------------------------------------------
 
-    test('clearing all telemetry filters sends null vehicleId/from/to',
-        () async {
-      final svc = _FakeService();
-      final ctrl = _build(svc);
-      await Future<void>.delayed(Duration.zero);
-      svc.telemetryCalls.clear();
+    test(
+      'clearing all telemetry filters sends null vehicleId/from/to',
+      () async {
+        final svc = _FakeService();
+        final ctrl = _build(svc);
+        await Future<void>.delayed(Duration.zero);
+        svc.telemetryCalls.clear();
 
-      ctrl.setTelemetryFilters(
-        vehicleId: '3',
-        from: DateTime.utc(2026, 1, 1),
-        to: DateTime.utc(2026, 12, 31),
-      );
+        ctrl.setTelemetryFilters(
+          vehicleId: '3',
+          from: DateTime.utc(2026, 1, 1),
+          to: DateTime.utc(2026, 12, 31),
+        );
 
-      ctrl.setTelemetryFilters(
-        clearVehicleId: true,
-        clearFrom: true,
-        clearTo: true,
-      );
-      await ctrl.loadTelemetryLogs();
+        ctrl.setTelemetryFilters(
+          clearVehicleId: true,
+          clearFrom: true,
+          clearTo: true,
+        );
+        await ctrl.loadTelemetryLogs();
 
-      final call = svc.telemetryCalls.first;
-      expect(call['vehicleId'], isNull);
-      expect(call['from'], isNull);
-      expect(call['to'], isNull);
-    });
+        final call = svc.telemetryCalls.first;
+        expect(call['vehicleId'], isNull);
+        expect(call['from'], isNull);
+        expect(call['to'], isNull);
+      },
+    );
 
     // -----------------------------------------------------------------------
     // Error handling
     // -----------------------------------------------------------------------
 
-    test('service error sets sectionErrorMessage and clears isLoadingTelemetry',
-        () async {
-      final svc = _FakeService()..throwError = ArgumentError('backend error');
-      final ctrl = _build(svc);
+    test(
+      'service error sets sectionErrorMessage and clears isLoadingTelemetry',
+      () async {
+        final svc = _FakeService()..throwError = ArgumentError('backend error');
+        final ctrl = _build(svc);
 
-      await ctrl.loadTelemetryLogs();
+        await ctrl.loadTelemetryLogs();
 
-      expect(ctrl.state.isLoadingTelemetry, isFalse);
-      expect(ctrl.state.sectionErrorMessage, isNotNull);
-    });
+        expect(ctrl.state.isLoadingTelemetry, isFalse);
+        expect(ctrl.state.sectionErrorMessage, isNotNull);
+      },
+    );
   });
 }

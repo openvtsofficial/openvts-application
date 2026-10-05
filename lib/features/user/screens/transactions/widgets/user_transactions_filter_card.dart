@@ -4,6 +4,7 @@ import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../../../shared/widgets/open_vts_date_time_range_selector.dart';
 import '../../../../../shared/widgets/open_vts_search_field.dart';
@@ -83,7 +84,7 @@ class _UserTransactionsFilterCardState
           Row(
             children: [
               Text(
-                'Filters',
+                context.mobileText('Filters'),
                 style: OpenVtsTypography.label.copyWith(
                   fontWeight: FontWeight.w700,
                   color: headingColor,
@@ -103,7 +104,7 @@ class _UserTransactionsFilterCardState
                   ),
                   icon: const Icon(Icons.filter_alt_off_outlined, size: 14),
                   label: Text(
-                    'Clear',
+                    context.mobileText('Clear'),
                     style: OpenVtsTypography.meta.copyWith(
                       fontWeight: FontWeight.w700,
                     ),
@@ -114,18 +115,20 @@ class _UserTransactionsFilterCardState
           const SizedBox(height: OpenVtsSpacing.xs),
           OpenVtsSearchField(
             key: ValueKey<int>(_searchFieldVersion),
-            hintText: 'Search reference, provider, user, vehicle',
+            hintText: context.mobileText(
+              'Search reference, provider, user, vehicle',
+            ),
             onChanged: widget.onSearchChanged,
           ),
           const SizedBox(height: OpenVtsSpacing.sm),
-          const _SectionLabel(text: 'Date Range'),
+          _SectionLabel(text: context.mobileText('Date Range')),
           const SizedBox(height: OpenVtsSpacing.xs),
           Wrap(
             spacing: OpenVtsSpacing.xs,
             runSpacing: OpenVtsSpacing.xs,
             children: [
               _CompactChoiceChip(
-                label: 'This Month',
+                label: context.mobileText('This Month'),
                 selected:
                     widget.rangePreset == UserTransactionsRangePreset.thisMonth,
                 onTap: () => widget.onRangePresetChanged(
@@ -133,15 +136,16 @@ class _UserTransactionsFilterCardState
                 ),
               ),
               _CompactChoiceChip(
-                label: 'Last 30 Days',
-                selected: widget.rangePreset ==
+                label: context.mobileText('Last 30 Days'),
+                selected:
+                    widget.rangePreset ==
                     UserTransactionsRangePreset.last30Days,
                 onTap: () => widget.onRangePresetChanged(
                   UserTransactionsRangePreset.last30Days,
                 ),
               ),
               _CompactChoiceChip(
-                label: 'This Year',
+                label: context.mobileText('This Year'),
                 selected:
                     widget.rangePreset == UserTransactionsRangePreset.thisYear,
                 onTap: () => widget.onRangePresetChanged(
@@ -149,7 +153,7 @@ class _UserTransactionsFilterCardState
                 ),
               ),
               _CompactChoiceChip(
-                label: 'Custom',
+                label: context.mobileText('Custom'),
                 selected:
                     widget.rangePreset == UserTransactionsRangePreset.custom,
                 onTap: () => widget.onRangePresetChanged(
@@ -161,44 +165,44 @@ class _UserTransactionsFilterCardState
           if (widget.rangePreset == UserTransactionsRangePreset.custom) ...[
             const SizedBox(height: OpenVtsSpacing.sm),
             OpenVtsDateTimeRangeField(
-              label: 'Custom Range',
+              label: context.mobileText('Custom Range'),
               value: OpenVtsDateTimeRange(
                 start: widget.customFrom,
                 end: widget.customTo,
               ),
               onChanged: (range) =>
                   widget.onCustomRangeChanged(range.start, range.end),
-              title: 'Choose Date Range',
+              title: context.mobileText('Choose Date Range'),
             ),
           ],
           const SizedBox(height: OpenVtsSpacing.sm),
-          const _SectionLabel(text: 'Status'),
+          _SectionLabel(text: context.mobileText('Status')),
           const SizedBox(height: OpenVtsSpacing.xs),
           Wrap(
             spacing: OpenVtsSpacing.xs,
             runSpacing: OpenVtsSpacing.xs,
             children: [
               _CompactChoiceChip(
-                label: 'All',
+                label: context.mobileText('All'),
                 selected: widget.selectedStatus == null,
                 onTap: () => widget.onStatusChanged(null),
               ),
               _CompactChoiceChip(
-                label: 'Success',
+                label: context.mobileText('Success'),
                 selected:
                     widget.selectedStatus == UserTransactionStatus.success,
                 onTap: () =>
                     widget.onStatusChanged(UserTransactionStatus.success),
               ),
               _CompactChoiceChip(
-                label: 'Pending',
+                label: context.mobileText('Pending'),
                 selected:
                     widget.selectedStatus == UserTransactionStatus.pending,
                 onTap: () =>
                     widget.onStatusChanged(UserTransactionStatus.pending),
               ),
               _CompactChoiceChip(
-                label: 'Failed',
+                label: context.mobileText('Failed'),
                 selected: widget.selectedStatus == UserTransactionStatus.failed,
                 onTap: () =>
                     widget.onStatusChanged(UserTransactionStatus.failed),
@@ -215,8 +219,9 @@ class _UserTransactionsFilterCardState
             style: TextButton.styleFrom(
               foregroundColor: OpenVtsColors.textSecondary,
               minimumSize: const Size(44, 44),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: OpenVtsSpacing.xs),
+              padding: const EdgeInsets.symmetric(
+                horizontal: OpenVtsSpacing.xs,
+              ),
             ),
             icon: Icon(
               showAdvancedFilters
@@ -226,8 +231,8 @@ class _UserTransactionsFilterCardState
             ),
             label: Text(
               showAdvancedFilters
-                  ? 'Hide payment filters'
-                  : 'Show payment filters',
+                  ? context.mobileText('Hide payment filters')
+                  : context.mobileText('Show payment filters'),
               style: OpenVtsTypography.meta.copyWith(
                 fontWeight: FontWeight.w700,
               ),
@@ -235,19 +240,19 @@ class _UserTransactionsFilterCardState
           ),
           if (showAdvancedFilters) ...[
             const SizedBox(height: OpenVtsSpacing.xs),
-            const _SectionLabel(text: 'Payment Mode'),
+            _SectionLabel(text: context.mobileText('Payment Mode')),
             const SizedBox(height: OpenVtsSpacing.xs),
             Wrap(
               spacing: OpenVtsSpacing.xs,
               runSpacing: OpenVtsSpacing.xs,
               children: [
                 _CompactChoiceChip(
-                  label: 'All',
+                  label: context.mobileText('All'),
                   selected: widget.selectedPaymentMode == null,
                   onTap: () => widget.onPaymentModeChanged(null),
                 ),
                 _CompactChoiceChip(
-                  label: 'Cash',
+                  label: context.mobileText('Cash'),
                   selected: widget.selectedPaymentMode == UserPaymentMode.cash,
                   onTap: () =>
                       widget.onPaymentModeChanged(UserPaymentMode.cash),
@@ -258,41 +263,42 @@ class _UserTransactionsFilterCardState
                   onTap: () => widget.onPaymentModeChanged(UserPaymentMode.upi),
                 ),
                 _CompactChoiceChip(
-                  label: 'Bank Transfer',
-                  selected: widget.selectedPaymentMode ==
+                  label: context.mobileText('Bank Transfer'),
+                  selected:
+                      widget.selectedPaymentMode ==
                       UserPaymentMode.bankTransfer,
                   onTap: () =>
                       widget.onPaymentModeChanged(UserPaymentMode.bankTransfer),
                 ),
                 _CompactChoiceChip(
-                  label: 'Card',
+                  label: context.mobileText('Card'),
                   selected: widget.selectedPaymentMode == UserPaymentMode.card,
                   onTap: () =>
                       widget.onPaymentModeChanged(UserPaymentMode.card),
                 ),
                 _CompactChoiceChip(
-                  label: 'Wallet',
+                  label: context.mobileText('Wallet'),
                   selected:
                       widget.selectedPaymentMode == UserPaymentMode.wallet,
                   onTap: () =>
                       widget.onPaymentModeChanged(UserPaymentMode.wallet),
                 ),
                 _CompactChoiceChip(
-                  label: 'Razorpay',
+                  label: context.mobileText('Razorpay'),
                   selected:
                       widget.selectedPaymentMode == UserPaymentMode.razorpay,
                   onTap: () =>
                       widget.onPaymentModeChanged(UserPaymentMode.razorpay),
                 ),
                 _CompactChoiceChip(
-                  label: 'Stripe',
+                  label: context.mobileText('Stripe'),
                   selected:
                       widget.selectedPaymentMode == UserPaymentMode.stripe,
                   onTap: () =>
                       widget.onPaymentModeChanged(UserPaymentMode.stripe),
                 ),
                 _CompactChoiceChip(
-                  label: 'Other',
+                  label: context.mobileText('Other'),
                   selected: widget.selectedPaymentMode == UserPaymentMode.other,
                   onTap: () =>
                       widget.onPaymentModeChanged(UserPaymentMode.other),
@@ -300,27 +306,30 @@ class _UserTransactionsFilterCardState
               ],
             ),
             const SizedBox(height: OpenVtsSpacing.sm),
-            const _SectionLabel(text: 'Payment Type'),
+            _SectionLabel(text: context.mobileText('Payment Type')),
             const SizedBox(height: OpenVtsSpacing.xs),
             Wrap(
               spacing: OpenVtsSpacing.xs,
               runSpacing: OpenVtsSpacing.xs,
               children: [
                 _CompactChoiceChip(
-                  label: 'All',
+                  label: context.mobileText('All'),
                   selected: widget.selectedDirection == null,
                   onTap: () => widget.onDirectionChanged(null),
                 ),
                 _CompactChoiceChip(
-                  label: 'Credit',
-                  selected: widget.selectedDirection ==
+                  label: context.mobileText('Credit'),
+                  selected:
+                      widget.selectedDirection ==
                       UserTransactionDirection.credit,
-                  onTap: () => widget
-                      .onDirectionChanged(UserTransactionDirection.credit),
+                  onTap: () => widget.onDirectionChanged(
+                    UserTransactionDirection.credit,
+                  ),
                 ),
                 _CompactChoiceChip(
-                  label: 'Debit',
-                  selected: widget.selectedDirection ==
+                  label: context.mobileText('Debit'),
+                  selected:
+                      widget.selectedDirection ==
                       UserTransactionDirection.debit,
                   onTap: () =>
                       widget.onDirectionChanged(UserTransactionDirection.debit),
@@ -376,11 +385,13 @@ class _CompactChoiceChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final backgroundColor =
-        selected ? (isDark ? Colors.black : Colors.white) : Colors.transparent;
+    final backgroundColor = selected
+        ? (isDark ? Colors.black : Colors.white)
+        : Colors.transparent;
     final textColor = isDark ? Colors.white : Colors.black;
-    final borderColor =
-        isDark ? Colors.white : Colors.black.withValues(alpha: 0.2);
+    final borderColor = isDark
+        ? Colors.white
+        : Colors.black.withValues(alpha: 0.2);
 
     return Material(
       color: backgroundColor,

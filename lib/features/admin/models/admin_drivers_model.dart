@@ -296,7 +296,7 @@ class AdminDriverCreateRequest {
       'mobile': mobile.trim(),
       'primaryUserid': primaryUserid.trim(),
       'username': username.trim(),
-      'password': password.trim(),
+      'password': password,
       'countryCode': countryCode.trim().toUpperCase(),
     };
     final trimmedEmail = email.trim();

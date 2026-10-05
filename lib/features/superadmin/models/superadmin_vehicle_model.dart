@@ -1,10 +1,7 @@
 import '../../notifications/models/app_notification.dart';
 
 class SuperadminVehiclePage {
-  const SuperadminVehiclePage({
-    required this.items,
-    required this.totalCount,
-  });
+  const SuperadminVehiclePage({required this.items, required this.totalCount});
 
   final List<SuperadminVehicleRecord> items;
   final int totalCount;
@@ -16,27 +13,22 @@ class SuperadminVehiclePage {
           .where((item) => item.hasIdentity)
           .toList();
 
-      return SuperadminVehiclePage(
-        items: items,
-        totalCount: items.length,
-      );
+      return SuperadminVehiclePage(items: items, totalCount: items.length);
     }
 
     final source = _asMap(json);
-    final rawItems = _firstList(
-          source,
-          const [
-            'items',
-            'rows',
-            'records',
-            'docs',
-            'data',
-            'results',
-            'list',
-            'vehicles',
-            'vehicle',
-          ],
-        ) ??
+    final rawItems =
+        _firstList(source, const [
+          'items',
+          'rows',
+          'records',
+          'docs',
+          'data',
+          'results',
+          'list',
+          'vehicles',
+          'vehicle',
+        ]) ??
         const <dynamic>[];
 
     final items = rawItems
@@ -44,18 +36,15 @@ class SuperadminVehiclePage {
         .where((item) => item.hasIdentity)
         .toList();
 
-    final totalCount = _firstInt(
-      source,
-      const [
-        'count',
-        'total',
-        'totalCount',
-        'recordCount',
-        'recordsCount',
-        'vehiclesCount',
-        'totalVehicles',
-      ],
-    );
+    final totalCount = _firstInt(source, const [
+      'count',
+      'total',
+      'totalCount',
+      'recordCount',
+      'recordsCount',
+      'vehiclesCount',
+      'totalVehicles',
+    ]);
 
     return SuperadminVehiclePage(
       items: items,
@@ -78,6 +67,8 @@ class SuperadminVehicleRecord {
     required this.primaryExpiry,
     required this.secondaryExpiry,
     required this.createdAt,
+    this.isLicenseBlocked = false,
+    this.licenseBlockReason,
   });
 
   final String id;
@@ -92,6 +83,8 @@ class SuperadminVehicleRecord {
   final DateTime? primaryExpiry;
   final DateTime? secondaryExpiry;
   final DateTime? createdAt;
+  final bool isLicenseBlocked;
+  final String? licenseBlockReason;
 
   bool get hasIdentity {
     return id.isNotEmpty ||
@@ -105,6 +98,7 @@ class SuperadminVehicleRecord {
       plateNumber,
       type,
       status,
+      licenseBlockReason ?? '',
       imei,
       sim,
       primaryUser,
@@ -113,235 +107,209 @@ class SuperadminVehicleRecord {
   }
 
   factory SuperadminVehicleRecord.fromJson(Map<String, dynamic> json) {
-    final vehicleType = _firstMap(
-      json,
-      const [
-        'vehicleType',
-        'vehicle_type',
-        'typeDetails',
-        'categoryDetails',
-        'vehicletype',
-      ],
-    );
-    final device = _firstMap(
-      json,
-      const ['device', 'tracker', 'unit', 'deviceDetails'],
-    );
+    final vehicleType = _firstMap(json, const [
+      'vehicleType',
+      'vehicle_type',
+      'typeDetails',
+      'categoryDetails',
+      'vehicletype',
+    ]);
+    final device = _firstMap(json, const [
+      'device',
+      'tracker',
+      'unit',
+      'deviceDetails',
+    ]);
     // The superadmin vehicles API uses Prisma relation names:
     // `userPrimary` is the user assigned to the vehicle and `userAddedBy`
     // is the administrator who created it. Keep the legacy aliases for
     // compatibility with older/custom deployments.
-    final primaryUser = _firstMap(
-      json,
-      const [
-        'userPrimary',
-        'primaryUser',
-        'primary_user',
-        'user',
-        'customer',
-        'owner',
-      ],
-    );
-    final addedBy = _firstMap(
-      json,
-      const [
-        'userAddedBy',
-        'addedBy',
-        'added_by',
-        'createdBy',
-        'created_by',
-        'admin',
-      ],
-    );
+    final primaryUser = _firstMap(json, const [
+      'userPrimary',
+      'primaryUser',
+      'primary_user',
+      'user',
+      'customer',
+      'owner',
+    ]);
+    final addedBy = _firstMap(json, const [
+      'userAddedBy',
+      'addedBy',
+      'added_by',
+      'createdBy',
+      'created_by',
+      'admin',
+    ]);
 
-    final plateNumber = _firstString(
-          json,
-          const [
-            'plateNumber',
-            'plate_number',
-            'plateNo',
-            'plate_no',
-            'vehicleNumber',
-            'vehicle_number',
-            'registrationNo',
-            'registration_no',
-          ],
-        ) ??
+    final plateNumber =
+        _firstString(json, const [
+          'plateNumber',
+          'plate_number',
+          'plateNo',
+          'plate_no',
+          'vehicleNumber',
+          'vehicle_number',
+          'registrationNo',
+          'registration_no',
+        ]) ??
         '—';
-    final resolvedName = _firstString(
-          json,
-          const ['name', 'vehicleName', 'label', 'title'],
-        ) ??
+    final resolvedName =
+        _firstString(json, const ['name', 'vehicleName', 'label', 'title']) ??
         (plateNumber == '—' ? 'Vehicle' : plateNumber);
-    final typeSource = (vehicleType == null
+    final typeSource =
+        (vehicleType == null
             ? null
-            : _firstString(
-                vehicleType,
-                const [
-                  'name',
-                  'type',
-                  'vehicleType',
-                  'vehicle_type',
-                  'category',
-                  'subtitle',
-                  'slug',
-                ],
-              )) ??
-        _firstString(
-          json,
-          const [
-            'vehicleType',
-            'vehicle_type',
-            'vehicletype',
-            'vehicleTypeName',
-            'vehicle_type_name',
-            'vehicleCategory',
-            'vehicle_category',
-            'category',
-            'iconType',
-            'icon_type',
-          ],
-        ) ??
+            : _firstString(vehicleType, const [
+                'name',
+                'type',
+                'vehicleType',
+                'vehicle_type',
+                'category',
+                'subtitle',
+                'slug',
+              ])) ??
+        _firstString(json, const [
+          'vehicleType',
+          'vehicle_type',
+          'vehicletype',
+          'vehicleTypeName',
+          'vehicle_type_name',
+          'vehicleCategory',
+          'vehicle_category',
+          'category',
+          'iconType',
+          'icon_type',
+        ]) ??
         resolvedName;
-    final statusFlag = _firstBool(
-      json,
-      const [
-        'activeStatus',
-        'active_status',
-        'isActive',
-        'is_active',
-        'connected',
-        'isConnected',
-      ],
-    );
-    final statusSource = _firstString(
-          json,
-          const [
-            'status',
-            'state',
-            'vehicleStatus',
-            'vehicle_status',
-            'connectionStatus',
-            'connection_status',
-            'statusText',
-            'status_text',
-            'liveStatus',
-            'live_status',
-          ],
-        ) ??
+    final statusFlag = _firstBool(json, const [
+      'activeStatus',
+      'active_status',
+      'isActive',
+      'is_active',
+      'connected',
+      'isConnected',
+    ]);
+    final isLicenseBlocked =
+        _firstBool(json, const ['isLicenseBlocked', 'is_license_blocked']) ??
+        false;
+    final statusSource =
+        _firstString(json, const [
+          'status',
+          'state',
+          'vehicleStatus',
+          'vehicle_status',
+          'connectionStatus',
+          'connection_status',
+          'statusText',
+          'status_text',
+          'liveStatus',
+          'live_status',
+        ]) ??
         (statusFlag == null
             ? null
             : statusFlag
-                ? 'active'
-                : 'inactive') ??
+            ? 'active'
+            : 'inactive') ??
         'Unknown';
 
     return SuperadminVehicleRecord(
-      id: _firstString(json, const ['id', '_id', 'vehicleId', 'uid', 'imei']) ??
+      id:
+          _firstString(json, const ['id', '_id', 'vehicleId', 'uid', 'imei']) ??
           '',
       name: resolvedName,
       plateNumber: plateNumber,
       type: _normalizeVehicleType(typeSource),
-      status: _normalizeVehicleStatus(statusSource),
-      imei: _firstString(
-            device ?? json,
-            const [
-              'imei',
-              'deviceImei',
-              'deviceIMEI',
-              'trackerImei',
-              'unitImei',
-            ],
-          ) ??
+      status: isLicenseBlocked
+          ? 'License blocked'
+          : _normalizeVehicleStatus(statusSource),
+      isLicenseBlocked: isLicenseBlocked,
+      licenseBlockReason: _firstString(json, const [
+        'licenseBlockReason',
+        'license_block_reason',
+      ]),
+      imei:
+          _firstString(device ?? json, const [
+            'imei',
+            'deviceImei',
+            'deviceIMEI',
+            'trackerImei',
+            'unitImei',
+          ]) ??
           '—',
-      sim: _firstString(
-            device ?? json,
-            const [
-              'sim',
-              'simNo',
-              'simNumber',
-              'sim_number',
-              'mobile',
-              'phone',
-            ],
-          ) ??
+      sim:
+          _firstString(device ?? json, const [
+            'sim',
+            'simNo',
+            'simNumber',
+            'sim_number',
+            'mobile',
+            'phone',
+          ]) ??
           '—',
-      primaryUser: _firstString(
-            primaryUser ?? const <String, dynamic>{},
-            const [
-              'name',
-              'fullName',
-              'displayName',
-              'username',
-              'userName',
-              'mobile',
-            ],
-          ) ??
-          _firstString(
-            json,
-            const [
-              'primaryUserName',
-              'primary_user_name',
-              'assignedToName',
-              'assigned_to_name',
-              'primaryUser',
-              'primary_user',
-              'assignedTo',
-              'assigned_to',
-            ],
-          ) ??
+      primaryUser:
+          _firstString(primaryUser ?? const <String, dynamic>{}, const [
+            'name',
+            'fullName',
+            'displayName',
+            'username',
+            'userName',
+            'mobile',
+          ]) ??
+          _firstString(json, const [
+            'primaryUserName',
+            'primary_user_name',
+            'assignedToName',
+            'assigned_to_name',
+            'primaryUser',
+            'primary_user',
+            'assignedTo',
+            'assigned_to',
+          ]) ??
           '—',
-      addedBy: _firstString(
-            addedBy ?? const <String, dynamic>{},
-            const ['name', 'fullName', 'displayName', 'username', 'userName'],
-          ) ??
-          _firstString(
-            json,
-            const [
-              'addedByName',
-              'added_by_name',
-              'createdByName',
-              'created_by_name',
-              'adminName',
-              'administratorName',
-              'addedBy',
-              'added_by',
-              'createdBy',
-              'created_by',
-            ],
-          ) ??
+      addedBy:
+          _firstString(addedBy ?? const <String, dynamic>{}, const [
+            'name',
+            'fullName',
+            'displayName',
+            'username',
+            'userName',
+          ]) ??
+          _firstString(json, const [
+            'addedByName',
+            'added_by_name',
+            'createdByName',
+            'created_by_name',
+            'adminName',
+            'administratorName',
+            'addedBy',
+            'added_by',
+            'createdBy',
+            'created_by',
+          ]) ??
           '—',
-      primaryExpiry: _firstDate(
-        json,
-        const [
-          'primaryExpiry',
-          'primary_expiry',
-          'primaryExpiresAt',
-          'primary_expires_at',
-        ],
-      ),
-      secondaryExpiry: _firstDate(
-        json,
-        const [
-          'secondaryExpiry',
-          'secondary_expiry',
-          'secondaryExpiresAt',
-          'secondary_expires_at',
-        ],
-      ),
-      createdAt: _firstDate(
-            json,
-            const [
-              'createdAt',
-              'updatedAt',
-              'addedAt',
-              'added_at',
-              'date',
-              'time',
-              'lastUpdate',
-              'last_update',
-            ],
-          ) ??
+      primaryExpiry: _firstDate(json, const [
+        'primaryExpiry',
+        'primary_expiry',
+        'primaryExpiresAt',
+        'primary_expires_at',
+      ]),
+      secondaryExpiry: _firstDate(json, const [
+        'secondaryExpiry',
+        'secondary_expiry',
+        'secondaryExpiresAt',
+        'secondary_expires_at',
+      ]),
+      createdAt:
+          _firstDate(json, const [
+            'createdAt',
+            'updatedAt',
+            'addedAt',
+            'added_at',
+            'date',
+            'time',
+            'lastUpdate',
+            'last_update',
+          ]) ??
           _firstDate(device ?? json, const ['updatedAt', 'createdAt']),
     );
   }
@@ -370,8 +338,11 @@ class SuperadminVehicleReplay {
 
     return SuperadminVehicleReplay(
       imei: _firstStringInMaps(candidateMaps, const ['imei']) ?? '',
-      from:
-          _firstDateInMaps(candidateMaps, const ['from', 'start', 'startTime']),
+      from: _firstDateInMaps(candidateMaps, const [
+        'from',
+        'start',
+        'startTime',
+      ]),
       to: _firstDateInMaps(candidateMaps, const ['to', 'end', 'endTime']),
       meta: SuperadminReplayMeta.fromJson(
         _firstMap(payloadMap, const ['meta', 'metadata', 'summary']) ??
@@ -610,10 +581,7 @@ class SuperadminReplayStopMarker {
 enum SuperadminVehicleLogSource { api, live }
 
 class SuperadminVehicleLogPage {
-  const SuperadminVehicleLogPage({
-    required this.items,
-    this.nextCursor,
-  });
+  const SuperadminVehicleLogPage({required this.items, this.nextCursor});
 
   final List<SuperadminVehicleLog> items;
   final String? nextCursor;
@@ -745,7 +713,8 @@ class SuperadminVehicleLog {
       _asMap(data['attributes']),
     ].where((candidate) => candidate.isNotEmpty).toList(growable: false);
     final coordinates = _extractReplayCoordinates(data);
-    final packetType = _firstStringInMaps(candidateMaps, const [
+    final packetType =
+        _firstStringInMaps(candidateMaps, const [
           'packetType',
           'packet_type',
           'type',
@@ -773,7 +742,8 @@ class SuperadminVehicleLog {
       'datetime',
       'date',
     ]);
-    final rawPacket = _firstStringInMaps(candidateMaps, const [
+    final rawPacket =
+        _firstStringInMaps(candidateMaps, const [
           'raw',
           'rawPacket',
           'raw_packet',
@@ -784,7 +754,8 @@ class SuperadminVehicleLog {
           'hex',
         ]) ??
         '';
-    final imei = _firstStringInMaps(candidateMaps, const [
+    final imei =
+        _firstStringInMaps(candidateMaps, const [
           'imei',
           'deviceImei',
           'device_imei',
@@ -798,7 +769,8 @@ class SuperadminVehicleLog {
     }
 
     return SuperadminVehicleLog(
-      id: _firstStringInMaps(candidateMaps, const [
+      id:
+          _firstStringInMaps(candidateMaps, const [
             'id',
             '_id',
             'logId',
@@ -812,7 +784,8 @@ class SuperadminVehicleLog {
       serverTime: serverTime,
       deviceTime: deviceTime,
       packetType: packetType,
-      protocol: _firstStringInMaps(candidateMaps, const [
+      protocol:
+          _firstStringInMaps(candidateMaps, const [
             'protocol',
             'deviceProtocol',
             'device_protocol',
@@ -849,10 +822,7 @@ class SuperadminVehicleLog {
       ]),
       latitude: coordinates?.latitude,
       longitude: coordinates?.longitude,
-      altitude: _firstDoubleInMaps(candidateMaps, const [
-        'altitude',
-        'alt',
-      ]),
+      altitude: _firstDoubleInMaps(candidateMaps, const ['altitude', 'alt']),
       satellites: _firstOptionalIntInMaps(candidateMaps, const [
         'satellites',
         'satelliteCount',
@@ -1005,10 +975,12 @@ class SuperadminVehicleEventPage {
       'has_more',
       'more',
     ]);
-    final hasMore = explicitHasMore ??
+    final hasMore =
+        explicitHasMore ??
         (requestedLimit > 0 && items.length >= requestedLimit);
-    final fallbackCursor =
-        hasMore && items.isNotEmpty ? _vehicleEventCursor(items.last) : null;
+    final fallbackCursor = hasMore && items.isNotEmpty
+        ? _vehicleEventCursor(items.last)
+        : null;
 
     return SuperadminVehicleEventPage(
       items: items,
@@ -1082,8 +1054,8 @@ class SuperadminCustomCommand {
     String? protocol,
     String? deviceProtocol,
     String? stableKey,
-  })  : protocol = protocol ?? deviceProtocol,
-        stableKey = stableKey ?? id;
+  }) : protocol = protocol ?? deviceProtocol,
+       stableKey = stableKey ?? id;
 
   final String id;
   final String command;
@@ -1126,8 +1098,9 @@ class SuperadminCustomCommand {
     if (type.isEmpty) return payload.isEmpty ? 'Command' : payload;
     if (payload.isEmpty || type == payload) return type;
     // Truncate long payloads for the closed field.
-    final short =
-        payload.length > 40 ? '${payload.substring(0, 38)}…' : payload;
+    final short = payload.length > 40
+        ? '${payload.substring(0, 38)}…'
+        : payload;
     return '$type — $short';
   }
 
@@ -1163,7 +1136,8 @@ class SuperadminCustomCommand {
       return null;
     }
 
-    final command = _firstString(source, const [
+    final command =
+        _firstString(source, const [
           'command',
           'payload',
           'text',
@@ -1180,7 +1154,8 @@ class SuperadminCustomCommand {
     final deviceType = _asMap(source['deviceType']);
 
     return SuperadminCustomCommand(
-      id: _firstString(source, const [
+      id:
+          _firstString(source, const [
             'id',
             '_id',
             'commandId',
@@ -1188,52 +1163,42 @@ class SuperadminCustomCommand {
           ]) ??
           command,
       command: command,
-      isActive: _firstBool(source, const [
+      isActive:
+          _firstBool(source, const [
             'isActive',
             'is_active',
             'active',
             'enabled',
           ]) ??
           true,
-      deviceTypeId: _firstOptionalInt(source, const [
-            'deviceTypeId',
-            'device_type_id',
-          ]) ??
+      deviceTypeId:
+          _firstOptionalInt(source, const ['deviceTypeId', 'device_type_id']) ??
           _firstOptionalInt(deviceType, const ['id']),
-      commandTypeId: _firstOptionalInt(source, const [
+      commandTypeId:
+          _firstOptionalInt(source, const [
             'commandTypeId',
             'command_type_id',
           ]) ??
           _firstOptionalInt(commandType, const ['id']),
-      commandTypeName: _firstString(commandType, const [
-            'name',
-            'title',
-            'label',
-          ]) ??
+      commandTypeName:
+          _firstString(commandType, const ['name', 'title', 'label']) ??
           _firstString(source, const [
             'commandTypeName',
             'command_type_name',
             'typeName',
             'type_name',
           ]),
-      commandTypeDescription: _firstString(commandType, const [
-            'description',
-            'details',
-          ]) ??
+      commandTypeDescription:
+          _firstString(commandType, const ['description', 'details']) ??
           _firstString(source, const [
             'commandTypeDescription',
             'command_type_description',
           ]),
-      deviceTypeName: _firstString(deviceType, const [
-            'name',
-            'title',
-            'label',
-          ]) ??
-          _firstString(source, const [
-            'deviceTypeName',
-            'device_type_name',
-          ]),
-      protocol: _firstString(deviceType, const [
+      deviceTypeName:
+          _firstString(deviceType, const ['name', 'title', 'label']) ??
+          _firstString(source, const ['deviceTypeName', 'device_type_name']),
+      protocol:
+          _firstString(deviceType, const [
             'protocol',
             'protocolName',
             'protocol_name',
@@ -1279,7 +1244,8 @@ class SuperadminSystemVariable {
       'code',
       'slug',
     ]);
-    final name = _firstString(source, const [
+    final name =
+        _firstString(source, const [
           'name',
           'label',
           'title',
@@ -1297,7 +1263,8 @@ class SuperadminSystemVariable {
       id: _firstString(source, const ['id', '_id', 'uid']) ?? key ?? name,
       key: key ?? name,
       name: name,
-      value: _firstString(source, const [
+      value:
+          _firstString(source, const [
             'value',
             'initialValue',
             'initial_value',
@@ -1313,7 +1280,8 @@ class SuperadminSystemVariable {
         'helpText',
         'help_text',
       ]),
-      isActive: _firstBool(source, const [
+      isActive:
+          _firstBool(source, const [
             'isActive',
             'is_active',
             'active',
@@ -1378,15 +1346,8 @@ class SuperadminSendCommandResult {
         'isConnected',
         'is_connected',
       ]),
-      queued: _firstBoolInMaps(maps, const [
-        'queued',
-        'isQueued',
-        'is_queued',
-      ]),
-      queueId: _firstStringInMaps(maps, const [
-        'queueId',
-        'queue_id',
-      ]),
+      queued: _firstBoolInMaps(maps, const ['queued', 'isQueued', 'is_queued']),
+      queueId: _firstStringInMaps(maps, const ['queueId', 'queue_id']),
       requestedAt: _firstDateInMaps(maps, const [
         'requestedAt',
         'requested_at',
@@ -1396,14 +1357,8 @@ class SuperadminSendCommandResult {
         'created_at',
         'created',
       ]),
-      message: _firstStringInMaps(maps, const [
-        'message',
-        'msg',
-      ]),
-      status: _firstStringInMaps(maps, const [
-        'status',
-        'state',
-      ]),
+      message: _firstStringInMaps(maps, const ['message', 'msg']),
+      status: _firstStringInMaps(maps, const ['status', 'state']),
     );
   }
 }
@@ -1437,11 +1392,8 @@ class SuperadminCommandHistoryPage {
     return SuperadminCommandHistoryPage(
       items: items,
       nextCursorId: nextCursor,
-      hasMore: _firstBoolInMaps(pageMaps, const [
-            'hasMore',
-            'has_more',
-            'more',
-          ]) ??
+      hasMore:
+          _firstBoolInMaps(pageMaps, const ['hasMore', 'has_more', 'more']) ??
           (nextCursor != null && nextCursor.isNotEmpty),
     );
   }
@@ -1557,8 +1509,9 @@ class SuperadminCommandHistoryItem {
       queuedAt: identical(queuedAt, _commandUnset)
           ? this.queuedAt
           : queuedAt as DateTime?,
-      sentAt:
-          identical(sentAt, _commandUnset) ? this.sentAt : sentAt as DateTime?,
+      sentAt: identical(sentAt, _commandUnset)
+          ? this.sentAt
+          : sentAt as DateTime?,
       respondedAt: identical(respondedAt, _commandUnset)
           ? this.respondedAt
           : respondedAt as DateTime?,
@@ -1589,7 +1542,8 @@ class SuperadminCommandHistoryItem {
     }
 
     final maps = _commandCandidateMaps(raw);
-    final command = _firstStringInMaps(maps, const [
+    final command =
+        _firstStringInMaps(maps, const [
           'command',
           'payload',
           'commandText',
@@ -1597,25 +1551,17 @@ class SuperadminCommandHistoryItem {
           'text',
         ]) ??
         '';
-    final cmdId = _firstStringInMaps(maps, const [
+    final cmdId =
+        _firstStringInMaps(maps, const [
           'cmdId',
           'cmd_id',
           'commandId',
           'command_id',
         ]) ??
         '';
-    final id = _firstStringInMaps(maps, const [
-          'id',
-          '_id',
-          'logId',
-          'log_id',
-        ]) ??
-        '';
-    final status = _firstStringInMaps(maps, const [
-          'status',
-          'state',
-        ]) ??
-        '';
+    final id =
+        _firstStringInMaps(maps, const ['id', '_id', 'logId', 'log_id']) ?? '';
+    final status = _firstStringInMaps(maps, const ['status', 'state']) ?? '';
 
     if (command.trim().isEmpty && cmdId.trim().isEmpty && id.trim().isEmpty) {
       return null;
@@ -1628,7 +1574,8 @@ class SuperadminCommandHistoryItem {
     return SuperadminCommandHistoryItem(
       id: id,
       cmdId: cmdId,
-      imei: _firstStringInMaps(maps, const [
+      imei:
+          _firstStringInMaps(maps, const [
             'imei',
             'deviceImei',
             'device_imei',
@@ -1647,10 +1594,7 @@ class SuperadminCommandHistoryItem {
       ]),
       transport: _firstStringInMaps(maps, const ['transport']),
       source: _firstStringInMaps(maps, const ['source']),
-      queueId: _firstStringInMaps(maps, const [
-        'queueId',
-        'queue_id',
-      ]),
+      queueId: _firstStringInMaps(maps, const ['queueId', 'queue_id']),
       connectedAtSend: _firstBoolInMaps(maps, const [
         'connectedAtSend',
         'connected_at_send',
@@ -1660,26 +1604,14 @@ class SuperadminCommandHistoryItem {
         'requestedAt',
         'requested_at',
       ]),
-      queuedAt: _firstDateInMaps(maps, const [
-        'queuedAt',
-        'queued_at',
-      ]),
-      sentAt: _firstDateInMaps(maps, const [
-        'sentAt',
-        'sent_at',
-      ]),
+      queuedAt: _firstDateInMaps(maps, const ['queuedAt', 'queued_at']),
+      sentAt: _firstDateInMaps(maps, const ['sentAt', 'sent_at']),
       respondedAt: _firstDateInMaps(maps, const [
         'respondedAt',
         'responded_at',
       ]),
-      failedAt: _firstDateInMaps(maps, const [
-        'failedAt',
-        'failed_at',
-      ]),
-      timeoutAt: _firstDateInMaps(maps, const [
-        'timeoutAt',
-        'timeout_at',
-      ]),
+      failedAt: _firstDateInMaps(maps, const ['failedAt', 'failed_at']),
+      timeoutAt: _firstDateInMaps(maps, const ['timeoutAt', 'timeout_at']),
       createdAt: _firstDateInMaps(maps, const [
         'createdAt',
         'created_at',
@@ -1724,9 +1656,7 @@ class SuperadminCommandStatus extends SuperadminCommandHistoryItem {
     super.responseHex,
     super.errorMessage,
     super.queueId,
-  }) : super(
-          id: '',
-        );
+  }) : super(id: '');
 
   static SuperadminCommandStatus? tryParse(dynamic raw) {
     final item = SuperadminCommandHistoryItem.tryParse(raw);
@@ -1838,7 +1768,8 @@ class SuperadminVehicleSensorPage {
   factory SuperadminVehicleSensorPage.fromJson(dynamic json) {
     final items = _parseVehicleSensors(json);
     final pageMaps = _vehicleSensorPageMaps(json);
-    final totalCount = _firstOptionalIntInMaps(pageMaps, const [
+    final totalCount =
+        _firstOptionalIntInMaps(pageMaps, const [
           'totalCount',
           'total_count',
           'count',
@@ -1851,7 +1782,8 @@ class SuperadminVehicleSensorPage {
     return SuperadminVehicleSensorPage(
       items: items,
       totalCount: totalCount,
-      truncated: _firstBoolInMaps(pageMaps, const [
+      truncated:
+          _firstBoolInMaps(pageMaps, const [
             'truncated',
             'isTruncated',
             'is_truncated',
@@ -1982,7 +1914,8 @@ class SuperadminVehicleSensor {
       metadata,
       meta,
     ].where((candidate) => candidate.isNotEmpty).toList(growable: false);
-    final name = _firstStringInMaps(candidateMaps, const [
+    final name =
+        _firstStringInMaps(candidateMaps, const [
           'name',
           'label',
           'title',
@@ -2035,7 +1968,8 @@ class SuperadminVehicleSensor {
       'state',
       'health',
     ]);
-    final isOk = _firstBoolInMaps(candidateMaps, const [
+    final isOk =
+        _firstBoolInMaps(candidateMaps, const [
           'ok',
           'isOk',
           'is_ok',
@@ -2051,7 +1985,8 @@ class SuperadminVehicleSensor {
     ]);
 
     return SuperadminVehicleSensor(
-      id: _firstStringInMaps(candidateMaps, const [
+      id:
+          _firstStringInMaps(candidateMaps, const [
             'id',
             '_id',
             'sensorId',
@@ -2060,7 +1995,8 @@ class SuperadminVehicleSensor {
           ]) ??
           '',
       name: name,
-      type: _firstStringInMaps(candidateMaps, const [
+      type:
+          _firstStringInMaps(candidateMaps, const [
             'type',
             'dataType',
             'data_type',
@@ -2069,12 +2005,13 @@ class SuperadminVehicleSensor {
           ]) ??
           '',
       latestValue: latestValue,
-      status: explicitStatus ??
+      status:
+          explicitStatus ??
           (isOk
               ? 'OK'
               : (error?.trim().isNotEmpty ?? false)
-                  ? 'Error'
-                  : 'Unavailable'),
+              ? 'Error'
+              : 'Unavailable'),
       isOk: isOk,
       unit: _firstStringInMaps(candidateMaps, const [
         'unit',
@@ -2514,9 +2451,12 @@ double? _parseEngineHoursDuration(String value) {
   }
 
   if (value.contains(':')) {
-    final parts = value.split(':').map((part) {
-      return double.tryParse(part.trim());
-    }).toList(growable: false);
+    final parts = value
+        .split(':')
+        .map((part) {
+          return double.tryParse(part.trim());
+        })
+        .toList(growable: false);
     if (parts.length >= 2 && parts[0] != null && parts[1] != null) {
       final hours = parts[0]!;
       final minutes = parts[1]!;
@@ -2573,10 +2513,7 @@ String? _firstStringInMaps(
   return null;
 }
 
-bool? _firstBoolInMaps(
-  List<Map<String, dynamic>> sources,
-  List<String> keys,
-) {
+bool? _firstBoolInMaps(List<Map<String, dynamic>> sources, List<String> keys) {
   for (final source in sources) {
     final value = _firstBool(source, keys);
     if (value != null) {
@@ -2763,12 +2700,7 @@ List<SuperadminVehicleLog> _parseVehicleLogs(
     }
 
     final logs = list
-        .map(
-          (item) => SuperadminVehicleLog.tryParse(
-            item,
-            source: source,
-          ),
-        )
+        .map((item) => SuperadminVehicleLog.tryParse(item, source: source))
         .whereType<SuperadminVehicleLog>()
         .toList(growable: false);
     if (logs.isNotEmpty) {
@@ -3436,7 +3368,8 @@ SuperadminVehicleSensorTelemetryMeta? _parseVehicleSensorTelemetryMeta(
     return null;
   }
 
-  final hasTelemetry = _firstBoolInMaps(maps, const [
+  final hasTelemetry =
+      _firstBoolInMaps(maps, const [
         'hasTelemetry',
         'has_telemetry',
         'available',
@@ -3508,8 +3441,10 @@ List<String> _sensorTelemetryAliases(SuperadminVehicleSensor sensor) {
     }
     final bracketMatches = RegExp(r'\[([^\]]+)\]').allMatches(trimmed);
     for (final match in bracketMatches) {
-      final bracketAlias =
-          (match.group(1) ?? '').replaceAll('"', '').replaceAll("'", '').trim();
+      final bracketAlias = (match.group(1) ?? '')
+          .replaceAll('"', '')
+          .replaceAll("'", '')
+          .trim();
       addAlias(bracketAlias);
     }
   }
@@ -3676,20 +3611,7 @@ String _normalizeVehicleStatus(String value) {
     return 'Unknown';
   }
 
-  if (normalized.contains('active') ||
-      normalized.contains('online') ||
-      normalized.contains('running') ||
-      normalized.contains('connect') ||
-      normalized == 'true' ||
-      normalized == '1' ||
-      normalized.contains('enable')) {
-    return 'Active';
-  }
-
-  if (normalized.contains('idle')) {
-    return 'Idle';
-  }
-
+  // Test negative states first: inactive contains active; disconnected contains connect.
   if (normalized.contains('inactive') ||
       normalized == 'stop' ||
       normalized.contains('stopped') ||
@@ -3698,9 +3620,18 @@ String _normalizeVehicleStatus(String value) {
       normalized.contains('disable')) {
     return 'Inactive';
   }
-
   if (normalized.contains('offline') || normalized.contains('disconnect')) {
     return 'Offline';
+  }
+  if (normalized.contains('idle')) return 'Idle';
+  if (normalized.contains('active') ||
+      normalized.contains('online') ||
+      normalized.contains('running') ||
+      normalized.contains('connect') ||
+      normalized == 'true' ||
+      normalized == '1' ||
+      normalized.contains('enable')) {
+    return 'Active';
   }
 
   return _titleCase(value);

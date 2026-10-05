@@ -6,19 +6,21 @@ import '../../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../../core/utils/unit_formatter.dart';
+import '../../../../../../shared/helpers/mobile_text.dart';
 import '../../../../models/user_report_state.dart';
 import '../../../../utils/user_report_format.dart';
-import '../../../../../../core/utils/unit_formatter.dart';
 import '../user_report_kpi_row.dart';
 import '../user_report_result_toolbar.dart';
 import '../user_report_row_details_sheet.dart';
 
 class UserDrivenReportResult extends ConsumerWidget {
-  const UserDrivenReportResult(
-      {required this.state,
-      required this.onLoadMore,
-      required this.onExport,
-      super.key});
+  const UserDrivenReportResult({
+    required this.state,
+    required this.onLoadMore,
+    required this.onExport,
+    super.key,
+  });
 
   final UserReportWorkspaceState state;
   final VoidCallback onLoadMore;
@@ -52,10 +54,22 @@ class UserDrivenReportResult extends ConsumerWidget {
         : dailyTotals.values.reduce((a, b) => a > b ? a : b);
 
     final kpis = [
-      ReportKpi(label: 'Total Distance', value: uf.distance(totalDist)),
-      ReportKpi(label: 'Vehicles Driven', value: '$drivenVehicles'),
-      ReportKpi(label: 'Avg Daily', value: uf.distance(avgDaily)),
-      ReportKpi(label: 'Peak Day', value: uf.distance(maxSingleDay)),
+      ReportKpi(
+        label: context.mobileText('Total Distance'),
+        value: uf.distance(totalDist),
+      ),
+      ReportKpi(
+        label: context.mobileText('Vehicles Driven'),
+        value: '$drivenVehicles',
+      ),
+      ReportKpi(
+        label: context.mobileText('Avg Daily'),
+        value: uf.distance(avgDaily),
+      ),
+      ReportKpi(
+        label: context.mobileText('Peak Day'),
+        value: uf.distance(maxSingleDay),
+      ),
     ];
 
     return Column(
@@ -65,7 +79,10 @@ class UserDrivenReportResult extends ConsumerWidget {
         const SizedBox(height: OpenVtsSpacing.sm),
         if (sortedDates.isNotEmpty) ...[
           _DailyTotalsChart(
-              sortedDates: sortedDates, dailyTotals: dailyTotals, uf: uf),
+            sortedDates: sortedDates,
+            dailyTotals: dailyTotals,
+            uf: uf,
+          ),
           const SizedBox(height: OpenVtsSpacing.sm),
         ],
         UserReportResultToolbar(
@@ -101,8 +118,11 @@ class UserDrivenReportResult extends ConsumerWidget {
 }
 
 class _DailyTotalsChart extends StatelessWidget {
-  const _DailyTotalsChart(
-      {required this.sortedDates, required this.dailyTotals, required this.uf});
+  const _DailyTotalsChart({
+    required this.sortedDates,
+    required this.dailyTotals,
+    required this.uf,
+  });
   final List<String> sortedDates;
   final Map<String, double> dailyTotals;
   final dynamic uf;
@@ -124,14 +144,18 @@ class _DailyTotalsChart extends StatelessWidget {
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(OpenVtsRadius.lg),
         border: Border.all(
-            color: isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border),
+          color: isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Daily Distance Totals',
-              style: OpenVtsTypography.label
-                  .copyWith(fontWeight: FontWeight.w600)),
+          Text(
+            context.mobileText('Daily Distance Totals'),
+            style: OpenVtsTypography.label.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
           const SizedBox(height: OpenVtsSpacing.sm),
           SizedBox(
             height: 160,
@@ -141,55 +165,70 @@ class _DailyTotalsChart extends StatelessWidget {
                 barGroups: displayDates
                     .asMap()
                     .entries
-                    .map((e) => BarChartGroupData(
-                          x: e.key,
-                          barRods: [
-                            BarChartRodData(
-                                toY: dailyTotals[e.value] ?? 0,
-                                color: barColor,
-                                width: 8,
-                                borderRadius: BorderRadius.circular(2))
-                          ],
-                        ))
+                    .map(
+                      (e) => BarChartGroupData(
+                        x: e.key,
+                        barRods: [
+                          BarChartRodData(
+                            toY: dailyTotals[e.value] ?? 0,
+                            color: barColor,
+                            width: 8,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ],
+                      ),
+                    )
                     .toList(),
                 titlesData: FlTitlesData(
                   leftTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                          showTitles: true,
-                          reservedSize: 44,
-                          getTitlesWidget: (v, _) => Text(uf.distance(v),
-                              style: OpenVtsTypography.meta
-                                  .copyWith(fontSize: 8)))),
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 44,
+                      getTitlesWidget: (v, _) => Text(
+                        uf.distance(v),
+                        style: OpenVtsTypography.meta.copyWith(fontSize: 8),
+                      ),
+                    ),
+                  ),
                   bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                          showTitles: displayDates.length <= 14,
-                          reservedSize: 24,
-                          getTitlesWidget: (v, _) {
-                            final i = v.toInt();
-                            if (i < 0 || i >= displayDates.length)
-                              return const SizedBox.shrink();
-                            final d = displayDates[i];
-                            final label = d.length >= 10 ? d.substring(5) : d;
-                            return Padding(
-                                padding: const EdgeInsets.only(top: 3),
-                                child: Text(label,
-                                    style: OpenVtsTypography.meta
-                                        .copyWith(fontSize: 8)));
-                          })),
+                    sideTitles: SideTitles(
+                      showTitles: displayDates.length <= 14,
+                      reservedSize: 24,
+                      getTitlesWidget: (v, _) {
+                        final i = v.toInt();
+                        if (i < 0 || i >= displayDates.length) {
+                          return const SizedBox.shrink();
+                        }
+                        final d = displayDates[i];
+                        final label = d.length >= 10 ? d.substring(5) : d;
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 3),
+                          child: Text(
+                            label,
+                            style: OpenVtsTypography.meta.copyWith(fontSize: 8),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
                   topTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false)),
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
                   rightTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false)),
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
                 ),
                 borderData: FlBorderData(show: false),
                 gridData: FlGridData(
-                    show: true,
-                    drawVerticalLine: false,
-                    getDrawingHorizontalLine: (_) => FlLine(
-                        color: isDark
-                            ? OpenVtsColors.darkBorder
-                            : OpenVtsColors.border,
-                        strokeWidth: 0.5)),
+                  show: true,
+                  drawVerticalLine: false,
+                  getDrawingHorizontalLine: (_) => FlLine(
+                    color: isDark
+                        ? OpenVtsColors.darkBorder
+                        : OpenVtsColors.border,
+                    strokeWidth: 0.5,
+                  ),
+                ),
               ),
             ),
           ),
@@ -200,13 +239,14 @@ class _DailyTotalsChart extends StatelessWidget {
 }
 
 class _DrivenVehicleCard extends StatelessWidget {
-  const _DrivenVehicleCard(
-      {required this.vehicleName,
-      required this.totalKm,
-      required this.activeDays,
-      required this.allDates,
-      required this.dayValues,
-      required this.uf});
+  const _DrivenVehicleCard({
+    required this.vehicleName,
+    required this.totalKm,
+    required this.activeDays,
+    required this.allDates,
+    required this.dayValues,
+    required this.uf,
+  });
   final String vehicleName;
   final double totalKm;
   final int activeDays;
@@ -228,25 +268,40 @@ class _DrivenVehicleCard extends StatelessWidget {
             color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(OpenVtsRadius.lg),
             border: Border.all(
-                color:
-                    isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border),
+              color: isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border,
+            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(children: [
-                Expanded(
-                    child: Text(vehicleName,
-                        style: OpenVtsTypography.label
-                            .copyWith(fontWeight: FontWeight.w700))),
-                Text(uf.distance(totalKm),
-                    style: OpenVtsTypography.label
-                        .copyWith(fontWeight: FontWeight.w700)),
-              ]),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      vehicleName,
+                      style: OpenVtsTypography.label.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    uf.distance(totalKm),
+                    style: OpenVtsTypography.label.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
               const SizedBox(height: 2),
-              Text('$activeDays active day${activeDays == 1 ? '' : 's'}',
-                  style: OpenVtsTypography.meta
-                      .copyWith(color: OpenVtsColors.textSecondary)),
+              Text(
+                context.mobileText("{value1} active day{value2}", {
+                  'value1': (activeDays).toString(),
+                  'value2': (activeDays == 1 ? '' : 's').toString(),
+                }),
+                style: OpenVtsTypography.meta.copyWith(
+                  color: OpenVtsColors.textSecondary,
+                ),
+              ),
               if (allDates.length <= 14 && allDates.isNotEmpty) ...[
                 const SizedBox(height: 6),
                 _DayStrip(allDates: allDates, dayValues: dayValues),
@@ -259,8 +314,8 @@ class _DrivenVehicleCard extends StatelessWidget {
   }
 
   void _showDetails(BuildContext context) {
-    final sortedDayEntries =
-        (dayValues.entries.toList()..sort((a, b) => a.key.compareTo(b.key)));
+    final sortedDayEntries = (dayValues.entries.toList()
+      ..sort((a, b) => a.key.compareTo(b.key)));
     UserReportRowDetailsSheet.show(
       context,
       title: vehicleName,
@@ -268,8 +323,9 @@ class _DrivenVehicleCard extends StatelessWidget {
         ('Vehicle', vehicleName),
         ('Total Distance', '${totalKm.toStringAsFixed(2)} km'),
         ('Active Days', '$activeDays'),
-        ...sortedDayEntries
-            .map((e) => (e.key, '${e.value.toStringAsFixed(2)} km')),
+        ...sortedDayEntries.map(
+          (e) => (e.key, '${e.value.toStringAsFixed(2)} km'),
+        ),
       ],
     );
   }
@@ -293,7 +349,10 @@ class _DayStrip extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 1),
             child: Tooltip(
-              message: '$d: ${val.toStringAsFixed(1)} km',
+              message: context.mobileText("{value1}: {value2} km", {
+                'value1': (d).toString(),
+                'value2': (val.toStringAsFixed(1)).toString(),
+              }),
               child: Container(
                 height: 18,
                 decoration: BoxDecoration(
@@ -302,7 +361,8 @@ class _DayStrip extends StatelessWidget {
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(2),
                   border: Border.all(
-                      color: OpenVtsColors.info.withValues(alpha: 0.2)),
+                    color: OpenVtsColors.info.withValues(alpha: 0.2),
+                  ),
                 ),
               ),
             ),

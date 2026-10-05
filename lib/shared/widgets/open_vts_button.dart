@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../core/theme/open_vts_colors.dart';
 import '../../core/theme/open_vts_radius.dart';
 import '../../core/theme/open_vts_typography.dart';
 
@@ -11,7 +10,7 @@ class OpenVtsButton extends StatelessWidget {
     this.isLoading = false,
     this.variant = OpenVtsButtonVariant.primary,
     this.trailingIcon,
-    this.height = 46,
+    this.height = 48,
     super.key,
   });
 
@@ -20,90 +19,56 @@ class OpenVtsButton extends StatelessWidget {
   final bool isLoading;
   final OpenVtsButtonVariant variant;
   final IconData? trailingIcon;
+
+  /// Preferred minimum height. Labels remain free to grow with text scaling.
   final double height;
 
   @override
   Widget build(BuildContext context) {
-    final isPrimary = variant == OpenVtsButtonVariant.primary;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return SizedBox(
-      height: height,
-      child: ElevatedButton(
-        onPressed: isLoading ? null : onPressed,
-        style: ElevatedButton.styleFrom(
-          elevation: 0,
-          backgroundColor: isPrimary
-              ? OpenVtsColors.brandInk
-              : (isDark ? OpenVtsColors.brandInk : OpenVtsColors.white),
-          foregroundColor: isPrimary
-              ? OpenVtsColors.white
-              : (isDark ? OpenVtsColors.white : OpenVtsColors.brandInk),
-          disabledBackgroundColor:
-              isDark ? OpenVtsColors.darkSurface : OpenVtsColors.surface,
-          disabledForegroundColor: isDark
-              ? OpenVtsColors.darkTextSecondary
-              : OpenVtsColors.textTertiary,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(OpenVtsRadius.button),
-            side: BorderSide(
-              color: isPrimary
-                  ? (isDark ? OpenVtsColors.white : OpenVtsColors.brandInk)
-                  : OpenVtsColors.border,
+    final scheme = Theme.of(context).colorScheme;
+    final primary = variant == OpenVtsButtonVariant.primary;
+    return ElevatedButton(
+      onPressed: isLoading ? null : onPressed,
+      style: ElevatedButton.styleFrom(
+        minimumSize: Size(48, height < 48 ? 48 : height),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        elevation: 0,
+        backgroundColor: primary ? scheme.primary : scheme.surface,
+        foregroundColor: primary ? scheme.onPrimary : scheme.onSurface,
+        disabledBackgroundColor: scheme.onSurface.withValues(alpha: 0.08),
+        disabledForegroundColor: scheme.onSurface.withValues(alpha: 0.38),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(OpenVtsRadius.button),
+          side: primary
+              ? BorderSide.none
+              : BorderSide(color: scheme.outlineVariant),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Flexible(
+            child: Text(
+              label,
+              textAlign: TextAlign.center,
+              style: OpenVtsTypography.label,
             ),
           ),
-        ),
-        child: isLoading
-            ? const SizedBox(
-                height: 18,
-                width: 18,
-                child: CircularProgressIndicator(strokeWidth: 2),
+          if (isLoading || trailingIcon != null) ...[
+            const SizedBox(width: 8),
+            if (isLoading)
+              SizedBox.square(
+                dimension: 18,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: scheme.onSurfaceVariant,
+                ),
               )
-            : trailingIcon == null
-                ? Text(label, style: OpenVtsTypography.label)
-                : LayoutBuilder(
-                    builder: (context, constraints) {
-                      if (!constraints.hasBoundedWidth) {
-                        return Row(
-                          mainAxisSize: MainAxisSize.min,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              label,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: OpenVtsTypography.label,
-                            ),
-                            const SizedBox(width: 8),
-                            Icon(trailingIcon, size: 18),
-                          ],
-                        );
-                      }
-
-                      return Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          Center(
-                            child: Padding(
-                              padding: const EdgeInsetsDirectional.only(
-                                end: 24,
-                              ),
-                              child: Text(
-                                label,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: OpenVtsTypography.label,
-                              ),
-                            ),
-                          ),
-                          Align(
-                            alignment: AlignmentDirectional.centerEnd,
-                            child: Icon(trailingIcon, size: 18),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
+            else
+              Icon(trailingIcon, size: 18),
+          ],
+        ],
       ),
     );
   }

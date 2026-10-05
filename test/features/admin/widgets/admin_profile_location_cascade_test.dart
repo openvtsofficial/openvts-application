@@ -23,7 +23,7 @@ Future<void> _openDropdown(WidgetTester tester, String label) async {
 
 Finder _sheetOption(String text) {
   return find.descendant(
-    of: find.byType(ListView).last,
+    of: find.byType(SliverList).last,
     matching: find.text(text),
   );
 }
@@ -111,11 +111,7 @@ class _CascadeWidgetState extends State<_CascadeWidget> {
 // ---------------------------------------------------------------------------
 
 const _countries = [
-  OpenVtsDropdownOption<String>(
-    value: 'IN',
-    label: 'India',
-    searchText: 'IN',
-  ),
+  OpenVtsDropdownOption<String>(value: 'IN', label: 'India', searchText: 'IN'),
   OpenVtsDropdownOption<String>(
     value: 'US',
     label: 'United States',
@@ -146,11 +142,7 @@ const _cities = [
   OpenVtsDropdownOption<String>(value: 'city-pune', label: 'Pune'),
 ];
 
-Widget _app({
-  String? country,
-  String? state,
-  String? city,
-}) {
+Widget _app({String? country, String? state, String? city}) {
   return _CascadeWidget(
     countries: _countries,
     states: _states,

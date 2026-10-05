@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -108,11 +109,13 @@ class MobilePushService {
     required LocalCache localCache,
     required TokenStorage tokenStorage,
     required FlutterSecureStorage secureStorage,
+    DeviceInfoPlugin? deviceInfoPlugin,
     MobilePushLocalNotifications? localNotifications,
   })  : _apiClient = apiClient,
         _localCache = localCache,
         _tokenStorage = tokenStorage,
         _secureStorage = secureStorage,
+        _deviceInfoPlugin = deviceInfoPlugin ?? DeviceInfoPlugin(),
         _localNotifications =
             localNotifications ?? MobilePushLocalNotifications();
 
@@ -120,6 +123,7 @@ class MobilePushService {
   final LocalCache _localCache;
   final TokenStorage _tokenStorage;
   final FlutterSecureStorage _secureStorage;
+  final DeviceInfoPlugin _deviceInfoPlugin;
   final MobilePushLocalNotifications _localNotifications;
 
   final _foregroundMessageController =
@@ -203,14 +207,9 @@ class MobilePushService {
       return false;
     }
 
-    final settings = await getNotificationSettings();
-    if (settings == null || !_isPermissionGranted(settings)) {
-      return false;
-    }
-
     final tokenToRegister = token?.trim().isNotEmpty == true
         ? token!.trim()
-        : await getCurrentToken();
+        : (await FirebaseMessaging.instance.getToken())?.trim();
     if (tokenToRegister == null || tokenToRegister.isEmpty) {
       return false;
     }
@@ -223,21 +222,22 @@ class MobilePushService {
         !MobilePushPlatform.fromCurrentPlatform().isSupported) {
       return false;
     }
+    if (await _tokenStorage.getActiveSession() == null) {
+      return false;
+    }
 
     try {
-      if (await _tokenStorage.getActiveSession() == null) {
-        return false;
-      }
       final tokenToRemove = _firstNonEmpty([
         token,
         _localCache.getString(StorageKeys.mobilePushRegisteredToken),
         _localCache.getString(StorageKeys.mobilePushFcmToken),
       ]);
       final deviceId = await _readStoredDeviceId();
-      final payload = RemovePushTokenRequest(
+      final request = RemovePushTokenRequest(
         token: tokenToRemove,
         deviceId: deviceId,
-      ).toJson();
+      );
+      final payload = request.toJson();
       if (payload.isEmpty) {
         return false;
       }
@@ -245,37 +245,14 @@ class MobilePushService {
       await _apiClient.delete<bool>(
         ApiEndpoints.auth.pushToken,
         data: payload,
-        // Logout/account closure must not refresh a revoked session merely
-        // to remove a token. The finally block always cleans this device.
-        options: _mobilePushApiOptions().copyWith(
-          extra: const {'skipAuthRefresh': true},
-        ),
+        options: _mobilePushApiOptions(),
         parser: (_) => true,
       );
+      await _clearRegisteredTokenState();
       return true;
     } catch (error) {
       await _rememberLastInitError(_safeError(error));
       return false;
-    } finally {
-      // Revoke local delivery even when logout cannot reach the backend.
-      // A later sign-in will obtain and register a fresh token.
-      if (Firebase.apps.isNotEmpty) {
-        try {
-          await FirebaseMessaging.instance.setAutoInitEnabled(false);
-          await FirebaseMessaging.instance.deleteToken().timeout(
-                _mobilePushApiReceiveTimeout,
-              );
-        } catch (_) {
-          // Network-dependent token deletion must not prevent local logout.
-        }
-      }
-      await _clearRegisteredTokenState();
-      await _localCache.remove(StorageKeys.mobilePushFcmToken);
-      try {
-        await _localNotifications.cancelAll();
-      } catch (_) {
-        // Notification plugin cleanup is best-effort on logout.
-      }
     }
   }
 
@@ -312,26 +289,6 @@ class MobilePushService {
       return null;
     }
 
-    // Never let getToken implicitly prompt or generate an identifier before
-    // the user enables notifications from the notification settings UI.
-    final settings = await getNotificationSettings();
-    if (settings == null || !_isPermissionGranted(settings)) {
-      return null;
-    }
-    if (MobilePushPlatform.fromCurrentPlatform() == MobilePushPlatform.ios) {
-      // APNs registration can complete shortly after the permission sheet.
-      // Bound the wait so unavailable APNs never stalls the application.
-      String? apnsToken;
-      for (var attempt = 0; attempt < 10; attempt++) {
-        apnsToken = await FirebaseMessaging.instance.getAPNSToken();
-        if (apnsToken?.isNotEmpty == true) break;
-        await Future<void>.delayed(const Duration(milliseconds: 200));
-      }
-      if (apnsToken == null || apnsToken.isEmpty) {
-        return null;
-      }
-    }
-    await FirebaseMessaging.instance.setAutoInitEnabled(true);
     final token = (await FirebaseMessaging.instance.getToken())?.trim();
     if (token == null || token.isEmpty) {
       return null;
@@ -350,9 +307,6 @@ class MobilePushService {
 
     final settings = await FirebaseMessaging.instance.getNotificationSettings();
     await _rememberPermissionStatus(settings);
-    if (!_isPermissionGranted(settings)) {
-      await FirebaseMessaging.instance.setAutoInitEnabled(false);
-    }
     return settings;
   }
 
@@ -369,9 +323,6 @@ class MobilePushService {
       sound: true,
     );
     await _rememberPermissionStatus(settings);
-    if (!_isPermissionGranted(settings)) {
-      await FirebaseMessaging.instance.setAutoInitEnabled(false);
-    }
     return settings;
   }
 
@@ -513,8 +464,11 @@ class MobilePushService {
       await _clearLastInitError();
       _startListeners();
 
-      // Inspect authorization without prompting or generating a token.
-      await getNotificationSettings();
+      try {
+        await getCurrentToken();
+      } catch (error) {
+        await _rememberLastInitError(_safeError(error));
+      }
 
       final initialMessage =
           await FirebaseMessaging.instance.getInitialMessage();
@@ -566,7 +520,7 @@ class MobilePushService {
     _listenersStarted = true;
     _tokenRefreshSubscription =
         FirebaseMessaging.instance.onTokenRefresh.listen(
-      (token) => unawaited(_safeHandleTokenRefresh(token)),
+      _handleTokenRefresh,
       onError: (Object error) {
         unawaited(_rememberLastInitError(_safeError(error)));
       },
@@ -589,23 +543,12 @@ class MobilePushService {
     );
   }
 
-  Future<void> _safeHandleTokenRefresh(String token) async {
-    try {
-      await _handleTokenRefresh(token);
-    } catch (error) {
-      await _rememberLastInitError(_safeError(error));
-    }
-  }
-
   Future<void> _handleTokenRefresh(String token) async {
     final normalized = token.trim();
     if (normalized.isEmpty) {
       return;
     }
 
-    if (await _tokenStorage.getActiveSession() == null) return;
-    final settings = await getNotificationSettings();
-    if (settings == null || !_isPermissionGranted(settings)) return;
     await _localCache.setString(StorageKeys.mobilePushFcmToken, normalized);
     _tokenRefreshController.add(normalized);
   }
@@ -781,10 +724,36 @@ class MobilePushService {
 
   Future<String> _buildUserAgent(MobilePushPlatform platform) async {
     final packageInfo = await PackageInfo.fromPlatform();
-    // App version and platform suffice for delivery diagnostics. Do not
-    // transmit hardware model, device name, or operating-system fingerprints.
-    return '${packageInfo.packageName}/${packageInfo.version}'
-        '+${packageInfo.buildNumber} (${platform.apiValue})';
+    final appPart = '${packageInfo.packageName}/${packageInfo.version}'
+        '+${packageInfo.buildNumber}';
+    final devicePart = await _deviceDescription(platform);
+    return '$appPart (${platform.apiValue}; $devicePart)';
+  }
+
+  Future<String> _deviceDescription(MobilePushPlatform platform) async {
+    try {
+      switch (platform) {
+        case MobilePushPlatform.android:
+          final info = await _deviceInfoPlugin.androidInfo;
+          return _joinNonEmpty([
+            info.manufacturer,
+            info.model,
+            'sdk ${info.version.sdkInt}',
+          ]);
+        case MobilePushPlatform.ios:
+          final info = await _deviceInfoPlugin.iosInfo;
+          return _joinNonEmpty([
+            info.model,
+            info.utsname.machine,
+            info.systemName,
+            info.systemVersion,
+          ]);
+        case MobilePushPlatform.unsupported:
+          return 'unsupported';
+      }
+    } catch (_) {
+      return 'unknown device';
+    }
   }
 
   Future<void> _cacheConfig(MobileFcmConfigResponse config) async {
@@ -851,6 +820,14 @@ String? _last10(String? value) {
   return normalized.substring(normalized.length - 10);
 }
 
+String _joinNonEmpty(Iterable<dynamic> values) {
+  return values
+      .map((value) => value?.toString().trim())
+      .whereType<String>()
+      .where((value) => value.isNotEmpty)
+      .join(' ');
+}
+
 String? _extractMessage(dynamic json) {
   if (json is Map<String, dynamic>) {
     final message = json['message'];
@@ -875,9 +852,4 @@ String? _extractMessage(dynamic json) {
   }
 
   return null;
-}
-
-bool _isPermissionGranted(NotificationSettings settings) {
-  return settings.authorizationStatus == AuthorizationStatus.authorized ||
-      settings.authorizationStatus == AuthorizationStatus.provisional;
 }

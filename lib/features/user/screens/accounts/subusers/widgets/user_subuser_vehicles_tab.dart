@@ -7,6 +7,7 @@ import '../../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../../shared/widgets/open_vts_bottom_sheet.dart';
 import '../../../../../../shared/widgets/open_vts_button.dart';
@@ -17,14 +18,14 @@ import '../../../../models/user_subuser_model.dart';
 import '../../../../models/user_subusers_state.dart';
 import 'user_subuser_assign_vehicles_sheet.dart';
 
-typedef UserSubUserDetailsProvider = AutoDisposeStateNotifierProvider<
-    UserSubUserDetailsController, UserSubUserDetailsState>;
+typedef UserSubUserDetailsProvider =
+    AutoDisposeStateNotifierProvider<
+      UserSubUserDetailsController,
+      UserSubUserDetailsState
+    >;
 
 class UserSubUserVehiclesTab extends ConsumerWidget {
-  const UserSubUserVehiclesTab({
-    required this.provider,
-    super.key,
-  });
+  const UserSubUserVehiclesTab({required this.provider, super.key});
 
   final UserSubUserDetailsProvider provider;
 
@@ -50,18 +51,20 @@ class UserSubUserVehiclesTab extends ConsumerWidget {
         ],
         const SizedBox(height: OpenVtsSpacing.sm),
         if (state.isLoadingVehicles && assigned.isEmpty)
-          const _LoadingCard(label: 'Loading assigned vehicles')
+          _LoadingCard(label: context.mobileText('Loading assigned vehicles'))
         else if (assigned.isEmpty)
           OpenVtsCard(
             child: Column(
               children: [
-                const OpenVtsEmptyState(
-                  title: 'No assigned vehicles',
-                  message: 'Assign one or more vehicles to this sub user.',
+                OpenVtsEmptyState(
+                  title: context.mobileText('No assigned vehicles'),
+                  message: context.mobileText(
+                    'Assign one or more vehicles to this sub user.',
+                  ),
                 ),
                 const SizedBox(height: OpenVtsSpacing.sm),
                 OpenVtsButton(
-                  label: 'Assign Vehicles',
+                  label: context.mobileText('Assign Vehicles'),
                   height: 36,
                   trailingIcon: Icons.add_link_rounded,
                   onPressed: state.isAssigningVehicles
@@ -93,7 +96,7 @@ class UserSubUserVehiclesTab extends ConsumerWidget {
   Future<void> _showAssignSheet(BuildContext context) {
     return OpenVtsBottomSheet.show<bool>(
       context: context,
-      title: 'Assign Vehicles',
+      title: context.mobileText('Assign Vehicles'),
       initialChildSize: 0.86,
       minChildSize: 0.5,
       maxChildSize: 0.97,
@@ -110,18 +113,20 @@ class UserSubUserVehiclesTab extends ConsumerWidget {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('Unassign vehicle'),
+          title: Text(context.mobileText('Unassign vehicle')),
           content: Text(
-            'Remove ${_vehicleTitle(vehicle)} from this sub user?',
+            context.mobileText("Remove {value1} from this sub user?", {
+              'value1': (_vehicleTitle(vehicle)).toString(),
+            }),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('Cancel'),
+              child: Text(context.mobileText('Cancel')),
             ),
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: const Text('Unassign'),
+              child: Text(context.mobileText('Unassign')),
             ),
           ],
         );
@@ -138,7 +143,10 @@ class UserSubUserVehiclesTab extends ConsumerWidget {
 
     final id = vehicle.id.trim();
     if (id.isEmpty) {
-      ToastHelper.showError('Vehicle id is missing.', context: context);
+      ToastHelper.showError(
+        context.mobileText('Vehicle id is missing.'),
+        context: context,
+      );
       return;
     }
 
@@ -148,7 +156,10 @@ class UserSubUserVehiclesTab extends ConsumerWidget {
     }
 
     if (ok) {
-      ToastHelper.showSuccess('Vehicle unassigned.', context: context);
+      ToastHelper.showSuccess(
+        context.mobileText('Vehicle unassigned.'),
+        context: context,
+      );
       return;
     }
 
@@ -199,7 +210,9 @@ class _ActionRow extends StatelessWidget {
             border: Border.all(color: OpenVtsColors.border),
           ),
           child: Text(
-            '$availableCount available to assign',
+            context.mobileText("{value1} available to assign", {
+              'value1': (availableCount).toString(),
+            }),
             style: OpenVtsTypography.meta.copyWith(
               color: OpenVtsColors.textSecondary,
               fontWeight: FontWeight.w700,
@@ -210,14 +223,14 @@ class _ActionRow extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             _CompactActionButton(
-              label: 'Refresh',
+              label: context.mobileText('Refresh'),
               icon: Icons.refresh_rounded,
               isLoading: isLoadingVehicles,
               onPressed: onRefresh,
             ),
             const SizedBox(width: OpenVtsSpacing.xs),
             _CompactActionButton(
-              label: 'Assign Vehicles',
+              label: context.mobileText('Assign Vehicles'),
               icon: Icons.add_link_rounded,
               isLoading: isAssigningVehicles,
               onPressed: isAssigningVehicles ? null : onAssignVehicles,
@@ -250,10 +263,12 @@ class _CompactActionButton extends StatelessWidget {
       child: OutlinedButton.icon(
         onPressed: isLoading ? null : onPressed,
         style: OutlinedButton.styleFrom(
-          backgroundColor:
-              isDarkMode ? const Color(0xFF1A1A1A) : OpenVtsColors.white,
-          foregroundColor:
-              isDarkMode ? Colors.white : OpenVtsColors.textPrimary,
+          backgroundColor: isDarkMode
+              ? const Color(0xFF1A1A1A)
+              : OpenVtsColors.white,
+          foregroundColor: isDarkMode
+              ? Colors.white
+              : OpenVtsColors.textPrimary,
           side: BorderSide(
             color: isDarkMode ? const Color(0xFF333333) : OpenVtsColors.border,
           ),
@@ -339,7 +354,7 @@ class _AssignedVehicleCard extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       vehicle.plateNumber.trim().isEmpty
-                          ? 'Plate unavailable'
+                          ? context.mobileText('Plate unavailable')
                           : vehicle.plateNumber.trim(),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -359,10 +374,13 @@ class _AssignedVehicleCard extends StatelessWidget {
           _MetaRow(label: 'SIM', value: _display(vehicle.simNumber)),
           if (vehicle.licenseStatus != null &&
               vehicle.licenseStatus!.trim().isNotEmpty)
-            _MetaRow(label: 'License', value: vehicle.licenseStatus!.trim()),
+            _MetaRow(
+              label: context.mobileText('License'),
+              value: vehicle.licenseStatus!.trim(),
+            ),
           if (vehicle.isBlocked != null)
             _MetaRow(
-              label: 'Blocked',
+              label: context.mobileText('Blocked'),
               value: vehicle.isBlocked! ? 'Yes' : 'No',
             ),
           const SizedBox(height: OpenVtsSpacing.xs),
@@ -373,7 +391,7 @@ class _AssignedVehicleCard extends StatelessWidget {
                   onPressed: onViewVehicle,
                   icon: const Icon(Icons.open_in_new_rounded, size: 15),
                   label: Text(
-                    'View Vehicle',
+                    context.mobileText('View Vehicle'),
                     style: OpenVtsTypography.meta.copyWith(
                       fontWeight: FontWeight.w800,
                     ),
@@ -385,8 +403,8 @@ class _AssignedVehicleCard extends StatelessWidget {
                 style: OutlinedButton.styleFrom(
                   foregroundColor:
                       Theme.of(context).brightness == Brightness.dark
-                          ? Colors.white
-                          : OpenVtsColors.textPrimary,
+                      ? Colors.white
+                      : OpenVtsColors.textPrimary,
                   side: BorderSide(
                     color: Theme.of(context).brightness == Brightness.dark
                         ? const Color(0xFF333333)
@@ -402,7 +420,7 @@ class _AssignedVehicleCard extends StatelessWidget {
                       )
                     : const Icon(Icons.link_off_rounded, size: 15),
                 label: Text(
-                  'Unassign',
+                  context.mobileText('Unassign'),
                   style: OpenVtsTypography.meta.copyWith(
                     fontWeight: FontWeight.w800,
                     color: Theme.of(context).brightness == Brightness.dark

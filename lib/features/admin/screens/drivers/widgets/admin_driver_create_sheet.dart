@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/utils/validators.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../shared/widgets/open_vts_bottom_sheet.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
@@ -18,13 +19,15 @@ import '../../users/widgets/admin_user_form_fields.dart';
 
 Future<void> showDriverCreateSheet({
   required BuildContext context,
-  required AutoDisposeStateNotifierProvider<AdminDriversController,
-          AdminDriversState>
-      provider,
+  required AutoDisposeStateNotifierProvider<
+    AdminDriversController,
+    AdminDriversState
+  >
+  provider,
 }) {
   return OpenVtsBottomSheet.show<void>(
     context: context,
-    title: 'Add Driver',
+    title: context.mobileText('Add Driver'),
     initialChildSize: 0.9,
     minChildSize: 0.5,
     maxChildSize: 0.96,
@@ -35,8 +38,11 @@ Future<void> showDriverCreateSheet({
 class _DriverCreateSheet extends ConsumerStatefulWidget {
   const _DriverCreateSheet({required this.provider});
 
-  final AutoDisposeStateNotifierProvider<AdminDriversController,
-      AdminDriversState> provider;
+  final AutoDisposeStateNotifierProvider<
+    AdminDriversController,
+    AdminDriversState
+  >
+  provider;
 
   @override
   ConsumerState<_DriverCreateSheet> createState() => _DriverCreateSheetState();
@@ -90,21 +96,29 @@ class _DriverCreateSheetState extends ConsumerState<_DriverCreateSheet> {
 
   List<AdminUserDropdownOption> get _mobilePrefixOptions {
     return _mobilePrefixes
-        .map((item) =>
-            AdminUserDropdownOption(value: item.value, label: item.label))
+        .map(
+          (item) =>
+              AdminUserDropdownOption(value: item.value, label: item.label),
+        )
         .toList(growable: false);
   }
 
   List<AdminUserDropdownOption> get _countryOptions {
     final options = _countries
-        .map((item) =>
-            AdminUserDropdownOption(value: item.value, label: item.label))
+        .map(
+          (item) =>
+              AdminUserDropdownOption(value: item.value, label: item.label),
+        )
         .toList(growable: true);
     if (_countryCode != null && !options.any((o) => o.value == _countryCode)) {
       options.insert(
         0,
         AdminUserDropdownOption(
-            value: _countryCode!, label: '$_countryCode (current)'),
+          value: _countryCode!,
+          label: context.mobileText("{value1} (current)", {
+            'value1': (_countryCode).toString(),
+          }),
+        ),
       );
     }
     return options;
@@ -112,14 +126,20 @@ class _DriverCreateSheetState extends ConsumerState<_DriverCreateSheet> {
 
   List<AdminUserDropdownOption> get _stateOptions {
     final options = _states
-        .map((item) =>
-            AdminUserDropdownOption(value: item.value, label: item.label))
+        .map(
+          (item) =>
+              AdminUserDropdownOption(value: item.value, label: item.label),
+        )
         .toList(growable: true);
     if (_stateCode != null && !options.any((o) => o.value == _stateCode)) {
       options.insert(
         0,
         AdminUserDropdownOption(
-            value: _stateCode!, label: '$_stateCode (current)'),
+          value: _stateCode!,
+          label: context.mobileText("{value1} (current)", {
+            'value1': (_stateCode).toString(),
+          }),
+        ),
       );
     }
     return options;
@@ -127,14 +147,20 @@ class _DriverCreateSheetState extends ConsumerState<_DriverCreateSheet> {
 
   List<AdminUserDropdownOption> get _cityOptions {
     final options = _cities
-        .map((item) =>
-            AdminUserDropdownOption(value: item.value, label: item.label))
+        .map(
+          (item) =>
+              AdminUserDropdownOption(value: item.value, label: item.label),
+        )
         .toList(growable: true);
     if (_cityValue != null && !options.any((o) => o.value == _cityValue)) {
       options.insert(
         0,
         AdminUserDropdownOption(
-            value: _cityValue!, label: '$_cityValue (current)'),
+          value: _cityValue!,
+          label: context.mobileText("{value1} (current)", {
+            'value1': (_cityValue).toString(),
+          }),
+        ),
       );
     }
     return options;
@@ -171,7 +197,7 @@ class _DriverCreateSheetState extends ConsumerState<_DriverCreateSheet> {
                 ),
                 const SizedBox(height: OpenVtsSpacing.sm),
                 OpenVtsTextField(
-                  label: 'Name',
+                  label: context.mobileText('Name'),
                   controller: _name,
                   prefixIcon: Icons.person_outline_rounded,
                   validator: (value) => Validators.driverName(value),
@@ -183,7 +209,7 @@ class _DriverCreateSheetState extends ConsumerState<_DriverCreateSheet> {
                     final isTablet = availableWidth >= 600;
 
                     final prefixDropdown = AdminUserDropdownField(
-                      label: 'Mobile Prefix',
+                      label: context.mobileText('Mobile Prefix'),
                       value: _mobilePrefix,
                       options: _mobilePrefixOptions,
                       hintText: '+91',
@@ -197,7 +223,7 @@ class _DriverCreateSheetState extends ConsumerState<_DriverCreateSheet> {
                     );
 
                     final numberField = OpenVtsTextField(
-                      label: 'Mobile',
+                      label: context.mobileText('Mobile'),
                       controller: _mobile,
                       keyboardType: TextInputType.phone,
                       prefixIcon: Icons.phone_rounded,
@@ -215,17 +241,16 @@ class _DriverCreateSheetState extends ConsumerState<_DriverCreateSheet> {
                       );
                     }
 
-                    final prefixWidth =
-                        (availableWidth * 0.30).clamp(110.0, 140.0);
+                    final prefixWidth = (availableWidth * 0.30).clamp(
+                      110.0,
+                      140.0,
+                    );
                     final gapWidth = OpenVtsSpacing.md;
 
                     return Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        SizedBox(
-                          width: prefixWidth,
-                          child: prefixDropdown,
-                        ),
+                        SizedBox(width: prefixWidth, child: prefixDropdown),
                         SizedBox(width: gapWidth),
                         Expanded(child: numberField),
                       ],
@@ -234,7 +259,7 @@ class _DriverCreateSheetState extends ConsumerState<_DriverCreateSheet> {
                 ),
                 const SizedBox(height: OpenVtsSpacing.sm),
                 OpenVtsTextField(
-                  label: 'Email',
+                  label: context.mobileText('Email'),
                   controller: _email,
                   keyboardType: TextInputType.emailAddress,
                   prefixIcon: Icons.mail_outline_rounded,
@@ -246,20 +271,21 @@ class _DriverCreateSheetState extends ConsumerState<_DriverCreateSheet> {
                 ),
                 const SizedBox(height: OpenVtsSpacing.sm),
                 OpenVtsTextField(
-                  label: 'Username',
+                  label: context.mobileText('Username'),
                   controller: _username,
                   prefixIcon: Icons.alternate_email_rounded,
                   validator: (value) => Validators.driverUsername(value),
                 ),
                 const SizedBox(height: OpenVtsSpacing.sm),
                 OpenVtsTextField(
-                  label: 'Password',
+                  label: context.mobileText('Password'),
                   controller: _password,
                   obscureText: _obscurePassword,
                   prefixIcon: Icons.lock_outline_rounded,
                   suffixIcon: IconButton(
-                    tooltip:
-                        _obscurePassword ? 'Show password' : 'Hide password',
+                    tooltip: _obscurePassword
+                        ? context.mobileText('Show password')
+                        : context.mobileText('Hide password'),
                     onPressed: () {
                       setState(() => _obscurePassword = !_obscurePassword);
                     },
@@ -271,7 +297,7 @@ class _DriverCreateSheetState extends ConsumerState<_DriverCreateSheet> {
                     ),
                   ),
                   validator: (value) {
-                    final text = value?.trim() ?? '';
+                    final text = value ?? '';
                     if (text.isEmpty) return 'Password is required';
                     if (text.length < 8) return 'Minimum 8 characters';
                     return null;
@@ -279,10 +305,10 @@ class _DriverCreateSheetState extends ConsumerState<_DriverCreateSheet> {
                 ),
                 const SizedBox(height: OpenVtsSpacing.sm),
                 AdminUserDropdownField(
-                  label: 'Country',
+                  label: context.mobileText('Country'),
                   value: _countryCode,
                   options: _countryOptions,
-                  hintText: 'Select country',
+                  hintText: context.mobileText('Select country'),
                   prefixIcon: Icons.public_rounded,
                   isLoading: _loadingReferences,
                   searchable: true,
@@ -291,12 +317,12 @@ class _DriverCreateSheetState extends ConsumerState<_DriverCreateSheet> {
                 ),
                 const SizedBox(height: OpenVtsSpacing.sm),
                 AdminUserDropdownField(
-                  label: 'State',
+                  label: context.mobileText('State'),
                   value: _stateCode,
                   options: _stateOptions,
                   hintText: _countryCode == null
-                      ? 'Select country first'
-                      : 'Select state',
+                      ? context.mobileText('Select country first')
+                      : context.mobileText('Select state'),
                   prefixIcon: Icons.map_outlined,
                   isLoading: _loadingStates,
                   searchable: true,
@@ -305,11 +331,12 @@ class _DriverCreateSheetState extends ConsumerState<_DriverCreateSheet> {
                 ),
                 const SizedBox(height: OpenVtsSpacing.sm),
                 AdminUserDropdownField(
-                  label: 'City',
+                  label: context.mobileText('City'),
                   value: _cityValue,
                   options: _cityOptions,
-                  hintText:
-                      _stateCode == null ? 'Select state first' : 'Select city',
+                  hintText: _stateCode == null
+                      ? context.mobileText('Select state first')
+                      : context.mobileText('Select city'),
                   prefixIcon: Icons.location_city_rounded,
                   isLoading: _loadingCities,
                   searchable: true,
@@ -320,7 +347,7 @@ class _DriverCreateSheetState extends ConsumerState<_DriverCreateSheet> {
                 ),
                 const SizedBox(height: OpenVtsSpacing.sm),
                 OpenVtsTextField(
-                  label: 'Address',
+                  label: context.mobileText('Address'),
                   controller: _address,
                   prefixIcon: Icons.place_outlined,
                   maxLines: 2,
@@ -328,7 +355,7 @@ class _DriverCreateSheetState extends ConsumerState<_DriverCreateSheet> {
                 ),
                 const SizedBox(height: OpenVtsSpacing.sm),
                 OpenVtsTextField(
-                  label: 'Pincode',
+                  label: context.mobileText('Pincode'),
                   controller: _pincode,
                   keyboardType: TextInputType.number,
                   prefixIcon: Icons.pin_drop_outlined,
@@ -351,7 +378,7 @@ class _DriverCreateSheetState extends ConsumerState<_DriverCreateSheet> {
                 children: [
                   Expanded(
                     child: OpenVtsButton(
-                      label: 'Cancel',
+                      label: context.mobileText('Cancel'),
                       variant: OpenVtsButtonVariant.secondary,
                       onPressed: state.isCreating
                           ? null
@@ -361,7 +388,7 @@ class _DriverCreateSheetState extends ConsumerState<_DriverCreateSheet> {
                   const SizedBox(width: OpenVtsSpacing.sm),
                   Expanded(
                     child: OpenVtsButton(
-                      label: 'Create driver',
+                      label: context.mobileText('Create driver'),
                       isLoading: state.isCreating,
                       trailingIcon: Icons.person_add_alt_1_rounded,
                       onPressed: state.isCreating
@@ -390,7 +417,10 @@ class _DriverCreateSheetState extends ConsumerState<_DriverCreateSheet> {
       });
     } catch (_) {
       if (mounted) {
-        ToastHelper.showError('Unable to load users.', context: context);
+        ToastHelper.showError(
+          context.mobileText('Unable to load users.'),
+          context: context,
+        );
       }
     } finally {
       if (mounted) setState(() => _loadingUsers = false);
@@ -419,7 +449,10 @@ class _DriverCreateSheetState extends ConsumerState<_DriverCreateSheet> {
       if (!mounted) return;
       setState(() => _loadingReferences = false);
       if (mounted) {
-        ToastHelper.showError('Unable to load form options.', context: context);
+        ToastHelper.showError(
+          context.mobileText('Unable to load form options.'),
+          context: context,
+        );
       }
     }
   }
@@ -467,7 +500,10 @@ class _DriverCreateSheetState extends ConsumerState<_DriverCreateSheet> {
     } catch (_) {
       if (!mounted) return;
       setState(() => _loadingStates = false);
-      ToastHelper.showError('Unable to load states.', context: context);
+      ToastHelper.showError(
+        context.mobileText('Unable to load states.'),
+        context: context,
+      );
     }
   }
 
@@ -503,7 +539,10 @@ class _DriverCreateSheetState extends ConsumerState<_DriverCreateSheet> {
     } catch (_) {
       if (!mounted) return;
       setState(() => _loadingCities = false);
-      ToastHelper.showError('Unable to load cities.', context: context);
+      ToastHelper.showError(
+        context.mobileText('Unable to load cities.'),
+        context: context,
+      );
     }
   }
 
@@ -550,7 +589,10 @@ class _DriverCreateSheetState extends ConsumerState<_DriverCreateSheet> {
     try {
       await controller.createDriver(request);
       if (!context.mounted) return;
-      ToastHelper.showSuccess('Driver created.', context: context);
+      ToastHelper.showSuccess(
+        context.mobileText('Driver created.'),
+        context: context,
+      );
       Navigator.of(context).pop();
     } catch (_) {
       if (!context.mounted) return;
@@ -579,8 +621,8 @@ class AdminDriverPrimaryUserDropdown extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return OpenVtsSearchableDropdown<String>(
-      label: 'Primary User',
-      hintText: 'Select primary user',
+      label: context.mobileText('Primary User'),
+      hintText: context.mobileText('Select primary user'),
       leadingIcon: Icons.person_search_outlined,
       value: value,
       options: users
@@ -602,10 +644,8 @@ class AdminDriverPrimaryUserDropdown extends StatelessWidget {
           .toList(growable: false),
       isLoading: isLoading,
       required: true,
-      validator: (selected) => Validators.required(
-        selected,
-        fieldName: 'Primary user',
-      ),
+      validator: (selected) =>
+          Validators.required(selected, fieldName: 'Primary user'),
       onChanged: onChanged,
     );
   }

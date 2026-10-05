@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/open_vts_spacing.dart';
@@ -17,6 +19,15 @@ class OpenVtsDashboardMetricCard extends StatelessWidget {
     this.onTap,
     super.key,
   });
+
+  static int gridColumns(BuildContext context, double width) {
+    final scale = MediaQuery.textScalerOf(context).scale(1);
+    if (scale > 1.3 || width < 280) return 1;
+    return width >= 760 ? 3 : 2;
+  }
+
+  static double gridExtent(BuildContext context) =>
+      math.max(160, 60 + 104 * MediaQuery.textScalerOf(context).scale(1));
 
   final String title;
   final String value;
@@ -61,6 +72,8 @@ class OpenVtsDashboardMetricCard extends StatelessWidget {
           const Spacer(),
           Text(
             value,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
             style: OpenVtsTypography.numeric.copyWith(
               fontSize: 19,
               color: Theme.of(context).colorScheme.onSurface,
@@ -70,7 +83,7 @@ class OpenVtsDashboardMetricCard extends StatelessWidget {
             const SizedBox(height: 2),
             Text(
               subtitle!,
-              maxLines: 1,
+              maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: OpenVtsTypography.meta.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -87,9 +100,6 @@ class OpenVtsDashboardMetricCard extends StatelessWidget {
       return child;
     }
 
-    return GestureDetector(
-      onTap: onTap,
-      child: child,
-    );
+    return GestureDetector(onTap: onTap, child: child);
   }
 }

@@ -93,6 +93,9 @@ class _FakeService extends Fake implements AdminPaymentsService {
   Future<List<AdminUserListItem>> getUsers() async => users;
 
   @override
+  Future<List<AdminUserListItem>> getRenewalUsers() async => users;
+
+  @override
   Future<List<AdminRenewVehicleOption>> getLinkedVehicles(String userId) =>
       _vehicles.future;
 

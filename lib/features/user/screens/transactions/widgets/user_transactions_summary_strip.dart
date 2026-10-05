@@ -4,15 +4,13 @@ import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../../../shared/widgets/open_vts_status_chip.dart';
 import '../../../models/user_transactions_model.dart';
 
 class UserTransactionsSummaryStrip extends StatelessWidget {
-  const UserTransactionsSummaryStrip({
-    required this.transactions,
-    super.key,
-  });
+  const UserTransactionsSummaryStrip({required this.transactions, super.key});
 
   final List<UserTransaction> transactions;
 
@@ -37,7 +35,7 @@ class UserTransactionsSummaryStrip extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Summary',
+            context.mobileText('Summary'),
             style: OpenVtsTypography.meta.copyWith(
               color: textColor,
               fontWeight: FontWeight.w700,
@@ -49,21 +47,25 @@ class UserTransactionsSummaryStrip extends StatelessWidget {
             runSpacing: OpenVtsSpacing.xs,
             children: [
               OpenVtsStatusChip(
-                label: 'Success $successCount',
+                label: context.mobileText("Success {value1}", {
+                  'value1': (successCount).toString(),
+                }),
                 type: OpenVtsStatusType.success,
               ),
               OpenVtsStatusChip(
-                label: 'Pending $pendingCount',
+                label: context.mobileText("Pending {value1}", {
+                  'value1': (pendingCount).toString(),
+                }),
                 type: OpenVtsStatusType.warning,
               ),
               OpenVtsStatusChip(
-                label: 'Failed $failedCount',
+                label: context.mobileText("Failed {value1}", {
+                  'value1': (failedCount).toString(),
+                }),
                 type: OpenVtsStatusType.error,
               ),
               if (currencyTotals.length == 1)
-                _AmountChip(
-                  label: _singleCurrencyLabel(currencyTotals),
-                ),
+                _AmountChip(label: _singleCurrencyLabel(currencyTotals)),
             ],
           ),
           if (currencyTotals.length > 1) ...[
@@ -71,13 +73,12 @@ class UserTransactionsSummaryStrip extends StatelessWidget {
             Builder(
               builder: (context) {
                 final isDark = Theme.of(context).brightness == Brightness.dark;
-                final textColor =
-                    isDark ? Colors.grey[300] : OpenVtsColors.textSecondary;
+                final textColor = isDark
+                    ? Colors.grey[300]
+                    : OpenVtsColors.textSecondary;
                 return Text(
-                  'Totals by currency',
-                  style: OpenVtsTypography.meta.copyWith(
-                    color: textColor,
-                  ),
+                  context.mobileText('Totals by currency'),
+                  style: OpenVtsTypography.meta.copyWith(color: textColor),
                 );
               },
             ),
@@ -114,9 +115,7 @@ class UserTransactionsSummaryStrip extends StatelessWidget {
     }
 
     final keys = grouped.keys.toList()..sort();
-    return <String, double>{
-      for (final key in keys) key: grouped[key]!,
-    };
+    return <String, double>{for (final key in keys) key: grouped[key]!};
   }
 
   String _singleCurrencyLabel(Map<String, double> totals) {
@@ -150,8 +149,9 @@ class _AmountChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final backgroundColor =
-        isDark ? Colors.black : OpenVtsColors.surfaceElevated;
+    final backgroundColor = isDark
+        ? Colors.black
+        : OpenVtsColors.surfaceElevated;
     final borderColor = isDark ? Colors.white : OpenVtsColors.border;
     final textColor = isDark ? Colors.white : OpenVtsColors.textPrimary;
 
@@ -163,10 +163,7 @@ class _AmountChip extends StatelessWidget {
       decoration: BoxDecoration(
         color: backgroundColor,
         borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-        border: Border.all(
-          color: borderColor,
-          width: isDark ? 1 : 1,
-        ),
+        border: Border.all(color: borderColor, width: isDark ? 1 : 1),
       ),
       child: Text(
         label,

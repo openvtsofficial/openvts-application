@@ -4,6 +4,7 @@ import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../core/utils/date_time_formatter.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../models/admin_users_model.dart';
 
@@ -55,51 +56,54 @@ class AdminUserDetailsSheet extends StatelessWidget {
               ),
             ),
             _StatusBadge(
-              label: user.isActive ? 'Active' : 'Inactive',
-              color:
-                  user.isActive ? OpenVtsColors.success : OpenVtsColors.error,
+              label: user.isActive
+                  ? context.mobileText('Active')
+                  : context.mobileText('Inactive'),
+              color: user.isActive
+                  ? OpenVtsColors.success
+                  : OpenVtsColors.error,
             ),
           ],
         ),
         const SizedBox(height: OpenVtsSpacing.md),
         _DetailsRow(
           icon: Icons.verified_rounded,
-          label: 'Email status',
+          label: context.mobileText('Email status'),
           value: user.isEmailVerified ? 'Verified' : 'Unverified',
         ),
         _DetailsRow(
           icon: Icons.mail_outline_rounded,
-          label: 'Email',
+          label: context.mobileText('Email'),
           value: user.email,
         ),
         _DetailsRow(
           icon: Icons.phone_rounded,
-          label: 'Mobile',
+          label: context.mobileText('Mobile'),
           value: user.mobileDisplay,
         ),
         _DetailsRow(
           icon: Icons.apartment_rounded,
-          label: 'Company',
+          label: context.mobileText('Company'),
           value: user.companyName,
         ),
         _DetailsRow(
           icon: Icons.place_outlined,
-          label: 'Location',
+          label: context.mobileText('Location'),
           value: user.location,
         ),
         _DetailsRow(
           icon: Icons.flag_outlined,
-          label: 'Country',
+          label: context.mobileText('Country'),
           value: user.countryCode,
         ),
         _DetailsRow(
           icon: Icons.directions_car_filled_outlined,
-          label: 'Assigned vehicles',
+          label: context.mobileText('Assigned vehicles'),
           value: _vehicleCountText(user.vehicleCount),
         ),
         _DetailsRow(
           icon: Icons.calendar_today_rounded,
-          label: 'Created',
+          label: context.mobileText('Created'),
           value: user.createdAt == null
               ? '—'
               : const DateTimeFormatter().formatDate(user.createdAt!.toLocal()),
@@ -109,7 +113,7 @@ class AdminUserDetailsSheet extends StatelessWidget {
           children: [
             Expanded(
               child: OpenVtsButton(
-                label: 'Edit',
+                label: context.mobileText('Edit'),
                 height: 40,
                 onPressed: onEdit,
                 variant: OpenVtsButtonVariant.secondary,
@@ -118,7 +122,7 @@ class AdminUserDetailsSheet extends StatelessWidget {
             const SizedBox(width: OpenVtsSpacing.xs),
             Expanded(
               child: OpenVtsButton(
-                label: 'Password',
+                label: context.mobileText('Password'),
                 height: 40,
                 onPressed: onChangePassword,
                 variant: OpenVtsButtonVariant.secondary,
@@ -131,7 +135,7 @@ class AdminUserDetailsSheet extends StatelessWidget {
           children: [
             Expanded(
               child: OpenVtsButton(
-                label: 'Login as User',
+                label: context.mobileText('Login as User'),
                 height: 40,
                 onPressed: onLoginAsUser,
                 trailingIcon: Icons.login_rounded,
@@ -140,7 +144,7 @@ class AdminUserDetailsSheet extends StatelessWidget {
             const SizedBox(width: OpenVtsSpacing.xs),
             Expanded(
               child: OpenVtsButton(
-                label: 'Delete',
+                label: context.mobileText('Delete'),
                 height: 40,
                 onPressed: onDelete,
                 variant: OpenVtsButtonVariant.secondary,

@@ -7,6 +7,8 @@ import '../../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../../shared/helpers/mobile_text.dart';
+import '../../../../../../shared/helpers/validation_localizations.dart';
 import '../../../../../../shared/widgets/open_vts_bottom_sheet.dart';
 import '../../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../controllers/user_landmark_studio_controller.dart'
@@ -116,7 +118,9 @@ class _UserPoiFormBodyState extends ConsumerState<_UserPoiFormBody> {
         builder: (_) => UserPoiPickerMap(
           initialPoint: initial,
           initialToleranceM: _toleranceMeters,
-          title: widget.existing == null ? 'Place POI' : 'Move POI',
+          title: widget.existing == null
+              ? context.mobileText('Place POI')
+              : context.mobileText('Move POI'),
         ),
       ),
     );
@@ -240,20 +244,20 @@ class _UserPoiFormBodyState extends ConsumerState<_UserPoiFormBody> {
         ),
         children: [
           _Field(
-            label: 'Name',
+            label: context.mobileText('Name'),
             required: true,
             child: TextFormField(
               controller: _name,
               style: OpenVtsTypography.body,
               textInputAction: TextInputAction.next,
               autovalidateMode: AutovalidateMode.onUserInteraction,
-              validator: _validateName,
+              validator: context.localizedValidator(_validateName),
               decoration: _inputDecoration(hint: 'e.g. Pune warehouse'),
             ),
           ),
           const SizedBox(height: OpenVtsSpacing.md),
           _Field(
-            label: 'Description',
+            label: context.mobileText('Description'),
             child: TextFormField(
               controller: _description,
               style: OpenVtsTypography.body,
@@ -281,7 +285,7 @@ class _UserPoiFormBodyState extends ConsumerState<_UserPoiFormBody> {
           ),
           const SizedBox(height: OpenVtsSpacing.md),
           _Field(
-            label: 'Tolerance (meters)',
+            label: context.mobileText('Tolerance (meters)'),
             child: TextFormField(
               controller: _tolerance,
               style: OpenVtsTypography.numeric,
@@ -319,7 +323,9 @@ class _UserPoiFormBodyState extends ConsumerState<_UserPoiFormBody> {
           ],
           const SizedBox(height: OpenVtsSpacing.md),
           OpenVtsButton(
-            label: widget.existing == null ? 'Create POI' : 'Save changes',
+            label: widget.existing == null
+                ? context.mobileText('Create POI')
+                : context.mobileText('Save changes'),
             onPressed: _submitting ? null : _submit,
             isLoading: _submitting,
           ),
@@ -330,7 +336,7 @@ class _UserPoiFormBodyState extends ConsumerState<_UserPoiFormBody> {
               foregroundColor: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
             child: Text(
-              'Cancel',
+              context.mobileText('Cancel'),
               style: OpenVtsTypography.label.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
@@ -363,10 +369,7 @@ class _UserPoiFormBodyState extends ConsumerState<_UserPoiFormBody> {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(OpenVtsRadius.button),
-        borderSide: const BorderSide(
-          color: OpenVtsColors.brandInk,
-          width: 1.4,
-        ),
+        borderSide: const BorderSide(color: OpenVtsColors.brandInk, width: 1.4),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(OpenVtsRadius.button),
@@ -374,10 +377,7 @@ class _UserPoiFormBodyState extends ConsumerState<_UserPoiFormBody> {
       ),
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(OpenVtsRadius.button),
-        borderSide: const BorderSide(
-          color: OpenVtsColors.error,
-          width: 1.4,
-        ),
+        borderSide: const BorderSide(color: OpenVtsColors.error, width: 1.4),
       ),
     );
   }
@@ -461,11 +461,7 @@ class _LocationCard extends StatelessWidget {
               border: Border.all(color: borderColor),
             ),
             alignment: Alignment.center,
-            child: Icon(
-              Icons.place_outlined,
-              size: 18,
-              color: textColor,
-            ),
+            child: Icon(Icons.place_outlined, size: 18, color: textColor),
           ),
           const SizedBox(width: OpenVtsSpacing.sm),
           Expanded(
@@ -473,21 +469,17 @@ class _LocationCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Location',
-                  style: OpenVtsTypography.label.copyWith(
-                    color: textColor,
-                  ),
+                  context.mobileText('Location'),
+                  style: OpenVtsTypography.label.copyWith(color: textColor),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   coordinates == null
-                      ? 'Not set'
+                      ? context.mobileText('Not set')
                       : '${coordinates!.lat.toStringAsFixed(6)}, '
-                          '${coordinates!.lon.toStringAsFixed(6)}'
-                          '${tolerance != null && tolerance! > 0 ? ' • ±${tolerance!.toStringAsFixed(0)} m' : ''}',
-                  style: OpenVtsTypography.meta.copyWith(
-                    color: textColor,
-                  ),
+                            '${coordinates!.lon.toStringAsFixed(6)}'
+                            '${tolerance != null && tolerance! > 0 ? ' • ±${tolerance!.toStringAsFixed(0)} m' : ''}',
+                  style: OpenVtsTypography.meta.copyWith(color: textColor),
                 ),
               ],
             ),
@@ -501,7 +493,9 @@ class _LocationCard extends StatelessWidget {
               ),
             ),
             child: Text(
-              coordinates == null ? 'Pick on map' : 'Edit on map',
+              coordinates == null
+                  ? context.mobileText('Pick on map')
+                  : context.mobileText('Edit on map'),
               style: OpenVtsTypography.label.copyWith(
                 color: textColor,
                 fontWeight: FontWeight.w700,
@@ -541,15 +535,19 @@ class _ActiveToggle extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Active',
+                  context.mobileText('Active'),
                   style: OpenVtsTypography.label.copyWith(
                     color: scheme.onSurface,
                   ),
                 ),
                 Text(
                   value
-                      ? 'Visible on live map and proximity alerts.'
-                      : 'Hidden from alerts; stays in the list.',
+                      ? context.mobileText(
+                          'Visible on live map and proximity alerts.',
+                        )
+                      : context.mobileText(
+                          'Hidden from alerts; stays in the list.',
+                        ),
                   style: OpenVtsTypography.meta.copyWith(
                     color: scheme.onSurfaceVariant,
                   ),
@@ -557,10 +555,7 @@ class _ActiveToggle extends StatelessWidget {
               ],
             ),
           ),
-          Switch.adaptive(
-            value: value,
-            onChanged: onChanged,
-          ),
+          Switch.adaptive(value: value, onChanged: onChanged),
         ],
       ),
     );

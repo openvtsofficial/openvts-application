@@ -7,10 +7,10 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../../../../core/theme/open_vts_colors.dart';
-import '../../../../../../core/widgets/map_attribution.dart';
 import '../../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../../shared/widgets/open_vts_map_layer_selector.dart';
@@ -81,14 +81,13 @@ class _UserPoiPickerMapState extends State<UserPoiPickerMap> {
     );
     _searchCtrl = TextEditingController();
     _ownsNominatimDio = widget.searchClient == null;
-    _nominatimDio = widget.searchClient ??
+    _nominatimDio =
+        widget.searchClient ??
         Dio(
           BaseOptions(
             connectTimeout: const Duration(seconds: 6),
             receiveTimeout: const Duration(seconds: 8),
-            headers: {
-              'User-Agent': 'OpenVTS-Mobile/1.0 (poi-search)',
-            },
+            headers: {'User-Agent': 'OpenVTS-Mobile/1.0 (poi-search)'},
           ),
         );
   }
@@ -142,15 +141,18 @@ class _UserPoiPickerMapState extends State<UserPoiPickerMap> {
     final metersPerDegLon =
         metersPerDegLat * math.cos(p.latitude * math.pi / 180).abs();
     final latOffset = (dLat * _nudgeMeters) / metersPerDegLat;
-    final lonOffset =
-        metersPerDegLon < 1 ? 0.0 : (dLon * _nudgeMeters) / metersPerDegLon;
+    final lonOffset = metersPerDegLon < 1
+        ? 0.0
+        : (dLon * _nudgeMeters) / metersPerDegLon;
     _setPoint(LatLng(p.latitude + latOffset, p.longitude + lonOffset));
   }
 
   void _save() {
     if (_point == null) {
       ToastHelper.showError(
-        'Tap the map or enter coordinates to place the POI.',
+        context.mobileText(
+          'Tap the map or enter coordinates to place the POI.',
+        ),
         context: context,
       );
       return;
@@ -194,11 +196,13 @@ class _UserPoiPickerMapState extends State<UserPoiPickerMap> {
             final lat = double.tryParse(item['lat'].toString());
             final lon = double.tryParse(item['lon'].toString());
             if (lat != null && lon != null) {
-              results.add(_NominatimResult(
-                label: item['display_name'] ?? '',
-                lat: lat,
-                lon: lon,
-              ));
+              results.add(
+                _NominatimResult(
+                  label: item['display_name'] ?? '',
+                  lat: lat,
+                  lon: lon,
+                ),
+              );
             }
           }
         }
@@ -239,7 +243,7 @@ class _UserPoiPickerMapState extends State<UserPoiPickerMap> {
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.close, color: OpenVtsColors.white),
+          icon: const Icon(Icons.close, color: OpenVtsColors.white),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
@@ -251,11 +255,9 @@ class _UserPoiPickerMapState extends State<UserPoiPickerMap> {
         actions: [
           TextButton(
             onPressed: _save,
-            style: TextButton.styleFrom(
-              foregroundColor: OpenVtsColors.white,
-            ),
+            style: TextButton.styleFrom(foregroundColor: OpenVtsColors.white),
             child: Text(
-              'Save',
+              context.mobileText('Save'),
               style: OpenVtsTypography.label.copyWith(
                 color: OpenVtsColors.white,
                 fontWeight: FontWeight.w700,
@@ -302,8 +304,9 @@ class _UserPoiPickerMapState extends State<UserPoiPickerMap> {
                               point: _point!,
                               useRadiusInMeter: true,
                               radius: _tolerance,
-                              color: OpenVtsColors.brandInk
-                                  .withValues(alpha: 0.10),
+                              color: OpenVtsColors.brandInk.withValues(
+                                alpha: 0.10,
+                              ),
                               borderStrokeWidth: 1.2,
                               borderColor: OpenVtsColors.brandInk.withValues(
                                 alpha: 0.6,
@@ -323,7 +326,6 @@ class _UserPoiPickerMapState extends State<UserPoiPickerMap> {
                             ),
                           ],
                         ),
-                      OpenVtsMapAttribution(layerId: _selectedLayerId),
                     ],
                   ),
                   // Layer button at top-right
@@ -398,7 +400,10 @@ class _PickerPin extends StatelessWidget {
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-              blurRadius: 4, color: Color(0x33000000), offset: Offset(0, 2)),
+            blurRadius: 4,
+            color: Color(0x33000000),
+            offset: Offset(0, 2),
+          ),
         ],
       ),
       padding: const EdgeInsets.all(3),
@@ -450,9 +455,7 @@ class _Panel extends StatelessWidget {
     return Container(
       decoration: const BoxDecoration(
         color: OpenVtsColors.brandInk,
-        border: Border(
-          top: BorderSide(color: OpenVtsColors.white),
-        ),
+        border: Border(top: BorderSide(color: OpenVtsColors.white)),
       ),
       padding: const EdgeInsets.fromLTRB(
         OpenVtsSpacing.md,
@@ -470,7 +473,7 @@ class _Panel extends StatelessWidget {
               children: [
                 Expanded(
                   child: _CoordField(
-                    label: 'Latitude',
+                    label: context.mobileText('Latitude'),
                     controller: latCtrl,
                     onSubmitted: onApplyCoords,
                   ),
@@ -478,7 +481,7 @@ class _Panel extends StatelessWidget {
                 const SizedBox(width: OpenVtsSpacing.xs),
                 Expanded(
                   child: _CoordField(
-                    label: 'Longitude',
+                    label: context.mobileText('Longitude'),
                     controller: lonCtrl,
                     onSubmitted: onApplyCoords,
                   ),
@@ -486,7 +489,7 @@ class _Panel extends StatelessWidget {
                 const SizedBox(width: OpenVtsSpacing.xs),
                 _IconBtn(
                   icon: Icons.my_location,
-                  tooltip: 'Recenter',
+                  tooltip: context.mobileText('Recenter'),
                   onTap: hasPoint ? onRecenter : null,
                 ),
               ],
@@ -495,7 +498,7 @@ class _Panel extends StatelessWidget {
             Row(
               children: [
                 Text(
-                  'Nudge 10 m',
+                  context.mobileText('Nudge 10 m'),
                   style: OpenVtsTypography.meta.copyWith(
                     color: OpenVtsColors.white,
                   ),
@@ -503,22 +506,22 @@ class _Panel extends StatelessWidget {
                 const Spacer(),
                 _IconBtn(
                   icon: Icons.arrow_upward,
-                  tooltip: 'North',
+                  tooltip: context.mobileText('North'),
                   onTap: hasPoint ? onNudgeNorth : null,
                 ),
                 _IconBtn(
                   icon: Icons.arrow_downward,
-                  tooltip: 'South',
+                  tooltip: context.mobileText('South'),
                   onTap: hasPoint ? onNudgeSouth : null,
                 ),
                 _IconBtn(
                   icon: Icons.arrow_back,
-                  tooltip: 'West',
+                  tooltip: context.mobileText('West'),
                   onTap: hasPoint ? onNudgeWest : null,
                 ),
                 _IconBtn(
                   icon: Icons.arrow_forward,
-                  tooltip: 'East',
+                  tooltip: context.mobileText('East'),
                   onTap: hasPoint ? onNudgeEast : null,
                 ),
               ],
@@ -528,7 +531,7 @@ class _Panel extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Tolerance',
+                  context.mobileText('Tolerance'),
                   style: OpenVtsTypography.label.copyWith(
                     color: OpenVtsColors.white,
                   ),
@@ -559,8 +562,10 @@ class _Panel extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: OpenVtsColors.brandInk,
                         borderRadius: BorderRadius.circular(4),
-                        border:
-                            Border.all(color: OpenVtsColors.white, width: 1),
+                        border: Border.all(
+                          color: OpenVtsColors.white,
+                          width: 1,
+                        ),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -571,11 +576,12 @@ class _Panel extends StatelessWidget {
                               controller: tolCtrl,
                               keyboardType:
                                   const TextInputType.numberWithOptions(
-                                decimal: true,
-                              ),
+                                    decimal: true,
+                                  ),
                               inputFormatters: <TextInputFormatter>[
                                 FilteringTextInputFormatter.allow(
-                                    RegExp(r'[0-9.]')),
+                                  RegExp(r'[0-9.]'),
+                                ),
                               ],
                               cursorColor: OpenVtsColors.white,
                               style: OpenVtsTypography.numeric.copyWith(
@@ -587,8 +593,9 @@ class _Panel extends StatelessWidget {
                                 isDense: true,
                                 filled: false,
                                 hintText: '0',
-                                hintStyle:
-                                    TextStyle(color: OpenVtsColors.white),
+                                hintStyle: TextStyle(
+                                  color: OpenVtsColors.white,
+                                ),
                                 contentPadding: EdgeInsets.zero,
                                 border: InputBorder.none,
                               ),
@@ -612,7 +619,9 @@ class _Panel extends StatelessWidget {
             ),
             const SizedBox(height: OpenVtsSpacing.xs),
             OpenVtsButton(
-              label: hasPoint ? 'Use this location' : 'Tap map to place POI',
+              label: hasPoint
+                  ? context.mobileText('Use this location')
+                  : context.mobileText('Tap map to place POI'),
               onPressed: hasPoint ? onSave : null,
             ),
           ],
@@ -645,18 +654,14 @@ class _CoordField extends StatelessWidget {
         FilteringTextInputFormatter.allow(RegExp(r'[0-9.\-]')),
       ],
       cursorColor: OpenVtsColors.white,
-      style: OpenVtsTypography.numeric.copyWith(
-        color: OpenVtsColors.white,
-      ),
+      style: OpenVtsTypography.numeric.copyWith(color: OpenVtsColors.white),
       onSubmitted: (_) => onSubmitted(),
       onEditingComplete: onSubmitted,
       decoration: InputDecoration(
         isDense: true,
         filled: false,
         labelText: label,
-        labelStyle: OpenVtsTypography.meta.copyWith(
-          color: OpenVtsColors.white,
-        ),
+        labelStyle: OpenVtsTypography.meta.copyWith(color: OpenVtsColors.white),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: OpenVtsSpacing.sm,
           vertical: 10,
@@ -671,10 +676,7 @@ class _CoordField extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(OpenVtsRadius.button),
-          borderSide: const BorderSide(
-            color: OpenVtsColors.white,
-            width: 1.4,
-          ),
+          borderSide: const BorderSide(color: OpenVtsColors.white, width: 1.4),
         ),
       ),
     );
@@ -772,11 +774,11 @@ class _SearchBar extends StatelessWidget {
               decoration: InputDecoration(
                 isDense: true,
                 filled: false,
-                hintText: 'Search place...',
+                hintText: context.mobileText('Search place...'),
                 hintStyle: OpenVtsTypography.body.copyWith(
                   color: OpenVtsColors.white.withValues(alpha: 0.6),
                 ),
-                prefixIcon: Icon(
+                prefixIcon: const Icon(
                   Icons.search,
                   size: 18,
                   color: OpenVtsColors.white,
@@ -796,15 +798,18 @@ class _SearchBar extends StatelessWidget {
                         ),
                       )
                     : controller.text.isNotEmpty
-                        ? IconButton(
-                            icon: const Icon(Icons.close,
-                                size: 18, color: OpenVtsColors.white),
-                            onPressed: () {
-                              controller.clear();
-                              onSearch();
-                            },
-                          )
-                        : null,
+                    ? IconButton(
+                        icon: const Icon(
+                          Icons.close,
+                          size: 18,
+                          color: OpenVtsColors.white,
+                        ),
+                        onPressed: () {
+                          controller.clear();
+                          onSearch();
+                        },
+                      )
+                    : null,
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.symmetric(vertical: 10),
                 suffixIconColor: OpenVtsColors.white,
@@ -817,7 +822,8 @@ class _SearchBar extends StatelessWidget {
               decoration: BoxDecoration(
                 border: Border(
                   top: BorderSide(
-                      color: OpenVtsColors.white.withValues(alpha: 0.2)),
+                    color: OpenVtsColors.white.withValues(alpha: 0.2),
+                  ),
                 ),
               ),
               child: ListView.builder(

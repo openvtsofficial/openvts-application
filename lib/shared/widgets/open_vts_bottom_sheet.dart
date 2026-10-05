@@ -5,18 +5,17 @@ import 'package:flutter/material.dart';
 import '../../core/theme/open_vts_radius.dart';
 import '../../core/theme/open_vts_spacing.dart';
 import '../../core/theme/open_vts_typography.dart';
+import '../helpers/widget_localizations.dart';
 
-typedef OpenVtsBottomSheetBuilder = Widget Function(
-  BuildContext context,
-  ScrollController scrollController,
-);
+typedef OpenVtsBottomSheetBuilder =
+    Widget Function(BuildContext context, ScrollController scrollController);
 
 class OpenVtsBottomSheet {
   static const List<double> _defaultSnapSizes = <double>[
     0.28,
     0.48,
     0.72,
-    0.92
+    0.92,
   ];
 
   static Future<T?> show<T>({
@@ -36,8 +35,9 @@ class OpenVtsBottomSheet {
     );
 
     final resolvedMinChildSize = minChildSize.clamp(0.0, 1.0).toDouble();
-    final resolvedMaxChildSize =
-        maxChildSize.clamp(resolvedMinChildSize, 1.0).toDouble();
+    final resolvedMaxChildSize = maxChildSize
+        .clamp(resolvedMinChildSize, 1.0)
+        .toDouble();
     final resolvedInitialChildSize = initialChildSize
         .clamp(resolvedMinChildSize, resolvedMaxChildSize)
         .toDouble();
@@ -51,6 +51,8 @@ class OpenVtsBottomSheet {
     final sheetFuture = showModalBottomSheet<T>(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
+      constraints: const BoxConstraints(maxWidth: 640),
       backgroundColor: Colors.transparent,
       builder: (context) {
         final mediaQuery = MediaQuery.of(context);
@@ -120,12 +122,26 @@ class OpenVtsBottomSheet {
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: OpenVtsSpacing.md,
                                   ),
-                                  child: Text(
-                                    title,
-                                    style:
-                                        OpenVtsTypography.titleSmall.copyWith(
-                                      color: scheme.onSurface,
-                                    ),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          title,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: OpenVtsTypography.titleSmall
+                                              .copyWith(
+                                                color: scheme.onSurface,
+                                              ),
+                                        ),
+                                      ),
+                                      IconButton(
+                                        tooltip: context.widgetL10n.close,
+                                        onPressed: () =>
+                                            Navigator.of(context).maybePop(),
+                                        icon: const Icon(Icons.close_rounded),
+                                      ),
+                                    ],
                                   ),
                                 ),
                                 const SizedBox(height: OpenVtsSpacing.sm),
@@ -179,8 +195,7 @@ class OpenVtsBottomSheet {
     final resolved = <double>{
       for (final size in snapSizes)
         size.clamp(minChildSize, maxChildSize).toDouble(),
-    }.toList()
-      ..sort();
+    }.toList()..sort();
 
     if (resolved.isEmpty) {
       return <double>[minChildSize, maxChildSize];
@@ -288,6 +303,10 @@ class _OpenVtsSheetDragHandleRegionState
     }
 
     _didDrag = false;
+    if (MediaQuery.disableAnimationsOf(context)) {
+      widget.controller.jumpTo(_nearestSnapSize(widget.controller.size));
+      return;
+    }
     unawaited(
       widget.controller
           .animateTo(

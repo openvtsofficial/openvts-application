@@ -7,6 +7,7 @@ import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
@@ -41,7 +42,7 @@ class _UserSubUsersScreenState extends ConsumerState<UserSubUsersScreen> {
     final visibleSubUsers = _applyLocalFilters(state.subUsers, _statusFilter);
 
     return OpenVtsPageScaffold(
-      title: 'Sub Users',
+      title: context.mobileText('Sub Users'),
       headerMode: OpenVtsPageHeaderMode.closeable,
       padding: const EdgeInsets.fromLTRB(
         OpenVtsSpacing.sm,
@@ -49,12 +50,7 @@ class _UserSubUsersScreenState extends ConsumerState<UserSubUsersScreen> {
         OpenVtsSpacing.sm,
         0,
       ),
-      body: _buildBody(
-        context,
-        state,
-        controller,
-        visibleSubUsers,
-      ),
+      body: _buildBody(context, state, controller, visibleSubUsers),
     );
   }
 
@@ -124,16 +120,22 @@ class _UserSubUsersScreenState extends ConsumerState<UserSubUsersScreen> {
                   onClearSearch: () => _clearFilters(controller),
                 )
               else
-                for (var index = 0;
-                    index < visibleSubUsers.length;
-                    index++) ...[
+                for (
+                  var index = 0;
+                  index < visibleSubUsers.length;
+                  index++
+                ) ...[
                   UserSubUserCard(
                     subUser: visibleSubUsers[index],
-                    isTogglingStatus:
-                        state.togglingIds.contains(visibleSubUsers[index].id),
+                    isTogglingStatus: state.togglingIds.contains(
+                      visibleSubUsers[index].id,
+                    ),
                     onTap: () => _openSubUserDetails(visibleSubUsers[index]),
                     onToggleStatus: (_) => _toggleStatus(
-                        context, controller, visibleSubUsers[index]),
+                      context,
+                      controller,
+                      visibleSubUsers[index],
+                    ),
                   ),
                   if (index < visibleSubUsers.length - 1)
                     const SizedBox(height: OpenVtsSpacing.sm),
@@ -156,13 +158,15 @@ class _UserSubUsersScreenState extends ConsumerState<UserSubUsersScreen> {
     List<UserSubUser> source,
     UserSubUsersStatusFilter statusFilter,
   ) {
-    return source.where((item) {
-      return switch (statusFilter) {
-        UserSubUsersStatusFilter.all => true,
-        UserSubUsersStatusFilter.active => item.isActive,
-        UserSubUsersStatusFilter.inactive => !item.isActive,
-      };
-    }).toList(growable: false);
+    return source
+        .where((item) {
+          return switch (statusFilter) {
+            UserSubUsersStatusFilter.all => true,
+            UserSubUsersStatusFilter.active => item.isActive,
+            UserSubUsersStatusFilter.inactive => !item.isActive,
+          };
+        })
+        .toList(growable: false);
   }
 
   Future<void> _openCreateSheet(BuildContext context) async {
@@ -174,16 +178,18 @@ class _UserSubUsersScreenState extends ConsumerState<UserSubUsersScreen> {
       useSafeArea: true,
       showDragHandle: true,
       backgroundColor: Theme.of(context).colorScheme.surface,
-      builder: (_) => UserSubUserCreateSheet(
-        onSubmit: controller.createSubUser,
-      ),
+      builder: (_) =>
+          UserSubUserCreateSheet(onSubmit: controller.createSubUser),
     );
 
     if (created == null || !context.mounted) {
       return;
     }
 
-    ToastHelper.showSuccess('Sub user created.', context: context);
+    ToastHelper.showSuccess(
+      context.mobileText('Sub user created.'),
+      context: context,
+    );
 
     final subUserId = created.id.trim();
     if (subUserId.isEmpty) {
@@ -203,7 +209,8 @@ class _UserSubUsersScreenState extends ConsumerState<UserSubUsersScreen> {
       return;
     }
 
-    final message = ref.read(userSubUsersControllerProvider).errorMessage ??
+    final message =
+        ref.read(userSubUsersControllerProvider).errorMessage ??
         'Status update failed.';
     ToastHelper.showError(message, context: context);
   }
@@ -251,7 +258,7 @@ class _SubUsersHeaderCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Sub Users',
+                context.mobileText('Sub Users'),
                 style: OpenVtsTypography.label.copyWith(
                   color: Theme.of(context).colorScheme.onSurface,
                   fontWeight: FontWeight.w800,
@@ -259,7 +266,7 @@ class _SubUsersHeaderCard extends StatelessWidget {
               ),
               const SizedBox(height: OpenVtsSpacing.xxs),
               Text(
-                'Manage sub users and vehicle access.',
+                context.mobileText('Manage sub users and vehicle access.'),
                 style: OpenVtsTypography.meta.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
@@ -274,7 +281,7 @@ class _SubUsersHeaderCard extends StatelessWidget {
               SizedBox(
                 height: 34,
                 child: OpenVtsButton(
-                  label: 'Refresh',
+                  label: context.mobileText('Refresh'),
                   height: 34,
                   variant: OpenVtsButtonVariant.secondary,
                   trailingIcon: Icons.refresh_rounded,
@@ -285,7 +292,7 @@ class _SubUsersHeaderCard extends StatelessWidget {
               SizedBox(
                 height: 34,
                 child: OpenVtsButton(
-                  label: 'Create Sub User',
+                  label: context.mobileText('Create Sub User'),
                   height: 34,
                   trailingIcon: Icons.person_add_alt_1_rounded,
                   onPressed: state.isCreating ? null : onCreate,
@@ -378,13 +385,15 @@ class _EmptySubUsersState extends StatelessWidget {
       return OpenVtsCard(
         child: Column(
           children: [
-            const OpenVtsEmptyState(
-              title: 'No sub users',
-              message: 'Create your first sub user to share selected access.',
+            OpenVtsEmptyState(
+              title: context.mobileText('No sub users'),
+              message: context.mobileText(
+                'Create your first sub user to share selected access.',
+              ),
             ),
             const SizedBox(height: OpenVtsSpacing.sm),
             OpenVtsButton(
-              label: 'Create Sub User',
+              label: context.mobileText('Create Sub User'),
               trailingIcon: Icons.person_add_alt_1_rounded,
               onPressed: onCreate,
             ),
@@ -397,15 +406,17 @@ class _EmptySubUsersState extends StatelessWidget {
       return OpenVtsCard(
         child: Column(
           children: [
-            const OpenVtsEmptyState(
-              title: 'No matching sub users',
-              message: 'Try clearing search or status filters.',
+            OpenVtsEmptyState(
+              title: context.mobileText('No matching sub users'),
+              message: context.mobileText(
+                'Try clearing search or status filters.',
+              ),
             ),
             const SizedBox(height: OpenVtsSpacing.sm),
             OpenVtsButton(
               label: hasSearchQuery && !hasStatusFilter
-                  ? 'Clear Search'
-                  : 'Clear Filters',
+                  ? context.mobileText('Clear Search')
+                  : context.mobileText('Clear Filters'),
               variant: OpenVtsButtonVariant.secondary,
               trailingIcon: Icons.filter_alt_off_outlined,
               onPressed: onClearSearch,
@@ -415,9 +426,9 @@ class _EmptySubUsersState extends StatelessWidget {
       );
     }
 
-    return const OpenVtsEmptyState(
-      title: 'No sub users available',
-      message: 'Pull to refresh or create a new sub user.',
+    return OpenVtsEmptyState(
+      title: context.mobileText('No sub users available'),
+      message: context.mobileText('Pull to refresh or create a new sub user.'),
     );
   }
 }
@@ -454,7 +465,7 @@ class _LoadMoreSection extends StatelessWidget {
 
     return Center(
       child: OpenVtsButton(
-        label: 'Load More',
+        label: context.mobileText('Load More'),
         height: 36,
         variant: OpenVtsButtonVariant.secondary,
         trailingIcon: Icons.expand_more_rounded,

@@ -10,6 +10,7 @@ import 'package:latlong2/latlong.dart';
 
 import '../../../../core/api/api_exception.dart';
 import '../../../../core/platform/platform_time_zone.dart';
+import '../../../../shared/helpers/mobile_text.dart';
 import '../../../../shared/widgets/open_vts_date_time_range_selector.dart';
 import '../../../../shared/widgets/open_vts_page_scaffold.dart';
 import '../../../auth/controllers/auth_controller.dart';
@@ -93,7 +94,7 @@ class _UserReportsScreenState extends ConsumerState<UserReportsScreen> {
     );
     if (isDemo) {
       return OpenVtsPageScaffold(
-        title: 'Reports',
+        title: context.mobileText('Reports'),
         body: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 560),
@@ -110,15 +111,17 @@ class _UserReportsScreenState extends ConsumerState<UserReportsScreen> {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'Reports are restricted in demo mode',
+                      context.mobileText('Reports are restricted in demo mode'),
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Advanced reporting features are not available in the '
-                      'public demo. Sign in with an OpenVTS account to run, '
-                      'page, visualise, and export fleet reports.',
+                      context.mobileText(
+                        'Advanced reporting features are not available in the '
+                        'public demo. Sign in with an OpenVTS account to run, '
+                        'page, visualise, and export fleet reports.',
+                      ),
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
@@ -132,10 +135,10 @@ class _UserReportsScreenState extends ConsumerState<UserReportsScreen> {
     }
 
     return OpenVtsPageScaffold(
-      title: 'Reports',
+      title: context.mobileText('Reports'),
       actions: [
         IconButton(
-          tooltip: 'Refresh report options',
+          tooltip: context.mobileText('Refresh report options'),
           onPressed: _isLoadingOptions ? null : _loadOptions,
           icon: const Icon(Icons.refresh_rounded),
         ),
@@ -143,38 +146,37 @@ class _UserReportsScreenState extends ConsumerState<UserReportsScreen> {
       body: _isLoadingOptions
           ? const Center(child: CircularProgressIndicator())
           : _options == null
-              ? _buildOptionsError()
-              : ListView(
-                  children: [
-                    _buildQueryCard(),
-                    const SizedBox(height: 12),
-                    if (_errorMessage != null) _buildErrorCard(_errorMessage!),
-                    if (_warning != null) _buildWarningCard(_warning!),
-                    if (_rows.isNotEmpty) ...[
-                      _MetricBars(
-                        reportKey: _reportKey,
-                        rows: _rows,
-                      ),
-                      const SizedBox(height: 12),
-                      _buildResultsTable(),
-                    ] else if (!_isGenerating && _lastRequest != null)
-                      const Card(
-                        child: Padding(
-                          padding: EdgeInsets.all(24),
-                          child: Center(
-                            child: Text(
-                              'No rows matched the selected report filters.',
-                            ),
+          ? _buildOptionsError()
+          : ListView(
+              children: [
+                _buildQueryCard(),
+                const SizedBox(height: 12),
+                if (_errorMessage != null) _buildErrorCard(_errorMessage!),
+                if (_warning != null) _buildWarningCard(_warning!),
+                if (_rows.isNotEmpty) ...[
+                  _MetricBars(reportKey: _reportKey, rows: _rows),
+                  const SizedBox(height: 12),
+                  _buildResultsTable(),
+                ] else if (!_isGenerating && _lastRequest != null)
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Center(
+                        child: Text(
+                          context.mobileText(
+                            'No rows matched the selected report filters.',
                           ),
                         ),
                       ),
-                    if (_isGenerating)
-                      const Padding(
-                        padding: EdgeInsets.all(32),
-                        child: Center(child: CircularProgressIndicator()),
-                      ),
-                  ],
-                ),
+                    ),
+                  ),
+                if (_isGenerating)
+                  const Padding(
+                    padding: EdgeInsets.all(32),
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
+              ],
+            ),
     );
   }
 
@@ -190,7 +192,7 @@ class _UserReportsScreenState extends ConsumerState<UserReportsScreen> {
           FilledButton.icon(
             onPressed: _loadOptions,
             icon: const Icon(Icons.refresh_rounded),
-            label: const Text('Retry'),
+            label: Text(context.mobileText('Retry')),
           ),
         ],
       ),
@@ -207,7 +209,7 @@ class _UserReportsScreenState extends ConsumerState<UserReportsScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              'Generate report',
+              context.mobileText('Generate report'),
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 4),
@@ -226,15 +228,12 @@ class _UserReportsScreenState extends ConsumerState<UserReportsScreen> {
                   width: 220,
                   child: DropdownButtonFormField<UserReportKey>(
                     initialValue: _reportKey,
-                    decoration: const InputDecoration(
-                      labelText: 'Report type',
+                    decoration: InputDecoration(
+                      labelText: context.mobileText('Report type'),
                     ),
                     items: [
                       for (final key in UserReportKey.values)
-                        DropdownMenuItem(
-                          value: key,
-                          child: Text(key.label),
-                        ),
+                        DropdownMenuItem(value: key, child: Text(key.label)),
                     ],
                     onChanged: _isGenerating
                         ? null
@@ -248,30 +247,33 @@ class _UserReportsScreenState extends ConsumerState<UserReportsScreen> {
                     width: 180,
                     child: DropdownButtonFormField<String>(
                       initialValue: _scopeMode,
-                      decoration: const InputDecoration(
-                        labelText: 'Vehicle scope',
+                      decoration: InputDecoration(
+                        labelText: context.mobileText('Vehicle scope'),
                       ),
-                      items: const [
-                        DropdownMenuItem(value: 'all', child: Text('All')),
+                      items: [
+                        DropdownMenuItem(
+                          value: 'all',
+                          child: Text(context.mobileText('All')),
+                        ),
                         DropdownMenuItem(
                           value: 'single',
-                          child: Text('One vehicle'),
+                          child: Text(context.mobileText('One vehicle')),
                         ),
                         DropdownMenuItem(
                           value: 'multiple',
-                          child: Text('Selected vehicles'),
+                          child: Text(context.mobileText('Selected vehicles')),
                         ),
                         DropdownMenuItem(
                           value: 'group',
-                          child: Text('Vehicle group'),
+                          child: Text(context.mobileText('Vehicle group')),
                         ),
                       ],
                       onChanged: _isGenerating
                           ? null
                           : (value) => setState(() {
-                                _scopeMode = value ?? 'all';
-                                _clearResult();
-                              }),
+                              _scopeMode = value ?? 'all';
+                              _clearResult();
+                            }),
                     ),
                   ),
                 if (_scopeMode == 'single' || _reportKey.requiresSingleVehicle)
@@ -291,7 +293,7 @@ class _UserReportsScreenState extends ConsumerState<UserReportsScreen> {
                     icon: const Icon(Icons.checklist_rounded),
                     label: Text(
                       _multipleVehicleIds.isEmpty
-                          ? 'Select vehicles'
+                          ? context.mobileText('Select vehicles')
                           : '${_multipleVehicleIds.length} vehicles selected',
                     ),
                   ),
@@ -300,8 +302,8 @@ class _UserReportsScreenState extends ConsumerState<UserReportsScreen> {
                     width: 240,
                     child: DropdownButtonFormField<String>(
                       initialValue: _groupId,
-                      decoration: const InputDecoration(
-                        labelText: 'Vehicle group',
+                      decoration: InputDecoration(
+                        labelText: context.mobileText('Vehicle group'),
                       ),
                       items: [
                         for (final group in options.groups)
@@ -316,9 +318,9 @@ class _UserReportsScreenState extends ConsumerState<UserReportsScreen> {
                       onChanged: _isGenerating
                           ? null
                           : (value) => setState(() {
-                                _groupId = value;
-                                _clearResult();
-                              }),
+                              _groupId = value;
+                              _clearResult();
+                            }),
                     ),
                   ),
                 OutlinedButton.icon(
@@ -345,7 +347,7 @@ class _UserReportsScreenState extends ConsumerState<UserReportsScreen> {
               child: FilledButton.icon(
                 onPressed: _isGenerating ? null : _generate,
                 icon: const Icon(Icons.analytics_outlined),
-                label: const Text('Generate'),
+                label: Text(context.mobileText('Generate')),
               ),
             ),
           ],
@@ -363,9 +365,9 @@ class _UserReportsScreenState extends ConsumerState<UserReportsScreen> {
             controller: _speedLimitController,
             enabled: !_isGenerating,
             keyboardType: TextInputType.number,
-            decoration: const InputDecoration(
-              labelText: 'Speed limit (km/h)',
-              helperText: 'Allowed range: 10–300',
+            decoration: InputDecoration(
+              labelText: context.mobileText('Speed limit (km/h)'),
+              helperText: context.mobileText('Allowed range: 10–300'),
             ),
           ),
         );
@@ -375,12 +377,12 @@ class _UserReportsScreenState extends ConsumerState<UserReportsScreen> {
           child: DropdownButtonFormField<String>(
             initialValue: _sensorId,
             decoration: InputDecoration(
-              labelText: 'Sensor',
+              labelText: context.mobileText('Sensor'),
               helperText: _singleVehicleId == null
-                  ? 'Select a vehicle first'
+                  ? context.mobileText('Select a vehicle first')
                   : _isLoadingSensors
-                      ? 'Loading sensors…'
-                      : null,
+                  ? context.mobileText('Loading sensors…')
+                  : null,
             ),
             items: [
               for (final sensor in _sensors.where((item) => item.isActive))
@@ -396,8 +398,9 @@ class _UserReportsScreenState extends ConsumerState<UserReportsScreen> {
         );
       case UserReportKey.geofence:
         return OutlinedButton.icon(
-          onPressed:
-              _isGenerating || _isLoadingGeofences ? null : _pickGeofences,
+          onPressed: _isGenerating || _isLoadingGeofences
+              ? null
+              : _pickGeofences,
           icon: _isLoadingGeofences
               ? const SizedBox.square(
                   dimension: 18,
@@ -406,7 +409,7 @@ class _UserReportsScreenState extends ConsumerState<UserReportsScreen> {
               : const Icon(Icons.radar_rounded),
           label: Text(
             _geofenceIds.isEmpty
-                ? 'All geofences'
+                ? context.mobileText('All geofences')
                 : '${_geofenceIds.length} geofences selected',
           ),
         );
@@ -415,7 +418,7 @@ class _UserReportsScreenState extends ConsumerState<UserReportsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _FilterChips(
-              title: 'Alert type',
+              title: context.mobileText('Alert type'),
               values: const {
                 'overspeed': 'Overspeed',
                 'geofence_entry': 'Geofence entry',
@@ -443,7 +446,7 @@ class _UserReportsScreenState extends ConsumerState<UserReportsScreen> {
               crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 _FilterChips(
-                  title: 'Severity',
+                  title: context.mobileText('Severity'),
                   values: const {
                     'critical': 'Critical',
                     'high': 'High',
@@ -457,24 +460,27 @@ class _UserReportsScreenState extends ConsumerState<UserReportsScreen> {
                   width: 240,
                   child: DropdownButtonFormField<String>(
                     initialValue: _acknowledged,
-                    decoration:
-                        const InputDecoration(labelText: 'Acknowledged'),
-                    items: const [
-                      DropdownMenuItem(value: 'all', child: Text('All alerts')),
+                    decoration: InputDecoration(
+                      labelText: context.mobileText('Acknowledged'),
+                    ),
+                    items: [
+                      DropdownMenuItem(
+                        value: 'all',
+                        child: Text(context.mobileText('All alerts')),
+                      ),
                       DropdownMenuItem(
                         value: 'yes',
-                        child: Text('Acknowledged'),
+                        child: Text(context.mobileText('Acknowledged')),
                       ),
                       DropdownMenuItem(
                         value: 'no',
-                        child: Text('Not acknowledged'),
+                        child: Text(context.mobileText('Not acknowledged')),
                       ),
                     ],
                     onChanged: _isGenerating
                         ? null
-                        : (value) => setState(
-                              () => _acknowledged = value ?? 'all',
-                            ),
+                        : (value) =>
+                              setState(() => _acknowledged = value ?? 'all'),
                   ),
                 ),
               ],
@@ -486,7 +492,7 @@ class _UserReportsScreenState extends ConsumerState<UserReportsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _FilterChips(
-              title: 'Category',
+              title: context.mobileText('Category'),
               values: const {
                 'telemetry': 'Telemetry',
                 'device_event': 'Device event',
@@ -500,7 +506,7 @@ class _UserReportsScreenState extends ConsumerState<UserReportsScreen> {
             ),
             const SizedBox(height: 8),
             _FilterChips(
-              title: 'Level',
+              title: context.mobileText('Level'),
               values: const {
                 'info': 'Info',
                 'warning': 'Warning',
@@ -513,7 +519,7 @@ class _UserReportsScreenState extends ConsumerState<UserReportsScreen> {
             ),
             const SizedBox(height: 8),
             _FilterChips(
-              title: 'Direction',
+              title: context.mobileText('Direction'),
               values: const {
                 'device_to_server': 'Device → server',
                 'server_to_device': 'Server → device',
@@ -529,10 +535,12 @@ class _UserReportsScreenState extends ConsumerState<UserReportsScreen> {
               child: TextField(
                 controller: _logSearchController,
                 enabled: !_isGenerating,
-                decoration: const InputDecoration(
-                  labelText: 'Search device logs',
-                  helperText: 'Optional; enter at least 3 characters',
-                  prefixIcon: Icon(Icons.search_rounded),
+                decoration: InputDecoration(
+                  labelText: context.mobileText('Search device logs'),
+                  helperText: context.mobileText(
+                    'Optional; enter at least 3 characters',
+                  ),
+                  prefixIcon: const Icon(Icons.search_rounded),
                 ),
               ),
             ),
@@ -545,18 +553,20 @@ class _UserReportsScreenState extends ConsumerState<UserReportsScreen> {
             for (final stateName in const ['running', 'stopped'])
               FilterChip(
                 label: Text(
-                  stateName == 'running' ? 'Running' : 'Stopped',
+                  stateName == 'running'
+                      ? context.mobileText('Running')
+                      : context.mobileText('Stopped'),
                 ),
                 selected: _timelineStates.contains(stateName),
                 onSelected: _isGenerating
                     ? null
                     : (selected) => setState(() {
-                          if (selected) {
-                            _timelineStates.add(stateName);
-                          } else {
-                            _timelineStates.remove(stateName);
-                          }
-                        }),
+                        if (selected) {
+                          _timelineStates.add(stateName);
+                        } else {
+                          _timelineStates.remove(stateName);
+                        }
+                      }),
               ),
           ],
         );
@@ -570,6 +580,7 @@ class _UserReportsScreenState extends ConsumerState<UserReportsScreen> {
   Widget _buildResultsTable() {
     final columns = _visibleColumns();
     final source = _ReportTableSource(
+      routeTrailTooltip: context.mobileText('Show route trail'),
       rows: _rows,
       columns: columns,
       reportKey: _reportKey,
@@ -599,7 +610,7 @@ class _UserReportsScreenState extends ConsumerState<UserReportsScreen> {
                   for (final column in columns)
                     DataColumn(label: Text(_columnLabel(column))),
                   if (_reportKey == UserReportKey.timeline)
-                    const DataColumn(label: Text('Route')),
+                    DataColumn(label: Text(context.mobileText('Route'))),
                 ],
                 source: source,
                 rowsPerPage: _rowsPerPage,
@@ -615,7 +626,9 @@ class _UserReportsScreenState extends ConsumerState<UserReportsScreen> {
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
               child: Text(
-                'Source: $_source',
+                context.mobileText("Source: {value1}", {
+                  'value1': (_source).toString(),
+                }),
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ),
@@ -630,7 +643,7 @@ class _UserReportsScreenState extends ConsumerState<UserReportsScreen> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.expand_more_rounded),
-                label: const Text('Load more from server'),
+                label: Text(context.mobileText('Load more from server')),
               ),
             ),
         ],
@@ -639,9 +652,7 @@ class _UserReportsScreenState extends ConsumerState<UserReportsScreen> {
   }
 
   List<String> _visibleColumns() {
-    final available = <String>{
-      for (final row in _rows) ...row.keys,
-    };
+    final available = <String>{for (final row in _rows) ...row.keys};
     final preferred = _reportKey.preferredColumns
         .where(available.contains)
         .toList(growable: false);
@@ -661,8 +672,9 @@ class _UserReportsScreenState extends ConsumerState<UserReportsScreen> {
       final options = await ref.read(userReportControllerProvider).getOptions();
       if (!mounted) return;
       setState(() {
-        final validVehicleIds =
-            options.vehicles.map((vehicle) => vehicle.id).toSet();
+        final validVehicleIds = options.vehicles
+            .map((vehicle) => vehicle.id)
+            .toSet();
         final validGroupIds = options.groups.map((group) => group.id).toSet();
         _options = options;
         if (!validVehicleIds.contains(_singleVehicleId)) {
@@ -727,7 +739,9 @@ class _UserReportsScreenState extends ConsumerState<UserReportsScreen> {
       dateTimeEnabled: dateTimeEnabled,
       firstDate: DateTime.now().subtract(const Duration(days: 3650)),
       lastDate: DateTime.now(),
-      title: 'Select ${_reportKey.label.toLowerCase()} report range',
+      title: context.mobileText("Select {value1} report range", {
+        'value1': (_reportKey.label.toLowerCase()).toString(),
+      }),
     );
     final normalized = selected?.normalized(dateTimeEnabled: dateTimeEnabled);
     final start = normalized?.start;
@@ -745,8 +759,9 @@ class _UserReportsScreenState extends ConsumerState<UserReportsScreen> {
     }
     setState(() {
       _rangeStart = start;
-      _rangeEndExclusive =
-          dateTimeEnabled ? end : end.add(const Duration(days: 1));
+      _rangeEndExclusive = dateTimeEnabled
+          ? end
+          : end.add(const Duration(days: 1));
       _clearResult();
     });
   }
@@ -760,8 +775,9 @@ class _UserReportsScreenState extends ConsumerState<UserReportsScreen> {
     }
     final now = DateTime.now();
     _rangeStart = today;
-    _rangeEndExclusive =
-        now.isAfter(today) ? now : today.add(const Duration(minutes: 1));
+    _rangeEndExclusive = now.isAfter(today)
+        ? now
+        : today.add(const Duration(minutes: 1));
   }
 
   Future<void> _pickVehicles({required bool multiple}) async {
@@ -811,16 +827,20 @@ class _UserReportsScreenState extends ConsumerState<UserReportsScreen> {
           final filtered = normalized.isEmpty
               ? vehicles
               : vehicles
-                  .where(
-                    (vehicle) =>
-                        vehicle.displayName
-                            .toLowerCase()
-                            .contains(normalized) ||
-                        vehicle.imei.toLowerCase().contains(normalized),
-                  )
-                  .toList(growable: false);
+                    .where(
+                      (vehicle) =>
+                          vehicle.displayName.toLowerCase().contains(
+                            normalized,
+                          ) ||
+                          vehicle.imei.toLowerCase().contains(normalized),
+                    )
+                    .toList(growable: false);
           return AlertDialog(
-            title: Text(multiple ? 'Select vehicles' : 'Select vehicle'),
+            title: Text(
+              multiple
+                  ? context.mobileText('Select vehicles')
+                  : context.mobileText('Select vehicle'),
+            ),
             content: SizedBox(
               width: 560,
               height: math.min(MediaQuery.sizeOf(context).height * 0.7, 620.0),
@@ -829,16 +849,22 @@ class _UserReportsScreenState extends ConsumerState<UserReportsScreen> {
                   TextField(
                     controller: searchController,
                     autofocus: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Search name, plate or IMEI',
-                      prefixIcon: Icon(Icons.search_rounded),
+                    decoration: InputDecoration(
+                      labelText: context.mobileText(
+                        'Search name, plate or IMEI',
+                      ),
+                      prefixIcon: const Icon(Icons.search_rounded),
                     ),
                     onChanged: (value) => setDialogState(() => query = value),
                   ),
                   const SizedBox(height: 8),
                   Expanded(
                     child: filtered.isEmpty
-                        ? const Center(child: Text('No vehicles found.'))
+                        ? Center(
+                            child: Text(
+                              context.mobileText('No vehicles found.'),
+                            ),
+                          )
                         : ListView.builder(
                             itemCount: filtered.length,
                             itemBuilder: (context, index) {
@@ -850,8 +876,9 @@ class _UserReportsScreenState extends ConsumerState<UserReportsScreen> {
                                 subtitle: Text(vehicle.imei),
                                 onChanged: (_) {
                                   if (!multiple) {
-                                    Navigator.of(dialogContext)
-                                        .pop(<String>{vehicle.id});
+                                    Navigator.of(
+                                      dialogContext,
+                                    ).pop(<String>{vehicle.id});
                                     return;
                                   }
                                   setDialogState(() {
@@ -872,12 +899,16 @@ class _UserReportsScreenState extends ConsumerState<UserReportsScreen> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(dialogContext).pop(),
-                child: const Text('Cancel'),
+                child: Text(context.mobileText('Cancel')),
               ),
               if (multiple)
                 FilledButton(
                   onPressed: () => Navigator.of(dialogContext).pop(selected),
-                  child: Text('Use ${selected.length} selected'),
+                  child: Text(
+                    context.mobileText("Use {value1} selected", {
+                      'value1': (selected.length).toString(),
+                    }),
+                  ),
                 ),
             ],
           );
@@ -894,8 +925,9 @@ class _UserReportsScreenState extends ConsumerState<UserReportsScreen> {
       _errorMessage = null;
     });
     try {
-      final page =
-          await ref.read(userReportControllerProvider).getSensors(vehicleId);
+      final page = await ref
+          .read(userReportControllerProvider)
+          .getSensors(vehicleId);
       if (!mounted || _singleVehicleId != vehicleId) return;
       setState(() {
         _sensors = page.items;
@@ -915,8 +947,9 @@ class _UserReportsScreenState extends ConsumerState<UserReportsScreen> {
       _errorMessage = null;
     });
     try {
-      final geofences =
-          await ref.read(userReportControllerProvider).getActiveGeofences();
+      final geofences = await ref
+          .read(userReportControllerProvider)
+          .getActiveGeofences();
       if (!mounted) return;
       setState(() => _geofences = geofences);
     } catch (error) {
@@ -936,13 +969,10 @@ class _UserReportsScreenState extends ConsumerState<UserReportsScreen> {
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Filter geofences'),
+          title: Text(context.mobileText('Filter geofences')),
           content: SizedBox(
             width: 500,
-            height: math.min(
-              MediaQuery.sizeOf(context).height * 0.65,
-              560.0,
-            ),
+            height: math.min(MediaQuery.sizeOf(context).height * 0.65, 560.0),
             child: ListView.builder(
               itemCount: _geofences.length,
               itemBuilder: (context, index) {
@@ -970,15 +1000,19 @@ class _UserReportsScreenState extends ConsumerState<UserReportsScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(<String>{}),
-              child: const Text('Use all'),
+              child: Text(context.mobileText('Use all')),
             ),
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Cancel'),
+              child: Text(context.mobileText('Cancel')),
             ),
             FilledButton(
               onPressed: () => Navigator.of(dialogContext).pop(selected),
-              child: Text('Use ${selected.length} selected'),
+              child: Text(
+                context.mobileText("Use {value1} selected", {
+                  'value1': (selected.length).toString(),
+                }),
+              ),
             ),
           ],
         ),
@@ -1016,8 +1050,9 @@ class _UserReportsScreenState extends ConsumerState<UserReportsScreen> {
     }
 
     Map<String, dynamic> scope;
-    final effectiveScope =
-        _reportKey.requiresSingleVehicle ? 'single' : _scopeMode;
+    final effectiveScope = _reportKey.requiresSingleVehicle
+        ? 'single'
+        : _scopeMode;
     switch (effectiveScope) {
       case 'single':
         if (_singleVehicleId == null) {
@@ -1147,7 +1182,9 @@ class _UserReportsScreenState extends ConsumerState<UserReportsScreen> {
       _warning = null;
     });
     try {
-      final page = await ref.read(userReportControllerProvider).generate(
+      final page = await ref
+          .read(userReportControllerProvider)
+          .generate(
             reportKey: request.reportKey,
             vehicleScope: request.vehicleScope,
             dateRange: request.dateRange,
@@ -1161,10 +1198,7 @@ class _UserReportsScreenState extends ConsumerState<UserReportsScreen> {
       setState(() {
         _lastRequest = request;
         _rows = append
-            ? List<Map<String, dynamic>>.unmodifiable([
-                ..._rows,
-                ...page.rows,
-              ])
+            ? List<Map<String, dynamic>>.unmodifiable([..._rows, ...page.rows])
             : page.rows;
         _nextCursor = page.nextCursor;
         _hasMore = page.hasMore && page.nextCursor != null;
@@ -1199,12 +1233,9 @@ class _UserReportsScreenState extends ConsumerState<UserReportsScreen> {
       _errorMessage = null;
     });
     try {
-      final points =
-          await ref.read(userReportControllerProvider).getTimelineMap(
-                vehicleId: vehicleId,
-                from: from,
-                to: to,
-              );
+      final points = await ref
+          .read(userReportControllerProvider)
+          .getTimelineMap(vehicleId: vehicleId, from: from, to: to);
       if (!mounted) return;
       if (points.isEmpty) {
         _setError('No valid route points were recorded for this segment.');
@@ -1338,6 +1369,7 @@ class _ReportRequest {
 
 class _ReportTableSource extends DataTableSource {
   _ReportTableSource({
+    required this.routeTrailTooltip,
     required this.rows,
     required this.columns,
     required this.reportKey,
@@ -1346,6 +1378,7 @@ class _ReportTableSource extends DataTableSource {
   });
 
   final List<Map<String, dynamic>> rows;
+  final String routeTrailTooltip;
   final List<String> columns;
   final UserReportKey reportKey;
   final String? loadingMapKey;
@@ -1374,9 +1407,10 @@ class _ReportTableSource extends DataTableSource {
         if (reportKey == UserReportKey.timeline)
           DataCell(
             IconButton(
-              tooltip: 'Show route trail',
-              onPressed:
-                  loadingMapKey == null ? () => onTimelineMap(row) : null,
+              tooltip: routeTrailTooltip,
+              onPressed: loadingMapKey == null
+                  ? () => onTimelineMap(row)
+                  : null,
               icon: loadingMapKey == mapKey
                   ? const SizedBox.square(
                       dimension: 18,
@@ -1400,10 +1434,7 @@ class _ReportTableSource extends DataTableSource {
 }
 
 class _MetricBars extends StatelessWidget {
-  const _MetricBars({
-    required this.reportKey,
-    required this.rows,
-  });
+  const _MetricBars({required this.reportKey, required this.rows});
 
   final UserReportKey reportKey;
   final List<Map<String, dynamic>> rows;
@@ -1460,20 +1491,14 @@ class _MetricBars extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              chartTitle,
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
+            Text(chartTitle, style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 12),
             for (final entry in entries) ...[
               Row(
                 children: [
                   SizedBox(
                     width: 120,
-                    child: Text(
-                      entry.label,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                    child: Text(entry.label, overflow: TextOverflow.ellipsis),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
@@ -1553,10 +1578,7 @@ class _FilterChips extends StatelessWidget {
 }
 
 class _TimelineMapDialog extends StatefulWidget {
-  const _TimelineMapDialog({
-    required this.title,
-    required this.points,
-  });
+  const _TimelineMapDialog({required this.title, required this.points});
 
   final String title;
   final List<UserTimelinePoint> points;
@@ -1592,7 +1614,7 @@ class _TimelineMapDialogState extends State<_TimelineMapDialog> {
                     ),
                   ),
                   IconButton(
-                    tooltip: 'Close',
+                    tooltip: context.mobileText('Close'),
                     onPressed: () => Navigator.of(context).pop(),
                     icon: const Icon(Icons.close_rounded),
                   ),
@@ -1700,8 +1722,9 @@ String _columnLabel(String key) {
 String _formatReportValue(String key, dynamic value) {
   if (value == null) return '—';
   if (key == 'durationSeconds' || key == 'engineHoursSeconds') {
-    final seconds =
-        value is num ? value.toInt() : int.tryParse(value.toString()) ?? 0;
+    final seconds = value is num
+        ? value.toInt()
+        : int.tryParse(value.toString()) ?? 0;
     final duration = Duration(seconds: math.max(0, seconds));
     final hours = duration.inHours;
     final minutes = duration.inMinutes.remainder(60);
@@ -1709,8 +1732,8 @@ String _formatReportValue(String key, dynamic value) {
     return hours > 0
         ? '${hours}h ${minutes}m'
         : minutes > 0
-            ? '${minutes}m ${remainingSeconds}s'
-            : '${remainingSeconds}s';
+        ? '${minutes}m ${remainingSeconds}s'
+        : '${remainingSeconds}s';
   }
   if (value is bool) return value ? 'Yes' : 'No';
   if (value is num) {

@@ -8,6 +8,7 @@ import '../../../../core/router/route_paths.dart';
 import '../../../../core/theme/open_vts_radius.dart';
 import '../../../../core/theme/open_vts_spacing.dart';
 import '../../../../core/theme/open_vts_typography.dart';
+import '../../../../shared/helpers/mobile_text.dart';
 import '../../../../shared/widgets/open_vts_page_scaffold.dart';
 import '../../controllers/admin_providers.dart';
 import '../../controllers/admin_support_controller.dart';
@@ -29,7 +30,7 @@ class AdminSupportScreen extends ConsumerWidget {
         : null;
 
     return OpenVtsPageScaffold(
-      title: 'Support',
+      title: context.mobileText('Support'),
       headerMode: OpenVtsPageHeaderMode.closeable,
       padding: const EdgeInsets.fromLTRB(
         OpenVtsSpacing.md,
@@ -39,7 +40,7 @@ class AdminSupportScreen extends ConsumerWidget {
       ),
       actions: [
         IconButton(
-          tooltip: 'Refresh tickets',
+          tooltip: context.mobileText('Refresh tickets'),
           onPressed: state.isLoadingCurrentTab
               ? null
               : () => unawaited(controller.refreshCurrentTab()),
@@ -108,12 +109,7 @@ class AdminSupportScreen extends ConsumerWidget {
       return;
     }
 
-    await _openTicket(
-      context,
-      ref,
-      tab: tab,
-      ticketId: ticketId,
-    );
+    await _openTicket(context, ref, tab: tab, ticketId: ticketId);
   }
 
   Future<void> _openTicket(
@@ -198,10 +194,7 @@ class _SplitSupportLayout extends StatelessWidget {
 }
 
 class _ConversationSplitPanel extends StatelessWidget {
-  const _ConversationSplitPanel({
-    required this.tab,
-    required this.ticketId,
-  });
+  const _ConversationSplitPanel({required this.tab, required this.ticketId});
 
   final AdminSupportTab tab;
   final String? ticketId;
@@ -251,12 +244,14 @@ class _SelectTicketPlaceholder extends StatelessWidget {
             ),
             const SizedBox(height: OpenVtsSpacing.sm),
             Text(
-              'Select a ticket',
+              context.mobileText('Select a ticket'),
               style: OpenVtsTypography.titleSmall.copyWith(fontSize: 16),
             ),
             const SizedBox(height: OpenVtsSpacing.xs),
             Text(
-              'Open a support ticket to review the full conversation.',
+              context.mobileText(
+                'Open a support ticket to review the full conversation.',
+              ),
               textAlign: TextAlign.center,
               style: OpenVtsTypography.body.copyWith(
                 color: colorScheme.onSurfaceVariant,

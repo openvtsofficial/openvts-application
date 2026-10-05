@@ -369,12 +369,14 @@ class AdminVehicleDetailsController
     try {
       final deviceTypeId = state.vehicle?.device?.deviceTypeId;
       final results = await Future.wait<dynamic>([
-        _service.getCommandHistoryByImei(imei: imei),
+        _service.getCommandHistoryByImei(
+            imei: imei, vehicleId: state.vehicleId),
         _service.getCustomCommands(
           activeOnly: true,
+          vehicleId: state.vehicleId,
           deviceTypeId: deviceTypeId,
         ),
-        _service.getSystemVariables(),
+        _service.getSystemVariables(vehicleId: state.vehicleId),
       ]);
       final page = results[0] as AdminVehicleCommandHistoryPage;
       _loadedTabs.add(AdminVehicleDetailsTab.commands);
@@ -414,13 +416,18 @@ class AdminVehicleDetailsController
     }
   }
 
-  Future<void> sendCommand({required String command, String? note}) async {
+  Future<void> sendCommand(
+      {required String command, String? note, String? commandId}) async {
     final imei = state.vehicle?.imei.trim() ?? '';
     if (imei.isEmpty) return;
     state = state.copyWith(isSendingCommand: true, sectionErrorMessage: null);
     try {
       final result = await _service.sendCommandByImei(
-          imei: imei, command: command, note: note);
+          imei: imei,
+          command: command,
+          note: note,
+          vehicleId: state.vehicleId,
+          commandId: commandId);
       state = state.copyWith(isSendingCommand: false);
       await loadCommands();
       final cmdId = (result.cmdId ?? '').trim();
@@ -435,16 +442,16 @@ class AdminVehicleDetailsController
 
   Future<void> pollCommandStatus(String cmdId) async {
     try {
-      await _service.getCommandStatus(cmdId);
+      await _service.getCommandStatus(cmdId, vehicleId: state.vehicleId);
     } catch (_) {}
   }
 
   Future<AdminCommandStatus?> getCommandStatus(String cmdId) {
-    return _service.getCommandStatus(cmdId);
+    return _service.getCommandStatus(cmdId, vehicleId: state.vehicleId);
   }
 
   Future<AdminVehicleCommandItem?> getCommandLog(String cmdId) {
-    return _service.getCommandLog(cmdId);
+    return _service.getCommandLog(cmdId, vehicleId: state.vehicleId);
   }
 
   Future<void> loadSensors({
@@ -583,7 +590,7 @@ class AdminVehicleDetailsController
   Future<void> deleteDocument(String docId) async {
     state = state.copyWith(isDeletingDocument: true, sectionErrorMessage: null);
     try {
-      await _service.deleteVehicleDocument(docId);
+      await _service.deleteVehicleDocument(docId, vehicleId: state.vehicleId);
       state = state.copyWith(isDeletingDocument: false);
       await loadDocuments();
     } catch (error) {

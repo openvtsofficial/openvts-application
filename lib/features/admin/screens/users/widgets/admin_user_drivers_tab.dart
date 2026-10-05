@@ -6,6 +6,7 @@ import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../core/utils/date_time_formatter.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../shared/widgets/open_vts_bottom_sheet.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
@@ -14,12 +15,10 @@ import '../../../../../shared/widgets/open_vts_error_view.dart';
 import '../../../controllers/admin_providers.dart';
 import '../../../controllers/admin_user_details_controller.dart';
 import '../../../models/admin_user_details_model.dart';
+import '../../../widgets/admin_action_gate.dart';
 
 class AdminUserDriversTab extends ConsumerStatefulWidget {
-  const AdminUserDriversTab({
-    super.key,
-    required this.userId,
-  });
+  const AdminUserDriversTab({super.key, required this.userId});
 
   final String userId;
 
@@ -46,12 +45,13 @@ class _AdminUserDriversTabState extends ConsumerState<AdminUserDriversTab> {
     final provider = adminUserDetailsControllerProvider(widget.userId);
     final state = ref.watch(provider);
     final controller = ref.read(provider.notifier);
-    final isInitialLoading = state.isLoadingDrivers &&
+    final isInitialLoading =
+        state.isLoadingDrivers &&
         state.linkedDrivers.isEmpty &&
         state.availableDrivers.isEmpty;
 
     if (isInitialLoading) {
-      return const _SectionLoader(title: 'Drivers');
+      return _SectionLoader(title: context.mobileText('Drivers'));
     }
 
     if (state.sectionErrorMessage != null &&
@@ -104,8 +104,8 @@ class _AdminUserDriversTabState extends ConsumerState<AdminUserDriversTab> {
         if (assigned.isEmpty)
           _EmptyCard(
             label: _query.trim().isEmpty
-                ? 'No assigned drivers'
-                : 'No drivers match your search',
+                ? context.mobileText('No assigned drivers')
+                : context.mobileText('No drivers match your search'),
           )
         else
           for (final driver in assigned) ...[
@@ -159,7 +159,7 @@ class _AdminUserDriversTabState extends ConsumerState<AdminUserDriversTab> {
     final provider = adminUserDetailsControllerProvider(widget.userId);
     return OpenVtsBottomSheet.show<void>(
       context: context,
-      title: 'Assign Driver',
+      title: context.mobileText('Assign Driver'),
       initialChildSize: 0.72,
       minChildSize: 0.42,
       maxChildSize: 0.92,
@@ -171,7 +171,10 @@ class _AdminUserDriversTabState extends ConsumerState<AdminUserDriversTab> {
             return false;
           }
           if (ok) {
-            ToastHelper.showSuccess('Driver assigned.', context: context);
+            ToastHelper.showSuccess(
+              context.mobileText('Driver assigned.'),
+              context: context,
+            );
           } else {
             ToastHelper.showError(
               ref.read(provider).sectionErrorMessage ??
@@ -195,7 +198,10 @@ class _AdminUserDriversTabState extends ConsumerState<AdminUserDriversTab> {
       return;
     }
     if (ok) {
-      ToastHelper.showSuccess('Driver unassigned.', context: context);
+      ToastHelper.showSuccess(
+        context.mobileText('Driver unassigned.'),
+        context: context,
+      );
     } else {
       ToastHelper.showError(
         ref.read(provider).sectionErrorMessage ?? 'Unable to unassign driver.',
@@ -224,7 +230,7 @@ class _StatsGrid extends StatelessWidget {
       children: [
         Expanded(
           child: _SummaryTile(
-            label: 'Drivers',
+            label: context.mobileText('Drivers'),
             value: total.toString(),
             icon: Icons.badge_outlined,
           ),
@@ -232,7 +238,7 @@ class _StatsGrid extends StatelessWidget {
         const SizedBox(width: OpenVtsSpacing.xs),
         Expanded(
           child: _SummaryTile(
-            label: 'Available',
+            label: context.mobileText('Available'),
             value: available.toString(),
             icon: Icons.person_add_alt_rounded,
           ),
@@ -240,7 +246,7 @@ class _StatsGrid extends StatelessWidget {
         const SizedBox(width: OpenVtsSpacing.xs),
         Expanded(
           child: _SummaryTile(
-            label: 'Active',
+            label: context.mobileText('Active'),
             value: active.toString(),
             icon: Icons.check_circle_outline_rounded,
           ),
@@ -248,7 +254,7 @@ class _StatsGrid extends StatelessWidget {
         const SizedBox(width: OpenVtsSpacing.xs),
         Expanded(
           child: _SummaryTile(
-            label: 'Inactive',
+            label: context.mobileText('Inactive'),
             value: inactive.toString(),
             icon: Icons.pause_circle_outline_rounded,
           ),
@@ -343,7 +349,7 @@ class _SummaryCard extends StatelessWidget {
                     ),
                     const SizedBox(width: OpenVtsSpacing.xs),
                     Text(
-                      'Drivers',
+                      context.mobileText('Drivers'),
                       style: OpenVtsTypography.label.copyWith(
                         color: Theme.of(context).colorScheme.onSurface,
                         fontWeight: FontWeight.w800,
@@ -361,7 +367,10 @@ class _SummaryCard extends StatelessWidget {
                 ),
                 const SizedBox(height: OpenVtsSpacing.xs),
                 Text(
-                  '$assignedCount assigned - $availableCount available',
+                  context.mobileText("{value1} assigned - {value2} available", {
+                    'value1': (assignedCount).toString(),
+                    'value2': (availableCount).toString(),
+                  }),
                   style: OpenVtsTypography.meta.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontWeight: FontWeight.w700,
@@ -372,12 +381,15 @@ class _SummaryCard extends StatelessWidget {
           ),
           SizedBox(
             height: 34,
-            child: OpenVtsButton(
-              label: 'Assign Driver',
-              height: 34,
-              isLoading: isAssigning,
-              onPressed: onAssign,
-              trailingIcon: Icons.add_rounded,
+            child: AdminActionGate(
+              capability: 'users.update',
+              child: OpenVtsButton(
+                label: context.mobileText('Assign Driver'),
+                height: 34,
+                isLoading: isAssigning,
+                onPressed: onAssign,
+                trailingIcon: Icons.add_rounded,
+              ),
             ),
           ),
         ],
@@ -387,10 +399,7 @@ class _SummaryCard extends StatelessWidget {
 }
 
 class _SearchField extends StatelessWidget {
-  const _SearchField({
-    required this.controller,
-    required this.onChanged,
-  });
+  const _SearchField({required this.controller, required this.onChanged});
 
   final TextEditingController controller;
   final ValueChanged<String> onChanged;
@@ -401,9 +410,7 @@ class _SearchField extends StatelessWidget {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.outlineVariant,
-        ),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
       padding: const EdgeInsets.symmetric(horizontal: OpenVtsSpacing.sm),
       child: Row(
@@ -425,7 +432,7 @@ class _SearchField extends StatelessWidget {
               ),
               decoration: InputDecoration(
                 isDense: true,
-                hintText: 'Search assigned drivers',
+                hintText: context.mobileText('Search assigned drivers'),
                 hintStyle: TextStyle(
                   fontSize: 12,
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -585,11 +592,14 @@ class _DriverCard extends StatelessWidget {
                   ],
                 ),
               ),
-              _TinyTextButton(
-                label: 'Unassign',
-                icon: Icons.link_off_rounded,
-                isLoading: isUnassigning,
-                onPressed: onUnassign,
+              AdminActionGate(
+                capability: 'users.update',
+                child: _TinyTextButton(
+                  label: context.mobileText('Unassign'),
+                  icon: Icons.link_off_rounded,
+                  isLoading: isUnassigning,
+                  onPressed: onUnassign,
+                ),
               ),
             ],
           ),
@@ -599,28 +609,39 @@ class _DriverCard extends StatelessWidget {
             runSpacing: OpenVtsSpacing.xs,
             children: [
               _MetaPill(
-                  icon: Icons.person_outline_rounded,
-                  label: _statusLabel(driver)),
+                icon: Icons.person_outline_rounded,
+                label: _statusLabel(driver),
+              ),
               if (driver.mobile.trim().isNotEmpty)
                 _MetaPill(
-                    icon: Icons.call_outlined, label: driver.mobile.trim()),
+                  icon: Icons.call_outlined,
+                  label: driver.mobile.trim(),
+                ),
               if (driver.email.trim().isNotEmpty)
                 _MetaPill(
-                    icon: Icons.mail_outline_rounded,
-                    label: driver.email.trim()),
+                  icon: Icons.mail_outline_rounded,
+                  label: driver.email.trim(),
+                ),
               if (driver.username.trim().isNotEmpty)
                 _MetaPill(
-                    icon: Icons.alternate_email_rounded,
-                    label: driver.username.trim()),
+                  icon: Icons.alternate_email_rounded,
+                  label: driver.username.trim(),
+                ),
               if (driver.licenseNo.trim().isNotEmpty)
                 _MetaPill(
-                    icon: Icons.badge_outlined,
-                    label: 'License ${driver.licenseNo.trim()}'),
+                  icon: Icons.badge_outlined,
+                  label: context.mobileText("License {value1}", {
+                    'value1': (driver.licenseNo.trim()).toString(),
+                  }),
+                ),
               if (driver.createdAt != null)
                 _MetaPill(
                   icon: Icons.calendar_today_outlined,
-                  label:
-                      'Added ${const DateTimeFormatter().formatDate(driver.createdAt!.toLocal())}',
+                  label: context.mobileText("Added {value1}", {
+                    'value1': (const DateTimeFormatter().formatDate(
+                      driver.createdAt!.toLocal(),
+                    )).toString(),
+                  }),
                 ),
             ],
           ),
@@ -631,10 +652,7 @@ class _DriverCard extends StatelessWidget {
 }
 
 class _AssignDriverSheet extends StatefulWidget {
-  const _AssignDriverSheet({
-    required this.drivers,
-    required this.onAssign,
-  });
+  const _AssignDriverSheet({required this.drivers, required this.onAssign});
 
   final List<AdminUserDriver> drivers;
   final Future<bool> Function(AdminUserDriver driver) onAssign;
@@ -714,11 +732,9 @@ class _AssignDriverSheetState extends State<_AssignDriverSheet> {
             controller: _searchController,
             onChanged: (value) => setState(() => _query = value),
             cursorColor: Theme.of(context).colorScheme.primary,
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
             decoration: InputDecoration(
-              hintText: 'Search available drivers',
+              hintText: context.mobileText('Search available drivers'),
               hintStyle: TextStyle(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
@@ -733,12 +749,13 @@ class _AssignDriverSheetState extends State<_AssignDriverSheet> {
         Expanded(
           child: matches.isEmpty
               ? Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: OpenVtsSpacing.md),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: OpenVtsSpacing.md,
+                  ),
                   child: _EmptyCard(
                     label: _query.trim().isEmpty
-                        ? 'No available drivers'
-                        : 'No drivers match your search',
+                        ? context.mobileText('No available drivers')
+                        : context.mobileText('No drivers match your search'),
                   ),
                 )
               : ListView.separated(
@@ -772,7 +789,7 @@ class _AssignDriverSheetState extends State<_AssignDriverSheet> {
               children: [
                 Expanded(
                   child: OpenVtsButton(
-                    label: 'Cancel',
+                    label: context.mobileText('Cancel'),
                     height: 40,
                     variant: OpenVtsButtonVariant.secondary,
                     onPressed: _isSubmitting
@@ -783,7 +800,7 @@ class _AssignDriverSheetState extends State<_AssignDriverSheet> {
                 const SizedBox(width: OpenVtsSpacing.sm),
                 Expanded(
                   child: OpenVtsButton(
-                    label: 'Assign',
+                    label: context.mobileText('Assign'),
                     height: 40,
                     isLoading: _isSubmitting,
                     trailingIcon: Icons.check_rounded,
@@ -818,8 +835,12 @@ class _AssignDriverSheetState extends State<_AssignDriverSheet> {
     if (normalized.isEmpty) {
       return true;
     }
-    return [driver.name, driver.username, driver.email, driver.mobile]
-        .any((value) => value.toLowerCase().contains(normalized));
+    return [
+      driver.name,
+      driver.username,
+      driver.email,
+      driver.mobile,
+    ].any((value) => value.toLowerCase().contains(normalized));
   }
 
   Future<void> _assign(AdminUserDriver driver) async {
@@ -953,10 +974,7 @@ class _TinyTextButton extends StatelessWidget {
 }
 
 class _MetaPill extends StatelessWidget {
-  const _MetaPill({
-    required this.icon,
-    required this.label,
-  });
+  const _MetaPill({required this.icon, required this.label});
 
   final IconData icon;
   final String label;
@@ -1046,7 +1064,9 @@ class _SectionLoader extends StatelessWidget {
           ),
           const SizedBox(width: OpenVtsSpacing.sm),
           Text(
-            'Loading $title',
+            context.mobileText("Loading {value1}", {
+              'value1': (title).toString(),
+            }),
             style: OpenVtsTypography.label.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
               fontWeight: FontWeight.w700,
@@ -1068,10 +1088,7 @@ class _SectionErrorCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return OpenVtsCard(
       padding: const EdgeInsets.all(OpenVtsSpacing.md),
-      child: OpenVtsErrorView(
-        message: message,
-        onRetry: onRetry,
-      ),
+      child: OpenVtsErrorView(message: message, onRetry: onRetry),
     );
   }
 }

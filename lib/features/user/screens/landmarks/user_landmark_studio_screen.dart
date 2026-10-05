@@ -6,6 +6,7 @@ import '../../../../core/theme/open_vts_colors.dart';
 import '../../../../core/theme/open_vts_radius.dart';
 import '../../../../core/theme/open_vts_spacing.dart';
 import '../../../../core/theme/open_vts_typography.dart';
+import '../../../../shared/helpers/mobile_text.dart';
 import '../../../../shared/widgets/open_vts_button.dart';
 import '../../../../shared/widgets/open_vts_card.dart';
 import '../../../../shared/widgets/open_vts_page_scaffold.dart';
@@ -49,7 +50,7 @@ class UserLandmarkStudioScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return OpenVtsPageScaffold(
-      title: 'Landmark Studio',
+      title: context.mobileText('Landmark Studio'),
       headerMode: OpenVtsPageHeaderMode.closeable,
       padding: const EdgeInsets.fromLTRB(
         OpenVtsSpacing.md,
@@ -67,8 +68,8 @@ class UserLandmarkStudioScreen extends StatelessWidget {
               final crossAxisCount = width >= 880
                   ? 3
                   : width >= 600
-                      ? 2
-                      : 1;
+                  ? 2
+                  : 1;
               return SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 child: Column(
@@ -99,12 +100,15 @@ class _StudioHeaderCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final iconBg =
-        isDark ? OpenVtsColors.darkSurface : OpenVtsColors.surfaceElevated;
-    final titleColor =
-        isDark ? OpenVtsColors.darkTextPrimary : OpenVtsColors.textPrimary;
-    final subtitleColor =
-        isDark ? OpenVtsColors.darkTextSecondary : OpenVtsColors.textSecondary;
+    final iconBg = isDark
+        ? OpenVtsColors.darkSurface
+        : OpenVtsColors.surfaceElevated;
+    final titleColor = isDark
+        ? OpenVtsColors.darkTextPrimary
+        : OpenVtsColors.textPrimary;
+    final subtitleColor = isDark
+        ? OpenVtsColors.darkTextSecondary
+        : OpenVtsColors.textSecondary;
 
     return OpenVtsCard(
       padding: const EdgeInsets.all(OpenVtsSpacing.md),
@@ -119,11 +123,7 @@ class _StudioHeaderCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(OpenVtsRadius.md),
               border: Border.all(color: OpenVtsColors.border),
             ),
-            child: Icon(
-              Icons.map_outlined,
-              size: 18,
-              color: titleColor,
-            ),
+            child: Icon(Icons.map_outlined, size: 18, color: titleColor),
           ),
           const SizedBox(width: OpenVtsSpacing.sm),
           Expanded(
@@ -131,7 +131,7 @@ class _StudioHeaderCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Landmark Studio',
+                  context.mobileText('Landmark Studio'),
                   style: OpenVtsTypography.titleSmall.copyWith(
                     color: titleColor,
                     fontWeight: FontWeight.w600,
@@ -139,10 +139,10 @@ class _StudioHeaderCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Create and manage geofences, points of interest, and routes.',
-                  style: OpenVtsTypography.meta.copyWith(
-                    color: subtitleColor,
+                  context.mobileText(
+                    'Create and manage geofences, points of interest, and routes.',
                   ),
+                  style: OpenVtsTypography.meta.copyWith(color: subtitleColor),
                 ),
               ],
             ),
@@ -197,11 +197,11 @@ class _OptionsGrid extends StatelessWidget {
   }
 
   double _columnWidth(BuildContext context, int columns) {
-    final maxWidth = MediaQuery.sizeOf(context).width.clamp(
-          0.0,
-          UserLandmarkStudioScreen._maxContentWidth,
-        );
-    final available = maxWidth -
+    final maxWidth = MediaQuery.sizeOf(
+      context,
+    ).width.clamp(0.0, UserLandmarkStudioScreen._maxContentWidth);
+    final available =
+        maxWidth -
         (OpenVtsSpacing.md * 2) -
         (OpenVtsSpacing.sm * (columns - 1));
     return available / columns;
@@ -234,12 +234,15 @@ class _LandmarkOptionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final iconBg =
-        isDark ? OpenVtsColors.darkSurface : OpenVtsColors.surfaceElevated;
-    final titleColor =
-        isDark ? OpenVtsColors.darkTextPrimary : OpenVtsColors.textPrimary;
-    final subtitleColor =
-        isDark ? OpenVtsColors.darkTextSecondary : OpenVtsColors.textSecondary;
+    final iconBg = isDark
+        ? OpenVtsColors.darkSurface
+        : OpenVtsColors.surfaceElevated;
+    final titleColor = isDark
+        ? OpenVtsColors.darkTextPrimary
+        : OpenVtsColors.textPrimary;
+    final subtitleColor = isDark
+        ? OpenVtsColors.darkTextSecondary
+        : OpenVtsColors.textSecondary;
 
     return OpenVtsCard(
       onTap: onTap,
@@ -266,7 +269,7 @@ class _LandmarkOptionCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      option.label,
+                      context.mobileText(option.label),
                       style: OpenVtsTypography.titleSmall.copyWith(
                         color: titleColor,
                         fontWeight: FontWeight.w600,
@@ -274,7 +277,7 @@ class _LandmarkOptionCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      option.description,
+                      context.mobileText(option.description),
                       style: OpenVtsTypography.meta.copyWith(
                         color: subtitleColor,
                         height: 1.35,
@@ -295,7 +298,7 @@ class _LandmarkOptionCard extends StatelessWidget {
           ),
           const SizedBox(height: OpenVtsSpacing.sm),
           OpenVtsButton(
-            label: option.cta,
+            label: context.mobileText(option.cta),
             onPressed: onTap,
             variant: OpenVtsButtonVariant.secondary,
             height: 40,

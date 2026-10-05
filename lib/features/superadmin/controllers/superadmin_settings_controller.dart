@@ -10,7 +10,7 @@ import '../services/superadmin_settings_service.dart';
 class SuperadminSettingsController
     extends StateNotifier<SuperadminSettingsState> {
   SuperadminSettingsController(this._service)
-      : super(const SuperadminSettingsState.initial());
+    : super(const SuperadminSettingsState.initial());
 
   final SuperadminSettingsService _service;
 
@@ -21,10 +21,7 @@ class SuperadminSettingsController
   Future<void> loadInitial() async {
     if (state.isLoadingInitial) return;
 
-    state = state.copyWith(
-      isLoadingInitial: true,
-      errorMessage: null,
-    );
+    state = state.copyWith(isLoadingInitial: true, errorMessage: null);
 
     try {
       await loadProfile();
@@ -37,10 +34,7 @@ class SuperadminSettingsController
 
   void selectSection(SuperadminSettingsSection section) {
     if (state.selectedSection == section) return;
-    state = state.copyWith(
-      selectedSection: section,
-      sectionErrorMessage: null,
-    );
+    state = state.copyWith(selectedSection: section, sectionErrorMessage: null);
     unawaited(_loadForSection(section));
   }
 
@@ -49,6 +43,8 @@ class SuperadminSettingsController
 
   Future<void> _loadForSection(SuperadminSettingsSection section) async {
     switch (section) {
+      case SuperadminSettingsSection.security:
+        break;
       case SuperadminSettingsSection.profile:
         await loadProfile();
         break;
@@ -69,10 +65,7 @@ class SuperadminSettingsController
   // ---------------------------------------------------------------
 
   Future<void> loadProfile() async {
-    state = state.copyWith(
-      isLoadingProfile: true,
-      sectionErrorMessage: null,
-    );
+    state = state.copyWith(isLoadingProfile: true, sectionErrorMessage: null);
     try {
       final profile = await _service.getProfile();
       state = state.copyWith(profile: profile, isLoadingProfile: false);
@@ -161,10 +154,7 @@ class SuperadminSettingsController
   }
 
   Future<bool> changePassword(SuperadminChangePasswordRequest request) async {
-    state = state.copyWith(
-      isChangingPassword: true,
-      sectionErrorMessage: null,
-    );
+    state = state.copyWith(isChangingPassword: true, sectionErrorMessage: null);
     try {
       await _service.changePassword(request);
       state = state.copyWith(isChangingPassword: false);
@@ -193,10 +183,7 @@ class SuperadminSettingsController
         bytes: bytes,
         fileName: fileName,
       );
-      state = state.copyWith(
-        profile: profile,
-        isUploadingProfilePhoto: false,
-      );
+      state = state.copyWith(profile: profile, isUploadingProfilePhoto: false);
       return true;
     } catch (error) {
       state = state.copyWith(
@@ -208,8 +195,10 @@ class SuperadminSettingsController
   }
 
   Future<bool> requestEmailOtp() async {
-    state =
-        state.copyWith(isRequestingEmailOtp: true, sectionErrorMessage: null);
+    state = state.copyWith(
+      isRequestingEmailOtp: true,
+      sectionErrorMessage: null,
+    );
     try {
       await _service.requestEmailOtp();
       state = state.copyWith(isRequestingEmailOtp: false);
@@ -240,7 +229,9 @@ class SuperadminSettingsController
 
   Future<bool> requestWhatsAppOtp() async {
     state = state.copyWith(
-        isRequestingWhatsAppOtp: true, sectionErrorMessage: null);
+      isRequestingWhatsAppOtp: true,
+      sectionErrorMessage: null,
+    );
     try {
       await _service.requestWhatsAppOtp();
       state = state.copyWith(isRequestingWhatsAppOtp: false);
@@ -291,10 +282,7 @@ class SuperadminSettingsController
     state = state.copyWith(isSubscribingEmail: true, sectionErrorMessage: null);
     try {
       await _service.subscribeEmail();
-      state = state.copyWith(
-        isSubscribingEmail: false,
-        emailSubscribed: true,
-      );
+      state = state.copyWith(isSubscribingEmail: false, emailSubscribed: true);
       return true;
     } catch (error) {
       state = state.copyWith(
@@ -338,10 +326,7 @@ class SuperadminSettingsController
     String? logoDarkUrl,
     String? faviconUrl,
   }) async {
-    state = state.copyWith(
-      isSavingWhiteLabel: true,
-      sectionErrorMessage: null,
-    );
+    state = state.copyWith(isSavingWhiteLabel: true, sectionErrorMessage: null);
     try {
       final updated = await _service.updateWhiteLabel(
         customDomain: customDomain,
@@ -353,10 +338,7 @@ class SuperadminSettingsController
         logoDarkUrl: logoDarkUrl,
         faviconUrl: faviconUrl,
       );
-      state = state.copyWith(
-        whiteLabel: updated,
-        isSavingWhiteLabel: false,
-      );
+      state = state.copyWith(whiteLabel: updated, isSavingWhiteLabel: false);
       return true;
     } catch (error) {
       state = state.copyWith(

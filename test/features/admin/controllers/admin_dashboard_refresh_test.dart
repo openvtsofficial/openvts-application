@@ -13,7 +13,7 @@ import 'package:open_vts/features/auth/controllers/auth_state.dart';
 // Minimal stubs
 // ---------------------------------------------------------------------------
 
-final _emptyUser = AdminUserListItem(
+final _emptyUser = const AdminUserListItem(
   id: '1',
   name: 'Test',
   username: 'test',
@@ -35,28 +35,28 @@ final _emptyUser = AdminUserListItem(
 );
 
 AdminUserDetails _emptyUserDetails({String id = '1'}) => AdminUserDetails(
-      id: id,
-      name: 'Test',
-      username: 'test',
-      email: 'test@example.com',
-      mobilePrefix: '+91',
-      mobileNumber: '9999999999',
-      mobileDisplay: '+91 9999999999',
-      isEmailVerified: false,
-      isActive: true,
-      companyName: '-',
-      location: '-',
-      countryCode: 'IN',
-      stateCode: '',
-      city: '',
-      pincode: '',
-      vehicleCount: 0,
-      createdAt: null,
-      updatedAt: null,
-      address: const <String, dynamic>{},
-      companies: const <Map<String, dynamic>>[],
-      raw: const <String, dynamic>{},
-    );
+  id: id,
+  name: 'Test',
+  username: 'test',
+  email: 'test@example.com',
+  mobilePrefix: '+91',
+  mobileNumber: '9999999999',
+  mobileDisplay: '+91 9999999999',
+  isEmailVerified: false,
+  isActive: true,
+  companyName: '-',
+  location: '-',
+  countryCode: 'IN',
+  stateCode: '',
+  city: '',
+  pincode: '',
+  vehicleCount: 0,
+  createdAt: null,
+  updatedAt: null,
+  address: const <String, dynamic>{},
+  companies: const <Map<String, dynamic>>[],
+  raw: const <String, dynamic>{},
+);
 
 class _FakeUsersService extends Fake implements AdminUsersService {
   bool throwOnCreate = false;
@@ -68,8 +68,7 @@ class _FakeUsersService extends Fake implements AdminUsersService {
   Future<List<AdminUserListItem>> getUsers({
     String? refreshKey,
     String? search,
-  }) async =>
-      <AdminUserListItem>[_emptyUser];
+  }) async => <AdminUserListItem>[_emptyUser];
 
   @override
   Future<AdminUserDetails> createUser(AdminCreateUserRequest request) async {
@@ -121,12 +120,13 @@ class _FakeVehicleService extends Fake implements AdminVehicleService {
 
   @override
   Future<AdminVehicleDetails> createVehicle(
-      AdminCreateVehicleRequest request) async {
+    AdminCreateVehicleRequest request,
+  ) async {
     if (throwOnCreate) throw Exception('create failed');
-    return AdminVehicleDetails.fromJson(
-      const <String, dynamic>{'id': 1, 'name': 'New Vehicle'},
-      fallbackId: '1',
-    );
+    return AdminVehicleDetails.fromJson(const <String, dynamic>{
+      'id': 1,
+      'name': 'New Vehicle',
+    }, fallbackId: '1');
   }
 
   @override
@@ -298,23 +298,22 @@ void main() {
         onDashboardRefresh: () => callCount++,
       );
 
-      await expectLater(
-        controller.deleteUser('1'),
-        throwsException,
-      );
+      await expectLater(controller.deleteUser('1'), throwsException);
       expect(callCount, 0);
     });
 
-    test('works correctly when onDashboardRefresh is null (no crash)',
-        () async {
-      final service = _FakeUsersService();
-      final controller = _makeUsersController(service);
+    test(
+      'works correctly when onDashboardRefresh is null (no crash)',
+      () async {
+        final service = _FakeUsersService();
+        final controller = _makeUsersController(service);
 
-      await expectLater(
-        controller.createUser(_stubCreateRequest()),
-        completes,
-      );
-    });
+        await expectLater(
+          controller.createUser(_stubCreateRequest()),
+          completes,
+        );
+      },
+    );
   });
 
   group('AdminVehiclesController — onDashboardRefresh', () {
@@ -408,14 +407,16 @@ void main() {
       expect(callCount, 0);
     });
 
-    test('works correctly when onDashboardRefresh is null (no crash)',
-        () async {
-      final service = _FakeVehicleService();
-      final controller = _makeVehiclesController(service);
+    test(
+      'works correctly when onDashboardRefresh is null (no crash)',
+      () async {
+        final service = _FakeVehicleService();
+        final controller = _makeVehiclesController(service);
 
-      final result = await controller.deleteVehicle('1');
-      expect(result, isTrue);
-    });
+        final result = await controller.deleteVehicle('1');
+        expect(result, isTrue);
+      },
+    );
   });
 }
 

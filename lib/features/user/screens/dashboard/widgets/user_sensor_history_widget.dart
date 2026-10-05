@@ -8,6 +8,7 @@ import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../core/utils/date_time_formatter.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/widgets/open_vts_date_time_range_selector.dart';
 import '../../../controllers/user_providers.dart';
 import '../../../models/user_dashboard_model.dart';
@@ -39,14 +40,14 @@ class _UserSensorHistoryWidgetState
   @override
   void initState() {
     super.initState();
-    _selectedVehicleId = userDashboardPropString(
-      widget.config.props,
-      const ['vehicleId', 'vehicle_id'],
-    );
-    _selectedSensorId = userDashboardPropString(
-      widget.config.props,
-      const ['sensorId', 'sensor_id'],
-    );
+    _selectedVehicleId = userDashboardPropString(widget.config.props, const [
+      'vehicleId',
+      'vehicle_id',
+    ]);
+    _selectedSensorId = userDashboardPropString(widget.config.props, const [
+      'sensorId',
+      'sensor_id',
+    ]);
     _range = _initialRange(widget.config.props);
   }
 
@@ -111,15 +112,16 @@ class _UserSensorHistoryWidgetState
 
   Widget _buildBody(
     AsyncValue<
-            ({
-              List<UserDashboardVehicleOption> vehicles,
-              List<UserDashboardSensorOption> sensors,
-              String? selectedVehicleId,
-              String? selectedSensorId,
-              UserDashboardSensorHistory? history,
-              String? emptyMessage,
-            })>
-        state,
+      ({
+        List<UserDashboardVehicleOption> vehicles,
+        List<UserDashboardSensorOption> sensors,
+        String? selectedVehicleId,
+        String? selectedSensorId,
+        UserDashboardSensorHistory? history,
+        String? emptyMessage,
+      })
+    >
+    state,
   ) {
     if (state.hasError) {
       return UserDashboardWidgetError(
@@ -158,8 +160,8 @@ class _UserSensorHistoryWidgetState
           const SizedBox(height: OpenVtsSpacing.sm),
         ],
         OpenVtsDateTimeRangeField(
-          label: 'Range',
-          title: 'Sensor History Range',
+          label: context.mobileText('Range'),
+          title: context.mobileText('Sensor History Range'),
           value: _range,
           dateTimeEnabled: true,
           lastDate: DateTime.now(),
@@ -177,8 +179,8 @@ class _UserSensorHistoryWidgetState
             icon: Icons.sensors_off_outlined,
           )
         else if (history == null || history.points.isEmpty)
-          const UserDashboardWidgetEmpty(
-            message: 'No sensor points for this range.',
+          UserDashboardWidgetEmpty(
+            message: context.mobileText('No sensor points for this range.'),
             icon: Icons.show_chart_rounded,
           )
         else ...[
@@ -210,8 +212,10 @@ class _UserSensorHistoryWidgetState
     final from = userDashboardPropDateTime(props, const ['from']);
     final to = userDashboardPropDateTime(props, const ['to']);
     if (from != null || to != null) {
-      return OpenVtsDateTimeRange(start: from, end: to)
-          .normalized(dateTimeEnabled: true);
+      return OpenVtsDateTimeRange(
+        start: from,
+        end: to,
+      ).normalized(dateTimeEnabled: true);
     }
     return _todayRange();
   }
@@ -241,7 +245,8 @@ class _UserSensorHistoryWidgetState
       String? selectedSensorId,
       UserDashboardSensorHistory? history,
       String? emptyMessage,
-    }) data,
+    })
+    data,
   ) {
     for (final sensor in data.sensors) {
       if (sensor.id == data.selectedSensorId) return sensor;
@@ -268,7 +273,7 @@ class _SensorSelector extends StatelessWidget {
       initialValue: value,
       isExpanded: true,
       decoration: InputDecoration(
-        labelText: 'Sensor',
+        labelText: context.mobileText('Sensor'),
         isDense: true,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: OpenVtsSpacing.sm,
@@ -276,8 +281,9 @@ class _SensorSelector extends StatelessWidget {
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(OpenVtsRadius.md),
-          borderSide:
-              BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
+          borderSide: BorderSide(
+            color: Theme.of(context).colorScheme.outlineVariant,
+          ),
         ),
       ),
       items: [
@@ -333,7 +339,8 @@ class _SensorSummary extends StatelessWidget {
               color: Theme.of(context).colorScheme.surfaceContainerHigh,
               borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
               border: Border.all(
-                  color: Theme.of(context).colorScheme.outlineVariant),
+                color: Theme.of(context).colorScheme.outlineVariant,
+              ),
             ),
             child: Icon(
               Icons.sensors_rounded,
@@ -391,23 +398,23 @@ class _SensorStatsGrid extends StatelessWidget {
       childAspectRatio: 2.35,
       children: [
         UserDashboardMetricTile(
-          label: 'Min',
+          label: context.mobileText('Min'),
           value: _formatSensorValue(stats.min, unit),
         ),
         UserDashboardMetricTile(
-          label: 'Max',
+          label: context.mobileText('Max'),
           value: _formatSensorValue(stats.max, unit),
         ),
         UserDashboardMetricTile(
-          label: 'Avg',
+          label: context.mobileText('Avg'),
           value: _formatSensorValue(stats.avg, unit),
         ),
         UserDashboardMetricTile(
-          label: 'First',
+          label: context.mobileText('First'),
           value: _formatSensorValue(stats.first, unit),
         ),
         UserDashboardMetricTile(
-          label: 'Last',
+          label: context.mobileText('Last'),
           value: _formatSensorValue(stats.last, unit),
         ),
       ],
@@ -454,8 +461,9 @@ class _SensorHistoryChartPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final validPoints =
-        points.where((point) => point.v != null).toList(growable: false);
+    final validPoints = points
+        .where((point) => point.v != null)
+        .toList(growable: false);
     if (validPoints.isEmpty || size.width <= 0 || size.height <= 0) return;
 
     const left = 36.0;
@@ -485,7 +493,10 @@ class _SensorHistoryChartPainter extends CustomPainter {
     for (var line = 0; line < 4; line++) {
       final y = top + chartHeight * line / 3;
       canvas.drawLine(
-          Offset(left, y), Offset(size.width - right, y), gridPaint);
+        Offset(left, y),
+        Offset(size.width - right, y),
+        gridPaint,
+      );
     }
 
     final areaPath = Path();

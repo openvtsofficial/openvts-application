@@ -4,6 +4,7 @@ import '../../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../../shared/helpers/mobile_text.dart';
 
 class UserSubUsersSummaryStrip extends StatelessWidget {
   const UserSubUsersSummaryStrip({
@@ -26,25 +27,25 @@ class UserSubUsersSummaryStrip extends StatelessWidget {
       child: Row(
         children: [
           _SummaryPill(
-            label: 'Loaded',
+            label: context.mobileText('Loaded'),
             value: totalLoaded,
             color: OpenVtsColors.brandInk,
           ),
           const SizedBox(width: OpenVtsSpacing.xs),
           _SummaryPill(
-            label: 'Total',
+            label: context.mobileText('Total'),
             value: totalRemote,
             color: OpenVtsColors.info,
           ),
           const SizedBox(width: OpenVtsSpacing.xs),
           _SummaryPill(
-            label: 'Active',
+            label: context.mobileText('Active'),
             value: activeCount,
             color: OpenVtsColors.textSecondary,
           ),
           const SizedBox(width: OpenVtsSpacing.xs),
           _SummaryPill(
-            label: 'Inactive',
+            label: context.mobileText('Inactive'),
             value: inactiveCount,
             color: OpenVtsColors.textTertiary,
           ),

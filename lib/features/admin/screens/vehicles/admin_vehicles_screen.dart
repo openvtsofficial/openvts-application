@@ -7,12 +7,14 @@ import '../../../../core/theme/open_vts_colors.dart';
 import '../../../../core/theme/open_vts_radius.dart';
 import '../../../../core/theme/open_vts_spacing.dart';
 import '../../../../core/theme/open_vts_typography.dart';
+import '../../../../shared/helpers/mobile_text.dart';
 import '../../../../shared/widgets/open_vts_empty_state.dart';
 import '../../../../shared/widgets/open_vts_error_view.dart';
 import '../../../../shared/widgets/open_vts_loader.dart';
 import '../../../../shared/widgets/open_vts_page_scaffold.dart';
 import '../../controllers/admin_providers.dart';
 import '../../models/admin_vehicle_state.dart';
+import '../../widgets/admin_action_gate.dart';
 import 'widgets/admin_vehicle_card.dart';
 
 const List<int> _recordsPerPageOptions = <int>[10, 25, 50, 100];
@@ -29,17 +31,16 @@ class AdminVehiclesScreen extends ConsumerWidget {
       for (final vehicle in state.vehicles)
         if (vehicle.vehicleTypeName.trim().isNotEmpty)
           vehicle.vehicleTypeName.trim(),
-    }.toList()
-      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+    }.toList()..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
 
     final visibleVehicles = state.visibleVehicles;
 
     return OpenVtsPageScaffold(
-      title: 'Vehicles',
+      title: context.mobileText('Vehicles'),
       headerMode: OpenVtsPageHeaderMode.closeable,
       actions: [
         IconButton(
-          tooltip: 'Refresh vehicles',
+          tooltip: context.mobileText('Refresh vehicles'),
           onPressed: controller.refresh,
           icon: state.isRefreshing
               ? const SizedBox.square(
@@ -58,85 +59,83 @@ class AdminVehiclesScreen extends ConsumerWidget {
       body: state.isLoading && state.vehicles.isEmpty
           ? const OpenVtsLoader()
           : state.errorMessage != null && state.filteredVehicles.isEmpty
-              ? OpenVtsErrorView(
-                  message: state.errorMessage!,
-                  onRetry: controller.load,
-                )
-              : Column(
-                  children: [
-                    _VehiclesHeaderCard(
-                      count: state.filteredCount,
-                      totalCount: state.vehicles.length,
-                      onCreateVehicle: () =>
-                          context.push(RoutePaths.adminVehicleCreate),
-                    ),
-                    const SizedBox(height: OpenVtsSpacing.sm),
-                    _VehiclesToolbar(
-                      searchQuery: state.searchQuery,
-                      recordsPerPage: state.recordsPerPage,
-                      hasActiveFilters: state.hasActiveFilters,
-                      onSearchChanged: controller.setSearchQuery,
-                      onOpenFilters: () => _openFiltersSheet(
-                        context,
-                        ref,
-                        typeOptions: typeOptions,
-                      ),
-                      onOpenSort: () => _openSortSheet(context, ref),
-                      onRecordsChanged: controller.setRecordsPerPage,
-                    ),
-                    const SizedBox(height: OpenVtsSpacing.sm),
-                    Expanded(
-                      child: RefreshIndicator(
-                        onRefresh: controller.refresh,
-                        child: state.filteredCount == 0
-                            ? ListView(
-                                physics: const AlwaysScrollableScrollPhysics(),
-                                children: const [
-                                  SizedBox(height: OpenVtsSpacing.section),
-                                  OpenVtsEmptyState(
-                                    title: 'No vehicles',
-                                    message:
-                                        'No matching vehicles found. Try a different search or filter.',
-                                  ),
-                                ],
-                              )
-                            : ListView.separated(
-                                physics: const AlwaysScrollableScrollPhysics(),
-                                itemCount: visibleVehicles.length + 1,
-                                separatorBuilder: (_, __) =>
-                                    const SizedBox(height: OpenVtsSpacing.sm),
-                                itemBuilder: (context, index) {
-                                  if (index == visibleVehicles.length) {
-                                    return _PaginationFooter(
-                                      currentPage: state.safeCurrentPage,
-                                      pageCount: state.pageCount,
-                                      showingCount: visibleVehicles.length,
-                                      totalCount: state.filteredCount,
-                                      onPrev: () => controller.goToPage(
-                                        state.safeCurrentPage - 1,
-                                      ),
-                                      onNext: () => controller.goToPage(
-                                        state.safeCurrentPage + 1,
-                                      ),
-                                    );
-                                  }
-
-                                  final vehicle = visibleVehicles[index];
-                                  return AdminVehicleCard(
-                                    vehicle: vehicle,
-                                    onTap: () => context.push(
-                                      RoutePaths.adminVehicleDetailsPath(
-                                        vehicle.id,
-                                      ),
-                                      extra: vehicle,
-                                    ),
-                                  );
-                                },
-                              ),
-                      ),
-                    ),
-                  ],
+          ? OpenVtsErrorView(
+              message: state.errorMessage!,
+              onRetry: controller.load,
+            )
+          : Column(
+              children: [
+                _VehiclesHeaderCard(
+                  count: state.filteredCount,
+                  totalCount: state.vehicles.length,
+                  onCreateVehicle: () =>
+                      context.push(RoutePaths.adminVehicleCreate),
                 ),
+                const SizedBox(height: OpenVtsSpacing.sm),
+                _VehiclesToolbar(
+                  searchQuery: state.searchQuery,
+                  recordsPerPage: state.recordsPerPage,
+                  hasActiveFilters: state.hasActiveFilters,
+                  onSearchChanged: controller.setSearchQuery,
+                  onOpenFilters: () =>
+                      _openFiltersSheet(context, ref, typeOptions: typeOptions),
+                  onOpenSort: () => _openSortSheet(context, ref),
+                  onRecordsChanged: controller.setRecordsPerPage,
+                ),
+                const SizedBox(height: OpenVtsSpacing.sm),
+                Expanded(
+                  child: RefreshIndicator(
+                    onRefresh: controller.refresh,
+                    child: state.filteredCount == 0
+                        ? ListView(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            children: [
+                              const SizedBox(height: OpenVtsSpacing.section),
+                              OpenVtsEmptyState(
+                                title: context.mobileText('No vehicles'),
+                                message: context.mobileText(
+                                  'No matching vehicles found. Try a different search or filter.',
+                                ),
+                              ),
+                            ],
+                          )
+                        : ListView.separated(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            itemCount: visibleVehicles.length + 1,
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(height: OpenVtsSpacing.sm),
+                            itemBuilder: (context, index) {
+                              if (index == visibleVehicles.length) {
+                                return _PaginationFooter(
+                                  currentPage: state.safeCurrentPage,
+                                  pageCount: state.pageCount,
+                                  showingCount: visibleVehicles.length,
+                                  totalCount: state.filteredCount,
+                                  onPrev: () => controller.goToPage(
+                                    state.safeCurrentPage - 1,
+                                  ),
+                                  onNext: () => controller.goToPage(
+                                    state.safeCurrentPage + 1,
+                                  ),
+                                );
+                              }
+
+                              final vehicle = visibleVehicles[index];
+                              return AdminVehicleCard(
+                                vehicle: vehicle,
+                                onTap: () => context.push(
+                                  RoutePaths.adminVehicleDetailsPath(
+                                    vehicle.id,
+                                  ),
+                                  extra: vehicle,
+                                ),
+                              );
+                            },
+                          ),
+                  ),
+                ),
+              ],
+            ),
     );
   }
 
@@ -165,10 +164,10 @@ class AdminVehiclesScreen extends ConsumerWidget {
         return StatefulBuilder(
           builder: (context, setSheetState) {
             return _OptionsSheet(
-              title: 'Filter vehicles',
+              title: context.mobileText('Filter vehicles'),
               sections: [
                 _OptionsSheetSection(
-                  label: 'Status',
+                  label: context.mobileText('Status'),
                   child: Wrap(
                     spacing: OpenVtsSpacing.xs,
                     runSpacing: OpenVtsSpacing.xs,
@@ -185,13 +184,13 @@ class AdminVehiclesScreen extends ConsumerWidget {
                   ),
                 ),
                 _OptionsSheetSection(
-                  label: 'Vehicle type',
+                  label: context.mobileText('Vehicle type'),
                   child: Wrap(
                     spacing: OpenVtsSpacing.xs,
                     runSpacing: OpenVtsSpacing.xs,
                     children: [
                       _ChoiceChip(
-                        label: 'All Types',
+                        label: context.mobileText('All Types'),
                         selected: selectedType.trim().isEmpty,
                         onSelected: () =>
                             setSheetState(() => selectedType = ''),
@@ -244,10 +243,10 @@ class AdminVehiclesScreen extends ConsumerWidget {
       ),
       builder: (sheetContext) {
         return _OptionsSheet(
-          title: 'Sort vehicles',
+          title: context.mobileText('Sort vehicles'),
           sections: [
             _OptionsSheetSection(
-              label: 'Order by',
+              label: context.mobileText('Order by'),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: AdminVehiclesSortOption.values
@@ -326,13 +325,17 @@ class _VehiclesHeaderCard extends StatelessWidget {
             child: Text(
               summary,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: -0.2,
-                  ),
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.2,
+              ),
             ),
           ),
           const SizedBox(width: OpenVtsSpacing.sm),
-          _PrimaryCreateButton(onPressed: onCreateVehicle),
+          AdminActionGate(
+            capability: 'vehicles.update',
+            scopes: const {'TENANT'},
+            child: _PrimaryCreateButton(onPressed: onCreateVehicle),
+          ),
         ],
       ),
     );
@@ -349,7 +352,7 @@ class _PrimaryCreateButton extends StatelessWidget {
     return ElevatedButton.icon(
       onPressed: onPressed,
       icon: const Icon(Icons.add_rounded, size: 18),
-      label: const Text('New Vehicle'),
+      label: Text(context.mobileText('New Vehicle')),
       style: ElevatedButton.styleFrom(
         backgroundColor: OpenVtsColors.brandInk,
         foregroundColor: OpenVtsColors.white,
@@ -436,14 +439,14 @@ class _VehiclesToolbarState extends State<_VehiclesToolbar> {
           const SizedBox(width: OpenVtsSpacing.xs),
           _SquareIconButton(
             icon: Icons.filter_alt_outlined,
-            tooltip: 'Filter vehicles',
+            tooltip: context.mobileText('Filter vehicles'),
             onPressed: widget.onOpenFilters,
             showDot: widget.hasActiveFilters,
           ),
           const SizedBox(width: OpenVtsSpacing.xs),
           _SquareIconButton(
             icon: Icons.swap_vert_rounded,
-            tooltip: 'Sort vehicles',
+            tooltip: context.mobileText('Sort vehicles'),
             onPressed: widget.onOpenSort,
           ),
           const SizedBox(width: OpenVtsSpacing.xs),
@@ -458,10 +461,7 @@ class _VehiclesToolbarState extends State<_VehiclesToolbar> {
 }
 
 class _SearchInput extends StatelessWidget {
-  const _SearchInput({
-    required this.controller,
-    required this.onChanged,
-  });
+  const _SearchInput({required this.controller, required this.onChanged});
 
   final TextEditingController controller;
   final ValueChanged<String> onChanged;
@@ -504,7 +504,8 @@ class _SearchInput extends StatelessWidget {
             cursorColor: _primaryInkColor(context),
             cursorWidth: 1.4,
             style: _baseStyle.copyWith(
-                color: Theme.of(context).colorScheme.onSurface),
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
             strutStyle: const StrutStyle(
               fontFamily: OpenVtsTypography.primaryFontFamily,
               fontFamilyFallback: OpenVtsTypography.fontFallback,
@@ -518,7 +519,9 @@ class _SearchInput extends StatelessWidget {
               fillColor: fillColor,
               isDense: true,
               isCollapsed: false,
-              hintText: 'Search vehicle, plate, VIN, IMEI, SIM, user\u2026',
+              hintText: context.mobileText(
+                'Search vehicle, plate, VIN, IMEI, SIM, user\u2026',
+              ),
               hintStyle: _baseStyle.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
                 fontWeight: FontWeight.w400,
@@ -545,7 +548,7 @@ class _SearchInput extends StatelessWidget {
                         end: OpenVtsSpacing.xxs,
                       ),
                       child: IconButton(
-                        tooltip: 'Clear search',
+                        tooltip: context.mobileText('Clear search'),
                         onPressed: () {
                           controller.clear();
                           onChanged('');
@@ -615,11 +618,7 @@ class _SquareIconButton extends StatelessWidget {
                   border: Border.all(color: _softBorderColor(context)),
                 ),
                 alignment: Alignment.center,
-                child: Icon(
-                  icon,
-                  size: 18,
-                  color: _primaryInkColor(context),
-                ),
+                child: Icon(icon, size: 18, color: _primaryInkColor(context)),
               ),
               if (showDot)
                 PositionedDirectional(
@@ -647,10 +646,7 @@ class _SquareIconButton extends StatelessWidget {
 }
 
 class _RecordsPerPageDropdown extends StatelessWidget {
-  const _RecordsPerPageDropdown({
-    required this.value,
-    required this.onChanged,
-  });
+  const _RecordsPerPageDropdown({required this.value, required this.onChanged});
 
   final int value;
   final ValueChanged<int> onChanged;
@@ -736,7 +732,10 @@ class _PaginationFooter extends StatelessWidget {
       child: Column(
         children: [
           Text(
-            'Showing $showingCount of $totalCount',
+            context.mobileText("Showing {value1} of {value2}", {
+              'value1': (showingCount).toString(),
+              'value2': (totalCount).toString(),
+            }),
             style: OpenVtsTypography.meta.copyWith(
               color: OpenVtsColors.textSecondary,
             ),
@@ -755,7 +754,10 @@ class _PaginationFooter extends StatelessWidget {
                     horizontal: OpenVtsSpacing.sm,
                   ),
                   child: Text(
-                    'Page $currentPage of $pageCount',
+                    context.mobileText("Page {value1} of {value2}", {
+                      'value1': (currentPage).toString(),
+                      'value2': (pageCount).toString(),
+                    }),
                     style: OpenVtsTypography.label.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
@@ -864,14 +866,14 @@ class _OptionsSheet extends StatelessWidget {
                   child: Text(
                     title,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
                 IconButton(
                   onPressed: () => Navigator.of(context).maybePop(),
                   icon: const Icon(Icons.close_rounded, size: 20),
-                  tooltip: 'Close',
+                  tooltip: context.mobileText('Close'),
                 ),
               ],
             ),
@@ -920,10 +922,7 @@ class _OptionsSheet extends StatelessWidget {
 }
 
 class _OptionsSheetSection {
-  const _OptionsSheetSection({
-    required this.label,
-    required this.child,
-  });
+  const _OptionsSheetSection({required this.label, required this.child});
 
   final String label;
   final Widget child;
@@ -943,11 +942,13 @@ class _ChoiceChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final backgroundColor =
-        selected ? (isDark ? Colors.black : Colors.white) : Colors.transparent;
+    final backgroundColor = selected
+        ? (isDark ? Colors.black : Colors.white)
+        : Colors.transparent;
     final textColor = isDark ? Colors.white : Colors.black;
-    final borderColor =
-        isDark ? Colors.white : Colors.black.withValues(alpha: 0.2);
+    final borderColor = isDark
+        ? Colors.white
+        : Colors.black.withValues(alpha: 0.2);
 
     return Material(
       color: backgroundColor,

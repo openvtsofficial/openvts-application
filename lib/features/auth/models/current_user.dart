@@ -1,3 +1,4 @@
+import '../../../core/access/mobile_access.dart';
 import '../../../shared/models/user_role.dart';
 
 class CurrentUser {
@@ -6,8 +7,8 @@ class CurrentUser {
     required this.name,
     required this.email,
     required this.role,
+    this.access = const MobileAccess.unavailable(),
     this.username = '',
-    this.backendRole,
     this.profileUrl,
     this.phoneNumber,
     this.accountStatus,
@@ -27,12 +28,8 @@ class CurrentUser {
   final String name;
   final String email;
   final UserRole role;
-  // Preserve the server identity when SUBUSER shares the existing user shell.
-  final String? backendRole;
-  String get effectiveBackendRole => (backendRole ?? role.apiValue).toUpperCase();
-  bool get isSubuser => effectiveBackendRole == 'SUBUSER';
-  bool get canCloseAccount =>
-      effectiveBackendRole == 'USER' || effectiveBackendRole == 'SUBUSER';
+  final MobileAccess access;
+  bool get accessLoaded => access.loaded;
   final String username;
   final String? profileUrl;
   final String? phoneNumber;
@@ -49,8 +46,8 @@ class CurrentUser {
   factory CurrentUser.fromJson(Map<String, dynamic> json) {
     final mobilePrefix = _firstNonEmptyString([
       json['mobilePrefix'],
-      json['mobileCode'],
       json['mobile_prefix'],
+      json['mobileCode'],
       json['phonePrefix'],
       json['phone_prefix'],
     ]);
@@ -81,14 +78,16 @@ class CurrentUser {
     ]);
 
     return CurrentUser(
-      id: _firstNonEmptyString([
+      id:
+          _firstNonEmptyString([
             json['id'],
             json['userId'],
             json['user_id'],
             json['uid'],
           ]) ??
           '',
-      name: _firstNonEmptyString([
+      name:
+          _firstNonEmptyString([
             json['name'],
             json['displayName'],
             json['display_name'],
@@ -97,7 +96,8 @@ class CurrentUser {
             json['username'],
           ]) ??
           'OpenVTS User',
-      email: _firstNonEmptyString([
+      email:
+          _firstNonEmptyString([
             json['email'],
             json['primaryEmail'],
             json['primary_email'],
@@ -108,13 +108,11 @@ class CurrentUser {
           json['role'],
           json['userRole'],
           json['user_role'],
+          json['loginType'],
         ]),
       ),
-      backendRole: _firstNonEmptyString([
-        json['backendRole'], json['role'], json['userRole'], json['user_role'],
-        json['loginType'],
-      ])?.toUpperCase(),
-      username: _firstNonEmptyString([
+      username:
+          _firstNonEmptyString([
             json['username'],
             json['userName'],
             json['user_name'],
@@ -153,7 +151,8 @@ class CurrentUser {
         json['file_path'],
         json['filepath'],
       ]),
-      phoneNumber: explicitPhoneNumber ??
+      phoneNumber:
+          explicitPhoneNumber ??
           _composePhoneNumber(mobilePrefix, mobileNumber),
       accountStatus: _firstNonEmptyString([
         json['accountStatus'],
@@ -211,7 +210,7 @@ class CurrentUser {
     String? name,
     String? email,
     UserRole? role,
-    String? backendRole,
+    MobileAccess? access,
     String? username,
     Object? profileUrl = _unset,
     Object? phoneNumber = _unset,
@@ -230,7 +229,7 @@ class CurrentUser {
       name: name ?? this.name,
       email: email ?? this.email,
       role: role ?? this.role,
-      backendRole: backendRole ?? this.backendRole,
+      access: access ?? this.access,
       username: username ?? this.username,
       profileUrl: identical(profileUrl, _unset)
           ? this.profileUrl
@@ -241,8 +240,9 @@ class CurrentUser {
       accountStatus: identical(accountStatus, _unset)
           ? this.accountStatus
           : accountStatus as String?,
-      isVerified:
-          identical(isVerified, _unset) ? this.isVerified : isVerified as bool?,
+      isVerified: identical(isVerified, _unset)
+          ? this.isVerified
+          : isVerified as bool?,
       mobilePrefix: identical(mobilePrefix, _unset)
           ? this.mobilePrefix
           : mobilePrefix as String?,
@@ -255,10 +255,12 @@ class CurrentUser {
       countryCode: identical(countryCode, _unset)
           ? this.countryCode
           : countryCode as String?,
-      stateCode:
-          identical(stateCode, _unset) ? this.stateCode : stateCode as String?,
-      cityName:
-          identical(cityName, _unset) ? this.cityName : cityName as String?,
+      stateCode: identical(stateCode, _unset)
+          ? this.stateCode
+          : stateCode as String?,
+      cityName: identical(cityName, _unset)
+          ? this.cityName
+          : cityName as String?,
       pincode: identical(pincode, _unset) ? this.pincode : pincode as String?,
     );
   }
@@ -273,7 +275,6 @@ class CurrentUser {
       'name': name,
       'email': email,
       'role': role.apiValue,
-      'backendRole': effectiveBackendRole,
       'username': username,
       'profileUrl': profileUrl,
       'phoneNumber': phoneNumber,

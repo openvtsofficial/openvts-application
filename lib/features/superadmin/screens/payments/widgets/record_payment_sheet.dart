@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../shared/widgets/open_vts_loader.dart';
@@ -148,8 +149,10 @@ class _RecordPaymentSheetState extends ConsumerState<RecordPaymentSheet> {
     });
 
     if (!_isAdminValid()) {
-      ToastHelper.showError('Please select an administrator.',
-          context: context);
+      ToastHelper.showError(
+        context.mobileText('Please select an administrator.'),
+        context: context,
+      );
       return;
     }
 
@@ -162,7 +165,7 @@ class _RecordPaymentSheetState extends ConsumerState<RecordPaymentSheet> {
     final reference = _referenceController.text.trim();
     if (reference.length > 100) {
       ToastHelper.showError(
-        'Reference must be 100 characters or less.',
+        context.mobileText('Reference must be 100 characters or less.'),
         context: context,
       );
       return;
@@ -185,14 +188,18 @@ class _RecordPaymentSheetState extends ConsumerState<RecordPaymentSheet> {
       }
 
       _clearForm();
-      ToastHelper.showSuccess('Payment recorded', context: context);
+      ToastHelper.showSuccess(
+        context.mobileText('Payment recorded'),
+        context: context,
+      );
       Navigator.of(context).pop(true);
     } catch (_) {
       if (!mounted) {
         return;
       }
 
-      final message = ref.read(
+      final message =
+          ref.read(
             superadminPaymentsControllerProvider.select(
               (value) => value.errorMessage,
             ),
@@ -213,18 +220,22 @@ class _RecordPaymentSheetState extends ConsumerState<RecordPaymentSheet> {
   List<OpenVtsDropdownOption<int>> _buildAdminOptions(
     List<SuperadminPaymentAdminOption> admins,
   ) {
-    return admins.map((admin) {
-      final subtitleParts = <String>[
-        if (admin.username.trim().isNotEmpty) '@${admin.username.trim()}',
-        if (admin.email.trim().isNotEmpty) admin.email.trim(),
-      ];
-      return OpenVtsDropdownOption<int>(
-        value: admin.uid,
-        label: admin.displayName,
-        subtitle: subtitleParts.isNotEmpty ? subtitleParts.join(' • ') : null,
-        searchText: admin.searchText,
-      );
-    }).toList(growable: false);
+    return admins
+        .map((admin) {
+          final subtitleParts = <String>[
+            if (admin.username.trim().isNotEmpty) '@${admin.username.trim()}',
+            if (admin.email.trim().isNotEmpty) admin.email.trim(),
+          ];
+          return OpenVtsDropdownOption<int>(
+            value: admin.uid,
+            label: admin.displayName,
+            subtitle: subtitleParts.isNotEmpty
+                ? subtitleParts.join(' • ')
+                : null,
+            searchText: admin.searchText,
+          );
+        })
+        .toList(growable: false);
   }
 
   @override
@@ -242,8 +253,9 @@ class _RecordPaymentSheetState extends ConsumerState<RecordPaymentSheet> {
     }
 
     final selectedAdmin = _selectedAdmin(admins);
-    final amountError =
-        _didAttemptSubmit ? _validateAmount(_amountController.text) : null;
+    final amountError = _didAttemptSubmit
+        ? _validateAmount(_amountController.text)
+        : null;
     final isSubmitEnabled = _canSubmit(state.isRecordingPayment);
     final adminOptions = _buildAdminOptions(admins);
 
@@ -275,13 +287,14 @@ class _RecordPaymentSheetState extends ConsumerState<RecordPaymentSheet> {
               ),
               const SizedBox(height: OpenVtsSpacing.xs),
               Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: OpenVtsSpacing.md),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: OpenVtsSpacing.md,
+                ),
                 child: Row(
                   children: [
                     Expanded(
                       child: Text(
-                        'Record Payment',
+                        context.mobileText('Record Payment'),
                         style: OpenVtsTypography.titleSmall.copyWith(
                           color: Theme.of(context).colorScheme.onSurface,
                         ),
@@ -312,9 +325,11 @@ class _RecordPaymentSheetState extends ConsumerState<RecordPaymentSheet> {
                         padding: const EdgeInsets.all(OpenVtsSpacing.md),
                         children: [
                           OpenVtsSearchableDropdown<int>(
-                            label: 'Administrator',
+                            label: context.mobileText('Administrator'),
                             required: true,
-                            hintText: 'Select administrator',
+                            hintText: context.mobileText(
+                              'Select administrator',
+                            ),
                             searchHintText:
                                 'Search by name, username, email or ID',
                             sheetTitle: 'Select Administrator',
@@ -338,14 +353,17 @@ class _RecordPaymentSheetState extends ConsumerState<RecordPaymentSheet> {
                           ),
                           if (admins.isEmpty && !state.isLoadingAdmins)
                             Padding(
-                              padding:
-                                  const EdgeInsets.only(top: OpenVtsSpacing.xs),
+                              padding: const EdgeInsets.only(
+                                top: OpenVtsSpacing.xs,
+                              ),
                               child: Text(
-                                'No administrators available. Pull to refresh and try again.',
+                                context.mobileText(
+                                  'No administrators available. Pull to refresh and try again.',
+                                ),
                                 style: OpenVtsTypography.meta.copyWith(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onSurfaceVariant,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
                                 ),
                               ),
                             ),
@@ -363,14 +381,14 @@ class _RecordPaymentSheetState extends ConsumerState<RecordPaymentSheet> {
                               ),
                             ],
                             decoration: InputDecoration(
-                              labelText: 'Amount *',
+                              labelText: context.mobileText('Amount *'),
                               hintText: '0.00',
                               errorText: amountError,
                               suffixText: _currencySuffix(selectedAdmin),
                               suffixStyle: OpenVtsTypography.label.copyWith(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onSurfaceVariant,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurfaceVariant,
                               ),
                             ),
                           ),
@@ -378,16 +396,16 @@ class _RecordPaymentSheetState extends ConsumerState<RecordPaymentSheet> {
                           DropdownButtonFormField<SuperadminPaymentMode>(
                             initialValue: _paymentMode,
                             isExpanded: true,
-                            decoration: const InputDecoration(
-                              labelText: 'Payment Mode *',
+                            decoration: InputDecoration(
+                              labelText: context.mobileText('Payment Mode *'),
                             ),
                             items: _paymentModeOrder
                                 .map(
                                   (mode) =>
                                       DropdownMenuItem<SuperadminPaymentMode>(
-                                    value: mode,
-                                    child: Text(mode.apiValue),
-                                  ),
+                                        value: mode,
+                                        child: Text(mode.apiValue),
+                                      ),
                                 )
                                 .toList(growable: false),
                             onChanged: state.isRecordingPayment
@@ -409,19 +427,24 @@ class _RecordPaymentSheetState extends ConsumerState<RecordPaymentSheet> {
                             inputFormatters: [
                               LengthLimitingTextInputFormatter(100),
                             ],
-                            decoration: const InputDecoration(
-                              labelText: 'Reference (Optional)',
-                              hintText:
-                                  'Bank transfer note / UTR / transaction ref',
+                            decoration: InputDecoration(
+                              labelText: context.mobileText(
+                                'Reference (Optional)',
+                              ),
+                              hintText: context.mobileText(
+                                'Bank transfer note / UTR / transaction ref',
+                              ),
                             ),
                           ),
                           const SizedBox(height: OpenVtsSpacing.xs),
                           Text(
-                            'Manual payments update transactions and analytics after successful submission.',
+                            context.mobileText(
+                              'Manual payments update transactions and analytics after successful submission.',
+                            ),
                             style: OpenVtsTypography.meta.copyWith(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurfaceVariant,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
                             ),
                           ),
                         ],
@@ -440,7 +463,7 @@ class _RecordPaymentSheetState extends ConsumerState<RecordPaymentSheet> {
                     children: [
                       Expanded(
                         child: OpenVtsButton(
-                          label: 'Cancel',
+                          label: context.mobileText('Cancel'),
                           variant: OpenVtsButtonVariant.secondary,
                           onPressed: state.isRecordingPayment
                               ? null
@@ -450,7 +473,7 @@ class _RecordPaymentSheetState extends ConsumerState<RecordPaymentSheet> {
                       const SizedBox(width: OpenVtsSpacing.sm),
                       Expanded(
                         child: OpenVtsButton(
-                          label: 'Record Payment',
+                          label: context.mobileText('Record Payment'),
                           isLoading: state.isRecordingPayment,
                           onPressed: isSubmitEnabled ? _submit : null,
                         ),

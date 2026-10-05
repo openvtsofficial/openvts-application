@@ -11,6 +11,7 @@ import '../../shared/models/user_role.dart';
 import '../providers/core_providers.dart';
 import '../router/app_router.dart';
 import '../router/route_paths.dart';
+import '../utils/permission_helper.dart';
 import 'mobile_push_message_mapper.dart';
 
 class MobilePushNavigation {
@@ -67,12 +68,16 @@ class MobilePushNavigation {
       case UserRole.superadmin:
         _ref.invalidate(superadminNotificationCenterProvider);
         _ref.invalidate(superadminNotificationUnreadBadgeProvider);
+      case UserRole.team:
       case UserRole.admin:
         _ref.invalidate(adminNotificationCenterProvider);
         _ref.invalidate(adminNotificationUnreadBadgeProvider);
+      case UserRole.subuser:
       case UserRole.user:
         _ref.invalidate(userNotificationCenterProvider);
         _ref.invalidate(userNotificationUnreadBadgeProvider);
+      case UserRole.driver:
+      case UserRole.unknown:
       case null:
         return;
     }
@@ -94,14 +99,19 @@ class MobilePushNavigation {
 
     try {
       switch (activeRole) {
+        case UserRole.driver:
+        case UserRole.unknown:
+          return;
         case UserRole.superadmin:
           await _ref
               .read(superadminNotificationServiceProvider)
               .markAsRead(notificationId);
+        case UserRole.team:
         case UserRole.admin:
           await _ref
               .read(adminNotificationServiceProvider)
               .markAsRead(notificationId);
+        case UserRole.subuser:
         case UserRole.user:
           await _ref
               .read(userNotificationServiceProvider)
@@ -144,7 +154,12 @@ class MobilePushNavigation {
         return;
       }
 
-      _ref.read(appRouterProvider).go(targetRoute);
+      _ref.read(appRouterProvider).go(
+            PermissionHelper.canAccessUserPath(
+                    latestAuthState.user, targetRoute)
+                ? targetRoute
+                : activeRole.homePath,
+          );
 
       if (_isNotificationCenterRoute(targetRoute)) {
         scheduleMicrotask(refreshActiveNotificationCenter);
@@ -209,13 +224,18 @@ class MobilePushNavigation {
     }
 
     switch (activeRole) {
+      case UserRole.driver:
+      case UserRole.unknown:
+        return null;
       case UserRole.superadmin:
         return _withVehicleQuery(
           RoutePaths.superadminMap,
           normalizedVehicleId,
         );
+      case UserRole.team:
       case UserRole.admin:
         return _withVehicleQuery(RoutePaths.adminMap, normalizedVehicleId);
+      case UserRole.subuser:
       case UserRole.user:
         return '/user/vehicles/${Uri.encodeComponent(normalizedVehicleId)}';
     }
@@ -223,10 +243,16 @@ class MobilePushNavigation {
 
   String _notificationCenterRouteForRole(UserRole activeRole) {
     switch (activeRole) {
+      case UserRole.driver:
+        return '/driver/notifications';
+      case UserRole.unknown:
+        return RoutePaths.login;
       case UserRole.superadmin:
         return RoutePaths.superadminNotifications;
+      case UserRole.team:
       case UserRole.admin:
         return RoutePaths.adminNotifications;
+      case UserRole.subuser:
       case UserRole.user:
         return RoutePaths.userNotificationCenter;
     }
@@ -257,10 +283,26 @@ class MobilePushNavigation {
 
   Set<String> _knownStaticRoutesForRole(UserRole activeRole) {
     switch (activeRole) {
+      case UserRole.driver:
+        return const {
+          '/driver',
+          '/driver/dashboard',
+          '/driver/trips',
+          '/driver/calendar',
+          '/driver/messages',
+          '/driver/documents',
+          '/driver/notifications',
+          '/driver/profile',
+          '/driver/security'
+        };
+      case UserRole.unknown:
+        return const {};
       case UserRole.superadmin:
         return _superadminStaticRoutes;
+      case UserRole.team:
       case UserRole.admin:
         return _adminStaticRoutes;
+      case UserRole.subuser:
       case UserRole.user:
         return _userStaticRoutes;
     }
@@ -268,10 +310,15 @@ class MobilePushNavigation {
 
   bool _isKnownDynamicRouteForRole(String path, UserRole activeRole) {
     switch (activeRole) {
+      case UserRole.driver:
+      case UserRole.unknown:
+        return false;
       case UserRole.superadmin:
         return RegExp(r'^/superadmin/administrators/[^/]+$').hasMatch(path);
+      case UserRole.team:
       case UserRole.admin:
         return RegExp(r'^/admin/users/[^/]+$').hasMatch(path);
+      case UserRole.subuser:
       case UserRole.user:
         return RegExp(r'^/user/vehicles/[^/]+$').hasMatch(path) ||
             RegExp(r'^/user/accounts/drivers/[^/]+$').hasMatch(path) ||
@@ -290,9 +337,7 @@ const _superadminStaticRoutes = <String>{
   RoutePaths.superadminServer,
   RoutePaths.superadminSupport,
   RoutePaths.superadminPayments,
-  RoutePaths.superadminDevices,
   RoutePaths.superadminNotifications,
-  RoutePaths.superadminReports,
   RoutePaths.superadminProfile,
   RoutePaths.superadminSettings,
 };
@@ -307,12 +352,12 @@ const _adminStaticRoutes = <String>{
   RoutePaths.adminTeam,
   RoutePaths.adminInventory,
   RoutePaths.adminPayments,
+  RoutePaths.adminTransactions,
   RoutePaths.adminSupport,
   RoutePaths.adminNotifications,
   RoutePaths.adminCalendar,
   RoutePaths.adminLogs,
   RoutePaths.adminPlans,
-  RoutePaths.adminReports,
   RoutePaths.adminProfile,
   RoutePaths.adminSettings,
 };
@@ -334,6 +379,7 @@ const _userStaticRoutes = <String>{
   RoutePaths.userTrackLinks,
   RoutePaths.userSupport,
   RoutePaths.userTransactions,
+  RoutePaths.userOperations,
   RoutePaths.userAccounts,
   RoutePaths.userDrivers,
   RoutePaths.userSubUsers,

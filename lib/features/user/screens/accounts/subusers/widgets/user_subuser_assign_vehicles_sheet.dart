@@ -5,6 +5,7 @@ import '../../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../../shared/widgets/open_vts_card.dart';
@@ -13,14 +14,14 @@ import '../../../../controllers/user_subuser_details_controller.dart';
 import '../../../../models/user_subuser_model.dart';
 import '../../../../models/user_subusers_state.dart';
 
-typedef UserSubUserDetailsProvider = AutoDisposeStateNotifierProvider<
-    UserSubUserDetailsController, UserSubUserDetailsState>;
+typedef UserSubUserDetailsProvider =
+    AutoDisposeStateNotifierProvider<
+      UserSubUserDetailsController,
+      UserSubUserDetailsState
+    >;
 
 class UserSubUserAssignVehiclesSheet extends ConsumerStatefulWidget {
-  const UserSubUserAssignVehiclesSheet({
-    required this.provider,
-    super.key,
-  });
+  const UserSubUserAssignVehiclesSheet({required this.provider, super.key});
 
   final UserSubUserDetailsProvider provider;
 
@@ -59,9 +60,11 @@ class _UserSubUserAssignVehiclesSheetState
                 onChanged: (value) {
                   setState(() => _searchQuery = value.trim());
                 },
-                decoration: const InputDecoration(
-                  hintText: 'Search by name, plate, VIN, IMEI, SIM...',
-                  prefixIcon: Icon(Icons.search, size: 20),
+                decoration: InputDecoration(
+                  hintText: context.mobileText(
+                    'Search by name, plate, VIN, IMEI, SIM...',
+                  ),
+                  prefixIcon: const Icon(Icons.search, size: 20),
                 ),
               ),
               const SizedBox(height: OpenVtsSpacing.sm),
@@ -77,16 +80,20 @@ class _UserSubUserAssignVehiclesSheetState
               ],
               const SizedBox(height: OpenVtsSpacing.sm),
               if (isLoading)
-                const _LoadingCard(label: 'Loading available vehicles')
+                _LoadingCard(
+                  label: context.mobileText('Loading available vehicles'),
+                )
               else if (filtered.isEmpty)
                 OpenVtsCard(
                   child: OpenVtsEmptyState(
                     title: available.isEmpty
-                        ? 'No available vehicles'
-                        : 'No matching vehicles',
+                        ? context.mobileText('No available vehicles')
+                        : context.mobileText('No matching vehicles'),
                     message: available.isEmpty
-                        ? 'All vehicles are already assigned to this sub user.'
-                        : 'Try a different search query.',
+                        ? context.mobileText(
+                            'All vehicles are already assigned to this sub user.',
+                          )
+                        : context.mobileText('Try a different search query.'),
                   ),
                 )
               else
@@ -111,17 +118,18 @@ class _UserSubUserAssignVehiclesSheetState
               children: [
                 Expanded(
                   child: OpenVtsButton(
-                    label: 'Cancel',
+                    label: context.mobileText('Cancel'),
                     height: 40,
                     variant: OpenVtsButtonVariant.secondary,
-                    onPressed:
-                        isSubmitting ? null : () => Navigator.of(context).pop(),
+                    onPressed: isSubmitting
+                        ? null
+                        : () => Navigator.of(context).pop(),
                   ),
                 ),
                 const SizedBox(width: OpenVtsSpacing.sm),
                 Expanded(
                   child: OpenVtsButton(
-                    label: 'Assign Selected',
+                    label: context.mobileText('Assign Selected'),
                     height: 40,
                     trailingIcon: Icons.check_rounded,
                     isLoading: isSubmitting,
@@ -140,7 +148,10 @@ class _UserSubUserAssignVehiclesSheetState
 
   Future<void> _assignVehicles() async {
     if (_selectedIds.isEmpty) {
-      ToastHelper.showError('Select at least one vehicle.', context: context);
+      ToastHelper.showError(
+        context.mobileText('Select at least one vehicle.'),
+        context: context,
+      );
       return;
     }
 
@@ -151,7 +162,10 @@ class _UserSubUserAssignVehiclesSheetState
     }
 
     if (ok) {
-      ToastHelper.showSuccess('Vehicles assigned.', context: context);
+      ToastHelper.showSuccess(
+        context.mobileText('Vehicles assigned.'),
+        context: context,
+      );
       Navigator.of(context).pop(true);
       return;
     }
@@ -186,9 +200,11 @@ class _UserSubUserAssignVehiclesSheetState
       return source;
     }
 
-    return source.where((item) {
-      return item.searchContent.contains(normalized);
-    }).toList(growable: false);
+    return source
+        .where((item) {
+          return item.searchContent.contains(normalized);
+        })
+        .toList(growable: false);
   }
 }
 
@@ -211,7 +227,14 @@ class _HeaderRow extends StatelessWidget {
       children: [
         Expanded(
           child: Text(
-            '$visibleCount of $totalCount vehicles • $selectedCount selected',
+            context.mobileText(
+              "{value1} of {value2} vehicles • {value3} selected",
+              {
+                'value1': (visibleCount).toString(),
+                'value2': (totalCount).toString(),
+                'value3': (selectedCount).toString(),
+              },
+            ),
             style: OpenVtsTypography.meta.copyWith(
               color: OpenVtsColors.textSecondary,
               fontWeight: FontWeight.w700,
@@ -306,8 +329,9 @@ class _VehicleOptionCard extends StatelessWidget {
                   ? OpenVtsColors.brandInk.withValues(alpha: 0.12)
                   : OpenVtsColors.surface,
               border: Border.all(
-                color:
-                    isSelected ? OpenVtsColors.brandInk : OpenVtsColors.border,
+                color: isSelected
+                    ? OpenVtsColors.brandInk
+                    : OpenVtsColors.border,
               ),
             ),
             child: Icon(

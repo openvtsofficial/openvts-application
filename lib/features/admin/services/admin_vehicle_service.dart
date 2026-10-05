@@ -4,12 +4,15 @@ import 'package:http_parser/http_parser.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/api/api_endpoints.dart';
 import '../../../core/api/api_options.dart';
+import '../../../core/utils/permission_helper.dart';
+import '../../../shared/models/user_role.dart';
 import '../models/admin_vehicle_model.dart';
 
 class AdminVehicleService {
   AdminVehicleService(this._apiClient);
 
   final ApiClient _apiClient;
+  bool get _isTeam => _apiClient.activeRole == UserRole.team;
 
   static final Options _readOptions = normalReadOptions();
 
@@ -41,7 +44,8 @@ class AdminVehicleService {
   }
 
   Future<AdminVehicleDetails> createVehicle(
-      AdminCreateVehicleRequest request) async {
+    AdminCreateVehicleRequest request,
+  ) async {
     final response = await _apiClient.post<dynamic>(
       ApiEndpoints.admin.vehicles,
       data: request.toJson(),
@@ -109,7 +113,7 @@ class AdminVehicleService {
 
   Future<List<AdminVehicleTypeOption>> getVehicleTypes() async {
     final response = await _apiClient.get<dynamic>(
-      '/vehicletypes',
+      ApiEndpoints.public.vehicleTypes,
       options: _readOptions,
       parser: (json) => json,
     );
@@ -118,12 +122,13 @@ class AdminVehicleService {
 
   Future<List<String>> getTimezones() async {
     final response = await _apiClient.get<dynamic>(
-      '/timezones',
+      ApiEndpoints.public.timezones,
       options: _readOptions,
       parser: (json) => json,
     );
-    final items =
-        response.data is List ? response.data as List : const <dynamic>[];
+    final items = response.data is List
+        ? response.data as List
+        : const <dynamic>[];
     return items
         .map((item) => item.toString().trim())
         .where((item) => item.isNotEmpty)
@@ -132,11 +137,8 @@ class AdminVehicleService {
 
   Future<List<AdminVehicleUserMini>> getUsers() async {
     final response = await _apiClient.get<dynamic>(
-      ApiEndpoints.admin.users,
-      queryParameters: <String, dynamic>{
-        'page': 1,
-        'limit': 1000,
-      },
+      _isTeam ? TeamContextEndpoints.vehicleUsers : ApiEndpoints.admin.users,
+      queryParameters: <String, dynamic>{'page': 1, 'limit': 1000},
       options: _readOptions,
       parser: (json) => json,
     );
@@ -163,8 +165,9 @@ class AdminVehicleService {
 
   Future<List<AdminVehicleUserMini>> getLinkedUsers(String vehicleId) async {
     final response = await _apiClient.get<dynamic>(
-      ApiEndpoints.admin
-          .linkUsersByVehicleId(_requireId(vehicleId, 'vehicleId')),
+      ApiEndpoints.admin.linkUsersByVehicleId(
+        _requireId(vehicleId, 'vehicleId'),
+      ),
       options: _readOptions,
       parser: (json) => json,
     );
@@ -172,35 +175,49 @@ class AdminVehicleService {
   }
 
   Future<List<AdminVehicleUserMini>> getUnlinkedUsers(String vehicleId) async {
+    if (_isTeam &&
+        !PermissionHelper.canPerform(
+          _apiClient.activeUser,
+          'vehicles.update',
+        )) {
+      return [];
+    }
     final response = await _apiClient.get<dynamic>(
-      ApiEndpoints.admin
-          .unlinkUsersByVehicleId(_requireId(vehicleId, 'vehicleId')),
+      ApiEndpoints.admin.unlinkUsersByVehicleId(
+        _requireId(vehicleId, 'vehicleId'),
+      ),
       options: _readOptions,
       parser: (json) => json,
     );
     return AdminVehicleUserMini.listFromJson(response.data);
   }
 
-  Future<void> linkUser(
-      {required String vehicleId, required String userId}) async {
+  Future<void> linkUser({
+    required String vehicleId,
+    required String userId,
+  }) async {
     await _apiClient.post<void>(
-      ApiEndpoints.admin
-          .linkUsersByVehicleId(_requireId(vehicleId, 'vehicleId')),
+      ApiEndpoints.admin.linkUsersByVehicleId(
+        _requireId(vehicleId, 'vehicleId'),
+      ),
       data: <String, dynamic>{
-        'userId': int.parse(_requireId(userId, 'userId'))
+        'userId': int.parse(_requireId(userId, 'userId')),
       },
       options: _mutationOptions,
       parser: (_) {},
     );
   }
 
-  Future<void> unlinkUser(
-      {required String vehicleId, required String userId}) async {
+  Future<void> unlinkUser({
+    required String vehicleId,
+    required String userId,
+  }) async {
     await _apiClient.post<void>(
-      ApiEndpoints.admin
-          .unlinkUsersByVehicleId(_requireId(vehicleId, 'vehicleId')),
+      ApiEndpoints.admin.unlinkUsersByVehicleId(
+        _requireId(vehicleId, 'vehicleId'),
+      ),
       data: <String, dynamic>{
-        'userId': int.parse(_requireId(userId, 'userId'))
+        'userId': int.parse(_requireId(userId, 'userId')),
       },
       options: _mutationOptions,
       parser: (_) {},
@@ -250,16 +267,24 @@ class AdminVehicleService {
       options: _readOptions,
       parser: (json) => json,
     );
-    return AdminVehicleEventPage.fromJson(response.data,
-        imei: imei, requestedLimit: limit);
+    return AdminVehicleEventPage.fromJson(
+      response.data,
+      imei: imei,
+      requestedLimit: limit,
+    );
   }
 
   Future<List<AdminCustomCommand>> getCustomCommands({
     bool activeOnly = true,
     int? deviceTypeId,
+    String? vehicleId,
   }) async {
     final response = await _apiClient.get<dynamic>(
-      ApiEndpoints.admin.customCommands,
+      _isTeam
+          ? TeamContextEndpoints.customCommands(
+              _requireId(vehicleId ?? '', 'vehicleId'),
+            )
+          : ApiEndpoints.admin.customCommands,
       queryParameters: <String, dynamic>{
         'activeOnly': activeOnly,
         if (deviceTypeId != null) 'deviceTypeId': deviceTypeId,
@@ -267,22 +292,30 @@ class AdminVehicleService {
       options: _readOptions,
       parser: (json) => json,
     );
-    final items =
-        response.data is List ? response.data as List : const <dynamic>[];
+    final items = response.data is List
+        ? response.data as List
+        : const <dynamic>[];
     return items
         .map(AdminCustomCommand.tryParse)
         .whereType<AdminCustomCommand>()
         .toList(growable: false);
   }
 
-  Future<List<AdminSystemVariable>> getSystemVariables() async {
+  Future<List<AdminSystemVariable>> getSystemVariables({
+    String? vehicleId,
+  }) async {
     final response = await _apiClient.get<dynamic>(
-      ApiEndpoints.admin.systemVariables,
+      _isTeam
+          ? TeamContextEndpoints.systemVariables(
+              _requireId(vehicleId ?? '', 'vehicleId'),
+            )
+          : ApiEndpoints.admin.systemVariables,
       options: _readOptions,
       parser: (json) => json,
     );
-    final items =
-        response.data is List ? response.data as List : const <dynamic>[];
+    final items = response.data is List
+        ? response.data as List
+        : const <dynamic>[];
     return items
         .map(AdminSystemVariable.tryParse)
         .whereType<AdminSystemVariable>()
@@ -293,13 +326,24 @@ class AdminVehicleService {
     required String imei,
     required String command,
     String? note,
+    String? vehicleId,
+    String? commandId,
   }) async {
     final response = await _apiClient.post<dynamic>(
-      ApiEndpoints.admin.sendCommandByImei(_requireId(imei, 'imei')),
-      data: <String, dynamic>{
-        'command': command.trim(),
-        if ((note ?? '').trim().isNotEmpty) 'note': note!.trim(),
-      },
+      _isTeam
+          ? TeamContextEndpoints.commands(
+              _requireId(vehicleId ?? '', 'vehicleId'),
+            )
+          : ApiEndpoints.admin.sendCommandByImei(_requireId(imei, 'imei')),
+      data: _isTeam
+          ? <String, dynamic>{
+              'commandId': int.parse(_requireId(commandId ?? '', 'commandId')),
+              'confirmed': true,
+            }
+          : <String, dynamic>{
+              'command': command.trim(),
+              if ((note ?? '').trim().isNotEmpty) 'note': note!.trim(),
+            },
       options: _mutationOptions,
       parser: (json) => json,
     );
@@ -310,9 +354,14 @@ class AdminVehicleService {
     required String imei,
     int limit = 50,
     String? cursorId,
+    String? vehicleId,
   }) async {
     final response = await _apiClient.get<dynamic>(
-      ApiEndpoints.admin.commandHistoryByImei(_requireId(imei, 'imei')),
+      _isTeam
+          ? TeamContextEndpoints.commandHistory(
+              _requireId(vehicleId ?? '', 'vehicleId'),
+            )
+          : ApiEndpoints.admin.commandHistoryByImei(_requireId(imei, 'imei')),
       queryParameters: <String, dynamic>{
         'limit': limit,
         if ((cursorId ?? '').trim().isNotEmpty) 'cursorId': cursorId,
@@ -323,18 +372,34 @@ class AdminVehicleService {
     return AdminVehicleCommandHistoryPage.fromJson(response.data);
   }
 
-  Future<AdminCommandStatus?> getCommandStatus(String cmdId) async {
+  Future<AdminCommandStatus?> getCommandStatus(
+    String cmdId, {
+    String? vehicleId,
+  }) async {
     final response = await _apiClient.get<dynamic>(
-      ApiEndpoints.admin.commandStatus(_requireId(cmdId, 'cmdId')),
+      _isTeam
+          ? TeamContextEndpoints.commandStatus(
+              _requireId(vehicleId ?? '', 'vehicleId'),
+              cmdId,
+            )
+          : ApiEndpoints.admin.commandStatus(_requireId(cmdId, 'cmdId')),
       options: _readOptions,
       parser: (json) => json,
     );
     return AdminCommandStatus.tryParse(response.data);
   }
 
-  Future<AdminVehicleCommandItem?> getCommandLog(String cmdId) async {
+  Future<AdminVehicleCommandItem?> getCommandLog(
+    String cmdId, {
+    String? vehicleId,
+  }) async {
     final response = await _apiClient.get<dynamic>(
-      ApiEndpoints.admin.commandLog(_requireId(cmdId, 'cmdId')),
+      _isTeam
+          ? TeamContextEndpoints.commandLog(
+              _requireId(vehicleId ?? '', 'vehicleId'),
+              cmdId,
+            )
+          : ApiEndpoints.admin.commandLog(_requireId(cmdId, 'cmdId')),
       options: _readOptions,
       parser: (json) => json,
     );
@@ -396,8 +461,10 @@ class AdminVehicleService {
     return parsed;
   }
 
-  Future<void> deleteVehicleSensor(
-      {required String vehicleId, required String sensorId}) async {
+  Future<void> deleteVehicleSensor({
+    required String vehicleId,
+    required String sensorId,
+  }) async {
     await _apiClient.delete<void>(
       ApiEndpoints.admin.vehicleSensorById(
         vehicleId: _requireId(vehicleId, 'vehicleId'),
@@ -413,7 +480,8 @@ class AdminVehicleService {
     String? sensorId,
     AdminVehicleSensorRunRequest? request,
   }) async {
-    final data = request?.toJson() ??
+    final data =
+        request?.toJson() ??
         <String, dynamic>{
           if ((sensorId ?? '').trim().isNotEmpty)
             'sensorId': _requireId(sensorId!, 'sensorId'),
@@ -428,10 +496,12 @@ class AdminVehicleService {
   }
 
   Future<AdminVehicleSensorTelemetry> getVehicleSensorTelemetry(
-      String vehicleId) async {
+    String vehicleId,
+  ) async {
     final response = await _apiClient.get<dynamic>(
-      ApiEndpoints.admin
-          .vehicleSensorsTelemetry(_requireId(vehicleId, 'vehicleId')),
+      ApiEndpoints.admin.vehicleSensorsTelemetry(
+        _requireId(vehicleId, 'vehicleId'),
+      ),
       options: _readOptions,
       parser: (json) => json,
     );
@@ -439,7 +509,8 @@ class AdminVehicleService {
   }
 
   Future<List<AdminVehicleDocument>> getVehicleDocuments(
-      String vehicleId) async {
+    String vehicleId,
+  ) async {
     final response = await _apiClient.get<dynamic>(
       ApiEndpoints.admin.documentsByVehicle(_requireId(vehicleId, 'vehicleId')),
       options: _readOptions,
@@ -458,10 +529,13 @@ class AdminVehicleService {
   }
 
   Future<void> uploadVehicleDocument(
-      AdminVehicleDocumentRequest request) async {
+    AdminVehicleDocumentRequest request,
+  ) async {
     final formData = await _buildDocumentFormData(request, requireFile: true);
     await _apiClient.post<void>(
-      ApiEndpoints.admin.uploadDoc,
+      _isTeam
+          ? TeamContextEndpoints.vehicleDocuments(request.vehicleId)
+          : ApiEndpoints.admin.uploadDoc,
       data: formData,
       options: _uploadOptions,
       parser: (_) {},
@@ -474,16 +548,26 @@ class AdminVehicleService {
   }) async {
     final formData = await _buildDocumentFormData(request, requireFile: false);
     await _apiClient.patch<void>(
-      ApiEndpoints.admin.uploadDocById(_requireId(docId, 'docId')),
+      _isTeam
+          ? TeamContextEndpoints.vehicleDocuments(
+              request.vehicleId,
+              documentId: _requireId(docId, 'docId'),
+            )
+          : ApiEndpoints.admin.uploadDocById(_requireId(docId, 'docId')),
       data: formData,
       options: _uploadOptions,
       parser: (_) {},
     );
   }
 
-  Future<void> deleteVehicleDocument(String docId) async {
+  Future<void> deleteVehicleDocument(String docId, {String? vehicleId}) async {
     await _apiClient.delete<void>(
-      ApiEndpoints.admin.uploadDocById(_requireId(docId, 'docId')),
+      _isTeam
+          ? TeamContextEndpoints.vehicleDocuments(
+              _requireId(vehicleId ?? '', 'vehicleId'),
+              documentId: _requireId(docId, 'docId'),
+            )
+          : ApiEndpoints.admin.uploadDocById(_requireId(docId, 'docId')),
       options: _mutationOptions,
       parser: (_) {},
     );

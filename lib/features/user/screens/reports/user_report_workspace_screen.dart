@@ -5,34 +5,38 @@ import '../../../../core/theme/open_vts_colors.dart';
 import '../../../../core/theme/open_vts_radius.dart';
 import '../../../../core/theme/open_vts_spacing.dart';
 import '../../../../core/theme/open_vts_typography.dart';
+import '../../../../shared/helpers/mobile_text.dart';
 import '../../../../shared/widgets/open_vts_button.dart';
 import '../../../../shared/widgets/open_vts_page_scaffold.dart';
-import '../../controllers/user_report_workspace_notifier.dart';
+import '../../../auth/controllers/auth_controller.dart';
 import '../../controllers/user_providers.dart';
+import '../../controllers/user_report_workspace_notifier.dart';
 import '../../models/user_report_model.dart';
 import '../../models/user_report_state.dart';
 import '../../services/user_report_export_service.dart';
 import 'widgets/filters/user_report_date_control.dart';
 import 'widgets/filters/user_report_filters.dart';
 import 'widgets/filters/user_report_vehicle_scope_selector.dart';
-import 'widgets/user_report_state_views.dart';
+import 'widgets/results/user_alerts_report_result.dart';
+import 'widgets/results/user_details_report_result.dart';
 import 'widgets/results/user_distance_report_result.dart';
 import 'widgets/results/user_driven_report_result.dart';
-import 'widgets/results/user_details_report_result.dart';
-import 'widgets/results/user_overspeed_report_result.dart';
 import 'widgets/results/user_geofence_report_result.dart';
-import 'widgets/results/user_alerts_report_result.dart';
-import 'widgets/results/user_sensor_report_result.dart';
 import 'widgets/results/user_logs_report_result.dart';
+import 'widgets/results/user_overspeed_report_result.dart';
+import 'widgets/results/user_sensor_report_result.dart';
 import 'widgets/results/user_timeline_report_result.dart';
+import 'widgets/user_report_state_views.dart';
 
-final _workspaceProvider = StateNotifierProvider.family.autoDispose<
-    UserReportWorkspaceNotifier,
-    UserReportWorkspaceState,
-    UserReportKey>((ref, key) {
-  final ctrl = ref.watch(userReportControllerProvider);
-  return UserReportWorkspaceNotifier(initialKey: key, controller: ctrl);
-});
+final _workspaceProvider = StateNotifierProvider.family
+    .autoDispose<
+      UserReportWorkspaceNotifier,
+      UserReportWorkspaceState,
+      UserReportKey
+    >((ref, key) {
+      final ctrl = ref.watch(userReportControllerProvider);
+      return UserReportWorkspaceNotifier(initialKey: key, controller: ctrl);
+    });
 
 class UserReportWorkspaceScreen extends ConsumerWidget {
   const UserReportWorkspaceScreen({required this.reportKey, super.key});
@@ -41,6 +45,19 @@ class UserReportWorkspaceScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(authControllerProvider).user;
+    if (user == null || !user.access.canReport(user.role, reportKey.apiValue)) {
+      return OpenVtsPageScaffold(
+        title: context.mobileText('Reports'),
+        body: Center(
+          child: Text(
+            context.mobileText(
+              'This report is not available for your account.',
+            ),
+          ),
+        ),
+      );
+    }
     final state = ref.watch(_workspaceProvider(reportKey));
     final notifier = ref.read(_workspaceProvider(reportKey).notifier);
     final title = _titleForKey(reportKey);
@@ -98,17 +115,25 @@ class _FilterSection extends StatelessWidget {
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(OpenVtsRadius.lg),
         border: Border.all(
-            color: isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border),
+          color: isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(
-                OpenVtsSpacing.sm, OpenVtsSpacing.sm, OpenVtsSpacing.sm, 0),
-            child: Text('Filters',
-                style: OpenVtsTypography.label
-                    .copyWith(fontWeight: FontWeight.w700)),
+              OpenVtsSpacing.sm,
+              OpenVtsSpacing.sm,
+              OpenVtsSpacing.sm,
+              0,
+            ),
+            child: Text(
+              context.mobileText('Filters'),
+              style: OpenVtsTypography.label.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
           ),
           const Divider(height: 1),
           Padding(
@@ -140,9 +165,10 @@ class _FilterSection extends StatelessWidget {
                 if (_hasExtraFilters(key)) ...[
                   const SizedBox(height: OpenVtsSpacing.sm),
                   _ExtraFilters(
-                      state: state,
-                      notifier: notifier,
-                      disabled: isGenerating || state.isLoadingOptions),
+                    state: state,
+                    notifier: notifier,
+                    disabled: isGenerating || state.isLoadingOptions,
+                  ),
                 ],
               ],
             ),
@@ -222,12 +248,15 @@ class _OptionsLoading extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(
-          horizontal: OpenVtsSpacing.sm, vertical: 14),
+        horizontal: OpenVtsSpacing.sm,
+        vertical: 14,
+      ),
       decoration: BoxDecoration(
         color: isDark ? OpenVtsColors.darkSurface : OpenVtsColors.surface,
         borderRadius: BorderRadius.circular(OpenVtsRadius.md),
         border: Border.all(
-            color: isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border),
+          color: isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border,
+        ),
       ),
       child: Row(
         children: [
@@ -243,11 +272,12 @@ class _OptionsLoading extends StatelessWidget {
           ),
           const SizedBox(width: OpenVtsSpacing.sm),
           Text(
-            'Loading vehicles…',
+            context.mobileText('Loading vehicles…'),
             style: OpenVtsTypography.body.copyWith(
-                color: isDark
-                    ? OpenVtsColors.darkTextSecondary
-                    : OpenVtsColors.textSecondary),
+              color: isDark
+                  ? OpenVtsColors.darkTextSecondary
+                  : OpenVtsColors.textSecondary,
+            ),
           ),
         ],
       ),
@@ -256,8 +286,11 @@ class _OptionsLoading extends StatelessWidget {
 }
 
 class _OptionsError extends StatelessWidget {
-  const _OptionsError(
-      {required this.message, required this.onRetry, required this.isDark});
+  const _OptionsError({
+    required this.message,
+    required this.onRetry,
+    required this.isDark,
+  });
   final String message;
   final VoidCallback onRetry;
   final bool isDark;
@@ -272,25 +305,29 @@ class _OptionsError extends StatelessWidget {
             : OpenVtsColors.error.withValues(alpha: 0.04),
         borderRadius: BorderRadius.circular(OpenVtsRadius.md),
         border: Border.all(
-            color: isDark
-                ? OpenVtsColors.darkBorder
-                : OpenVtsColors.error.withValues(alpha: 0.3)),
+          color: isDark
+              ? OpenVtsColors.darkBorder
+              : OpenVtsColors.error.withValues(alpha: 0.3),
+        ),
       ),
       child: Row(
         children: [
-          Icon(Icons.warning_amber_rounded,
-              size: 16,
-              color: isDark
-                  ? OpenVtsColors.darkTextSecondary
-                  : OpenVtsColors.error),
+          Icon(
+            Icons.warning_amber_rounded,
+            size: 16,
+            color: isDark
+                ? OpenVtsColors.darkTextSecondary
+                : OpenVtsColors.error,
+          ),
           const SizedBox(width: OpenVtsSpacing.xs),
           Expanded(
             child: Text(
               message,
               style: OpenVtsTypography.meta.copyWith(
-                  color: isDark
-                      ? OpenVtsColors.darkTextSecondary
-                      : OpenVtsColors.error),
+                color: isDark
+                    ? OpenVtsColors.darkTextSecondary
+                    : OpenVtsColors.error,
+              ),
             ),
           ),
           const SizedBox(width: OpenVtsSpacing.xs),
@@ -300,7 +337,7 @@ class _OptionsError extends StatelessWidget {
               visualDensity: VisualDensity.compact,
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             ),
-            child: const Text('Retry'),
+            child: Text(context.mobileText('Retry')),
           ),
         ],
       ),
@@ -321,7 +358,8 @@ class _OptionsEmpty extends StatelessWidget {
         color: isDark ? OpenVtsColors.darkSurface : OpenVtsColors.surface,
         borderRadius: BorderRadius.circular(OpenVtsRadius.md),
         border: Border.all(
-            color: isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border),
+          color: isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -332,7 +370,7 @@ class _OptionsEmpty extends StatelessWidget {
               const SizedBox(width: OpenVtsSpacing.xs),
               Expanded(
                 child: Text(
-                  'No vehicles assigned to your account',
+                  context.mobileText('No vehicles assigned to your account'),
                   style: OpenVtsTypography.body,
                 ),
               ),
@@ -340,22 +378,26 @@ class _OptionsEmpty extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            'Contact your administrator to assign vehicles.',
+            context.mobileText(
+              'Contact your administrator to assign vehicles.',
+            ),
             style: OpenVtsTypography.meta.copyWith(
-                color: isDark
-                    ? OpenVtsColors.darkTextSecondary
-                    : OpenVtsColors.textSecondary),
+              color: isDark
+                  ? OpenVtsColors.darkTextSecondary
+                  : OpenVtsColors.textSecondary,
+            ),
           ),
           const SizedBox(height: 6),
           GestureDetector(
             onTap: onRetry,
             child: Text(
-              'Refresh',
+              context.mobileText('Refresh'),
               style: OpenVtsTypography.meta.copyWith(
-                  color: isDark
-                      ? OpenVtsColors.darkTextPrimary
-                      : OpenVtsColors.brandInk,
-                  fontWeight: FontWeight.w600),
+                color: isDark
+                    ? OpenVtsColors.darkTextPrimary
+                    : OpenVtsColors.brandInk,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],
@@ -365,8 +407,11 @@ class _OptionsEmpty extends StatelessWidget {
 }
 
 class _ExtraFilters extends StatelessWidget {
-  const _ExtraFilters(
-      {required this.state, required this.notifier, required this.disabled});
+  const _ExtraFilters({
+    required this.state,
+    required this.notifier,
+    required this.disabled,
+  });
   final UserReportWorkspaceState state;
   final UserReportWorkspaceNotifier notifier;
   final bool disabled;
@@ -375,57 +420,57 @@ class _ExtraFilters extends StatelessWidget {
   Widget build(BuildContext context) {
     return switch (state.reportKey) {
       UserReportKey.overspeed => UserOverspeedReportFilter(
-          filters: state.overspeedFilters,
-          onChanged: notifier.setOverspeedFilters,
-          disabled: disabled,
-        ),
+        filters: state.overspeedFilters,
+        onChanged: notifier.setOverspeedFilters,
+        disabled: disabled,
+      ),
       UserReportKey.geofence => UserGeofenceReportFilter(
-          filters: state.geofenceFilters,
-          onChanged: notifier.setGeofenceFilters,
-          geofences: state.geofences,
-          isLoading: state.isLoadingGeofences,
-          disabled: disabled,
-        ),
+        filters: state.geofenceFilters,
+        onChanged: notifier.setGeofenceFilters,
+        geofences: state.geofences,
+        isLoading: state.isLoadingGeofences,
+        disabled: disabled,
+      ),
       UserReportKey.sensor => UserSensorReportFilter(
-          vehicleId: state.scope.vehicleId,
-          vehicles: state.options?.vehicles ?? const [],
-          sensors: state.sensors,
-          filters: state.sensorFilters,
-          onVehicleChanged: (id) {
-            if (id != null) {
-              notifier.setScope(ReportVehicleScope.single(id));
-            }
-          },
-          onFiltersChanged: notifier.setSensorFilters,
-          isLoadingSensors: state.isLoadingSensors,
-          sensorLoadError: state.sensorLoadError,
-          onRetrySensorLoad: notifier.retrySensorLoad,
-          disabled: disabled,
-          vehicleError: state.validationErrors['sensorVehicle'],
-          sensorError: state.validationErrors['sensorSensor'],
-        ),
+        vehicleId: state.scope.vehicleId,
+        vehicles: state.options?.vehicles ?? const [],
+        sensors: state.sensors,
+        filters: state.sensorFilters,
+        onVehicleChanged: (id) {
+          if (id != null) {
+            notifier.setScope(ReportVehicleScope.single(id));
+          }
+        },
+        onFiltersChanged: notifier.setSensorFilters,
+        isLoadingSensors: state.isLoadingSensors,
+        sensorLoadError: state.sensorLoadError,
+        onRetrySensorLoad: notifier.retrySensorLoad,
+        disabled: disabled,
+        vehicleError: state.validationErrors['sensorVehicle'],
+        sensorError: state.validationErrors['sensorSensor'],
+      ),
       UserReportKey.alerts => UserAlertsReportFilter(
-          filters: state.alertsFilters,
-          onChanged: notifier.setAlertsFilters,
-          disabled: disabled,
-        ),
+        filters: state.alertsFilters,
+        onChanged: notifier.setAlertsFilters,
+        disabled: disabled,
+      ),
       UserReportKey.logs => UserLogsReportFilter(
-          vehicleId: state.scope.vehicleId,
-          vehicles: state.options?.vehicles ?? const [],
-          filters: state.logsFilters,
-          onVehicleChanged: (id) {
-            if (id != null) notifier.setScope(ReportVehicleScope.single(id));
-          },
-          onFiltersChanged: notifier.setLogsFilters,
-          vehicleError: state.validationErrors['logsVehicle'],
-          disabled: disabled,
-        ),
+        vehicleId: state.scope.vehicleId,
+        vehicles: state.options?.vehicles ?? const [],
+        filters: state.logsFilters,
+        onVehicleChanged: (id) {
+          if (id != null) notifier.setScope(ReportVehicleScope.single(id));
+        },
+        onFiltersChanged: notifier.setLogsFilters,
+        vehicleError: state.validationErrors['logsVehicle'],
+        disabled: disabled,
+      ),
       UserReportKey.timeline => UserTimelineReportFilter(
-          filters: state.timelineFilters,
-          onChanged: notifier.setTimelineFilters,
-          disabled: disabled,
-          error: state.validationErrors['timelineState'],
-        ),
+        filters: state.timelineFilters,
+        onChanged: notifier.setTimelineFilters,
+        disabled: disabled,
+        error: state.validationErrors['timelineState'],
+      ),
       _ => const SizedBox.shrink(),
     };
   }
@@ -441,17 +486,18 @@ class _ActionRow extends StatelessWidget {
     final isGenerating = state.genStatus == ReportGenStatus.loading;
     final optionsReady = state.options != null && state.optionsError == null;
     final canGenerate = !isGenerating && optionsReady;
-    final hasResult = state.genStatus == ReportGenStatus.success ||
+    final hasResult =
+        state.genStatus == ReportGenStatus.success ||
         state.genStatus == ReportGenStatus.empty;
     return Row(
       children: [
         Expanded(
           child: OpenVtsButton(
             label: isGenerating
-                ? 'Generating…'
+                ? context.mobileText('Generating…')
                 : state.isLoadingOptions
-                    ? 'Loading vehicles…'
-                    : 'Generate Report',
+                ? context.mobileText('Loading vehicles…')
+                : context.mobileText('Generate Report'),
             onPressed: canGenerate ? notifier.generate : null,
             isLoading: isGenerating,
           ),
@@ -461,9 +507,10 @@ class _ActionRow extends StatelessWidget {
           OutlinedButton.icon(
             onPressed: notifier.reset,
             icon: const Icon(Icons.refresh_rounded, size: 16),
-            label: const Text('Reset'),
-            style:
-                OutlinedButton.styleFrom(visualDensity: VisualDensity.compact),
+            label: Text(context.mobileText('Reset')),
+            style: OutlinedButton.styleFrom(
+              visualDensity: VisualDensity.compact,
+            ),
           ),
         ],
       ],
@@ -483,10 +530,13 @@ class _ResultArea extends StatelessWidget {
       ReportGenStatus.loading => const ReportLoadingView(),
       ReportGenStatus.empty => const ReportEmptyView(),
       ReportGenStatus.error => ReportErrorView(
-          message: state.genError ?? 'Unknown error',
-          onRetry: notifier.generate),
-      ReportGenStatus.success =>
-        _ReportResult(state: state, notifier: notifier),
+        message: state.genError ?? 'Unknown error',
+        onRetry: notifier.generate,
+      ),
+      ReportGenStatus.success => _ReportResult(
+        state: state,
+        notifier: notifier,
+      ),
     };
   }
 }
@@ -496,35 +546,17 @@ class _ReportResult extends StatelessWidget {
   final UserReportWorkspaceState state;
   final UserReportWorkspaceNotifier notifier;
 
-  Future<void> _handleExport(BuildContext context, String format) async {
-    final screenBounds = Offset.zero & MediaQuery.sizeOf(context);
-    final renderBox = context.findRenderObject();
-    final visibleBounds = renderBox is RenderBox && renderBox.hasSize
-        ? (renderBox.localToGlobal(Offset.zero) & renderBox.size)
-            .intersect(screenBounds)
-        : Rect.zero;
-    final shareOrigin = visibleBounds.isEmpty
-        ? Rect.fromCenter(center: screenBounds.center, width: 1, height: 1)
-        : visibleBounds;
-    final exportService = UserReportExportService(
-      sharePositionOrigin: shareOrigin,
+  void _handleExport(BuildContext context, String format) {
+    final exportService = const UserReportExportService();
+    exportService.export(
+      reportKey: state.reportKey,
+      rows: state.rows,
+      allColumns: state.reportKey.preferredColumns,
+      columnLabels: state.reportKey.columnLabels,
+      format: format,
+      generatedAt: state.generatedAt,
+      warning: state.warning,
     );
-    try {
-      await exportService.export(
-        reportKey: state.reportKey,
-        rows: state.rows,
-        allColumns: state.reportKey.preferredColumns,
-        columnLabels: state.reportKey.columnLabels,
-        format: format,
-        generatedAt: state.generatedAt,
-        warning: state.warning,
-      );
-    } catch (_) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Unable to export the report. Please try again.')),
-      );
-    }
   }
 
   @override
@@ -532,41 +564,50 @@ class _ReportResult extends StatelessWidget {
     final key = state.reportKey;
     return switch (key) {
       UserReportKey.distance => UserDistanceReportResult(
-          state: state,
-          onLoadMore: notifier.loadMore,
-          onExport: (f) => _handleExport(context, f)),
+        state: state,
+        onLoadMore: notifier.loadMore,
+        onExport: (f) => _handleExport(context, f),
+      ),
       UserReportKey.driven => UserDrivenReportResult(
-          state: state,
-          onLoadMore: notifier.loadMore,
-          onExport: (f) => _handleExport(context, f)),
+        state: state,
+        onLoadMore: notifier.loadMore,
+        onExport: (f) => _handleExport(context, f),
+      ),
       UserReportKey.details => UserDetailsReportResult(
-          state: state,
-          onLoadMore: notifier.loadMore,
-          onExport: (f) => _handleExport(context, f)),
+        state: state,
+        onLoadMore: notifier.loadMore,
+        onExport: (f) => _handleExport(context, f),
+      ),
       UserReportKey.overspeed => UserOverspeedReportResult(
-          state: state,
-          onLoadMore: notifier.loadMore,
-          onExport: (f) => _handleExport(context, f)),
+        state: state,
+        onLoadMore: notifier.loadMore,
+        onExport: (f) => _handleExport(context, f),
+      ),
       UserReportKey.geofence => UserGeofenceReportResult(
-          state: state,
-          onLoadMore: notifier.loadMore,
-          onExport: (f) => _handleExport(context, f)),
+        state: state,
+        onLoadMore: notifier.loadMore,
+        onExport: (f) => _handleExport(context, f),
+      ),
       UserReportKey.alerts => UserAlertsReportResult(
-          state: state,
-          onLoadMore: notifier.loadMore,
-          onExport: (f) => _handleExport(context, f)),
+        state: state,
+        onLoadMore: notifier.loadMore,
+        onExport: (f) => _handleExport(context, f),
+      ),
       UserReportKey.sensor => UserSensorReportResult(
-          state: state,
-          onLoadMore: notifier.loadMore,
-          onExport: (f) => _handleExport(context, f)),
+        state: state,
+        onLoadMore: notifier.loadMore,
+        onExport: (f) => _handleExport(context, f),
+      ),
       UserReportKey.logs => UserLogsReportResult(
-          state: state,
-          onLoadMore: notifier.loadMore,
-          onExport: (f) => _handleExport(context, f)),
+        state: state,
+        onLoadMore: notifier.loadMore,
+        onExport: (f) => _handleExport(context, f),
+      ),
       UserReportKey.timeline => UserTimelineReportResult(
-          state: state,
-          onLoadMore: notifier.loadMore,
-          onExport: (f) => _handleExport(context, f)),
+        state: state,
+        onLoadMore: notifier.loadMore,
+        onExport: (f) => _handleExport(context, f),
+      ),
     };
   }
 }

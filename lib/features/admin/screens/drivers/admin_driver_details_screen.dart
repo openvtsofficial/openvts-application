@@ -7,6 +7,7 @@ import '../../../../core/theme/open_vts_colors.dart';
 import '../../../../core/theme/open_vts_radius.dart';
 import '../../../../core/theme/open_vts_spacing.dart';
 import '../../../../core/theme/open_vts_typography.dart';
+import '../../../../shared/helpers/mobile_text.dart';
 import '../../../../shared/helpers/toast_helper.dart';
 import '../../../../shared/widgets/open_vts_card.dart';
 import '../../../../shared/widgets/open_vts_detail_tab_strip.dart';
@@ -17,6 +18,7 @@ import '../../controllers/admin_driver_details_controller.dart';
 import '../../controllers/admin_providers.dart';
 import '../../models/admin_driver_details_state.dart';
 import '../../models/admin_drivers_model.dart';
+import '../../widgets/admin_action_gate.dart';
 import 'widgets/admin_driver_documents_tab.dart';
 import 'widgets/admin_driver_profile_tab.dart';
 import 'widgets/admin_driver_users_tab.dart';
@@ -42,8 +44,8 @@ class AdminDriverDetailsScreen extends ConsumerWidget {
     final title = driver?.name.trim().isNotEmpty == true
         ? driver!.name
         : (initialDriver?.firstName.trim().isNotEmpty == true
-            ? initialDriver!.firstName
-            : 'Driver');
+              ? initialDriver!.firstName
+              : 'Driver');
 
     return OpenVtsPageScaffold(
       title: title,
@@ -59,7 +61,7 @@ class AdminDriverDetailsScreen extends ConsumerWidget {
         _HeaderStatusChip(isActive: isActive),
         const SizedBox(width: 4),
         PopupMenuButton<_DriverMenuAction>(
-          tooltip: 'Driver actions',
+          tooltip: context.mobileText('Driver actions'),
           icon: Icon(
             Icons.more_vert_rounded,
             size: 20,
@@ -77,7 +79,9 @@ class AdminDriverDetailsScreen extends ConsumerWidget {
                 if (context.mounted) {
                   if (ok) {
                     ToastHelper.showSuccess(
-                      !current ? 'Driver activated.' : 'Driver deactivated.',
+                      !current
+                          ? context.mobileText('Driver activated.')
+                          : context.mobileText('Driver deactivated.'),
                       context: context,
                     );
                   } else {
@@ -94,7 +98,7 @@ class AdminDriverDetailsScreen extends ConsumerWidget {
                   context: context,
                   builder: (dialogContext) {
                     return AlertDialog(
-                      title: const Text('Delete driver account'),
+                      title: Text(context.mobileText('Delete driver account')),
                       content: Text(
                         'Delete ${driver?.name ?? initialDriver?.firstName ?? 'this driver'}? '
                         'This removes the driver account and assignments.',
@@ -103,7 +107,7 @@ class AdminDriverDetailsScreen extends ConsumerWidget {
                         TextButton(
                           onPressed: () =>
                               Navigator.of(dialogContext).pop(false),
-                          child: const Text('Cancel'),
+                          child: Text(context.mobileText('Cancel')),
                         ),
                         TextButton(
                           onPressed: () =>
@@ -111,7 +115,7 @@ class AdminDriverDetailsScreen extends ConsumerWidget {
                           style: TextButton.styleFrom(
                             foregroundColor: OpenVtsColors.error,
                           ),
-                          child: const Text('Delete'),
+                          child: Text(context.mobileText('Delete')),
                         ),
                       ],
                     );
@@ -121,8 +125,10 @@ class AdminDriverDetailsScreen extends ConsumerWidget {
                 final ok = await controller.deleteDriver();
                 if (context.mounted) {
                   if (ok) {
-                    ToastHelper.showSuccess('Driver deleted.',
-                        context: context);
+                    ToastHelper.showSuccess(
+                      context.mobileText('Driver deleted.'),
+                      context: context,
+                    );
                     ref.invalidate(adminDriversControllerProvider);
                     context.go(RoutePaths.adminDrivers);
                   } else {
@@ -137,33 +143,38 @@ class AdminDriverDetailsScreen extends ConsumerWidget {
             }
           },
           itemBuilder: (context) => [
-            const PopupMenuItem(
+            PopupMenuItem(
               value: _DriverMenuAction.refresh,
               height: 40,
-              child: _MenuRow(icon: Icons.refresh_rounded, label: 'Refresh'),
-            ),
-            PopupMenuItem(
-              value: _DriverMenuAction.toggleStatus,
-              height: 40,
               child: _MenuRow(
-                icon: (driver?.isActive ?? initialDriver?.isActive ?? false)
-                    ? Icons.toggle_off_outlined
-                    : Icons.toggle_on_outlined,
-                label: (driver?.isActive ?? initialDriver?.isActive ?? false)
-                    ? 'Set Inactive'
-                    : 'Set Active',
+                icon: Icons.refresh_rounded,
+                label: context.mobileText('Refresh'),
               ),
             ),
+            if (adminCanPerform(ref, 'drivers.update'))
+              PopupMenuItem(
+                value: _DriverMenuAction.toggleStatus,
+                height: 40,
+                child: _MenuRow(
+                  icon: (driver?.isActive ?? initialDriver?.isActive ?? false)
+                      ? Icons.toggle_off_outlined
+                      : Icons.toggle_on_outlined,
+                  label: (driver?.isActive ?? initialDriver?.isActive ?? false)
+                      ? context.mobileText('Set Inactive')
+                      : context.mobileText('Set Active'),
+                ),
+              ),
             const PopupMenuDivider(height: 1),
-            const PopupMenuItem(
-              value: _DriverMenuAction.delete,
-              height: 40,
-              child: _MenuRow(
-                icon: Icons.delete_outline_rounded,
-                label: 'Delete Account',
-                destructive: true,
+            if (adminCanPerform(ref, 'drivers.delete'))
+              PopupMenuItem(
+                value: _DriverMenuAction.delete,
+                height: 40,
+                child: _MenuRow(
+                  icon: Icons.delete_outline_rounded,
+                  label: context.mobileText('Delete Account'),
+                  destructive: true,
+                ),
               ),
-            ),
           ],
         ),
         const SizedBox(width: 4),
@@ -228,7 +239,9 @@ class _HeaderStatusChip extends StatelessWidget {
           border: Border.all(color: borderColor),
         ),
         child: Text(
-          isActive ? 'Active' : 'Inactive',
+          isActive
+              ? context.mobileText('Active')
+              : context.mobileText('Inactive'),
           style: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w600,
@@ -356,20 +369,17 @@ class _SummaryCard extends StatelessWidget {
                 : OpenVtsColors.border,
           ),
           const SizedBox(height: OpenVtsSpacing.sm),
-          _SummaryEmailRow(
-            email: email,
-            isVerified: isVerified,
-          ),
+          _SummaryEmailRow(email: email, isVerified: isVerified),
           const SizedBox(height: OpenVtsSpacing.xs),
           _SummaryRow(
             icon: Icons.phone_outlined,
-            label: 'Phone',
+            label: context.mobileText('Phone'),
             value: phone,
           ),
           const SizedBox(height: OpenVtsSpacing.xs),
-          const _SummaryRow(
+          _SummaryRow(
             icon: Icons.badge_outlined,
-            label: 'Role',
+            label: context.mobileText('Role'),
             value: 'Driver',
           ),
         ],
@@ -378,8 +388,11 @@ class _SummaryCard extends StatelessWidget {
   }
 
   String _initials(String text) {
-    final parts =
-        text.trim().split(RegExp(r'\s+')).where((e) => e.isNotEmpty).toList();
+    final parts = text
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((e) => e.isNotEmpty)
+        .toList();
     if (parts.isEmpty) return '--';
     if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
     return (parts.first.substring(0, 1) + parts.last.substring(0, 1))
@@ -411,7 +424,9 @@ class _StatusBadge extends StatelessWidget {
         border: Border.all(color: borderColor),
       ),
       child: Text(
-        isActive ? 'Active' : 'Inactive',
+        isActive
+            ? context.mobileText('Active')
+            : context.mobileText('Inactive'),
         style: TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.w600,
@@ -423,10 +438,7 @@ class _StatusBadge extends StatelessWidget {
 }
 
 class _SummaryEmailRow extends StatelessWidget {
-  const _SummaryEmailRow({
-    required this.email,
-    required this.isVerified,
-  });
+  const _SummaryEmailRow({required this.email, required this.isVerified});
 
   final String email;
   final bool isVerified;
@@ -434,22 +446,27 @@ class _SummaryEmailRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final displayEmail = email.trim().isEmpty ? '—' : email;
-    final verifiedColor =
-        isVerified ? OpenVtsColors.success : OpenVtsColors.textTertiary;
-    final verifiedIcon =
-        isVerified ? Icons.verified_rounded : Icons.error_outline_rounded;
+    final verifiedColor = isVerified
+        ? OpenVtsColors.success
+        : OpenVtsColors.textTertiary;
+    final verifiedIcon = isVerified
+        ? Icons.verified_rounded
+        : Icons.error_outline_rounded;
     final tooltip = isVerified ? 'Email verified' : 'Email unverified';
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Icon(Icons.mail_outline_rounded,
-            size: 14, color: OpenVtsColors.textTertiary),
+        const Icon(
+          Icons.mail_outline_rounded,
+          size: 14,
+          color: OpenVtsColors.textTertiary,
+        ),
         const SizedBox(width: 8),
         SizedBox(
           width: 56,
           child: Text(
-            'Email',
+            context.mobileText('Email'),
             style: OpenVtsTypography.meta.copyWith(
               color: OpenVtsColors.textTertiary,
               fontSize: 11,
@@ -474,11 +491,7 @@ class _SummaryEmailRow extends StatelessWidget {
             const SizedBox(width: 6),
             Tooltip(
               message: tooltip,
-              child: Icon(
-                verifiedIcon,
-                size: 14,
-                color: verifiedColor,
-              ),
+              child: Icon(verifiedIcon, size: 14, color: verifiedColor),
             ),
           ],
         ),
@@ -541,20 +554,20 @@ class _TabChips extends StatelessWidget {
     return OpenVtsDetailTabStrip<AdminDriverDetailsTab>(
       selected: selected,
       onChanged: onSelect,
-      tabs: const [
+      tabs: [
         OpenVtsDetailTabOption(
           value: AdminDriverDetailsTab.profile,
-          label: 'Profile',
+          label: context.mobileText('Profile'),
           icon: Icons.person_outline_rounded,
         ),
         OpenVtsDetailTabOption(
           value: AdminDriverDetailsTab.documents,
-          label: 'Documents',
+          label: context.mobileText('Documents'),
           icon: Icons.description_outlined,
         ),
         OpenVtsDetailTabOption(
           value: AdminDriverDetailsTab.users,
-          label: 'Users',
+          label: context.mobileText('Users'),
           icon: Icons.group_outlined,
         ),
       ],
@@ -566,8 +579,11 @@ class _TabContent extends ConsumerWidget {
   const _TabContent({required this.state, required this.provider});
 
   final AdminDriverDetailsState state;
-  final AutoDisposeStateNotifierProvider<AdminDriverDetailsController,
-      AdminDriverDetailsState> provider;
+  final AutoDisposeStateNotifierProvider<
+    AdminDriverDetailsController,
+    AdminDriverDetailsState
+  >
+  provider;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

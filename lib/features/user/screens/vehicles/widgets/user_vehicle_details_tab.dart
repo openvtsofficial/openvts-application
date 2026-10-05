@@ -6,6 +6,7 @@ import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../core/utils/date_time_formatter.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/widgets/open_vts_bottom_sheet.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
@@ -17,8 +18,11 @@ import 'user_vehicle_edit_sheet.dart';
 class UserVehicleDetailsTabView extends ConsumerWidget {
   const UserVehicleDetailsTabView({required this.provider, super.key});
 
-  final AutoDisposeStateNotifierProvider<UserVehicleDetailsController,
-      UserVehicleDetailsState> provider;
+  final AutoDisposeStateNotifierProvider<
+    UserVehicleDetailsController,
+    UserVehicleDetailsState
+  >
+  provider;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -29,7 +33,7 @@ class UserVehicleDetailsTabView extends ConsumerWidget {
 
     if (vehicle == null) {
       return _SectionStateCard(
-        title: 'Vehicle details',
+        title: context.mobileText('Vehicle details'),
         isLoading: state.isLoadingVehicle,
         onRetry: controller.loadVehicle,
       );
@@ -41,7 +45,7 @@ class UserVehicleDetailsTabView extends ConsumerWidget {
         Align(
           alignment: AlignmentDirectional.centerStart,
           child: _CompactActionButton(
-            label: 'Edit',
+            label: context.mobileText('Edit'),
             icon: Icons.edit_outlined,
             isLoading: state.isSavingVehicle || state.isLoadingReferenceData,
             onPressed: state.isSavingVehicle
@@ -51,71 +55,104 @@ class UserVehicleDetailsTabView extends ConsumerWidget {
         ),
         const SizedBox(height: OpenVtsSpacing.sm),
         _InfoCard(
-          title: 'Overview',
+          title: context.mobileText('Overview'),
           icon: Icons.directions_car_filled_outlined,
           rows: [
             _InfoRow(
-              label: 'Vehicle Type',
+              label: context.mobileText('Vehicle Type'),
               value: _display(vehicle.vehicleType?.name),
             ),
-            _InfoRow(label: 'GMT Offset', value: _display(vehicle.gmtOffset)),
             _InfoRow(
-                label: 'Created At',
-                value: _dateText(vehicle.createdAt, formatter)),
+              label: context.mobileText('GMT Offset'),
+              value: _display(vehicle.gmtOffset),
+            ),
+            _InfoRow(
+              label: context.mobileText('Created At'),
+              value: _dateText(vehicle.createdAt, formatter),
+            ),
           ],
         ),
         const SizedBox(height: OpenVtsSpacing.sm),
         _InfoCard(
-          title: 'Identity',
+          title: context.mobileText('Identity'),
           icon: Icons.badge_outlined,
           rows: [
-            _InfoRow(label: 'Name', value: _display(vehicle.name)),
             _InfoRow(
-              label: 'Plate Number',
+              label: context.mobileText('Name'),
+              value: _display(vehicle.name),
+            ),
+            _InfoRow(
+              label: context.mobileText('Plate Number'),
               value: _display(vehicle.plateNumber),
             ),
             _InfoRow(label: 'VIN', value: _display(vehicle.vin)),
             _InfoRow(label: 'IMEI', value: _display(vehicle.imei)),
-            _InfoRow(label: 'SIM Number', value: _display(vehicle.simNumber)),
+            _InfoRow(
+              label: context.mobileText('SIM Number'),
+              value: _display(vehicle.simNumber),
+            ),
           ],
         ),
         const SizedBox(height: OpenVtsSpacing.sm),
         _InfoCard(
-          title: 'Plan',
+          title: context.mobileText('Plan'),
           icon: Icons.credit_card_outlined,
           rows: [
-            _InfoRow(label: 'Plan Name', value: _display(vehicle.plan?.name)),
-            _InfoRow(label: 'Price', value: _numberText(vehicle.plan?.price)),
             _InfoRow(
-                label: 'Currency', value: _display(vehicle.plan?.currency)),
+              label: context.mobileText('Plan Name'),
+              value: _display(vehicle.plan?.name),
+            ),
+            _InfoRow(
+              label: context.mobileText('Service starts'),
+              value: _dateText(vehicle.registrationAt, formatter),
+            ),
+            _InfoRow(
+              label: context.mobileText('Customer service expires'),
+              value: _dateText(vehicle.secondaryExpiry, formatter),
+            ),
+            _InfoRow(
+              label: context.mobileText('Provider coverage expires'),
+              value: _dateText(vehicle.primaryExpiry, formatter),
+            ),
+            _InfoRow(
+              label: context.mobileText('Price'),
+              value: _numberText(vehicle.plan?.price),
+            ),
+            _InfoRow(
+              label: context.mobileText('Currency'),
+              value: _display(vehicle.plan?.currency),
+            ),
           ],
         ),
         const SizedBox(height: OpenVtsSpacing.sm),
         _MetadataCard(meta: vehicle.vehicleMeta),
         const SizedBox(height: OpenVtsSpacing.sm),
         _InfoCard(
-          title: 'Device Summary',
+          title: context.mobileText('Device Summary'),
           icon: Icons.memory_outlined,
           rows: [
             _InfoRow(
-                label: 'Device IMEI', value: _display(vehicle.device?.imei)),
+              label: context.mobileText('Device IMEI'),
+              value: _display(vehicle.device?.imei),
+            ),
             _InfoRow(
-              label: 'Speed Multiplier',
+              label: context.mobileText('Speed Multiplier'),
               value: _numberText(vehicle.device?.speedVariation),
             ),
             _InfoRow(
-              label: 'Distance Multiplier',
+              label: context.mobileText('Distance Multiplier'),
               value: _numberText(vehicle.device?.distanceVariation),
             ),
             _InfoRow(
-                label: 'Odometer',
-                value: _numberText(vehicle.device?.odometer)),
+              label: context.mobileText('Odometer'),
+              value: _numberText(vehicle.device?.odometer),
+            ),
             _InfoRow(
-              label: 'Engine Hours',
+              label: context.mobileText('Engine Hours'),
               value: _numberText(vehicle.device?.engineHours),
             ),
             _InfoRow(
-              label: 'Ignition Source',
+              label: context.mobileText('Ignition Source'),
               value: _display(vehicle.device?.ignitionSource),
             ),
           ],
@@ -134,14 +171,11 @@ class UserVehicleDetailsTabView extends ConsumerWidget {
 
     await OpenVtsBottomSheet.show<void>(
       context: context,
-      title: 'Edit Vehicle',
+      title: context.mobileText('Edit Vehicle'),
       initialChildSize: 0.88,
       minChildSize: 0.52,
       maxChildSize: 0.96,
-      child: UserVehicleEditSheet(
-        provider: provider,
-        vehicle: vehicle,
-      ),
+      child: UserVehicleEditSheet(provider: provider, vehicle: vehicle),
     );
   }
 }
@@ -187,12 +221,14 @@ class _MetadataCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _CardHeader(
-              title: 'Vehicle Meta', icon: Icons.data_object_rounded),
+          _CardHeader(
+            title: context.mobileText('Vehicle Meta'),
+            icon: Icons.data_object_rounded,
+          ),
           const SizedBox(height: OpenVtsSpacing.xs),
           if (entries.isEmpty)
             Text(
-              'No metadata',
+              context.mobileText('No metadata'),
               style: OpenVtsTypography.meta.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
                 fontWeight: FontWeight.w600,
@@ -220,8 +256,11 @@ class _CardHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon,
-            size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
+        Icon(
+          icon,
+          size: 16,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
         const SizedBox(width: OpenVtsSpacing.xs),
         Expanded(
           child: Text(
@@ -352,7 +391,9 @@ class _SectionStateCard extends StatelessWidget {
                 ),
                 const SizedBox(width: OpenVtsSpacing.sm),
                 Text(
-                  'Loading $title',
+                  context.mobileText("Loading {value1}", {
+                    'value1': (title).toString(),
+                  }),
                   style: OpenVtsTypography.meta.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontWeight: FontWeight.w700,
@@ -364,7 +405,9 @@ class _SectionStateCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  '$title could not be loaded.',
+                  context.mobileText("{value1} could not be loaded.", {
+                    'value1': (title).toString(),
+                  }),
                   style: OpenVtsTypography.meta.copyWith(
                     color: OpenVtsColors.error,
                     fontWeight: FontWeight.w700,
@@ -372,7 +415,7 @@ class _SectionStateCard extends StatelessWidget {
                 ),
                 const SizedBox(height: OpenVtsSpacing.sm),
                 OpenVtsButton(
-                  label: 'Retry',
+                  label: context.mobileText('Retry'),
                   height: 36,
                   variant: OpenVtsButtonVariant.secondary,
                   onPressed: onRetry,
@@ -400,17 +443,20 @@ String _dateText(DateTime? value, AppDateFormatter formatter) {
 }
 
 String _titleCase(String value) {
-  final spaced = value
-      .replaceAll('_', ' ')
-      .replaceAllMapped(RegExp(r'([a-z])([A-Z])'), (match) {
-    return '${match.group(1)} ${match.group(2)}';
-  }).trim();
+  final spaced = value.replaceAll('_', ' ').replaceAllMapped(
+    RegExp(r'([a-z])([A-Z])'),
+    (match) {
+      return '${match.group(1)} ${match.group(2)}';
+    },
+  ).trim();
   if (spaced.isEmpty) return '-';
   return spaced
       .split(RegExp(r'\s+'))
-      .map((part) => part.isEmpty
-          ? part
-          : '${part[0].toUpperCase()}${part.substring(1).toLowerCase()}')
+      .map(
+        (part) => part.isEmpty
+            ? part
+            : '${part[0].toUpperCase()}${part.substring(1).toLowerCase()}',
+      )
       .join(' ');
 }
 

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/utils/validators.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../shared/widgets/open_vts_text_field.dart';
@@ -36,12 +37,15 @@ class _AdminInventoryEditSimSheetState
   @override
   void initState() {
     super.initState();
-    _simNumberController =
-        TextEditingController(text: _dashToEmpty(widget.simCard.simNumber));
-    _imsiController =
-        TextEditingController(text: _dashToEmpty(widget.simCard.imsi));
-    _iccidController =
-        TextEditingController(text: _dashToEmpty(widget.simCard.iccid));
+    _simNumberController = TextEditingController(
+      text: _dashToEmpty(widget.simCard.simNumber),
+    );
+    _imsiController = TextEditingController(
+      text: _dashToEmpty(widget.simCard.imsi),
+    );
+    _iccidController = TextEditingController(
+      text: _dashToEmpty(widget.simCard.iccid),
+    );
     _providerId = widget.simCard.providerId ?? '';
     _status = widget.simCard.status.toApiValue();
     _isActive = widget.simCard.isActive;
@@ -75,7 +79,7 @@ class _AdminInventoryEditSimSheetState
                   const SizedBox(height: OpenVtsSpacing.sm),
                 ],
                 OpenVtsTextField(
-                  label: 'SIM Number',
+                  label: context.mobileText('SIM Number'),
                   controller: _simNumberController,
                   validator: Validators.simNumber,
                 ),
@@ -85,17 +89,21 @@ class _AdminInventoryEditSimSheetState
                 OpenVtsTextField(label: 'ICCID', controller: _iccidController),
                 const SizedBox(height: OpenVtsSpacing.sm),
                 SearchableDropdownField<String>(
-                  label: 'SIM Provider',
-                  hintText: 'Select provider',
-                  searchHint: 'Search provider…',
+                  label: context.mobileText('SIM Provider'),
+                  hintText: context.mobileText('Select provider'),
+                  searchHint: context.mobileText('Search provider…'),
                   initialValue: _providerId,
                   items: [
-                    const SearchableDropdownItem<String>(
-                        value: '', label: 'No Provider'),
-                    ..._providers.map((item) => SearchableDropdownItem<String>(
-                          value: item.id,
-                          label: item.name,
-                        )),
+                    SearchableDropdownItem<String>(
+                      value: '',
+                      label: context.mobileText('No Provider'),
+                    ),
+                    ..._providers.map(
+                      (item) => SearchableDropdownItem<String>(
+                        value: item.id,
+                        label: item.name,
+                      ),
+                    ),
                   ],
                   enabled: !isSubmitting,
                   onChanged: (v) => setState(() => _providerId = v),
@@ -105,12 +113,18 @@ class _AdminInventoryEditSimSheetState
                   initialValue: _status,
                   items: const [
                     DropdownMenuItem(
-                        value: 'IN_STOCK', child: Text('IN_STOCK')),
+                      value: 'IN_STOCK',
+                      child: Text('IN_STOCK'),
+                    ),
                     DropdownMenuItem(value: 'IN_USE', child: Text('IN_USE')),
                     DropdownMenuItem(
-                        value: 'IN_SCRAP', child: Text('IN_SCRAP')),
+                      value: 'IN_SCRAP',
+                      child: Text('IN_SCRAP'),
+                    ),
                   ],
-                  decoration: const InputDecoration(labelText: 'Status'),
+                  decoration: InputDecoration(
+                    labelText: context.mobileText('Status'),
+                  ),
                   onChanged: isSubmitting
                       ? null
                       : (v) => setState(() => _status = v ?? 'IN_STOCK'),
@@ -118,7 +132,7 @@ class _AdminInventoryEditSimSheetState
                 const SizedBox(height: OpenVtsSpacing.sm),
                 SwitchListTile.adaptive(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('Active'),
+                  title: Text(context.mobileText('Active')),
                   value: _isActive,
                   onChanged: isSubmitting
                       ? null
@@ -136,7 +150,7 @@ class _AdminInventoryEditSimSheetState
                 children: [
                   Expanded(
                     child: OpenVtsButton(
-                      label: 'Cancel',
+                      label: context.mobileText('Cancel'),
                       variant: OpenVtsButtonVariant.secondary,
                       onPressed: isSubmitting
                           ? null
@@ -146,7 +160,7 @@ class _AdminInventoryEditSimSheetState
                   const SizedBox(width: OpenVtsSpacing.sm),
                   Expanded(
                     child: OpenVtsButton(
-                      label: 'Save',
+                      label: context.mobileText('Save'),
                       isLoading: isSubmitting,
                       onPressed: isSubmitting ? null : _submit,
                     ),
@@ -191,22 +205,25 @@ class _AdminInventoryEditSimSheetState
       isActive: _isActive,
     );
 
-    final success =
-        await ref.read(adminInventoryControllerProvider.notifier).updateSimCard(
-              id: widget.simCard.id,
-              request: req,
-            );
+    final success = await ref
+        .read(adminInventoryControllerProvider.notifier)
+        .updateSimCard(id: widget.simCard.id, request: req);
 
     if (!mounted) return;
     if (success) {
       Navigator.of(context).pop();
-      ToastHelper.showSuccess('SIM card updated.', context: context);
+      ToastHelper.showSuccess(
+        context.mobileText('SIM card updated.'),
+        context: context,
+      );
       return;
     }
 
     final message = ref.read(adminInventoryControllerProvider).editErrorMessage;
-    ToastHelper.showError(message ?? 'Unable to update SIM card.',
-        context: context);
+    ToastHelper.showError(
+      message ?? 'Unable to update SIM card.',
+      context: context,
+    );
   }
 
   String _dashToEmpty(String value) => value.trim() == '-' ? '' : value;

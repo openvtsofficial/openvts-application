@@ -7,6 +7,7 @@ import '../../../../core/theme/open_vts_colors.dart';
 import '../../../../core/theme/open_vts_radius.dart';
 import '../../../../core/theme/open_vts_spacing.dart';
 import '../../../../core/theme/open_vts_typography.dart';
+import '../../../../shared/helpers/mobile_text.dart';
 import '../../../../shared/helpers/toast_helper.dart';
 import '../../../../shared/widgets/open_vts_bottom_sheet.dart';
 import '../../../../shared/widgets/open_vts_button.dart';
@@ -19,6 +20,7 @@ import '../../controllers/admin_users_controller.dart';
 import '../../models/admin_users_model.dart';
 import '../../models/admin_users_state.dart';
 import '../../utils/location_label_resolver.dart';
+import '../../widgets/admin_action_gate.dart';
 import 'widgets/admin_edit_user_sheet.dart';
 import 'widgets/admin_user_card.dart';
 import 'widgets/admin_user_delete_sheet.dart';
@@ -58,11 +60,11 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
     final controller = ref.read(adminUsersControllerProvider.notifier);
 
     return OpenVtsPageScaffold(
-      title: 'Users',
+      title: context.mobileText('Users'),
       headerMode: OpenVtsPageHeaderMode.closeable,
       actions: [
         IconButton(
-          tooltip: 'Refresh users',
+          tooltip: context.mobileText('Refresh users'),
           onPressed: controller.refresh,
           icon: state.isRefreshing
               ? const SizedBox.square(
@@ -81,20 +83,20 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
       body: state.isLoading && !state.hasUsers
           ? const OpenVtsLoader()
           : state.errorMessage != null && !state.hasUsers
-              ? OpenVtsErrorView(
-                  message: state.errorMessage ?? 'Users could not be loaded.',
-                  onRetry: controller.refresh,
-                )
-              : _UsersBody(
-                  state: state,
-                  controller: controller,
-                  onCreate: _openCreateUser,
-                  onOpenFilters: () => _openFiltersSheet(context, ref),
-                  onOpenSort: () => _openSortSheet(context, ref),
-                  onOpenDetails: _openUserDetails,
-                  onStatusChanged: _updateUserStatus,
-                  onActionSelected: _handleUserAction,
-                ),
+          ? OpenVtsErrorView(
+              message: state.errorMessage ?? 'Users could not be loaded.',
+              onRetry: controller.refresh,
+            )
+          : _UsersBody(
+              state: state,
+              controller: controller,
+              onCreate: _openCreateUser,
+              onOpenFilters: () => _openFiltersSheet(context, ref),
+              onOpenSort: () => _openSortSheet(context, ref),
+              onOpenDetails: _openUserDetails,
+              onStatusChanged: _updateUserStatus,
+              onActionSelected: _handleUserAction,
+            ),
     );
   }
 
@@ -127,10 +129,10 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
         return StatefulBuilder(
           builder: (context, setSheetState) {
             return _OptionsSheet(
-              title: 'Filter users',
+              title: context.mobileText('Filter users'),
               sections: [
                 _OptionsSheetSection(
-                  label: 'Status',
+                  label: context.mobileText('Status'),
                   child: Wrap(
                     spacing: OpenVtsSpacing.xs,
                     runSpacing: OpenVtsSpacing.xs,
@@ -147,7 +149,7 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
                   ),
                 ),
                 _OptionsSheetSection(
-                  label: 'Email verification',
+                  label: context.mobileText('Email verification'),
                   child: Wrap(
                     spacing: OpenVtsSpacing.xs,
                     runSpacing: OpenVtsSpacing.xs,
@@ -164,13 +166,13 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
                   ),
                 ),
                 _OptionsSheetSection(
-                  label: 'Country',
+                  label: context.mobileText('Country'),
                   child: Wrap(
                     spacing: OpenVtsSpacing.xs,
                     runSpacing: OpenVtsSpacing.xs,
                     children: [
                       _ChoiceChip(
-                        label: 'All Countries',
+                        label: context.mobileText('All Countries'),
                         selected: selectedCountry == null,
                         onSelected: () =>
                             setSheetState(() => selectedCountry = null),
@@ -227,10 +229,10 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
       ),
       builder: (sheetContext) {
         return _OptionsSheet(
-          title: 'Sort users',
+          title: context.mobileText('Sort users'),
           sections: [
             _OptionsSheetSection(
-              label: 'Order by',
+              label: context.mobileText('Order by'),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: AdminUsersSortOption.values
@@ -260,7 +262,7 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
   Future<void> _showEditUserSheet(AdminUserListItem user) {
     return OpenVtsBottomSheet.show<void>(
       context: context,
-      title: 'Edit User',
+      title: context.mobileText('Edit User'),
       initialChildSize: 0.88,
       minChildSize: 0.5,
       maxChildSize: 0.96,
@@ -277,7 +279,10 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
               if (!context.mounted) {
                 return;
               }
-              ToastHelper.showSuccess('User updated.', context: context);
+              ToastHelper.showSuccess(
+                context.mobileText('User updated.'),
+                context: context,
+              );
             },
           );
         },
@@ -288,7 +293,7 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
   Future<void> _showPasswordSheet(AdminUserListItem user) {
     return OpenVtsBottomSheet.show<void>(
       context: context,
-      title: 'Change Password',
+      title: context.mobileText('Change Password'),
       initialChildSize: 0.46,
       minChildSize: 0.38,
       maxChildSize: 0.72,
@@ -306,7 +311,10 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
               if (!context.mounted) {
                 return;
               }
-              ToastHelper.showSuccess('Password updated.', context: context);
+              ToastHelper.showSuccess(
+                context.mobileText('Password updated.'),
+                context: context,
+              );
             },
           );
         },
@@ -317,7 +325,7 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
   Future<void> _showDeleteUserSheet(AdminUserListItem user) {
     return OpenVtsBottomSheet.show<void>(
       context: context,
-      title: 'Delete user',
+      title: context.mobileText('Delete user'),
       initialChildSize: 0.34,
       minChildSize: 0.3,
       maxChildSize: 0.5,
@@ -335,7 +343,10 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
               if (!context.mounted) {
                 return;
               }
-              ToastHelper.showSuccess('User deleted.', context: context);
+              ToastHelper.showSuccess(
+                context.mobileText('User deleted.'),
+                context: context,
+              );
             },
           );
         },
@@ -356,7 +367,9 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
         return;
       }
       ToastHelper.showSuccess(
-        isActive ? 'User activated.' : 'User deactivated.',
+        isActive
+            ? context.mobileText('User activated.')
+            : context.mobileText('User deactivated.'),
         context: context,
       );
     } catch (_) {
@@ -383,7 +396,9 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
           ? user.name
           : (user.username.trim().isNotEmpty ? user.username : 'user');
       ToastHelper.showSuccess(
-        'Signed in as $name.',
+        context.mobileText("Signed in as {value1}.", {
+          'value1': (name).toString(),
+        }),
         context: context,
       );
       context.go(RoutePaths.userHome);
@@ -466,11 +481,13 @@ class _UsersBody extends StatelessWidget {
             child: filteredCount == 0
                 ? ListView(
                     physics: const AlwaysScrollableScrollPhysics(),
-                    children: const [
-                      SizedBox(height: OpenVtsSpacing.section),
+                    children: [
+                      const SizedBox(height: OpenVtsSpacing.section),
                       OpenVtsEmptyState(
-                        title: 'No users found',
-                        message: 'Try a different search or filter.',
+                        title: context.mobileText('No users found'),
+                        message: context.mobileText(
+                          'Try a different search or filter.',
+                        ),
                       ),
                     ],
                   )
@@ -520,10 +537,7 @@ class _UsersBody extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _UsersHeaderCard extends StatelessWidget {
-  const _UsersHeaderCard({
-    required this.count,
-    required this.onCreate,
-  });
+  const _UsersHeaderCard({required this.count, required this.onCreate});
 
   final int count;
   final VoidCallback onCreate;
@@ -556,15 +570,22 @@ class _UsersHeaderCard extends StatelessWidget {
           const SizedBox(width: OpenVtsSpacing.sm),
           Expanded(
             child: Text(
-              '$count User${count == 1 ? '' : 's'}',
+              context.mobileText("{value1} User{value2}", {
+                'value1': (count).toString(),
+                'value2': (count == 1 ? '' : 's').toString(),
+              }),
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: -0.2,
-                  ),
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.2,
+              ),
             ),
           ),
           const SizedBox(width: OpenVtsSpacing.sm),
-          _PrimaryCreateButton(onPressed: onCreate),
+          AdminActionGate(
+            capability: 'users.update',
+            scopes: const {'OWN', 'TENANT'},
+            child: _PrimaryCreateButton(onPressed: onCreate),
+          ),
         ],
       ),
     );
@@ -581,7 +602,7 @@ class _PrimaryCreateButton extends StatelessWidget {
     return ElevatedButton.icon(
       onPressed: onPressed,
       icon: const Icon(Icons.add_rounded, size: 18),
-      label: const Text('Create User'),
+      label: Text(context.mobileText('Create User')),
       style: ElevatedButton.styleFrom(
         backgroundColor: OpenVtsColors.brandInk,
         foregroundColor: OpenVtsColors.white,
@@ -672,14 +693,14 @@ class _UsersToolbarState extends State<_UsersToolbar> {
           const SizedBox(width: OpenVtsSpacing.xs),
           _SquareIconButton(
             icon: Icons.filter_alt_outlined,
-            tooltip: 'Filter users',
+            tooltip: context.mobileText('Filter users'),
             onPressed: widget.onOpenFilters,
             showDot: widget.hasActiveFilters,
           ),
           const SizedBox(width: OpenVtsSpacing.xs),
           _SquareIconButton(
             icon: Icons.swap_vert_rounded,
-            tooltip: 'Sort users',
+            tooltip: context.mobileText('Sort users'),
             onPressed: widget.onOpenSort,
           ),
           const SizedBox(width: OpenVtsSpacing.xs),
@@ -694,10 +715,7 @@ class _UsersToolbarState extends State<_UsersToolbar> {
 }
 
 class _SearchInput extends StatelessWidget {
-  const _SearchInput({
-    required this.controller,
-    required this.onChanged,
-  });
+  const _SearchInput({required this.controller, required this.onChanged});
 
   final TextEditingController controller;
   final ValueChanged<String> onChanged;
@@ -740,7 +758,8 @@ class _SearchInput extends StatelessWidget {
             cursorColor: _primaryInkColor(context),
             cursorWidth: 1.4,
             style: _baseStyle.copyWith(
-                color: Theme.of(context).colorScheme.onSurface),
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
             strutStyle: const StrutStyle(
               fontFamily: OpenVtsTypography.primaryFontFamily,
               fontFamilyFallback: OpenVtsTypography.fontFallback,
@@ -754,7 +773,7 @@ class _SearchInput extends StatelessWidget {
               fillColor: fillColor,
               isDense: true,
               isCollapsed: false,
-              hintText: 'Search by name, email\u2026',
+              hintText: context.mobileText('Search by name, email\u2026'),
               hintStyle: _baseStyle.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
                 fontWeight: FontWeight.w400,
@@ -781,7 +800,7 @@ class _SearchInput extends StatelessWidget {
                         end: OpenVtsSpacing.xxs,
                       ),
                       child: IconButton(
-                        tooltip: 'Clear search',
+                        tooltip: context.mobileText('Clear search'),
                         onPressed: () {
                           controller.clear();
                           onChanged('');
@@ -851,11 +870,7 @@ class _SquareIconButton extends StatelessWidget {
                   border: Border.all(color: _softBorderColor(context)),
                 ),
                 alignment: Alignment.center,
-                child: Icon(
-                  icon,
-                  size: 18,
-                  color: _primaryInkColor(context),
-                ),
+                child: Icon(icon, size: 18, color: _primaryInkColor(context)),
               ),
               if (showDot)
                 PositionedDirectional(
@@ -883,10 +898,7 @@ class _SquareIconButton extends StatelessWidget {
 }
 
 class _RecordsPerPageDropdown extends StatelessWidget {
-  const _RecordsPerPageDropdown({
-    required this.value,
-    required this.onChanged,
-  });
+  const _RecordsPerPageDropdown({required this.value, required this.onChanged});
 
   final int value;
   final ValueChanged<int> onChanged;
@@ -976,7 +988,10 @@ class _PaginationFooter extends StatelessWidget {
       child: Column(
         children: [
           Text(
-            'Showing $showingCount of $totalCount',
+            context.mobileText("Showing {value1} of {value2}", {
+              'value1': (showingCount).toString(),
+              'value2': (totalCount).toString(),
+            }),
             style: OpenVtsTypography.meta.copyWith(
               color: OpenVtsColors.textSecondary,
             ),
@@ -995,7 +1010,10 @@ class _PaginationFooter extends StatelessWidget {
                     horizontal: OpenVtsSpacing.sm,
                   ),
                   child: Text(
-                    'Page $currentPage of $pageCount',
+                    context.mobileText("Page {value1} of {value2}", {
+                      'value1': (currentPage).toString(),
+                      'value2': (pageCount).toString(),
+                    }),
                     style: OpenVtsTypography.label.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
@@ -1108,14 +1126,14 @@ class _OptionsSheet extends StatelessWidget {
                   child: Text(
                     title,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
                 IconButton(
                   onPressed: () => Navigator.of(context).maybePop(),
                   icon: const Icon(Icons.close_rounded, size: 20),
-                  tooltip: 'Close',
+                  tooltip: context.mobileText('Close'),
                 ),
               ],
             ),
@@ -1183,8 +1201,9 @@ class _ChoiceChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final background =
-        selected ? _primaryInkColor(context) : _softSurfaceColor(context);
+    final background = selected
+        ? _primaryInkColor(context)
+        : _softSurfaceColor(context);
     final foreground = selected
         ? Theme.of(context).colorScheme.surface
         : _primaryInkColor(context);

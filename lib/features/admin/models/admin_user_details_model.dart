@@ -1345,6 +1345,8 @@ class AdminRenewVehiclesPaymentRequest {
     required this.paymentMode,
     this.reference,
     this.amountOverride,
+    this.overrideReason,
+    this.idempotencyKey,
   });
 
   final String userId;
@@ -1352,6 +1354,8 @@ class AdminRenewVehiclesPaymentRequest {
   final String paymentMode;
   final String? reference;
   final String? amountOverride;
+  final String? overrideReason;
+  final String? idempotencyKey;
 
   Map<String, dynamic> toJson() {
     final normalizedReference = reference?.trim();
@@ -1360,6 +1364,9 @@ class AdminRenewVehiclesPaymentRequest {
       'userId': _idPayloadValue(userId),
       'vehicleIds': vehicleIds.map(_idPayloadValue).toList(growable: false),
       'paymentMode': paymentMode.trim().toUpperCase(),
+      if (idempotencyKey != null) 'idempotencyKey': idempotencyKey,
+      if ((overrideReason ?? '').trim().isNotEmpty)
+        'overrideReason': overrideReason!.trim(),
       if (normalizedReference != null && normalizedReference.isNotEmpty)
         'reference': normalizedReference,
       if (normalizedAmount != null && normalizedAmount.isNotEmpty)

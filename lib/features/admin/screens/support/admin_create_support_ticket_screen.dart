@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/open_vts_spacing.dart';
+import '../../../../shared/helpers/mobile_text.dart';
 import '../../../../shared/widgets/open_vts_page_scaffold.dart';
 import '../../controllers/admin_providers.dart';
 import '../../models/admin_support_model.dart';
@@ -20,7 +21,7 @@ class AdminCreateSupportTicketScreen extends ConsumerWidget {
     final resolvedMode = _resolveMode(mode, selectedTab);
 
     return OpenVtsPageScaffold(
-      title: 'Create Ticket',
+      title: context.mobileText('Create Ticket'),
       headerMode: OpenVtsPageHeaderMode.closeable,
       padding: EdgeInsets.zero,
       body: AdminSupportTicketForm(

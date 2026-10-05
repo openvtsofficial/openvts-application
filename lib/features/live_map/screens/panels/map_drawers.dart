@@ -225,7 +225,7 @@ class _MapNorthResetButton extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Tooltip(
-      message: 'Reset north',
+      message: context.mobileText('Reset north'),
       child: Material(
         color: Colors.transparent,
         shape: const CircleBorder(),
@@ -293,11 +293,7 @@ class _MapSideIconButton extends StatelessWidget {
               ),
             ],
           ),
-          child: Icon(
-            icon,
-            size: 22,
-            color: scheme.onSurface,
-          ),
+          child: Icon(icon, size: 22, color: scheme.onSurface),
         ),
       ),
     );
@@ -404,7 +400,7 @@ class _MapLayerDrawerState extends State<_MapLayerDrawer> {
           Row(
             children: [
               Text(
-                'Map type',
+                context.mobileText('Map type'),
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
@@ -441,7 +437,7 @@ class _MapLayerDrawerState extends State<_MapLayerDrawer> {
           Divider(color: scheme.outlineVariant, height: 1),
           const SizedBox(height: 16),
           Text(
-            'Map details',
+            context.mobileText('Map details'),
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w700,
@@ -1087,30 +1083,38 @@ class _MapSettingsDrawerState extends State<_MapSettingsDrawer> {
     final items = <_SettingTileData>[
       _SettingTileData(
         icon: Icons.label_outline_rounded,
-        title: 'Vehicle Label',
-        subtitle: 'Show vehicle name next to the icon on the map',
+        title: context.mobileText('Vehicle Label'),
+        subtitle: context.mobileText(
+          'Show vehicle name next to the icon on the map',
+        ),
         value: _settings.vehicleLabel,
         onChanged: (value) => _update(_settings.copyWith(vehicleLabel: value)),
       ),
       _SettingTileData(
         icon: Icons.layers_outlined,
-        title: 'Cluster',
-        subtitle: 'Group nearby vehicles into clusters at lower zoom',
+        title: context.mobileText('Cluster'),
+        subtitle: context.mobileText(
+          'Group nearby vehicles into clusters at lower zoom',
+        ),
         value: _settings.cluster,
         onChanged: (value) => _update(_settings.copyWith(cluster: value)),
       ),
       _SettingTileData(
         icon: Icons.waves_rounded,
-        title: 'Ripple',
-        subtitle: 'Show animated pulse around running vehicles',
+        title: context.mobileText('Ripple'),
+        subtitle: context.mobileText(
+          'Show animated pulse around running vehicles',
+        ),
         value: _settings.ripple,
         onChanged: (value) => _update(_settings.copyWith(ripple: value)),
       ),
       if (widget.config.supportsGeofence)
         _SettingTileData(
           icon: Icons.hexagon_outlined,
-          title: 'Geofence',
-          subtitle: 'Display geofence boundaries on the map',
+          title: context.mobileText('Geofence'),
+          subtitle: context.mobileText(
+            'Display geofence boundaries on the map',
+          ),
           value: _settings.geofence,
           onChanged: (value) => _update(_settings.copyWith(geofence: value)),
         ),
@@ -1118,15 +1122,15 @@ class _MapSettingsDrawerState extends State<_MapSettingsDrawer> {
         _SettingTileData(
           icon: Icons.place_outlined,
           title: 'POI',
-          subtitle: 'Show points of interest markers',
+          subtitle: context.mobileText('Show points of interest markers'),
           value: _settings.poi,
           onChanged: (value) => _update(_settings.copyWith(poi: value)),
         ),
       if (widget.config.supportsRoute)
         _SettingTileData(
           icon: Icons.route_outlined,
-          title: 'Route',
-          subtitle: 'Display saved routes on the map',
+          title: context.mobileText('Route'),
+          subtitle: context.mobileText('Display saved routes on the map'),
           value: _settings.route,
           onChanged: (value) => _update(_settings.copyWith(route: value)),
         ),
@@ -1375,10 +1379,10 @@ class _MapBottomDrawerState extends State<_MapBottomDrawer>
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
               ),
-              tabs: const [
-                Tab(height: 40, text: 'Vehicles'),
-                Tab(height: 40, text: 'History'),
-                Tab(height: 40, text: 'Alerts'),
+              tabs: [
+                Tab(height: 40, text: context.mobileText('Vehicles')),
+                Tab(height: 40, text: context.mobileText('History')),
+                Tab(height: 40, text: context.mobileText('Alerts')),
               ],
             ),
           ),
@@ -1391,22 +1395,22 @@ class _MapBottomDrawerState extends State<_MapBottomDrawer>
   Widget _buildActiveTabBody() {
     return switch (_selectedTabIndex) {
       0 => _VehiclesTab(
-          vehicles: widget.vehicles,
-          onVehicleSelected: widget.onVehicleSelected,
-          searchController: _vehicleSearchController,
-          scrollController: widget.scrollController,
-        ),
+        vehicles: widget.vehicles,
+        onVehicleSelected: widget.onVehicleSelected,
+        searchController: _vehicleSearchController,
+        scrollController: widget.scrollController,
+      ),
       1 => _HistoryTab(
-          vehicles: widget.vehicles,
-          selectedHistorySegmentId: widget.selectedHistorySegmentId,
-          onEntrySelected: widget.onHistoryEntrySelected,
-          scrollController: widget.scrollController,
-        ),
+        vehicles: widget.vehicles,
+        selectedHistorySegmentId: widget.selectedHistorySegmentId,
+        onEntrySelected: widget.onHistoryEntrySelected,
+        scrollController: widget.scrollController,
+      ),
       _ => _AlertsTab(
-          alerts: widget.alerts,
-          isLoading: widget.isAlertsLoading,
-          scrollController: widget.scrollController,
-        ),
+        alerts: widget.alerts,
+        isLoading: widget.isAlertsLoading,
+        scrollController: widget.scrollController,
+      ),
     };
   }
 }

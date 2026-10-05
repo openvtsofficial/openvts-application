@@ -4,6 +4,7 @@ import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../../../shared/widgets/open_vts_date_time_range_selector.dart';
 import '../../../models/admin_payments_model.dart';
@@ -55,7 +56,7 @@ class _AdminPaymentsFiltersCardState extends State<AdminPaymentsFiltersCard> {
           Row(
             children: [
               Text(
-                'Filters',
+                context.mobileText('Filters'),
                 style: OpenVtsTypography.label.copyWith(
                   fontWeight: FontWeight.w700,
                   color: headingColor,
@@ -75,7 +76,7 @@ class _AdminPaymentsFiltersCardState extends State<AdminPaymentsFiltersCard> {
                   ),
                   icon: const Icon(Icons.filter_alt_off_outlined, size: 14),
                   label: Text(
-                    'Clear',
+                    context.mobileText('Clear'),
                     style: OpenVtsTypography.meta.copyWith(
                       fontWeight: FontWeight.w700,
                     ),
@@ -84,78 +85,84 @@ class _AdminPaymentsFiltersCardState extends State<AdminPaymentsFiltersCard> {
             ],
           ),
           const SizedBox(height: OpenVtsSpacing.sm),
-          const _SectionLabel(text: 'Date Range'),
+          _SectionLabel(text: context.mobileText('Date Range')),
           const SizedBox(height: OpenVtsSpacing.xs),
           Wrap(
             spacing: OpenVtsSpacing.xs,
             runSpacing: OpenVtsSpacing.xs,
             children: [
               _CompactChoiceChip(
-                label: 'Today',
+                label: context.mobileText('Today'),
                 selected:
                     widget.state.rangePreset == AdminPaymentsRangePreset.today,
-                onTap: () => widget.onRangePresetChanged(
-                  AdminPaymentsRangePreset.today,
-                ),
+                onTap: () =>
+                    widget.onRangePresetChanged(AdminPaymentsRangePreset.today),
               ),
               _CompactChoiceChip(
-                label: 'Yesterday',
-                selected: widget.state.rangePreset ==
+                label: context.mobileText('Yesterday'),
+                selected:
+                    widget.state.rangePreset ==
                     AdminPaymentsRangePreset.yesterday,
                 onTap: () => widget.onRangePresetChanged(
                   AdminPaymentsRangePreset.yesterday,
                 ),
               ),
               _CompactChoiceChip(
-                label: 'Last 12 Hours',
-                selected: widget.state.rangePreset ==
+                label: context.mobileText('Last 12 Hours'),
+                selected:
+                    widget.state.rangePreset ==
                     AdminPaymentsRangePreset.last12Hours,
                 onTap: () => widget.onRangePresetChanged(
                   AdminPaymentsRangePreset.last12Hours,
                 ),
               ),
               _CompactChoiceChip(
-                label: 'Last 24 Hours',
-                selected: widget.state.rangePreset ==
+                label: context.mobileText('Last 24 Hours'),
+                selected:
+                    widget.state.rangePreset ==
                     AdminPaymentsRangePreset.last24Hours,
                 onTap: () => widget.onRangePresetChanged(
                   AdminPaymentsRangePreset.last24Hours,
                 ),
               ),
               _CompactChoiceChip(
-                label: 'Last 7 Days',
-                selected: widget.state.rangePreset ==
+                label: context.mobileText('Last 7 Days'),
+                selected:
+                    widget.state.rangePreset ==
                     AdminPaymentsRangePreset.last7Days,
                 onTap: () => widget.onRangePresetChanged(
                   AdminPaymentsRangePreset.last7Days,
                 ),
               ),
               _CompactChoiceChip(
-                label: 'Last 30 Days',
-                selected: widget.state.rangePreset ==
+                label: context.mobileText('Last 30 Days'),
+                selected:
+                    widget.state.rangePreset ==
                     AdminPaymentsRangePreset.last30Days,
                 onTap: () => widget.onRangePresetChanged(
                   AdminPaymentsRangePreset.last30Days,
                 ),
               ),
               _CompactChoiceChip(
-                label: 'This Month',
-                selected: widget.state.rangePreset ==
+                label: context.mobileText('This Month'),
+                selected:
+                    widget.state.rangePreset ==
                     AdminPaymentsRangePreset.thisMonth,
                 onTap: () => widget.onRangePresetChanged(
                   AdminPaymentsRangePreset.thisMonth,
                 ),
               ),
               _CompactChoiceChip(
-                label: 'This Year',
-                selected: widget.state.rangePreset ==
+                label: context.mobileText('This Year'),
+                selected:
+                    widget.state.rangePreset ==
                     AdminPaymentsRangePreset.thisYear,
                 onTap: () => widget.onRangePresetChanged(
                   AdminPaymentsRangePreset.thisYear,
                 ),
               ),
               _CompactChoiceChip(
-                label: 'Custom',
+                label: context.mobileText('Custom'),
                 selected:
                     widget.state.rangePreset == AdminPaymentsRangePreset.custom,
                 onTap: () => widget.onRangePresetChanged(
@@ -167,42 +174,42 @@ class _AdminPaymentsFiltersCardState extends State<AdminPaymentsFiltersCard> {
           if (widget.state.rangePreset == AdminPaymentsRangePreset.custom) ...[
             const SizedBox(height: OpenVtsSpacing.sm),
             OpenVtsDateTimeRangeField(
-              label: 'Custom Range',
+              label: context.mobileText('Custom Range'),
               value: OpenVtsDateTimeRange(
                 start: widget.state.customFrom,
                 end: widget.state.customTo,
               ),
               onChanged: (range) =>
                   widget.onCustomRangeChanged(range.start, range.end),
-              title: 'Choose Date Range',
+              title: context.mobileText('Choose Date Range'),
             ),
           ],
           const SizedBox(height: OpenVtsSpacing.sm),
-          const _SectionLabel(text: 'Status'),
+          _SectionLabel(text: context.mobileText('Status')),
           const SizedBox(height: OpenVtsSpacing.xs),
           Wrap(
             spacing: OpenVtsSpacing.xs,
             runSpacing: OpenVtsSpacing.xs,
             children: [
               _CompactChoiceChip(
-                label: 'All',
+                label: context.mobileText('All'),
                 selected: widget.state.selectedStatus == null,
                 onTap: () => widget.onStatusChanged(null),
               ),
               _CompactChoiceChip(
-                label: 'Success',
+                label: context.mobileText('Success'),
                 selected:
                     widget.state.selectedStatus == AdminPaymentStatus.success,
                 onTap: () => widget.onStatusChanged(AdminPaymentStatus.success),
               ),
               _CompactChoiceChip(
-                label: 'Pending',
+                label: context.mobileText('Pending'),
                 selected:
                     widget.state.selectedStatus == AdminPaymentStatus.pending,
                 onTap: () => widget.onStatusChanged(AdminPaymentStatus.pending),
               ),
               _CompactChoiceChip(
-                label: 'Failed',
+                label: context.mobileText('Failed'),
                 selected:
                     widget.state.selectedStatus == AdminPaymentStatus.failed,
                 onTap: () => widget.onStatusChanged(AdminPaymentStatus.failed),
@@ -219,8 +226,9 @@ class _AdminPaymentsFiltersCardState extends State<AdminPaymentsFiltersCard> {
             style: TextButton.styleFrom(
               foregroundColor: OpenVtsColors.textSecondary,
               minimumSize: const Size(44, 44),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: OpenVtsSpacing.xs),
+              padding: const EdgeInsets.symmetric(
+                horizontal: OpenVtsSpacing.xs,
+              ),
             ),
             icon: Icon(
               showAdvancedFilters
@@ -230,8 +238,8 @@ class _AdminPaymentsFiltersCardState extends State<AdminPaymentsFiltersCard> {
             ),
             label: Text(
               showAdvancedFilters
-                  ? 'Hide payment filters'
-                  : 'Show payment filters',
+                  ? context.mobileText('Hide payment filters')
+                  : context.mobileText('Show payment filters'),
               style: OpenVtsTypography.meta.copyWith(
                 fontWeight: FontWeight.w700,
               ),
@@ -239,38 +247,40 @@ class _AdminPaymentsFiltersCardState extends State<AdminPaymentsFiltersCard> {
           ),
           if (showAdvancedFilters) ...[
             const SizedBox(height: OpenVtsSpacing.xs),
-            const _SectionLabel(text: 'User'),
+            _SectionLabel(text: context.mobileText('User')),
             const SizedBox(height: OpenVtsSpacing.xs),
             Wrap(
               spacing: OpenVtsSpacing.xs,
               runSpacing: OpenVtsSpacing.xs,
               children: [
                 _CompactChoiceChip(
-                  label: 'All Users',
+                  label: context.mobileText('All Users'),
                   selected: widget.state.selectedUserId == null,
                   onTap: () => widget.onUserChanged(null),
                 ),
-                ...widget.state.users.map((user) => _CompactChoiceChip(
-                      label: _getUserLabel(user),
-                      selected: widget.state.selectedUserId == user.id,
-                      onTap: () => widget.onUserChanged(user.id),
-                    )),
+                ...widget.state.users.map(
+                  (user) => _CompactChoiceChip(
+                    label: _getUserLabel(user),
+                    selected: widget.state.selectedUserId == user.id,
+                    onTap: () => widget.onUserChanged(user.id),
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: OpenVtsSpacing.sm),
-            const _SectionLabel(text: 'Payment Mode'),
+            _SectionLabel(text: context.mobileText('Payment Mode')),
             const SizedBox(height: OpenVtsSpacing.xs),
             Wrap(
               spacing: OpenVtsSpacing.xs,
               runSpacing: OpenVtsSpacing.xs,
               children: [
                 _CompactChoiceChip(
-                  label: 'All',
+                  label: context.mobileText('All'),
                   selected: widget.state.selectedMode == null,
                   onTap: () => widget.onModeChanged(null),
                 ),
                 _CompactChoiceChip(
-                  label: 'Cash',
+                  label: context.mobileText('Cash'),
                   selected: widget.state.selectedMode == AdminPaymentMode.cash,
                   onTap: () => widget.onModeChanged(AdminPaymentMode.cash),
                 ),
@@ -280,37 +290,38 @@ class _AdminPaymentsFiltersCardState extends State<AdminPaymentsFiltersCard> {
                   onTap: () => widget.onModeChanged(AdminPaymentMode.upi),
                 ),
                 _CompactChoiceChip(
-                  label: 'Bank Transfer',
-                  selected: widget.state.selectedMode ==
+                  label: context.mobileText('Bank Transfer'),
+                  selected:
+                      widget.state.selectedMode ==
                       AdminPaymentMode.bankTransfer,
                   onTap: () =>
                       widget.onModeChanged(AdminPaymentMode.bankTransfer),
                 ),
                 _CompactChoiceChip(
-                  label: 'Card',
+                  label: context.mobileText('Card'),
                   selected: widget.state.selectedMode == AdminPaymentMode.card,
                   onTap: () => widget.onModeChanged(AdminPaymentMode.card),
                 ),
                 _CompactChoiceChip(
-                  label: 'Wallet',
+                  label: context.mobileText('Wallet'),
                   selected:
                       widget.state.selectedMode == AdminPaymentMode.wallet,
                   onTap: () => widget.onModeChanged(AdminPaymentMode.wallet),
                 ),
                 _CompactChoiceChip(
-                  label: 'Razorpay',
+                  label: context.mobileText('Razorpay'),
                   selected:
                       widget.state.selectedMode == AdminPaymentMode.razorpay,
                   onTap: () => widget.onModeChanged(AdminPaymentMode.razorpay),
                 ),
                 _CompactChoiceChip(
-                  label: 'Stripe',
+                  label: context.mobileText('Stripe'),
                   selected:
                       widget.state.selectedMode == AdminPaymentMode.stripe,
                   onTap: () => widget.onModeChanged(AdminPaymentMode.stripe),
                 ),
                 _CompactChoiceChip(
-                  label: 'Other',
+                  label: context.mobileText('Other'),
                   selected: widget.state.selectedMode == AdminPaymentMode.other,
                   onTap: () => widget.onModeChanged(AdminPaymentMode.other),
                 ),

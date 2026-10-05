@@ -4,11 +4,7 @@ import 'dart:typed_data';
 // Enums
 // =====================================================================
 
-enum AdminSettingsSection {
-  profile,
-  localization,
-  smtp,
-}
+enum AdminSettingsSection { profile, localization, smtp, security }
 
 enum AdminSmtpType {
   none,
@@ -199,8 +195,12 @@ class AdminAddressSettings {
       final cityRaw = source['city'];
       if (cityRaw is Map) {
         final cityMap = _asMap(cityRaw);
-        cityName ??= _firstString(
-            cityMap, const ['name', 'cityName', 'city_name', 'label']);
+        cityName ??= _firstString(cityMap, const [
+          'name',
+          'cityName',
+          'city_name',
+          'label',
+        ]);
         cityId ??= _firstString(cityMap, const ['id', '_id', 'value']);
         cityCode ??= _firstString(cityMap, const ['code']);
       } else if (cityName == null) {
@@ -237,19 +237,13 @@ class AdminAddressSettings {
         'country_code',
         'country',
       ]),
-      countryName: _firstString(source, const [
-        'countryName',
-        'country_name',
-      ]),
+      countryName: _firstString(source, const ['countryName', 'country_name']),
       stateCode: _firstString(source, const [
         'stateCode',
         'state_code',
         'state',
       ]),
-      stateName: _firstString(source, const [
-        'stateName',
-        'state_name',
-      ]),
+      stateName: _firstString(source, const ['stateName', 'state_name']),
       cityName: cityName,
       cityId: cityId,
       cityCode: cityCode,
@@ -328,13 +322,13 @@ class AdminSocialLinks {
   }
 
   Map<String, dynamic> toJson() => <String, dynamic>{
-        'facebook': facebook ?? '',
-        'twitter': twitter ?? '',
-        'linkedin': linkedin ?? '',
-        'instagram': instagram ?? '',
-        'youtube': youtube ?? '',
-        'github': github ?? '',
-      };
+    'facebook': facebook ?? '',
+    'twitter': twitter ?? '',
+    'linkedin': linkedin ?? '',
+    'instagram': instagram ?? '',
+    'youtube': youtube ?? '',
+    'github': github ?? '',
+  };
 
   Map<String, dynamic> toJsonNonEmpty() {
     final result = <String, dynamic>{};
@@ -523,7 +517,7 @@ class AdminProfileSettings {
         'zip',
         'zipCode',
         'fullAddress',
-        'formatted'
+        'formatted',
       ]) {
         if (source.containsKey(key)) {
           rootLevelAddressFields[key] = source[key];
@@ -535,8 +529,9 @@ class AdminProfileSettings {
       }
     }
 
-    final parsedAddress =
-        addressMap != null ? AdminAddressSettings.fromJson(addressMap) : null;
+    final parsedAddress = addressMap != null
+        ? AdminAddressSettings.fromJson(addressMap)
+        : null;
 
     // Extract city name: prefer parsed address city, then try root-level
     String? rootCityName;
@@ -546,8 +541,12 @@ class AdminProfileSettings {
       final rootCity = source['city'];
       if (rootCity is Map) {
         final cityMap = _asMap(rootCity);
-        rootCityName = _firstString(
-            cityMap, const ['name', 'cityName', 'city_name', 'label']);
+        rootCityName = _firstString(cityMap, const [
+          'name',
+          'cityName',
+          'city_name',
+          'label',
+        ]);
       } else {
         rootCityName = _firstString(source, const [
           'cityName',
@@ -569,27 +568,30 @@ class AdminProfileSettings {
       username: _firstString(source, const ['username', 'userName']),
       email: _firstString(source, const ['email']),
       mobilePrefix: _firstString(source, const ['mobilePrefix', 'phonePrefix']),
-      mobileNumber:
-          _firstString(source, const ['mobileNumber', 'phoneNumber', 'mobile']),
-      profileUrl:
-          _firstString(source, const ['profileUrl', 'avatar', 'profile']),
+      mobileNumber: _firstString(source, const [
+        'mobileNumber',
+        'phoneNumber',
+        'mobile',
+      ]),
+      profileUrl: _firstString(source, const [
+        'profileUrl',
+        'avatar',
+        'profile',
+      ]),
       credits: _firstDouble(source, const ['credits', 'balance']),
       createdAt: _firstDate(source, const ['createdAt', 'created']),
       updatedAt: _firstDate(source, const ['updatedAt', 'modified']),
-      isEmailVerified: _firstBool(
-            source,
-            const ['isEmailVerified', 'emailVerified'],
-          ) ??
+      isEmailVerified:
+          _firstBool(source, const ['isEmailVerified', 'emailVerified']) ??
           false,
       emailVerifiedAt: _firstDate(source, const ['emailVerifiedAt']),
-      isMobileVerified: _firstBool(
-            source,
-            const ['isMobileVerified', 'mobileVerified'],
-          ) ??
+      isMobileVerified:
+          _firstBool(source, const ['isMobileVerified', 'mobileVerified']) ??
           false,
       mobileVerifiedAt: _firstDate(source, const ['mobileVerifiedAt']),
-      company:
-          companyMap != null ? AdminCompanySettings.fromJson(companyMap) : null,
+      company: companyMap != null
+          ? AdminCompanySettings.fromJson(companyMap)
+          : null,
       address: parsedAddress,
       cityName: rootCityName,
     );
@@ -742,9 +744,9 @@ class AdminChangePasswordRequest {
   final String newPassword;
 
   Map<String, dynamic> toJson() => <String, dynamic>{
-        'currentPassword': currentPassword,
-        'newPassword': newPassword,
-      };
+    'currentPassword': currentPassword,
+    'newPassword': newPassword,
+  };
 }
 
 // =====================================================================
@@ -922,14 +924,15 @@ class AdminLocalizationSettings {
     final source = _unwrap(json);
     return AdminLocalizationSettings(
       language: _firstString(source, const ['language', 'lang']) ?? 'en',
-      layoutDirection:
-          AdminLayoutDirection.fromValue(source['layoutDirection']),
+      layoutDirection: AdminLayoutDirection.fromValue(
+        source['layoutDirection'],
+      ),
       dateFormat: _firstString(source, const ['dateFormat']) ?? 'YYYY-MM-DD',
       use24Hour: _firstBool(source, const ['use24Hour']) ?? true,
       theme: AdminTheme.fromValue(source['theme']),
       timezoneOffset:
           _firstString(source, const ['timezoneOffset', 'timezone']) ??
-              '+00:00',
+          '+00:00',
       units: AdminUnits.fromValue(
         source['units'] ?? source['distanceUnit'] ?? source['measurementUnit'],
       ),
@@ -940,17 +943,17 @@ class AdminLocalizationSettings {
   }
 
   Map<String, dynamic> toJson() => <String, dynamic>{
-        'language': language,
-        'layoutDirection': layoutDirection.apiValue,
-        'dateFormat': dateFormat,
-        'use24Hour': use24Hour,
-        'theme': theme.apiValue,
-        'timezoneOffset': timezoneOffset,
-        'units': units.apiValue,
-        'defaultLat': defaultLat,
-        'defaultLon': defaultLon,
-        'mapZoom': mapZoom,
-      };
+    'language': language,
+    'layoutDirection': layoutDirection.apiValue,
+    'dateFormat': dateFormat,
+    'use24Hour': use24Hour,
+    'theme': theme.apiValue,
+    'timezoneOffset': timezoneOffset,
+    'units': units.apiValue,
+    'defaultLat': defaultLat,
+    'defaultLon': defaultLon,
+    'mapZoom': mapZoom,
+  };
 
   AdminLocalizationSettings copyWith({
     String? language,
@@ -980,10 +983,7 @@ class AdminLocalizationSettings {
 }
 
 class AdminLanguageOption {
-  const AdminLanguageOption({
-    required this.code,
-    required this.label,
-  });
+  const AdminLanguageOption({required this.code, required this.label});
 
   final String code;
   final String label;
@@ -1006,10 +1006,7 @@ class AdminLanguageOption {
 }
 
 class AdminDateFormatOption {
-  const AdminDateFormatOption({
-    required this.value,
-    required this.label,
-  });
+  const AdminDateFormatOption({required this.value, required this.label});
 
   final String value;
   final String label;
@@ -1026,8 +1023,10 @@ class AdminDateFormatOption {
   }
 
   static List<AdminDateFormatOption> listFromJson(dynamic json) {
-    final list =
-        _extractList(json, keys: const ['dateFormats', 'items', 'data']);
+    final list = _extractList(
+      json,
+      keys: const ['dateFormats', 'items', 'data'],
+    );
     return list
         .map(AdminDateFormatOption.fromJson)
         .where((entry) => entry.value.isNotEmpty)
@@ -1068,12 +1067,12 @@ class AdminSoftwareConfig {
   }
 
   Map<String, dynamic> toJson() => <String, dynamic>{
-        'geocodingPrecision': geocodingPrecision.apiValue,
-        'backupDays': backupDays,
-        'allowDemoLogin': allowDemoLogin,
-        'allowSignup': allowSignup,
-        'signupCredits': signupCredits,
-      };
+    'geocodingPrecision': geocodingPrecision.apiValue,
+    'backupDays': backupDays,
+    'allowDemoLogin': allowDemoLogin,
+    'allowSignup': allowSignup,
+    'signupCredits': signupCredits,
+  };
 
   AdminSoftwareConfig copyWith({
     AdminGeocodingPrecision? geocodingPrecision,
@@ -1126,8 +1125,11 @@ class AdminDataRetentionTableResult {
       deletedRows: _firstInt(source, const ['deletedRows', 'deleted']) ?? 0,
       olderRows: _firstInt(source, const ['olderRows', 'older']) ?? 0,
       failed: _firstBool(source, const ['failed']) ?? false,
-      errorMessage:
-          _firstString(source, const ['errorMessage', 'error', 'message']),
+      errorMessage: _firstString(source, const [
+        'errorMessage',
+        'error',
+        'message',
+      ]),
       durationMs: _firstInt(source, const ['durationMs', 'duration']),
     );
   }
@@ -1166,8 +1168,10 @@ class AdminDataRetentionSummary {
 
   factory AdminDataRetentionSummary.fromJson(dynamic json) {
     final source = _unwrap(json);
-    final tablesList =
-        _extractList(source['tables'], keys: const ['tables', 'items']);
+    final tablesList = _extractList(
+      source['tables'],
+      keys: const ['tables', 'items'],
+    );
     return AdminDataRetentionSummary(
       startedAt: _firstDate(source, const ['startedAt', 'started']),
       finishedAt: _firstDate(source, const ['finishedAt', 'finished']),

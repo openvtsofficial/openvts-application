@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:open_vts/shared/helpers/toast_helper.dart';
 
 import '../../../../core/router/route_paths.dart';
 import '../../../../core/theme/open_vts_colors.dart';
 import '../../../../core/theme/open_vts_radius.dart';
 import '../../../../core/theme/open_vts_spacing.dart';
 import '../../../../core/theme/open_vts_typography.dart';
+import '../../../../shared/helpers/mobile_text.dart';
 import '../../../../shared/widgets/open_vts_empty_state.dart';
 import '../../../../shared/widgets/open_vts_error_view.dart';
 import '../../../../shared/widgets/open_vts_list_page_header.dart';
@@ -18,6 +20,7 @@ import '../../models/admin_drivers_model.dart';
 import '../../models/admin_drivers_state.dart';
 import '../../models/admin_users_model.dart';
 import '../../utils/location_label_resolver.dart';
+import '../../widgets/admin_action_gate.dart';
 import 'widgets/admin_driver_card.dart';
 import 'widgets/admin_driver_create_sheet.dart';
 
@@ -30,11 +33,11 @@ class AdminDriversScreen extends ConsumerWidget {
     final controller = ref.read(adminDriversControllerProvider.notifier);
 
     return OpenVtsPageScaffold(
-      title: 'Drivers',
+      title: context.mobileText('Drivers'),
       headerMode: OpenVtsPageHeaderMode.closeable,
       actions: [
         IconButton(
-          tooltip: 'Refresh drivers',
+          tooltip: context.mobileText('Refresh drivers'),
           onPressed: controller.refresh,
           icon: state.isRefreshing
               ? const SizedBox.square(
@@ -53,22 +56,22 @@ class AdminDriversScreen extends ConsumerWidget {
       body: state.isLoading && !state.hasDrivers
           ? const OpenVtsLoader()
           : state.errorMessage != null && !state.hasDrivers
-              ? OpenVtsErrorView(
-                  message: state.errorMessage ?? 'Drivers could not be loaded.',
-                  onRetry: controller.refresh,
-                )
-              : _DriversBody(
-                  state: state,
-                  controller: controller,
-                  onCreate: () => _showCreateDriverSheet(context),
-                  onOpenFilters: () => _showFilterSheet(context, ref),
-                  onOpenSort: () => _showSortSheet(context, ref),
-                  onOpenDetails: (driver) => _openDriverDetails(
-                    context,
-                    driver,
-                    ref.read(adminDriversControllerProvider.notifier),
-                  ),
-                ),
+          ? OpenVtsErrorView(
+              message: state.errorMessage ?? 'Drivers could not be loaded.',
+              onRetry: controller.refresh,
+            )
+          : _DriversBody(
+              state: state,
+              controller: controller,
+              onCreate: () => _showCreateDriverSheet(context),
+              onOpenFilters: () => _showFilterSheet(context, ref),
+              onOpenSort: () => _showSortSheet(context, ref),
+              onOpenDetails: (driver) => _openDriverDetails(
+                context,
+                driver,
+                ref.read(adminDriversControllerProvider.notifier),
+              ),
+            ),
     );
   }
 
@@ -93,10 +96,7 @@ class AdminDriversScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _showFilterSheet(
-    BuildContext context,
-    WidgetRef ref,
-  ) async {
+  Future<void> _showFilterSheet(BuildContext context, WidgetRef ref) async {
     final controller = ref.read(adminDriversControllerProvider.notifier);
     final state = ref.read(adminDriversControllerProvider);
 
@@ -104,8 +104,9 @@ class AdminDriversScreen extends ConsumerWidget {
     await ref
         .read(adminUsersControllerProvider.notifier)
         .ensureCountryOptionsLoaded();
-    final cachedCountryOptions =
-        ref.read(adminUsersControllerProvider).countryOptions;
+    final cachedCountryOptions = ref
+        .read(adminUsersControllerProvider)
+        .countryOptions;
 
     if (!context.mounted) return;
 
@@ -128,10 +129,10 @@ class AdminDriversScreen extends ConsumerWidget {
         return StatefulBuilder(
           builder: (context, setSheetState) {
             return OpenVtsListPageOptionsSheet(
-              title: 'Filter drivers',
+              title: context.mobileText('Filter drivers'),
               sections: [
                 OpenVtsListPageOptionsSection(
-                  label: 'Status',
+                  label: context.mobileText('Status'),
                   child: _PillSegmentedControl(
                     children: AdminDriverStatusFilter.values
                         .map(
@@ -150,7 +151,7 @@ class AdminDriversScreen extends ConsumerWidget {
                   ),
                 ),
                 OpenVtsListPageOptionsSection(
-                  label: 'Verification',
+                  label: context.mobileText('Verification'),
                   child: _PillSegmentedControl(
                     children: AdminDriverVerifiedFilter.values
                         .map(
@@ -170,13 +171,13 @@ class AdminDriversScreen extends ConsumerWidget {
                   ),
                 ),
                 OpenVtsListPageOptionsSection(
-                  label: 'Country',
+                  label: context.mobileText('Country'),
                   child: Wrap(
                     spacing: OpenVtsSpacing.xs,
                     runSpacing: OpenVtsSpacing.xs,
                     children: [
                       _PillSegment(
-                        label: 'All Countries',
+                        label: context.mobileText('All Countries'),
                         selected: selectedCountry == null,
                         onTap: () =>
                             setSheetState(() => selectedCountry = null),
@@ -231,10 +232,10 @@ class AdminDriversScreen extends ConsumerWidget {
       ),
       builder: (sheetContext) {
         return OpenVtsListPageOptionsSheet(
-          title: 'Sort drivers',
+          title: context.mobileText('Sort drivers'),
           sections: [
             OpenVtsListPageOptionsSection(
-              label: 'Order by',
+              label: context.mobileText('Order by'),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: AdminDriversSortOption.values
@@ -303,6 +304,11 @@ class _DriversBody extends ConsumerWidget {
     return Column(
       children: [
         OpenVtsListPageHeaderCard(
+          showCreate: adminCanPerform(
+            ref,
+            'drivers.update',
+            scopes: const {'OWN', 'TENANT'},
+          ),
           icon: Icons.badge_outlined,
           countLabel: '$filteredCount Driver${filteredCount == 1 ? '' : 's'}',
           createLabel: 'Add Driver',
@@ -312,7 +318,7 @@ class _DriversBody extends ConsumerWidget {
         const SizedBox(height: OpenVtsSpacing.sm),
         OpenVtsListPageToolbar(
           searchQuery: state.searchQuery,
-          hintText: 'Search by name, email\u2026',
+          hintText: context.mobileText('Search by name, email\u2026'),
           hasActiveFilters: state.hasActiveFilters,
           onSearchChanged: controller.setSearchQuery,
           onOpenFilters: onOpenFilters,
@@ -335,10 +341,14 @@ class _DriversBody extends ConsumerWidget {
                     children: [
                       const SizedBox(height: OpenVtsSpacing.section),
                       OpenVtsEmptyState(
-                        title: 'No drivers found',
+                        title: context.mobileText('No drivers found'),
                         message: state.hasActiveFilters
-                            ? 'Try a different search or filter.'
-                            : 'Create a driver to get started.',
+                            ? context.mobileText(
+                                'Try a different search or filter.',
+                              )
+                            : context.mobileText(
+                                'Create a driver to get started.',
+                              ),
                       ),
                     ],
                   )
@@ -362,8 +372,9 @@ class _DriversBody extends ConsumerWidget {
                       }
 
                       final driver = visible[index];
-                      final isUpdatingStatus =
-                          state.updatingDriverIds.contains(driver.id);
+                      final isUpdatingStatus = state.updatingDriverIds.contains(
+                        driver.id,
+                      );
                       return AdminDriverCard(
                         driver: driver,
                         onTap: () => onOpenDetails(driver),
@@ -399,13 +410,8 @@ class _DriversBody extends ConsumerWidget {
       if (context.mounted) {
         final errorMsg =
             ref.read(adminDriversControllerProvider).errorMessage ??
-                'Unable to update driver status.';
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMsg),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+            'Unable to update driver status.';
+        ToastHelper.showError(errorMsg, context: context);
       }
     }
   }
@@ -428,19 +434,22 @@ class _InlineErrorBanner extends StatelessWidget {
         color: Theme.of(context).colorScheme.error.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(OpenVtsRadius.md),
         border: Border.all(
-            color: Theme.of(context).colorScheme.error.withValues(alpha: 0.2)),
+          color: Theme.of(context).colorScheme.error.withValues(alpha: 0.2),
+        ),
       ),
       child: Row(
         children: [
-          Icon(Icons.error_outline_rounded,
-              color: Theme.of(context).colorScheme.error),
+          Icon(
+            Icons.error_outline_rounded,
+            color: Theme.of(context).colorScheme.error,
+          ),
           const SizedBox(width: OpenVtsSpacing.sm),
           Expanded(
             child: Text(
               message,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: OpenVtsColors.error,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: OpenVtsColors.error),
             ),
           ),
         ],
@@ -450,9 +459,7 @@ class _InlineErrorBanner extends StatelessWidget {
 }
 
 class _PillSegmentedControl extends StatelessWidget {
-  const _PillSegmentedControl({
-    required this.children,
-  });
+  const _PillSegmentedControl({required this.children});
 
   final List<Widget> children;
 
@@ -468,10 +475,7 @@ class _PillSegmentedControl extends StatelessWidget {
         borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
         border: Border.all(color: borderColor, width: 1),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: children,
-      ),
+      child: Row(mainAxisSize: MainAxisSize.min, children: children),
     );
   }
 }

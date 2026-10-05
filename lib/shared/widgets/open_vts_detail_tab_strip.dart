@@ -32,7 +32,10 @@ class OpenVtsDetailTabStrip<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 32,
+      height: (20 + MediaQuery.textScalerOf(context).scale(13) * 1.35).clamp(
+        48,
+        double.infinity,
+      ),
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: tabs.length,
@@ -79,33 +82,37 @@ class _TabChip extends StatelessWidget {
         ? (isDark ? OpenVtsColors.darkBorder : OpenVtsColors.brandInk)
         : (isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border);
 
-    return Material(
-      color: background,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
-        side: BorderSide(color: borderColor),
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (icon != null) ...[
-                Icon(icon, size: 14, color: foreground),
-                const SizedBox(width: 5),
-              ],
-              Text(
-                label,
-                style: OpenVtsTypography.meta.copyWith(
-                  color: foreground,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
+    return Semantics(
+      selected: isSelected,
+      button: true,
+      child: Material(
+        color: background,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
+          side: BorderSide(color: borderColor),
+        ),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (icon != null) ...[
+                  Icon(icon, size: 18, color: foreground),
+                  const SizedBox(width: 5),
+                ],
+                Text(
+                  label,
+                  style: OpenVtsTypography.meta.copyWith(
+                    color: foreground,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

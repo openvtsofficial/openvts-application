@@ -5,6 +5,7 @@ import '../../../core/theme/open_vts_radius.dart';
 import '../../../core/theme/open_vts_spacing.dart';
 import '../../../core/theme/open_vts_typography.dart';
 import '../../../core/utils/date_time_formatter.dart';
+import '../../../shared/helpers/mobile_text.dart';
 import '../../../shared/widgets/open_vts_empty_state.dart';
 import '../../../shared/widgets/open_vts_error_view.dart';
 import '../../../shared/widgets/open_vts_loader.dart';
@@ -77,11 +78,15 @@ class NotificationCenterView extends StatelessWidget {
           padding: const EdgeInsets.only(top: OpenVtsSpacing.xl),
           child: OpenVtsEmptyState(
             title: state.unreadOnly
-                ? 'No unread notifications'
-                : 'No notifications yet',
+                ? context.mobileText('No unread notifications')
+                : context.mobileText('No notifications yet'),
             message: state.unreadOnly
-                ? 'Everything is marked as read. New alerts will appear here as they arrive.'
-                : 'Vehicle alerts, system events, and operational updates will appear here.',
+                ? context.mobileText(
+                    'Everything is marked as read. New alerts will appear here as they arrive.',
+                  )
+                : context.mobileText(
+                    'Vehicle alerts, system events, and operational updates will appear here.',
+                  ),
           ),
         )
       else
@@ -150,8 +155,9 @@ class _InboxSummaryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final headingColor =
-        isDark ? OpenVtsColors.white : theme.colorScheme.onSurface;
+    final headingColor = isDark
+        ? OpenVtsColors.white
+        : theme.colorScheme.onSurface;
     final secondaryColor = isDark
         ? OpenVtsColors.white.withValues(alpha: 0.7)
         : theme.colorScheme.onSurface.withValues(alpha: 0.62);
@@ -167,9 +173,7 @@ class _InboxSummaryCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDark ? Colors.black : theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(OpenVtsRadius.lg),
-        border: Border.all(
-          color: borderColor,
-        ),
+        border: Border.all(color: borderColor),
       ),
       padding: const EdgeInsets.all(OpenVtsSpacing.sm),
       child: Column(
@@ -182,10 +186,12 @@ class _InboxSummaryCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Inbox',
-                        style: OpenVtsTypography.titleSmall.copyWith(
-                          color: headingColor,
-                        )),
+                    Text(
+                      context.mobileText('Inbox'),
+                      style: OpenVtsTypography.titleSmall.copyWith(
+                        color: headingColor,
+                      ),
+                    ),
                     const SizedBox(height: OpenVtsSpacing.xxs),
                     Text(
                       unreadLabel,
@@ -198,7 +204,9 @@ class _InboxSummaryCard extends StatelessWidget {
               ),
               const SizedBox.shrink(),
               _NotificationStatusPill(
-                label: unreadCount == 0 ? 'All read' : '$unreadCount unread',
+                label: unreadCount == 0
+                    ? context.mobileText('All read')
+                    : '$unreadCount unread',
                 textColor: unreadCount == 0 ? secondaryColor : accentColor,
                 borderColor: unreadCount == 0
                     ? borderColor
@@ -215,18 +223,20 @@ class _InboxSummaryCard extends StatelessWidget {
             runSpacing: OpenVtsSpacing.xs,
             children: [
               _NotificationFilterPill(
-                label: 'All',
+                label: context.mobileText('All'),
                 selected: !unreadOnly,
                 onTap: () => onUnreadOnlyChanged(false),
               ),
               _NotificationFilterPill(
-                label: 'Unread',
+                label: context.mobileText('Unread'),
                 selected: unreadOnly,
                 onTap: () => onUnreadOnlyChanged(true),
               ),
               if (unreadCount > 0 || isMarkingAllRead)
                 _NotificationActionPill(
-                  label: isMarkingAllRead ? 'Marking…' : 'Mark all read',
+                  label: isMarkingAllRead
+                      ? context.mobileText('Marking…')
+                      : context.mobileText('Mark all read'),
                   onTap: isMarkingAllRead
                       ? null
                       : () {
@@ -276,9 +286,7 @@ class _NotificationFilterPill extends StatelessWidget {
           decoration: BoxDecoration(
             color: backgroundColor,
             borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
-            border: Border.all(
-              color: borderColor,
-            ),
+            border: Border.all(color: borderColor),
           ),
           child: Text(
             label,
@@ -309,8 +317,9 @@ class _NotificationListItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final headingColor =
-        isDark ? OpenVtsColors.white : theme.colorScheme.onSurface;
+    final headingColor = isDark
+        ? OpenVtsColors.white
+        : theme.colorScheme.onSurface;
     final secondaryColor = isDark
         ? OpenVtsColors.white.withValues(alpha: 0.7)
         : theme.colorScheme.onSurface.withValues(alpha: 0.62);
@@ -330,9 +339,7 @@ class _NotificationListItem extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDark ? Colors.black : theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(OpenVtsRadius.lg),
-        border: Border.all(
-          color: borderColor,
-        ),
+        border: Border.all(color: borderColor),
       ),
       padding: const EdgeInsets.all(OpenVtsSpacing.sm),
       child: Column(
@@ -374,8 +381,9 @@ class _NotificationListItem extends StatelessWidget {
                           Container(
                             width: 6,
                             height: 6,
-                            margin:
-                                const EdgeInsets.only(right: OpenVtsSpacing.xs),
+                            margin: const EdgeInsets.only(
+                              right: OpenVtsSpacing.xs,
+                            ),
                             decoration: BoxDecoration(
                               color: accentColor,
                               shape: BoxShape.circle,
@@ -411,12 +419,12 @@ class _NotificationListItem extends StatelessWidget {
               const SizedBox(width: OpenVtsSpacing.sm),
               if (onMarkAsRead != null)
                 _NotificationActionPill(
-                  label: 'Mark read',
+                  label: context.mobileText('Mark read'),
                   onTap: onMarkAsRead!,
                 )
               else
                 _NotificationStatusPill(
-                  label: 'Read',
+                  label: context.mobileText('Read'),
                   textColor: secondaryColor,
                   borderColor: borderColor,
                   backgroundColor: Colors.transparent,
@@ -493,10 +501,7 @@ class _NotificationStatusPill extends StatelessWidget {
 }
 
 class _NotificationActionPill extends StatelessWidget {
-  const _NotificationActionPill({
-    required this.label,
-    required this.onTap,
-  });
+  const _NotificationActionPill({required this.label, required this.onTap});
 
   final String label;
   final VoidCallback? onTap;
@@ -520,8 +525,8 @@ class _NotificationActionPill extends StatelessWidget {
             color: onTap == null
                 ? Colors.transparent
                 : (isDark
-                    ? Colors.black
-                    : theme.colorScheme.primary.withValues(alpha: 0.06)),
+                      ? Colors.black
+                      : theme.colorScheme.primary.withValues(alpha: 0.06)),
             borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
             border: Border.all(
               color: isDark ? OpenVtsColors.white : OpenVtsColors.border,
@@ -533,8 +538,8 @@ class _NotificationActionPill extends StatelessWidget {
               color: isDark
                   ? OpenVtsColors.white
                   : (onTap == null
-                      ? theme.colorScheme.onSurface.withValues(alpha: 0.45)
-                      : theme.colorScheme.onSurface.withValues(alpha: 0.78)),
+                        ? theme.colorScheme.onSurface.withValues(alpha: 0.45)
+                        : theme.colorScheme.onSurface.withValues(alpha: 0.78)),
               fontWeight: FontWeight.w600,
               height: 1,
             ),
@@ -546,10 +551,10 @@ class _NotificationActionPill extends StatelessWidget {
 }
 
 IconData _notificationIcon(AppNotification notification) {
-  final key = [notification.severity, notification.category]
-      .whereType<String>()
-      .join(' ')
-      .toLowerCase();
+  final key = [
+    notification.severity,
+    notification.category,
+  ].whereType<String>().join(' ').toLowerCase();
 
   if (key.contains('security') || key.contains('login')) {
     return Icons.shield_outlined;

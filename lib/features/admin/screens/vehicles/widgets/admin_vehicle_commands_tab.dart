@@ -3,19 +3,24 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
+import '../../../../../shared/helpers/toast_helper.dart';
+import '../../../../../shared/models/user_role.dart';
 import '../../../../../shared/widgets/open_vts_bottom_sheet.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../../../shared/widgets/open_vts_empty_state.dart';
 import '../../../../../shared/widgets/open_vts_loader.dart';
+import '../../../../auth/controllers/auth_controller.dart';
 import '../../../models/admin_vehicle_model.dart';
 
-class AdminVehicleCommandsTab extends StatefulWidget {
+class AdminVehicleCommandsTab extends ConsumerStatefulWidget {
   const AdminVehicleCommandsTab({
     super.key,
     required this.vehicle,
@@ -37,17 +42,23 @@ class AdminVehicleCommandsTab extends StatefulWidget {
   final bool isLoading;
   final bool isSending;
   final Future<void> Function() onRefresh;
-  final Future<void> Function({required String command, String? note}) onSend;
+  final Future<void> Function({
+    required String command,
+    String? note,
+    String? commandId,
+  })
+  onSend;
   final Future<AdminCommandStatus?> Function(String cmdId) onPollStatus;
   final Future<AdminVehicleCommandItem?> Function(String cmdId)
-      onFetchCommandLog;
+  onFetchCommandLog;
 
   @override
-  State<AdminVehicleCommandsTab> createState() =>
+  ConsumerState<AdminVehicleCommandsTab> createState() =>
       _AdminVehicleCommandsTabState();
 }
 
-class _AdminVehicleCommandsTabState extends State<AdminVehicleCommandsTab> {
+class _AdminVehicleCommandsTabState
+    extends ConsumerState<AdminVehicleCommandsTab> {
   final TextEditingController _commandController = TextEditingController();
   final TextEditingController _noteController = TextEditingController();
 
@@ -68,8 +79,9 @@ class _AdminVehicleCommandsTabState extends State<AdminVehicleCommandsTab> {
   void didUpdateWidget(AdminVehicleCommandsTab oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (_selectedTemplateId != null) {
-      final stillExists =
-          widget.customCommands.any((cmd) => cmd.id == _selectedTemplateId);
+      final stillExists = widget.customCommands.any(
+        (cmd) => cmd.id == _selectedTemplateId,
+      );
       if (!stillExists) {
         setState(() {
           _selectedTemplateId = null;
@@ -90,9 +102,9 @@ class _AdminVehicleCommandsTabState extends State<AdminVehicleCommandsTab> {
   Widget build(BuildContext context) {
     final imei = widget.vehicle.imei.trim();
     if (imei.isEmpty) {
-      return const OpenVtsEmptyState(
-        title: 'Command unavailable',
-        message: 'IMEI is required to send commands.',
+      return OpenVtsEmptyState(
+        title: context.mobileText('Command unavailable'),
+        message: context.mobileText('IMEI is required to send commands.'),
       );
     }
 
@@ -106,24 +118,24 @@ class _AdminVehicleCommandsTabState extends State<AdminVehicleCommandsTab> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Command',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
+                context.mobileText('Command'),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: OpenVtsSpacing.sm),
               DropdownButtonFormField<String>(
                 key: ValueKey(_dropdownEpoch),
                 initialValue: _selectedTemplateId,
-                decoration: const InputDecoration(
-                  labelText: 'Template',
+                decoration: InputDecoration(
+                  labelText: context.mobileText('Template'),
                   isDense: true,
-                  contentPadding: EdgeInsets.symmetric(
+                  contentPadding: const EdgeInsets.symmetric(
                     horizontal: OpenVtsSpacing.sm,
                     vertical: OpenVtsSpacing.xs,
                   ),
                 ),
-                hint: const Text('Select command template'),
+                hint: Text(context.mobileText('Select command template')),
                 items: widget.customCommands
                     .map(
                       (item) => DropdownMenuItem<String>(
@@ -145,28 +157,32 @@ class _AdminVehicleCommandsTabState extends State<AdminVehicleCommandsTab> {
                       .where((item) => item.id == value)
                       .toList(growable: false);
                   if (selected.isNotEmpty) {
-                    _commandController.text =
-                        _resolveVariables(selected.first.command);
+                    _commandController.text = _resolveVariables(
+                      selected.first.command,
+                    );
                   }
                 },
               ),
               const SizedBox(height: OpenVtsSpacing.sm),
               TextField(
                 controller: _commandController,
+                readOnly:
+                    ref.watch(authControllerProvider).user?.role ==
+                    UserRole.team,
                 maxLines: 3,
                 maxLength: 500,
-                decoration: const InputDecoration(
-                  labelText: 'Command',
-                  hintText: 'Enter command text',
+                decoration: InputDecoration(
+                  labelText: context.mobileText('Command'),
+                  hintText: context.mobileText('Enter command text'),
                 ),
               ),
               const SizedBox(height: OpenVtsSpacing.sm),
               TextField(
                 controller: _noteController,
                 maxLines: 2,
-                decoration: const InputDecoration(
-                  labelText: 'Note',
-                  hintText: 'Optional notes',
+                decoration: InputDecoration(
+                  labelText: context.mobileText('Note'),
+                  hintText: context.mobileText('Optional notes'),
                 ),
               ),
               const SizedBox(height: OpenVtsSpacing.md),
@@ -174,7 +190,9 @@ class _AdminVehicleCommandsTabState extends State<AdminVehicleCommandsTab> {
                 children: [
                   Expanded(
                     child: OpenVtsButton(
-                      label: _polling ? 'Polling status...' : 'Send',
+                      label: _polling
+                          ? context.mobileText('Polling status...')
+                          : context.mobileText('Send'),
                       isLoading: widget.isSending,
                       onPressed: widget.isSending || _polling ? null : _send,
                     ),
@@ -203,10 +221,10 @@ class _AdminVehicleCommandsTabState extends State<AdminVehicleCommandsTab> {
                       const SizedBox(width: OpenVtsSpacing.xs),
                       Expanded(
                         child: Text(
-                          'Status: $_latestStatus',
-                          style: OpenVtsTypography.meta.copyWith(
-                            fontSize: 12,
-                          ),
+                          context.mobileText("Status: {value1}", {
+                            'value1': (_latestStatus).toString(),
+                          }),
+                          style: OpenVtsTypography.meta.copyWith(fontSize: 12),
                         ),
                       ),
                     ],
@@ -220,9 +238,9 @@ class _AdminVehicleCommandsTabState extends State<AdminVehicleCommandsTab> {
         if (widget.isLoading)
           const OpenVtsLoader()
         else if (widget.history.isEmpty)
-          const OpenVtsEmptyState(
-            title: 'No command history',
-            message: 'Send a command to see history.',
+          OpenVtsEmptyState(
+            title: context.mobileText('No command history'),
+            message: context.mobileText('Send a command to see history.'),
           )
         else ...[
           ...widget.history.map(
@@ -250,8 +268,37 @@ class _AdminVehicleCommandsTabState extends State<AdminVehicleCommandsTab> {
       return;
     }
 
+    if (ref.read(authControllerProvider).user?.role == UserRole.team &&
+        (_selectedTemplateId == null ||
+            int.tryParse(_selectedTemplateId!) == null)) {
+      _toast('Select an approved command template.');
+      return;
+    }
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: Text(context.mobileText('Send command to vehicle?')),
+        content: Text(
+          context.mobileText("Send this command to {value1}?", {
+            'value1': (widget.vehicle.name).toString(),
+          }),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(c, false),
+            child: Text(context.mobileText('Cancel')),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(c, true),
+            child: Text(context.mobileText('Send')),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
     await widget.onSend(
       command: command,
+      commandId: _selectedTemplateId,
       note: _noteController.text.trim().isEmpty
           ? null
           : _noteController.text.trim(),
@@ -293,13 +340,14 @@ class _AdminVehicleCommandsTabState extends State<AdminVehicleCommandsTab> {
 
   Future<void> _openHistoryDetails(AdminVehicleCommandItem item) async {
     final cmdId = item.cmdId.trim();
-    final loaded =
-        cmdId.isEmpty ? item : (await widget.onFetchCommandLog(cmdId) ?? item);
+    final loaded = cmdId.isEmpty
+        ? item
+        : (await widget.onFetchCommandLog(cmdId) ?? item);
 
     if (!mounted) return;
     await OpenVtsBottomSheet.show<void>(
       context: context,
-      title: 'Command Details',
+      title: context.mobileText('Command Details'),
       initialChildSize: 0.82,
       minChildSize: 0.52,
       maxChildSize: 0.95,
@@ -320,19 +368,23 @@ class _AdminVehicleCommandsTabState extends State<AdminVehicleCommandsTab> {
           _line('Response Hex', _safe(loaded.responseHex ?? '')),
           _line('Error', _safe(loaded.errorMessage ?? '')),
           const SizedBox(height: OpenVtsSpacing.xs),
-          Text('Metadata', style: Theme.of(context).textTheme.titleSmall),
+          Text(
+            context.mobileText('Metadata'),
+            style: Theme.of(context).textTheme.titleSmall,
+          ),
           const SizedBox(height: OpenVtsSpacing.xs),
           SelectableText(
-              const JsonEncoder.withIndent('  ').convert(loaded.metadata)),
+            const JsonEncoder.withIndent('  ').convert(loaded.metadata),
+          ),
         ],
       ),
     );
   }
 
   Widget _line(String label, String value) => Padding(
-        padding: const EdgeInsets.only(bottom: 4),
-        child: Text('$label: $value'),
-      );
+    padding: const EdgeInsets.only(bottom: 4),
+    child: Text('$label: $value'),
+  );
 
   String _resolveVariables(String template) {
     final map = <String, String>{
@@ -367,8 +419,7 @@ class _AdminVehicleCommandsTabState extends State<AdminVehicleCommandsTab> {
   }
 
   void _toast(String message) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
+    ToastHelper.showInfo(message, context: context);
   }
 
   String _safe(String value) => value.trim().isEmpty ? '-' : value.trim();
@@ -391,8 +442,9 @@ class _TargetVehicleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final name =
-        vehicle.name.trim().isEmpty ? vehicle.plateNumber : vehicle.name;
+    final name = vehicle.name.trim().isEmpty
+        ? vehicle.plateNumber
+        : vehicle.name;
     final hasType = vehicle.vehicleType != null;
 
     return OpenVtsCard(
@@ -401,10 +453,10 @@ class _TargetVehicleCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Target Vehicle',
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+            context.mobileText('Target Vehicle'),
+            style: Theme.of(
+              context,
+            ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: OpenVtsSpacing.sm),
           Text(
@@ -412,9 +464,9 @@ class _TargetVehicleCard extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -0.2,
-                ),
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.2,
+            ),
           ),
           if (vehicle.plateNumber.trim().isNotEmpty) ...[
             const SizedBox(height: 2),
@@ -460,7 +512,7 @@ class _TargetVehicleCard extends StatelessWidget {
                   Expanded(
                     child: _DetailItem(
                       icon: Icons.category_rounded,
-                      label: 'Type',
+                      label: context.mobileText('Type'),
                       value: vehicle.vehicleType?.name ?? '-',
                     ),
                   ),
@@ -469,7 +521,7 @@ class _TargetVehicleCard extends StatelessWidget {
                   Expanded(
                     child: _DetailItem(
                       icon: Icons.person_rounded,
-                      label: 'Primary User',
+                      label: context.mobileText('Primary User'),
                       value: vehicle.primaryUser?.displayName ?? '-',
                     ),
                   ),
@@ -530,10 +582,7 @@ class _DetailItem extends StatelessWidget {
 }
 
 class _CommandHistoryCard extends StatelessWidget {
-  const _CommandHistoryCard({
-    required this.item,
-    required this.onTap,
-  });
+  const _CommandHistoryCard({required this.item, required this.onTap});
 
   final AdminVehicleCommandItem item;
   final VoidCallback onTap;
@@ -554,9 +603,9 @@ class _CommandHistoryCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: -0.2,
-                      ),
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.2,
+                  ),
                 ),
               ),
               const SizedBox(width: OpenVtsSpacing.xs),
@@ -571,7 +620,7 @@ class _CommandHistoryCard extends StatelessWidget {
               Expanded(
                 child: _DetailItem(
                   icon: Icons.access_time_rounded,
-                  label: 'Requested',
+                  label: context.mobileText('Requested'),
                   value: _formatTime(item.requestedAt ?? item.displayTime),
                 ),
               ),
@@ -579,7 +628,7 @@ class _CommandHistoryCard extends StatelessWidget {
               Expanded(
                 child: _DetailItem(
                   icon: Icons.check_circle_outline_rounded,
-                  label: 'Status',
+                  label: context.mobileText('Status'),
                   value: item.status,
                 ),
               ),

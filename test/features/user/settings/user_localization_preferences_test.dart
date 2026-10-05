@@ -3,11 +3,45 @@ import 'package:open_vts/core/providers/app_preferences_provider.dart';
 import 'package:open_vts/core/providers/core_providers.dart';
 import 'package:open_vts/core/storage/local_cache.dart';
 import 'package:open_vts/core/storage/storage_keys.dart';
+import 'package:open_vts/features/user/controllers/user_settings_controller.dart';
+import 'package:open_vts/features/user/models/user_settings_model.dart';
+import 'package:open_vts/features/user/services/user_settings_service.dart';
 import 'package:open_vts/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+class _LanguageSettingsService implements UserSettingsService {
+  @override
+  Future<UserLocalizationSettings> getLocalization() async =>
+      const UserLocalizationSettings(language: 'en', timezoneOffset: '+05:30');
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  test(
+    'localization form preserves the language chosen from the home header',
+    () async {
+      final controller = UserSettingsController(
+        service: _LanguageSettingsService(),
+        languageOverride: () => const AppLocalizationPreferences(
+          languageCode: 'ar',
+          layoutDirection: 'RTL',
+        ),
+      );
+      addTearDown(controller.dispose);
+      await controller.loadLocalization();
+      expect(controller.state.localization!.language, 'ar');
+      expect(controller.state.draftLocalization!.language, 'ar');
+      expect(
+        controller.state.draftLocalization!.layoutDirection,
+        UserLayoutDirection.rtl,
+      );
+      expect(controller.state.draftLocalization!.timezoneOffset, '+05:30');
+      expect(controller.state.isLocalizationDirty, isFalse);
+    },
+  );
 
   test('Flutter locale catalog is the authoritative supported set', () {
     expect(
@@ -57,9 +91,7 @@ void main() {
   });
 
   test('unsupported cached locale cannot silently remain selected', () async {
-    SharedPreferences.setMockInitialValues({
-      StorageKeys.appLanguageCode: 'ru',
-    });
+    SharedPreferences.setMockInitialValues({StorageKeys.appLanguageCode: 'ru'});
     final preferences = await SharedPreferences.getInstance();
     final cache = LocalCache(preferences);
 

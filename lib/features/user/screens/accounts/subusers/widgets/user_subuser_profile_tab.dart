@@ -8,6 +8,7 @@ import '../../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../../core/utils/date_time_formatter.dart';
+import '../../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../../shared/widgets/open_vts_bottom_sheet.dart';
 import '../../../../../../shared/widgets/open_vts_card.dart';
@@ -18,14 +19,14 @@ import '../../../../models/user_subusers_state.dart';
 import 'user_subuser_delete_sheet.dart';
 import 'user_subuser_edit_sheet.dart';
 
-typedef UserSubUserDetailsProvider = AutoDisposeStateNotifierProvider<
-    UserSubUserDetailsController, UserSubUserDetailsState>;
+typedef UserSubUserDetailsProvider =
+    AutoDisposeStateNotifierProvider<
+      UserSubUserDetailsController,
+      UserSubUserDetailsState
+    >;
 
 class UserSubUserProfileTab extends ConsumerWidget {
-  const UserSubUserProfileTab({
-    required this.provider,
-    super.key,
-  });
+  const UserSubUserProfileTab({required this.provider, super.key});
 
   final UserSubUserDetailsProvider provider;
 
@@ -62,37 +63,51 @@ class UserSubUserProfileTab extends ConsumerWidget {
         ],
         const SizedBox(height: OpenVtsSpacing.sm),
         _InfoCard(
-          title: 'Profile',
+          title: context.mobileText('Profile'),
           icon: Icons.person_outline_rounded,
           rows: [
-            _InfoRow(label: 'Name', value: _display(subUser.name)),
-            _InfoRow(label: 'Username', value: _username(subUser.username)),
             _InfoRow(
-              label: 'Status',
+              label: context.mobileText('Name'),
+              value: _display(subUser.name),
+            ),
+            _InfoRow(
+              label: context.mobileText('Username'),
+              value: _username(subUser.username),
+            ),
+            _InfoRow(
+              label: context.mobileText('Status'),
               value: subUser.isActive ? 'Active' : 'Inactive',
             ),
           ],
         ),
         const SizedBox(height: OpenVtsSpacing.sm),
         _InfoCard(
-          title: 'Contact',
+          title: context.mobileText('Contact'),
           icon: Icons.call_outlined,
           rows: [
-            _InfoRow(label: 'Email', value: _display(subUser.email)),
-            _InfoRow(label: 'Mobile', value: _mobile(subUser)),
+            _InfoRow(
+              label: context.mobileText('Email'),
+              value: _display(subUser.email),
+            ),
+            _InfoRow(
+              label: context.mobileText('Mobile'),
+              value: _mobile(subUser),
+            ),
           ],
         ),
         const SizedBox(height: OpenVtsSpacing.sm),
         _InfoCard(
-          title: 'Timeline',
+          title: context.mobileText('Timeline'),
           icon: Icons.schedule_rounded,
           rows: [
             _InfoRow(
-                label: 'Created',
-                value: _dateText(subUser.createdAt, dateFormatter)),
+              label: context.mobileText('Created'),
+              value: _dateText(subUser.createdAt, dateFormatter),
+            ),
             _InfoRow(
-                label: 'Updated',
-                value: _dateText(subUser.updatedAt, dateFormatter)),
+              label: context.mobileText('Updated'),
+              value: _dateText(subUser.updatedAt, dateFormatter),
+            ),
           ],
         ),
       ],
@@ -102,14 +117,11 @@ class UserSubUserProfileTab extends ConsumerWidget {
   Future<void> _showEditSheet(BuildContext context, UserSubUser subUser) {
     return OpenVtsBottomSheet.show<bool>(
       context: context,
-      title: 'Edit Sub User',
+      title: context.mobileText('Edit Sub User'),
       initialChildSize: 0.88,
       minChildSize: 0.5,
       maxChildSize: 0.97,
-      child: UserSubUserEditSheet(
-        provider: provider,
-        subUser: subUser,
-      ),
+      child: UserSubUserEditSheet(provider: provider, subUser: subUser),
     );
   }
 
@@ -126,7 +138,9 @@ class UserSubUserProfileTab extends ConsumerWidget {
 
     if (ok) {
       ToastHelper.showSuccess(
-        wasActive ? 'Sub user deactivated.' : 'Sub user activated.',
+        wasActive
+            ? context.mobileText('Sub user deactivated.')
+            : context.mobileText('Sub user activated.'),
         context: context,
       );
       return;
@@ -145,14 +159,11 @@ class UserSubUserProfileTab extends ConsumerWidget {
   ) async {
     final deleted = await OpenVtsBottomSheet.show<bool>(
       context: context,
-      title: 'Delete Sub User',
+      title: context.mobileText('Delete Sub User'),
       initialChildSize: 0.42,
       minChildSize: 0.34,
       maxChildSize: 0.62,
-      child: UserSubUserDeleteSheet(
-        provider: provider,
-        subUser: subUser,
-      ),
+      child: UserSubUserDeleteSheet(provider: provider, subUser: subUser),
     );
 
     if (deleted != true || !context.mounted) {
@@ -164,7 +175,10 @@ class UserSubUserProfileTab extends ConsumerWidget {
       return;
     }
 
-    ToastHelper.showSuccess('Sub user deleted.', context: context);
+    ToastHelper.showSuccess(
+      context.mobileText('Sub user deleted.'),
+      context: context,
+    );
     context.go(RoutePaths.userSubUsers);
   }
 }
@@ -195,13 +209,15 @@ class _ActionButtons extends StatelessWidget {
       runSpacing: OpenVtsSpacing.xs,
       children: [
         _CompactActionButton(
-          label: 'Edit Profile',
+          label: context.mobileText('Edit Profile'),
           icon: Icons.edit_outlined,
           isLoading: isSaving,
           onPressed: isSaving ? null : onEdit,
         ),
         _CompactActionButton(
-          label: isActive ? 'Deactivate' : 'Activate',
+          label: isActive
+              ? context.mobileText('Deactivate')
+              : context.mobileText('Activate'),
           icon: isActive
               ? Icons.pause_circle_outline_rounded
               : Icons.check_circle_outline_rounded,
@@ -209,7 +225,7 @@ class _ActionButtons extends StatelessWidget {
           onPressed: isTogglingStatus ? null : onToggleStatus,
         ),
         _CompactActionButton(
-          label: 'Delete',
+          label: context.mobileText('Delete'),
           icon: Icons.delete_outline_rounded,
           isDestructive: true,
           isLoading: isDeleting,
@@ -237,8 +253,9 @@ class _CompactActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final foreground =
-        isDestructive ? OpenVtsColors.error : OpenVtsColors.textPrimary;
+    final foreground = isDestructive
+        ? OpenVtsColors.error
+        : OpenVtsColors.textPrimary;
 
     return SizedBox(
       height: 34,
@@ -441,7 +458,7 @@ class _SectionStateCard extends StatelessWidget {
                 OutlinedButton.icon(
                   onPressed: onRetry,
                   icon: const Icon(Icons.refresh_rounded, size: 16),
-                  label: const Text('Retry'),
+                  label: Text(context.mobileText('Retry')),
                 ),
               ],
             ),
@@ -463,10 +480,10 @@ String _username(String value) {
 }
 
 String _mobile(UserSubUser subUser) {
-  final value = [subUser.mobilePrefix.trim(), subUser.mobileNumber.trim()]
-      .where((part) => part.isNotEmpty)
-      .join(' ')
-      .trim();
+  final value = [
+    subUser.mobilePrefix.trim(),
+    subUser.mobileNumber.trim(),
+  ].where((part) => part.isNotEmpty).join(' ').trim();
   return value.isEmpty ? '-' : value;
 }
 

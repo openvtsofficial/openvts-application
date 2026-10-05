@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../core/utils/date_time_formatter.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../shared/widgets/open_vts_bottom_sheet.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
@@ -14,7 +16,7 @@ import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../../../shared/widgets/open_vts_text_field.dart';
 import '../../../controllers/admin_providers.dart';
 import '../../../models/admin_user_details_model.dart';
-import '../../../models/admin_subscription_policy.dart';
+import '../../../widgets/admin_action_gate.dart';
 
 const DateTimeFormatter _dateFormatter = DateTimeFormatter();
 const List<String> _paymentModes = <String>[
@@ -22,16 +24,11 @@ const List<String> _paymentModes = <String>[
   'BANK_TRANSFER',
   'CARD',
   'UPI',
-  'WALLET',
-  'CHEQUE',
   'OTHER',
 ];
 
 class AdminUserPaymentsTab extends ConsumerStatefulWidget {
-  const AdminUserPaymentsTab({
-    super.key,
-    required this.userId,
-  });
+  const AdminUserPaymentsTab({super.key, required this.userId});
 
   final String userId;
 
@@ -46,12 +43,13 @@ class _AdminUserPaymentsTabState extends ConsumerState<AdminUserPaymentsTab> {
     final provider = adminUserDetailsControllerProvider(widget.userId);
     final state = ref.watch(provider);
     final controller = ref.read(provider.notifier);
-    final isInitialLoading = state.isLoadingPayments &&
+    final isInitialLoading =
+        state.isLoadingPayments &&
         state.payments.isEmpty &&
         state.paymentsPage == null;
 
     if (isInitialLoading) {
-      return const _SectionLoader(title: 'Payments');
+      return _SectionLoader(title: context.mobileText('Payments'));
     }
 
     if (state.sectionErrorMessage != null && state.payments.isEmpty) {
@@ -79,7 +77,7 @@ class _AdminUserPaymentsTabState extends ConsumerState<AdminUserPaymentsTab> {
           const SizedBox(height: OpenVtsSpacing.sm),
         ],
         if (state.payments.isEmpty)
-          const _EmptyCard(label: 'No payments found')
+          _EmptyCard(label: context.mobileText('No payments found'))
         else
           for (final payment in state.payments) ...[
             _PaymentCard(
@@ -95,7 +93,6 @@ class _AdminUserPaymentsTabState extends ConsumerState<AdminUserPaymentsTab> {
   }
 
   Future<void> _showRenewSheet() async {
-    if (!AdminSubscriptionPolicy.allowsRenewals) return;
     final provider = adminUserDetailsControllerProvider(widget.userId);
     final controller = ref.read(provider.notifier);
     final state = ref.read(provider);
@@ -108,7 +105,7 @@ class _AdminUserPaymentsTabState extends ConsumerState<AdminUserPaymentsTab> {
 
     await OpenVtsBottomSheet.show<void>(
       context: context,
-      title: 'Renew Vehicle',
+      title: context.mobileText('Renew Vehicle'),
       initialChildSize: 0.86,
       minChildSize: 0.5,
       maxChildSize: 0.96,
@@ -120,7 +117,7 @@ class _AdminUserPaymentsTabState extends ConsumerState<AdminUserPaymentsTab> {
     final state = ref.read(adminUserDetailsControllerProvider(widget.userId));
     return OpenVtsBottomSheet.show<void>(
       context: context,
-      title: 'Transaction Details',
+      title: context.mobileText('Transaction Details'),
       initialChildSize: 0.78,
       minChildSize: 0.46,
       maxChildSize: 0.94,
@@ -165,7 +162,7 @@ class _SummaryCard extends StatelessWidget {
                     ),
                     const SizedBox(width: OpenVtsSpacing.xs),
                     Text(
-                      'Payments',
+                      context.mobileText('Payments'),
                       style: OpenVtsTypography.label.copyWith(
                         color: colors.onSurface,
                         fontWeight: FontWeight.w800,
@@ -183,7 +180,9 @@ class _SummaryCard extends StatelessWidget {
                 ),
                 const SizedBox(height: OpenVtsSpacing.xs),
                 Text(
-                  totalCount == 1 ? '1 payment' : '$totalCount payments',
+                  totalCount == 1
+                      ? context.mobileText('1 payment')
+                      : '$totalCount payments',
                   style: OpenVtsTypography.meta.copyWith(
                     color: colors.onSurfaceVariant,
                     fontWeight: FontWeight.w700,
@@ -192,17 +191,19 @@ class _SummaryCard extends StatelessWidget {
               ],
             ),
           ),
-          if (AdminSubscriptionPolicy.allowsRenewals)
-            SizedBox(
+          AdminActionGate(
+            capability: 'users.update',
+            child: SizedBox(
               height: 34,
               child: OpenVtsButton(
-                label: 'Renew Vehicle',
+                label: context.mobileText('Renew Vehicle'),
                 height: 34,
                 isLoading: isRenewing,
                 onPressed: onRenew,
                 trailingIcon: Icons.autorenew_rounded,
               ),
             ),
+          ),
         ],
       ),
     );
@@ -225,25 +226,25 @@ class _StatsGrid extends StatelessWidget {
           children: [
             _StatCard(
               width: width,
-              label: 'Total Received',
+              label: context.mobileText('Total Received'),
               value: stats.totalReceivedLabel,
               icon: Icons.account_balance_wallet_outlined,
             ),
             _StatCard(
               width: width,
-              label: 'Successful',
+              label: context.mobileText('Successful'),
               value: stats.successfulCount.toString(),
               icon: Icons.check_circle_outline_rounded,
             ),
             _StatCard(
               width: width,
-              label: 'Pending / Failed',
+              label: context.mobileText('Pending / Failed'),
               value: '${stats.pendingCount} / ${stats.failedCount}',
               icon: Icons.pending_actions_rounded,
             ),
             _StatCard(
               width: width,
-              label: 'Last Payment',
+              label: context.mobileText('Last Payment'),
               value: _dateText(stats.lastPaymentAt),
               icon: Icons.event_outlined,
             ),
@@ -405,7 +406,8 @@ class _StandardPaymentChips extends StatelessWidget {
       'plate_number',
     ]);
     final matchedVehicle = _matchVehicle(payment.vehicle, linkedVehicles);
-    final rawDevice = _valueForKey(payment.vehicle, 'device') ??
+    final rawDevice =
+        _valueForKey(payment.vehicle, 'device') ??
         _valueForKey(payment.vehicle, 'gpsDevice') ??
         _valueForKey(payment.vehicle, 'tracker');
     final vehicleDevice = rawDevice is Map<String, dynamic>
@@ -452,17 +454,17 @@ class _StandardPaymentChips extends StatelessWidget {
       children: [
         _LabeledMetaItem(
           icon: Icons.directions_car_filled_outlined,
-          label: 'Vehicle',
+          label: context.mobileText('Vehicle'),
           value: _displayValue(vehicle),
         ),
         _LabeledMetaItem(
           icon: Icons.workspace_premium_outlined,
-          label: 'Default plan',
+          label: context.mobileText('Default plan'),
           value: _displayValue(plan),
         ),
         _LabeledMetaItem(
           icon: Icons.calendar_today_outlined,
-          label: 'Created at',
+          label: context.mobileText('Created at'),
           value: _dateTimeText(payment.createdAt),
         ),
         _LabeledMetaItem(
@@ -501,7 +503,7 @@ class _RenewalVehicleChips extends StatelessWidget {
             const SizedBox(width: 4),
             Text(
               summaries.length == 1
-                  ? 'Renewal — 1 vehicle'
+                  ? context.mobileText('Renewal — 1 vehicle')
                   : 'Renewal — ${summaries.length} vehicles',
               style: OpenVtsTypography.meta.copyWith(
                 color: colors.onSurfaceVariant,
@@ -513,10 +515,7 @@ class _RenewalVehicleChips extends StatelessWidget {
         ),
         const SizedBox(height: OpenVtsSpacing.xs),
         for (final summary in summaries) ...[
-          _RenewalVehicleRow(
-            summary: summary,
-            linkedVehicles: linkedVehicles,
-          ),
+          _RenewalVehicleRow(summary: summary, linkedVehicles: linkedVehicles),
           if (summary != summaries.last)
             const SizedBox(height: OpenVtsSpacing.xs),
         ],
@@ -540,9 +539,7 @@ class _RenewalVehicleRow extends StatelessWidget {
     final matched = summary.vehicleId.isNotEmpty
         ? _matchVehicleById(summary.vehicleId, linkedVehicles)
         : null;
-    final imei = _firstNonEmpty([
-      if (matched != null) matched.imei,
-    ]);
+    final imei = _firstNonEmpty([if (matched != null) matched.imei]);
     final vehicleName = _firstNonEmpty([
       summary.name,
       if (matched != null) _firstNonEmpty([matched.name, matched.plateNumber]),
@@ -555,12 +552,12 @@ class _RenewalVehicleRow extends StatelessWidget {
       children: [
         _LabeledMetaItem(
           icon: Icons.directions_car_filled_outlined,
-          label: 'Vehicle',
+          label: context.mobileText('Vehicle'),
           value: _displayValue(vehicleName),
         ),
         _LabeledMetaItem(
           icon: Icons.workspace_premium_outlined,
-          label: 'Plan',
+          label: context.mobileText('Plan'),
           value: _displayValue(planName),
         ),
         _LabeledMetaItem(
@@ -592,9 +589,7 @@ class _LabeledMetaItem extends StatelessWidget {
       decoration: BoxDecoration(
         color: colors.onSurface.withValues(alpha: 0.04),
         borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-        border: Border.all(
-          color: colors.onSurface.withValues(alpha: 0.08),
-        ),
+        border: Border.all(color: colors.onSurface.withValues(alpha: 0.08)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -646,12 +641,24 @@ class _RenewPaymentSheetState extends ConsumerState<_RenewPaymentSheet> {
   final _referenceController = TextEditingController();
   final _amountController = TextEditingController();
   final _selectedVehicleIds = <String>{};
+  final _overrideReasonController = TextEditingController();
+  String? _lastPayload;
+  String? _idempotencyKey;
   var _paymentMode = 'CASH';
+
+  @override
+  void initState() {
+    super.initState();
+    _amountController.addListener(() {
+      if (mounted) setState(() {});
+    });
+  }
 
   @override
   void dispose() {
     _referenceController.dispose();
     _amountController.dispose();
+    _overrideReasonController.dispose();
     super.dispose();
   }
 
@@ -673,6 +680,15 @@ class _RenewPaymentSheetState extends ConsumerState<_RenewPaymentSheet> {
             controller: PrimaryScrollController.maybeOf(context),
             padding: const EdgeInsets.all(OpenVtsSpacing.md),
             children: [
+              if (_amountController.text.trim().isNotEmpty) ...[
+                OpenVtsTextField(
+                  label: context.mobileText(
+                    'Reason for amount override (5–500 characters)',
+                  ),
+                  controller: _overrideReasonController,
+                ),
+                const SizedBox(height: OpenVtsSpacing.sm),
+              ],
               _EstimateCard(
                 selectedCount: _selectedVehicleIds.length,
                 estimateLabel: estimate,
@@ -688,17 +704,17 @@ class _RenewPaymentSheetState extends ConsumerState<_RenewPaymentSheet> {
               ),
               const SizedBox(height: OpenVtsSpacing.sm),
               OpenVtsTextField(
-                label: 'Reference',
+                label: context.mobileText('Reference'),
                 controller: _referenceController,
-                hintText: 'Optional receipt or note',
+                hintText: context.mobileText('Optional receipt or note'),
                 prefixIcon: Icons.receipt_long_outlined,
                 textInputAction: TextInputAction.next,
               ),
               const SizedBox(height: OpenVtsSpacing.sm),
               OpenVtsTextField(
-                label: 'Amount override',
+                label: context.mobileText('Amount override'),
                 controller: _amountController,
-                hintText: 'Optional amount',
+                hintText: context.mobileText('Optional amount'),
                 prefixIcon: Icons.payments_outlined,
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
@@ -707,7 +723,7 @@ class _RenewPaymentSheetState extends ConsumerState<_RenewPaymentSheet> {
               ),
               const SizedBox(height: OpenVtsSpacing.md),
               Text(
-                'Vehicles',
+                context.mobileText('Vehicles'),
                 style: OpenVtsTypography.label.copyWith(
                   color: colors.onSurface,
                   fontWeight: FontWeight.w800,
@@ -715,9 +731,11 @@ class _RenewPaymentSheetState extends ConsumerState<_RenewPaymentSheet> {
               ),
               const SizedBox(height: OpenVtsSpacing.xs),
               if (state.isLoadingVehicles && vehicles.isEmpty)
-                const _SectionLoader(title: 'Vehicles')
+                _SectionLoader(title: context.mobileText('Vehicles'))
               else if (vehicles.isEmpty)
-                const _EmptyCard(label: 'No linked vehicles available')
+                _EmptyCard(
+                  label: context.mobileText('No linked vehicles available'),
+                )
               else
                 for (final vehicle in vehicles) ...[
                   _SelectableVehicleTile(
@@ -740,7 +758,7 @@ class _RenewPaymentSheetState extends ConsumerState<_RenewPaymentSheet> {
               children: [
                 Expanded(
                   child: OpenVtsButton(
-                    label: 'Cancel',
+                    label: context.mobileText('Cancel'),
                     height: 40,
                     variant: OpenVtsButtonVariant.secondary,
                     onPressed: state.isRenewingPayment
@@ -751,7 +769,7 @@ class _RenewPaymentSheetState extends ConsumerState<_RenewPaymentSheet> {
                 const SizedBox(width: OpenVtsSpacing.sm),
                 Expanded(
                   child: OpenVtsButton(
-                    label: 'Renew',
+                    label: context.mobileText('Renew'),
                     height: 40,
                     isLoading: state.isRenewingPayment,
                     trailingIcon: Icons.check_rounded,
@@ -778,24 +796,56 @@ class _RenewPaymentSheetState extends ConsumerState<_RenewPaymentSheet> {
 
   Future<void> _submit() async {
     if (_selectedVehicleIds.isEmpty) {
-      ToastHelper.showError('Select at least one vehicle.', context: context);
+      ToastHelper.showError(
+        context.mobileText('Select at least one vehicle.'),
+        context: context,
+      );
       return;
     }
 
     final amount = _amountController.text.trim();
-    if (amount.isNotEmpty && num.tryParse(amount.replaceAll(',', '')) == null) {
-      ToastHelper.showError('Enter a valid amount.', context: context);
+    if (amount.isNotEmpty && !RegExp(r'^\d+(\.\d{1,2})?$').hasMatch(amount)) {
+      ToastHelper.showError(
+        context.mobileText('Enter a valid amount.'),
+        context: context,
+      );
       return;
     }
 
+    if (_selectedVehicleIds.length > 100) {
+      ToastHelper.showError(
+        context.mobileText('Renew up to 100 vehicles at a time.'),
+        context: context,
+      );
+      return;
+    }
+    final reason = _overrideReasonController.text.trim();
+    if (amount.isNotEmpty && (reason.length < 5 || reason.length > 500)) {
+      ToastHelper.showError(
+        context.mobileText('Enter an override reason of 5–500 characters.'),
+        context: context,
+      );
+      return;
+    }
+    final sortedIds = _selectedVehicleIds.toList()..sort();
+    final fingerprint =
+        '${sortedIds.join(',')}|$_paymentMode|${_referenceController.text.trim()}|$amount|$reason';
+    if (_lastPayload != fingerprint) {
+      _lastPayload = fingerprint;
+      _idempotencyKey = const Uuid().v4();
+    }
     final provider = adminUserDetailsControllerProvider(widget.userId);
-    final ok = await ref.read(provider.notifier).renewVehiclesPayment(
+    final ok = await ref
+        .read(provider.notifier)
+        .renewVehiclesPayment(
           AdminRenewVehiclesPaymentRequest(
             userId: widget.userId,
             vehicleIds: _selectedVehicleIds.toList(growable: false),
             paymentMode: _paymentMode,
             reference: _referenceController.text.trim(),
             amountOverride: amount,
+            overrideReason: amount.isEmpty ? null : reason,
+            idempotencyKey: _idempotencyKey,
           ),
         );
     if (!mounted) {
@@ -803,7 +853,10 @@ class _RenewPaymentSheetState extends ConsumerState<_RenewPaymentSheet> {
     }
 
     if (ok) {
-      ToastHelper.showSuccess('Vehicle renewal recorded.', context: context);
+      ToastHelper.showSuccess(
+        context.mobileText('Vehicle renewal recorded.'),
+        context: context,
+      );
       Navigator.of(context).pop();
     } else {
       ToastHelper.showError(
@@ -841,14 +894,18 @@ class _EstimateCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '$selectedCount selected',
+                  context.mobileText("{value1} selected", {
+                    'value1': (selectedCount).toString(),
+                  }),
                   style: OpenVtsTypography.label.copyWith(
                     color: colors.onSurface,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
                 Text(
-                  'Estimated total $estimateLabel',
+                  context.mobileText("Estimated total {value1}", {
+                    'value1': (estimateLabel).toString(),
+                  }),
                   style: OpenVtsTypography.meta.copyWith(
                     color: colors.onSurfaceVariant,
                     fontWeight: FontWeight.w700,
@@ -874,7 +931,10 @@ class _PaymentModeField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Payment mode', style: OpenVtsTypography.label),
+        Text(
+          context.mobileText('Payment mode'),
+          style: OpenVtsTypography.label,
+        ),
         const SizedBox(height: OpenVtsSpacing.xs),
         DropdownButtonFormField<String>(
           initialValue: value,
@@ -1023,7 +1083,7 @@ class _PaymentDetailsSheet extends StatelessWidget {
         ),
         const SizedBox(height: OpenVtsSpacing.sm),
         _DetailsCard(
-          title: 'Details',
+          title: context.mobileText('Details'),
           rows: [
             _DetailRowData('Transaction ID', _displayValue(payment.id)),
             _DetailRowData('Date', _dateTimeText(payment.createdAt)),
@@ -1043,7 +1103,7 @@ class _PaymentDetailsSheet extends StatelessWidget {
           )
         else
           _DetailsCard(
-            title: 'Vehicle / Plan',
+            title: context.mobileText('Vehicle / Plan'),
             rows: [
               _DetailRowData(
                 'Vehicle',
@@ -1096,7 +1156,9 @@ class _RenewalDetailsSection extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Renewed Vehicles (${summaries.length})',
+            context.mobileText("Renewed Vehicles ({value1})", {
+              'value1': (summaries.length).toString(),
+            }),
             style: OpenVtsTypography.label.copyWith(
               color: colors.onSurface,
               fontWeight: FontWeight.w800,
@@ -1104,9 +1166,7 @@ class _RenewalDetailsSection extends StatelessWidget {
           ),
           const SizedBox(height: OpenVtsSpacing.sm),
           for (int i = 0; i < summaries.length; i++) ...[
-            if (i > 0) ...[
-              const Divider(height: OpenVtsSpacing.md),
-            ],
+            if (i > 0) ...[const Divider(height: OpenVtsSpacing.md)],
             _RenewalVehicleDetails(
               index: i + 1,
               summary: summaries[i],
@@ -1145,19 +1205,25 @@ class _RenewalVehicleDetails extends StatelessWidget {
     return Column(
       children: [
         _DetailRow(
-            row: _DetailRowData('Vehicle $index', _displayValue(vehicleName))),
+          row: _DetailRowData('Vehicle $index', _displayValue(vehicleName)),
+        ),
         _DetailRow(row: _DetailRowData('IMEI', _displayValue(imei))),
         _DetailRow(row: _DetailRowData('Plan', _displayValue(planName))),
         if (summary.price != '0' && summary.price.isNotEmpty)
           _DetailRow(
-              row: _DetailRowData('Price', _formatAmount(summary.price))),
+            row: _DetailRowData('Price', _formatAmount(summary.price)),
+          ),
         if (summary.durationDays != null)
           _DetailRow(
-              row: _DetailRowData('Duration', '${summary.durationDays} days')),
+            row: _DetailRowData('Duration', '${summary.durationDays} days'),
+          ),
         if (summary.newSecondaryExpiry != null)
           _DetailRow(
-              row: _DetailRowData(
-                  'New Expiry', _dateText(summary.newSecondaryExpiry))),
+            row: _DetailRowData(
+              'New Expiry',
+              _dateText(summary.newSecondaryExpiry),
+            ),
+          ),
       ],
     );
   }
@@ -1250,7 +1316,7 @@ class _MetaJsonCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Meta',
+            context.mobileText('Meta'),
             style: OpenVtsTypography.label.copyWith(
               color: colors.onSurface,
               fontWeight: FontWeight.w800,
@@ -1282,8 +1348,8 @@ class _StatusPill extends StatelessWidget {
       icon: _isSuccessStatus(status)
           ? Icons.check_rounded
           : _isFailedStatus(status)
-              ? Icons.error_outline_rounded
-              : Icons.pending_outlined,
+          ? Icons.error_outline_rounded
+          : Icons.pending_outlined,
       label: _statusLabel(status),
       color: color,
     );
@@ -1291,11 +1357,7 @@ class _StatusPill extends StatelessWidget {
 }
 
 class _MetaPill extends StatelessWidget {
-  const _MetaPill({
-    required this.icon,
-    required this.label,
-    this.color,
-  });
+  const _MetaPill({required this.icon, required this.label, this.color});
 
   final IconData icon;
   final String label;
@@ -1388,7 +1450,9 @@ class _SectionLoader extends StatelessWidget {
           ),
           const SizedBox(width: OpenVtsSpacing.sm),
           Text(
-            'Loading $title',
+            context.mobileText("Loading {value1}", {
+              'value1': (title).toString(),
+            }),
             style: OpenVtsTypography.label.copyWith(
               color: colors.onSurfaceVariant,
               fontWeight: FontWeight.w700,
@@ -1424,7 +1488,7 @@ class _SectionErrorCard extends StatelessWidget {
               const SizedBox(width: OpenVtsSpacing.xs),
               Expanded(
                 child: Text(
-                  'Unable to load payments',
+                  context.mobileText('Unable to load payments'),
                   style: OpenVtsTypography.label.copyWith(
                     color: colors.onSurface,
                     fontWeight: FontWeight.w800,
@@ -1442,7 +1506,7 @@ class _SectionErrorCard extends StatelessWidget {
           ),
           const SizedBox(height: OpenVtsSpacing.sm),
           OpenVtsButton(
-            label: 'Retry',
+            label: context.mobileText('Retry'),
             height: 34,
             variant: OpenVtsButtonVariant.secondary,
             onPressed: onRetry,
@@ -1622,9 +1686,11 @@ String _statusLabel(String value) {
   }
   return normalized
       .split('_')
-      .map((part) => part.isEmpty
-          ? part
-          : '${part.substring(0, 1)}${part.substring(1).toLowerCase()}')
+      .map(
+        (part) => part.isEmpty
+            ? part
+            : '${part.substring(0, 1)}${part.substring(1).toLowerCase()}',
+      )
       .join(' ');
 }
 

@@ -3,16 +3,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/config/app_config.dart';
-import '../controllers/auth_controller.dart';
 import '../../../core/providers/core_providers.dart';
 import '../../../core/theme/open_vts_colors.dart';
 import '../../../core/theme/open_vts_spacing.dart';
 import '../../../core/theme/open_vts_typography.dart';
+import '../../../shared/helpers/mobile_text.dart';
 import '../../../shared/helpers/toast_helper.dart';
 import '../../../shared/widgets/open_vts_button.dart';
 import '../../../shared/widgets/open_vts_card.dart';
 import '../../../shared/widgets/open_vts_page_scaffold.dart';
 import '../../../shared/widgets/open_vts_text_field.dart';
+import '../controllers/auth_controller.dart';
 
 class ApiBaseUrlSettingsScreen extends ConsumerStatefulWidget {
   const ApiBaseUrlSettingsScreen({super.key});
@@ -42,50 +43,77 @@ class _ApiBaseUrlSettingsScreenState
 
   Future<void> _save() async {
     if (_saving || _formKey.currentState?.validate() != true) return;
-    await _changeServer(_urlController.text.trim());
+    await _changeServer(_urlController.text, reset: false);
   }
 
   Future<void> _reset() async {
     if (_saving) return;
-    await _changeServer(ref.read(apiBaseUrlProvider.notifier).defaultUrl, reset: true);
+    await _changeServer(AppConfig.defaultApiBaseUrl, reset: true);
   }
 
-  Future<void> _changeServer(String url, {bool reset = false}) async {
+  Future<void> _changeServer(String value, {required bool reset}) async {
     setState(() => _saving = true);
-    // Read both controllers before logout rebuilds the authenticated subtree.
-    final server = ref.read(apiBaseUrlProvider.notifier);
-    final auth = ref.read(authControllerProvider.notifier);
     try {
-      if (url != ref.read(apiBaseUrlProvider)) {
-        // Deregister push and remove credentials against the OLD server first.
-        await auth.logoutAllRoles();
-      }
-      if (reset) {
-        await server.resetToDefault();
-      } else {
-        await server.saveCustomUrl(url);
+      final controller = ref.read(apiBaseUrlProvider.notifier);
+      final next = reset
+          ? controller.defaultUrl
+          : ApiBaseUrlController.normalizeUrl(value);
+      if (next != ref.read(apiBaseUrlProvider)) {
+        // Credentials are scoped to the server that issued them. Cancel pending
+        // authentication and clear every local role before changing the origin.
+        await ref
+            .read(authControllerProvider.notifier)
+            .logoutAllRoles(deregisterPush: false, showLoading: false);
       }
       if (!mounted) return;
-      _urlController.text = url;
-      ToastHelper.show(context, 'Server URL updated. Sign in to continue.');
-      Navigator.of(context).pop();
+      if (reset) {
+        await controller.resetToDefault();
+      } else {
+        await controller.saveCustomUrl(value);
+      }
+      if (!mounted) return;
+      _urlController.text = next;
+      ToastHelper.show(
+        context,
+        reset ? 'Server URL reset to default' : 'Server URL updated',
+      );
+      if (!reset) Navigator.of(context).pop();
     } catch (_) {
-      if (mounted) ToastHelper.showError('Could not update the server URL.');
+      if (mounted) {
+        ToastHelper.showError(
+          context.mobileText('Unable to update the server URL.'),
+          context: context,
+        );
+      }
     } finally {
       if (mounted) setState(() => _saving = false);
     }
   }
 
-  String? _validateUrl(String? value) => AppConfig.validateApiBaseUrl(value ?? '');
+  String? _validateUrl(String? value) {
+    final trimmed = value?.trim() ?? '';
+    if (trimmed.isEmpty) return 'Enter a server URL';
+
+    final uri = Uri.tryParse(trimmed);
+    final hasValidScheme = uri?.scheme == 'http' || uri?.scheme == 'https';
+
+    if (uri == null || !uri.isAbsolute || !hasValidScheme || uri.host.isEmpty) {
+      return 'Enter a valid URL (e.g. http://192.168.1.10:3000/api)';
+    }
+
+    if (uri.userInfo.isNotEmpty || uri.hasQuery || uri.hasFragment) {
+      return 'Enter a server URL without credentials, query parameters or a fragment.';
+    }
+    return null;
+  }
 
   @override
   Widget build(BuildContext context) {
     final activeUrl = ref.watch(apiBaseUrlProvider);
-    final defaultUrl = ref.read(apiBaseUrlProvider.notifier).defaultUrl;
-    final isUsingDefault = activeUrl == defaultUrl;
+    final isUsingDefault = activeUrl == AppConfig.defaultApiBaseUrl;
 
     return OpenVtsPageScaffold(
-      title: 'Server URL',
+      title: context.mobileText('Server URL'),
       body: Form(
         key: _formKey,
         child: SingleChildScrollView(
@@ -97,9 +125,9 @@ class _ApiBaseUrlSettingsScreenState
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     OpenVtsTextField(
-                      label: 'Server URL',
+                      label: context.mobileText('Server URL'),
                       controller: _urlController,
-                      hintText: 'https://your-server.example/api',
+                      hintText: 'http://192.168.1.10:3000/api',
                       keyboardType: TextInputType.url,
                       textInputAction: TextInputAction.done,
                       prefixIcon: Icons.dns_rounded,
@@ -108,7 +136,9 @@ class _ApiBaseUrlSettingsScreenState
                     ),
                     const SizedBox(height: OpenVtsSpacing.sm),
                     Text(
-                      'Include the full path, e.g. https://your-server.example/api',
+                      context.mobileText(
+                        'Include the full path, e.g. http://192.168.1.10:3000/api',
+                      ),
                       style: OpenVtsTypography.meta.copyWith(
                         color: OpenVtsColors.textSecondary,
                       ),
@@ -116,7 +146,9 @@ class _ApiBaseUrlSettingsScreenState
                     if (kIsWeb) ...[
                       const SizedBox(height: OpenVtsSpacing.xs),
                       Text(
-                        'Web browsers require the server to allow cross-origin requests (CORS). If login fails with a connection error, enable CORS on your server.',
+                        context.mobileText(
+                          'Web browsers require the server to allow cross-origin requests (CORS). If login fails with a connection error, enable CORS on your server.',
+                        ),
                         style: OpenVtsTypography.meta.copyWith(
                           color: OpenVtsColors.textSecondary,
                         ),
@@ -127,7 +159,9 @@ class _ApiBaseUrlSettingsScreenState
                       GestureDetector(
                         onTap: _saving ? null : _reset,
                         child: Text(
-                          'Reset to default ($defaultUrl)',
+                          context.mobileText("Reset to default ({value1})", {
+                            'value1': (AppConfig.defaultApiBaseUrl).toString(),
+                          }),
                           style: OpenVtsTypography.meta.copyWith(
                             color: OpenVtsColors.textSecondary,
                             decoration: TextDecoration.underline,
@@ -140,7 +174,7 @@ class _ApiBaseUrlSettingsScreenState
               ),
               const SizedBox(height: OpenVtsSpacing.lg),
               OpenVtsButton(
-                label: 'Save',
+                label: context.mobileText('Save'),
                 isLoading: _saving,
                 onPressed: _save,
               ),

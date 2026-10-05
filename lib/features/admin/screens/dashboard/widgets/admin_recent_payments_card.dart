@@ -6,6 +6,7 @@ import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../core/utils/date_time_formatter.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../models/admin_dashboard_model.dart';
 import 'admin_dashboard_list_card.dart';
 
@@ -24,11 +25,11 @@ class AdminRecentPaymentsCard extends ConsumerWidget {
     final formatter = ref.watch(appDateFormatterProvider);
 
     return AdminDashboardListCard(
-      title: 'Recent Payments',
+      title: context.mobileText('Recent Payments'),
       icon: Icons.credit_card_rounded,
       viewAllRoute: RoutePaths.adminPayments,
       emptyTitle: 'No recent payments',
-      emptyMessage: 'Payment activity will appear here.',
+      emptyMessage: context.mobileText('Payment activity will appear here.'),
       itemCount: payments.length,
       itemBuilder: (context, index) {
         return _RecentPaymentRow(
@@ -55,8 +56,9 @@ class _RecentPaymentRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final status = _paymentStatus(payment.status);
-    final currency =
-        payment.currency.isNotEmpty ? payment.currency : fallbackCurrency;
+    final currency = payment.currency.isNotEmpty
+        ? payment.currency
+        : fallbackCurrency;
 
     return Padding(
       padding: const EdgeInsets.symmetric(
@@ -81,8 +83,10 @@ class _RecentPaymentRow extends StatelessWidget {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  adminDashboardRelativeDate(payment.createdAt,
-                      formatter: formatter),
+                  adminDashboardRelativeDate(
+                    payment.createdAt,
+                    formatter: formatter,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: OpenVtsTypography.meta.copyWith(

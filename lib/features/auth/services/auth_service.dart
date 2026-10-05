@@ -9,7 +9,7 @@ import '../../../shared/models/user_role.dart';
 import '../models/current_user.dart';
 import '../models/login_request.dart';
 import '../models/login_response.dart';
-import '../models/mfa_login_challenge.dart';
+import '../models/mfa_challenge.dart';
 
 class AuthService {
   AuthService(this._apiClient);
@@ -55,54 +55,38 @@ class AuthService {
     }
 
     final response = await _apiClient.post<Map<String, dynamic>>(
-      ApiEndpoints.auth.login,
-      data: request.toJson(),
-      parser: _mapPayload,
-    );
+        ApiEndpoints.auth.login,
+        data: request.toJson(),
+        parser: _mapPayload);
     if (response.data['mfaRequired'] == true) {
-      throw MfaLoginChallenge.fromJson(response.data);
+      throw MfaRequiredException(MfaChallenge.fromJson(response.data));
     }
     return _validatedLogin(response.data);
   }
 
-  Future<LoginResponse> verifyMfaLogin({
-    required String challengeToken,
-    required String code,
-  }) async {
+  Future<LoginResponse> verifyMfaLogin(
+      MfaChallenge challenge, String code) async {
+    if (challenge.isExpired) {
+      throw const ApiException(
+          message: 'Sign-in expired. Enter your password again.');
+    }
     final response = await _apiClient.post<Map<String, dynamic>>(
-      ApiEndpoints.auth.verifyMfaLogin,
-      data: {'challengeToken': challengeToken, 'code': code.trim()},
-      parser: _mapPayload,
-    );
+        AuthSecurityEndpoints.verifyLogin,
+        data: {'challengeToken': challenge.token, 'code': code.trim()},
+        parser: _mapPayload);
     return _validatedLogin(response.data);
   }
 
-  static LoginResponse _validatedLogin(Map<String, dynamic> data) {
-    final result = LoginResponse.fromJson(data);
-    if (result.accessToken.isEmpty || result.refreshToken.isEmpty ||
-        result.user.id.isEmpty) {
-      throw const ApiException(message: 'Login response is incomplete.');
+  LoginResponse _validatedLogin(Map<String, dynamic> payload) {
+    final result = LoginResponse.fromJson(payload);
+    if (result.accessToken.isEmpty ||
+        result.refreshToken.isEmpty ||
+        result.user.id.isEmpty ||
+        result.user.role == UserRole.unknown) {
+      throw const ApiException(
+          message: 'The server returned an invalid account session.');
     }
     return result;
-  }
-
-  /// The supplied backend closes accounts recoverably; it does not erase data.
-  Future<void> closeAccount({
-    required String currentPassword,
-    String? code,
-  }) async {
-    final response = await _apiClient.delete<Map<String, dynamic>>(
-      ApiEndpoints.auth.account,
-      options: Options(receiveTimeout: const Duration(seconds: 30)),
-      data: {
-        'currentPassword': currentPassword,
-        if (code != null && code.trim().isNotEmpty) 'code': code.trim(),
-      },
-      parser: _mapPayload,
-    );
-    if (response.data['deleted'] != true) {
-      throw const ApiException(message: 'The server did not confirm account closure.');
-    }
   }
 
   Future<String> requestPasswordReset(String identifier) async {
@@ -134,9 +118,11 @@ class AuthService {
     if (normalizedToken.isEmpty) {
       throw const ApiException(message: 'Enter a valid password reset token.');
     }
-    if (newPassword.length < 6 || newPassword.length > 35) {
+    if (newPassword.length < 6 ||
+        newPassword.length > 35 ||
+        newPassword.runes.any((r) => r > 127)) {
       throw const ApiException(
-        message: 'Password must contain between 6 and 35 characters.',
+        message: 'Password must contain between 6 and 35 English characters.',
       );
     }
     if (AppConfig.useMockData) {
@@ -262,8 +248,15 @@ class AuthService {
         return ApiEndpoints.superadmin.profile;
       case UserRole.admin:
         return ApiEndpoints.admin.profile;
+      case UserRole.team:
+        return AuthSecurityEndpoints.teamProfile;
+      case UserRole.driver:
+        return AuthSecurityEndpoints.driverProfile;
+      case UserRole.subuser:
       case UserRole.user:
         return ApiEndpoints.user.profile;
+      case UserRole.unknown:
+        throw const ApiException(message: 'Unsupported account role.');
     }
   }
 
@@ -273,8 +266,14 @@ class AuthService {
         return ApiEndpoints.superadmin.uploadProfile(currentUser.id);
       case UserRole.admin:
         return ApiEndpoints.admin.uploadProfile;
+      case UserRole.subuser:
       case UserRole.user:
         return ApiEndpoints.user.uploadProfile;
+      case UserRole.team:
+      case UserRole.driver:
+      case UserRole.unknown:
+        throw const ApiException(
+            message: 'Profile photo upload is unavailable for this role.');
     }
   }
 

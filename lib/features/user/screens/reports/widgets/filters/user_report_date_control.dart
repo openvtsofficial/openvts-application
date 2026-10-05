@@ -5,6 +5,7 @@ import '../../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../../shared/helpers/mobile_text.dart';
 import '../../../../models/user_report_model.dart';
 import '../../../../models/user_report_state.dart';
 
@@ -35,22 +36,24 @@ class UserReportDateControl extends StatelessWidget {
   Widget build(BuildContext context) {
     if (reportKey.usesDateOnly) {
       return _DateOnlyControl(
-          dateRange: dateRange,
-          onChanged: onChanged,
-          disabled: disabled,
-          startError: startError,
-          endError: endError,
-          rangeError: rangeError,
-          maxDays: reportKey.maxDays);
+        dateRange: dateRange,
+        onChanged: onChanged,
+        disabled: disabled,
+        startError: startError,
+        endError: endError,
+        rangeError: rangeError,
+        maxDays: reportKey.maxDays,
+      );
     } else {
       return _DateTimeControl(
-          dateRange: dateRange,
-          onChanged: onChanged,
-          disabled: disabled,
-          startError: startError,
-          endError: endError,
-          rangeError: rangeError,
-          maxDays: reportKey.maxDays);
+        dateRange: dateRange,
+        onChanged: onChanged,
+        disabled: disabled,
+        startError: startError,
+        endError: endError,
+        rangeError: rangeError,
+        maxDays: reportKey.maxDays,
+      );
     }
   }
 }
@@ -60,14 +63,15 @@ class UserReportDateControl extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _DateOnlyControl extends StatelessWidget {
-  const _DateOnlyControl(
-      {required this.dateRange,
-      required this.onChanged,
-      required this.disabled,
-      this.startError,
-      this.endError,
-      this.rangeError,
-      required this.maxDays});
+  const _DateOnlyControl({
+    required this.dateRange,
+    required this.onChanged,
+    required this.disabled,
+    this.startError,
+    this.endError,
+    this.rangeError,
+    required this.maxDays,
+  });
   final ReportDateRange? dateRange;
   final ValueChanged<ReportDateRange?> onChanged;
   final bool disabled;
@@ -90,7 +94,7 @@ class _DateOnlyControl extends StatelessWidget {
           children: [
             Expanded(
               child: _DateField(
-                label: 'Start date',
+                label: context.mobileText('Start date'),
                 value: _startDate,
                 error: startError,
                 disabled: disabled,
@@ -100,7 +104,7 @@ class _DateOnlyControl extends StatelessWidget {
             const SizedBox(width: OpenVtsSpacing.sm),
             Expanded(
               child: _DateField(
-                label: 'End date',
+                label: context.mobileText('End date'),
                 value: _endDate,
                 error: endError,
                 disabled: disabled,
@@ -111,15 +115,21 @@ class _DateOnlyControl extends StatelessWidget {
         ),
         if (rangeError != null) ...[
           const SizedBox(height: 4),
-          Text(rangeError!,
-              style:
-                  OpenVtsTypography.meta.copyWith(color: OpenVtsColors.error)),
+          Text(
+            rangeError!,
+            style: OpenVtsTypography.meta.copyWith(color: OpenVtsColors.error),
+          ),
         ],
         Padding(
           padding: const EdgeInsets.only(top: 4),
-          child: Text('Max $maxDays days for this report type',
-              style: OpenVtsTypography.meta
-                  .copyWith(color: OpenVtsColors.textSecondary)),
+          child: Text(
+            context.mobileText("Max {value1} days for this report type", {
+              'value1': (maxDays).toString(),
+            }),
+            style: OpenVtsTypography.meta.copyWith(
+              color: OpenVtsColors.textSecondary,
+            ),
+          ),
         ),
       ],
     );
@@ -138,11 +148,19 @@ class _DateOnlyControl extends StatelessWidget {
     final fmt = DateFormat('yyyy-MM-dd');
     final pickedStr = fmt.format(picked);
     if (isStart) {
-      onChanged(ReportDateRange.dateOnly(
-          startDate: pickedStr, endDate: _endDate ?? pickedStr));
+      onChanged(
+        ReportDateRange.dateOnly(
+          startDate: pickedStr,
+          endDate: _endDate ?? pickedStr,
+        ),
+      );
     } else {
-      onChanged(ReportDateRange.dateOnly(
-          startDate: _startDate ?? pickedStr, endDate: pickedStr));
+      onChanged(
+        ReportDateRange.dateOnly(
+          startDate: _startDate ?? pickedStr,
+          endDate: pickedStr,
+        ),
+      );
     }
   }
 
@@ -162,14 +180,15 @@ class _DateOnlyControl extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _DateTimeControl extends StatelessWidget {
-  const _DateTimeControl(
-      {required this.dateRange,
-      required this.onChanged,
-      required this.disabled,
-      this.startError,
-      this.endError,
-      this.rangeError,
-      required this.maxDays});
+  const _DateTimeControl({
+    required this.dateRange,
+    required this.onChanged,
+    required this.disabled,
+    this.startError,
+    this.endError,
+    this.rangeError,
+    required this.maxDays,
+  });
   final ReportDateRange? dateRange;
   final ValueChanged<ReportDateRange?> onChanged;
   final bool disabled;
@@ -194,7 +213,7 @@ class _DateTimeControl extends StatelessWidget {
           children: [
             Expanded(
               child: _DateTimeField(
-                label: 'Start',
+                label: context.mobileText('Start'),
                 value: _from?.toLocal(),
                 error: startError,
                 disabled: disabled,
@@ -204,7 +223,7 @@ class _DateTimeControl extends StatelessWidget {
             const SizedBox(width: OpenVtsSpacing.sm),
             Expanded(
               child: _DateTimeField(
-                label: 'End',
+                label: context.mobileText('End'),
                 value: _to?.toLocal(),
                 error: endError,
                 disabled: disabled,
@@ -215,39 +234,55 @@ class _DateTimeControl extends StatelessWidget {
         ),
         if (rangeError != null) ...[
           const SizedBox(height: 4),
-          Text(rangeError!,
-              style:
-                  OpenVtsTypography.meta.copyWith(color: OpenVtsColors.error)),
+          Text(
+            rangeError!,
+            style: OpenVtsTypography.meta.copyWith(color: OpenVtsColors.error),
+          ),
         ],
         Padding(
           padding: const EdgeInsets.only(top: 4),
-          child: Text('Max $maxDays days for this report type',
-              style: OpenVtsTypography.meta
-                  .copyWith(color: OpenVtsColors.textSecondary)),
+          child: Text(
+            context.mobileText("Max {value1} days for this report type", {
+              'value1': (maxDays).toString(),
+            }),
+            style: OpenVtsTypography.meta.copyWith(
+              color: OpenVtsColors.textSecondary,
+            ),
+          ),
         ),
       ],
     );
   }
 
-  Future<void> _pickDateTime(BuildContext context,
-      {required bool isStart}) async {
+  Future<void> _pickDateTime(
+    BuildContext context, {
+    required bool isStart,
+  }) async {
     final now = DateTime.now();
     final initial = (isStart ? _from?.toLocal() : _to?.toLocal()) ?? now;
 
     final date = await showDatePicker(
-        context: context,
-        initialDate: initial,
-        firstDate: DateTime(2015),
-        lastDate: now.add(const Duration(days: 1)));
+      context: context,
+      initialDate: initial,
+      firstDate: DateTime(2015),
+      lastDate: now.add(const Duration(days: 1)),
+    );
     if (date == null) return;
     if (!context.mounted) return;
 
     final time = await showTimePicker(
-        context: context, initialTime: TimeOfDay.fromDateTime(initial));
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(initial),
+    );
     if (time == null) return;
 
-    final picked =
-        DateTime(date.year, date.month, date.day, time.hour, time.minute);
+    final picked = DateTime(
+      date.year,
+      date.month,
+      date.day,
+      time.hour,
+      time.minute,
+    );
     final from = isStart
         ? picked
         : (_from ?? DateTime(date.year, date.month, date.day, 0, 1));
@@ -255,9 +290,12 @@ class _DateTimeControl extends StatelessWidget {
         ? (_to ?? DateTime(date.year, date.month, date.day, 23, 59))
         : picked;
 
-    onChanged(ReportDateRange.dateTime(
+    onChanged(
+      ReportDateRange.dateTime(
         from: from.toUtc().toIso8601String(),
-        to: to.toUtc().toIso8601String()));
+        to: to.toUtc().toIso8601String(),
+      ),
+    );
   }
 }
 
@@ -266,12 +304,13 @@ class _DateTimeControl extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _DateField extends StatelessWidget {
-  const _DateField(
-      {required this.label,
-      required this.value,
-      required this.disabled,
-      required this.onTap,
-      this.error});
+  const _DateField({
+    required this.label,
+    required this.value,
+    required this.disabled,
+    required this.onTap,
+    this.error,
+  });
   final String label;
   final String? value;
   final bool disabled;
@@ -285,50 +324,61 @@ class _DateField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label,
-            style: OpenVtsTypography.meta.copyWith(
-                fontWeight: FontWeight.w600,
-                color: isDark
-                    ? OpenVtsColors.darkTextSecondary
-                    : OpenVtsColors.textSecondary)),
+        Text(
+          label,
+          style: OpenVtsTypography.meta.copyWith(
+            fontWeight: FontWeight.w600,
+            color: isDark
+                ? OpenVtsColors.darkTextSecondary
+                : OpenVtsColors.textSecondary,
+          ),
+        ),
         const SizedBox(height: 4),
         GestureDetector(
           onTap: disabled ? null : onTap,
           child: Container(
             padding: const EdgeInsets.symmetric(
-                horizontal: OpenVtsSpacing.sm, vertical: 10),
+              horizontal: OpenVtsSpacing.sm,
+              vertical: 10,
+            ),
             decoration: BoxDecoration(
               color: isDark ? OpenVtsColors.darkSurface : OpenVtsColors.white,
               borderRadius: BorderRadius.circular(OpenVtsRadius.md),
               border: Border.all(
-                  color: hasError
-                      ? OpenVtsColors.error
-                      : (isDark
+                color: hasError
+                    ? OpenVtsColors.error
+                    : (isDark
                           ? OpenVtsColors.darkBorder
                           : OpenVtsColors.border),
-                  width: hasError ? 1.4 : 1),
+                width: hasError ? 1.4 : 1,
+              ),
             ),
             child: Row(
               children: [
                 const Icon(Icons.calendar_today_rounded, size: 14),
                 const SizedBox(width: 6),
                 Expanded(
-                    child: Text(value ?? 'Select',
-                        style: OpenVtsTypography.body.copyWith(
-                            color: value == null
-                                ? (isDark
-                                    ? OpenVtsColors.darkTextSecondary
-                                    : OpenVtsColors.textSecondary)
-                                : null))),
+                  child: Text(
+                    value ?? 'Select',
+                    style: OpenVtsTypography.body.copyWith(
+                      color: value == null
+                          ? (isDark
+                                ? OpenVtsColors.darkTextSecondary
+                                : OpenVtsColors.textSecondary)
+                          : null,
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
         ),
         if (hasError) ...[
           const SizedBox(height: 3),
-          Text(error!,
-              style:
-                  OpenVtsTypography.meta.copyWith(color: OpenVtsColors.error)),
+          Text(
+            error!,
+            style: OpenVtsTypography.meta.copyWith(color: OpenVtsColors.error),
+          ),
         ],
       ],
     );
@@ -336,12 +386,13 @@ class _DateField extends StatelessWidget {
 }
 
 class _DateTimeField extends StatelessWidget {
-  const _DateTimeField(
-      {required this.label,
-      required this.value,
-      required this.disabled,
-      required this.onTap,
-      this.error});
+  const _DateTimeField({
+    required this.label,
+    required this.value,
+    required this.disabled,
+    required this.onTap,
+    this.error,
+  });
   final String label;
   final DateTime? value;
   final bool disabled;
@@ -356,50 +407,61 @@ class _DateTimeField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label,
-            style: OpenVtsTypography.meta.copyWith(
-                fontWeight: FontWeight.w600,
-                color: isDark
-                    ? OpenVtsColors.darkTextSecondary
-                    : OpenVtsColors.textSecondary)),
+        Text(
+          label,
+          style: OpenVtsTypography.meta.copyWith(
+            fontWeight: FontWeight.w600,
+            color: isDark
+                ? OpenVtsColors.darkTextSecondary
+                : OpenVtsColors.textSecondary,
+          ),
+        ),
         const SizedBox(height: 4),
         GestureDetector(
           onTap: disabled ? null : onTap,
           child: Container(
             padding: const EdgeInsets.symmetric(
-                horizontal: OpenVtsSpacing.sm, vertical: 10),
+              horizontal: OpenVtsSpacing.sm,
+              vertical: 10,
+            ),
             decoration: BoxDecoration(
               color: isDark ? OpenVtsColors.darkSurface : OpenVtsColors.white,
               borderRadius: BorderRadius.circular(OpenVtsRadius.md),
               border: Border.all(
-                  color: hasError
-                      ? OpenVtsColors.error
-                      : (isDark
+                color: hasError
+                    ? OpenVtsColors.error
+                    : (isDark
                           ? OpenVtsColors.darkBorder
                           : OpenVtsColors.border),
-                  width: hasError ? 1.4 : 1),
+                width: hasError ? 1.4 : 1,
+              ),
             ),
             child: Row(
               children: [
                 const Icon(Icons.access_time_rounded, size: 14),
                 const SizedBox(width: 6),
                 Expanded(
-                    child: Text(fmt ?? 'Select',
-                        style: OpenVtsTypography.body.copyWith(
-                            color: fmt == null
-                                ? (isDark
-                                    ? OpenVtsColors.darkTextSecondary
-                                    : OpenVtsColors.textSecondary)
-                                : null))),
+                  child: Text(
+                    fmt ?? 'Select',
+                    style: OpenVtsTypography.body.copyWith(
+                      color: fmt == null
+                          ? (isDark
+                                ? OpenVtsColors.darkTextSecondary
+                                : OpenVtsColors.textSecondary)
+                          : null,
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
         ),
         if (hasError) ...[
           const SizedBox(height: 3),
-          Text(error!,
-              style:
-                  OpenVtsTypography.meta.copyWith(color: OpenVtsColors.error)),
+          Text(
+            error!,
+            style: OpenVtsTypography.meta.copyWith(color: OpenVtsColors.error),
+          ),
         ],
       ],
     );

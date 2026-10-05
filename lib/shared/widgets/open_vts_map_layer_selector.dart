@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/open_vts_colors.dart' as open_vts_colors;
+import '../../shared/helpers/mobile_text.dart';
 
 // ---------------------------------------------------------------------------
 // Layer option and selector button
@@ -39,6 +40,7 @@ enum MapLayerPreviewStyle {
 }
 
 const List<String> _googleTileSubdomains = ['mt0', 'mt1', 'mt2', 'mt3'];
+const List<String> _osmTileSubdomains = ['a', 'b', 'c'];
 const List<String> _cartoTileSubdomains = ['a', 'b', 'c', 'd'];
 
 const List<MapLayerOption> primaryMapLayerOptions = [
@@ -82,8 +84,8 @@ const List<MapLayerOption> detailMapLayerOptions = [
     id: 'osm',
     name: 'OpenStreetMap',
     shortLabel: 'OSM',
-    url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-    subdomains: <String>[],
+    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    subdomains: _osmTileSubdomains,
     previewStyle: MapLayerPreviewStyle.osm,
   ),
   MapLayerOption(
@@ -144,10 +146,7 @@ MapLayerOption? mapLayerOptionById(String? id) {
     return null;
   }
 
-  for (final layer in [
-    ...primaryMapLayerOptions,
-    ...detailMapLayerOptions,
-  ]) {
+  for (final layer in [...primaryMapLayerOptions, ...detailMapLayerOptions]) {
     if (layer.id == normalizedId) {
       return layer;
     }
@@ -204,7 +203,9 @@ class OpenVtsMapLayerSelectorButton extends StatelessWidget {
             color: open_vts_colors.OpenVtsColors.brandInk,
             shape: BoxShape.circle,
             border: Border.all(
-                color: open_vts_colors.OpenVtsColors.white, width: 2),
+              color: open_vts_colors.OpenVtsColors.white,
+              width: 2,
+            ),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.1),
@@ -266,8 +267,9 @@ class _MapLayerDrawerSheetState extends State<_MapLayerDrawerSheet> {
     return SafeArea(
       top: false,
       child: Padding(
-        padding:
-            EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
         child: ConstrainedBox(
           constraints: BoxConstraints(
             maxHeight: MediaQuery.of(context).size.height * 0.74,
@@ -297,7 +299,7 @@ class _MapLayerDrawerSheetState extends State<_MapLayerDrawerSheet> {
                         Row(
                           children: [
                             Text(
-                              'Map type',
+                              context.mobileText('Map type'),
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w700,
@@ -316,13 +318,16 @@ class _MapLayerDrawerSheetState extends State<_MapLayerDrawerSheet> {
                         const SizedBox(height: 4),
                         Row(
                           children: [
-                            for (var index = 0;
-                                index < primaryOptions.length;
-                                index++) ...[
+                            for (
+                              var index = 0;
+                              index < primaryOptions.length;
+                              index++
+                            ) ...[
                               Expanded(
                                 child: _MapLayerCard(
                                   option: primaryOptions[index],
-                                  isSelected: _selectedLayerId ==
+                                  isSelected:
+                                      _selectedLayerId ==
                                       primaryOptions[index].id,
                                   onTap: () =>
                                       _selectLayer(primaryOptions[index]),
@@ -335,13 +340,10 @@ class _MapLayerDrawerSheetState extends State<_MapLayerDrawerSheet> {
                           ],
                         ),
                         const SizedBox(height: 14),
-                        Divider(
-                          color: cs.outlineVariant,
-                          height: 1,
-                        ),
+                        Divider(color: cs.outlineVariant, height: 1),
                         const SizedBox(height: 16),
                         Text(
-                          'Map details',
+                          context.mobileText('Map details'),
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
@@ -355,11 +357,11 @@ class _MapLayerDrawerSheetState extends State<_MapLayerDrawerSheet> {
                           itemCount: detailOptions.length,
                           gridDelegate:
                               const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 4,
-                            crossAxisSpacing: 12,
-                            mainAxisSpacing: 14,
-                            childAspectRatio: 0.78,
-                          ),
+                                crossAxisCount: 4,
+                                crossAxisSpacing: 12,
+                                mainAxisSpacing: 14,
+                                childAspectRatio: 0.78,
+                              ),
                           itemBuilder: (context, index) {
                             final option = detailOptions[index];
                             return _MapLayerCard(
@@ -398,8 +400,9 @@ class _MapLayerCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final labelColor =
-        isSelected ? const Color(0xFF1293A6) : cs.onSurfaceVariant;
+    final labelColor = isSelected
+        ? const Color(0xFF1293A6)
+        : cs.onSurfaceVariant;
 
     return InkWell(
       onTap: onTap,
@@ -416,8 +419,9 @@ class _MapLayerCard extends StatelessWidget {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color:
-                      isSelected ? const Color(0xFF1293A6) : cs.outlineVariant,
+                  color: isSelected
+                      ? const Color(0xFF1293A6)
+                      : cs.outlineVariant,
                   width: isSelected ? 2 : 1,
                 ),
               ),

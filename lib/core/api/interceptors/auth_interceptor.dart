@@ -1,50 +1,77 @@
 import 'package:dio/dio.dart';
-
 import '../../storage/token_storage.dart';
+import 'refresh_token_interceptor.dart';
 
 class AuthInterceptor extends Interceptor {
-  AuthInterceptor(this._tokenStorage);
-
-  final TokenStorage _tokenStorage;
-
+  AuthInterceptor(this._storage);
+  final TokenStorage _storage;
   @override
   void onRequest(
-    RequestOptions options,
-    RequestInterceptorHandler handler,
-  ) async {
-    final base = Uri.tryParse(options.baseUrl);
-    final destination = options.uri;
-    final sameOrigin = base != null && base.hasAuthority &&
-        base.scheme == destination.scheme && base.host == destination.host &&
-        base.port == destination.port;
-    if (!sameOrigin || _isPublicRequest(options.path)) {
-      options.extra['skipAuthRefresh'] = true;
-      options.headers.removeWhere((name, _) => name.toLowerCase() == 'authorization');
+      RequestOptions options, RequestInterceptorHandler handler) async {
+    if (!_isApiRequest(options) ||
+        RefreshTokenInterceptor.isPublicAuthRequest(options.path)) {
+      _removeBearer(options);
       handler.next(options);
       return;
     }
-
-    var token = _tokenStorage.cachedActiveAccessToken;
-    if (token == null && !_tokenStorage.isCacheHydrated) {
-      await _tokenStorage.hydrateCache();
-      token = _tokenStorage.cachedActiveAccessToken;
-    }
-
-    if (token != null && token.isNotEmpty) {
-      options.headers['Authorization'] = 'Bearer $token';
-      final session = _tokenStorage.cachedActiveSession;
-      options.extra['authSessionRole'] = session?.role.apiValue;
-      options.extra['authSessionUserId'] = session?.user.id;
-      options.extra['authSessionToken'] = token;
-      options.extra['authSessionRevision'] = _tokenStorage.sessionRevision;
+    if (!_storage.isCacheHydrated) await _storage.hydrateCache();
+    final session = _storage.cachedActiveSession;
+    if (session != null && session.accessToken.isNotEmpty) {
+      if ((options.extra['authRole'] != null &&
+              options.extra['authRole'] != session.role.apiValue) ||
+          (options.extra['authUserId'] != null &&
+              options.extra['authUserId'] != session.user.id)) {
+        handler.reject(DioException(
+            requestOptions: options,
+            type: DioExceptionType.cancel,
+            message: 'Account session changed.'));
+        return;
+      }
+      options.headers['Authorization'] = 'Bearer ${session.accessToken}';
+      options.extra['authRole'] = session.role.apiValue;
+      options.extra['authUserId'] = session.user.id;
+    } else {
+      _removeBearer(options);
     }
     handler.next(options);
   }
 
-  bool _isPublicRequest(String value) {
-    final path = Uri.tryParse(value)?.path ?? value.split('?').first;
-    return path == '/demo' || path.startsWith('/demo/') ||
-        const ['/auth/login', '/auth/mfa/verify-login', '/auth/refresh-token',
-          '/auth/forgot-password', '/auth/reset-password'].any(path.endsWith);
+  void _removeBearer(RequestOptions options) {
+    for (final key in options.headers.keys.toList(growable: false)) {
+      if (key.toLowerCase() == 'authorization') options.headers.remove(key);
+    }
+  }
+
+  bool _isApiRequest(RequestOptions options) {
+    final base = Uri.tryParse(options.baseUrl), target = options.uri;
+    if (base == null ||
+        !base.hasAuthority ||
+        !target.hasAuthority ||
+        target.origin != base.origin) {
+      return false;
+    }
+    final prefix = base.path.replaceAll(RegExp(r'/+$'), '');
+    return prefix.isEmpty ||
+        target.path == prefix ||
+        target.path.startsWith('$prefix/');
+  }
+
+  @override
+  void onResponse(
+      Response<dynamic> response, ResponseInterceptorHandler handler) {
+    final extra = response.requestOptions.extra;
+    if (extra['authRole'] != null) {
+      final active = _storage.cachedActiveSession;
+      if (active == null ||
+          active.role.apiValue != extra['authRole'] ||
+          active.user.id != extra['authUserId']) {
+        handler.reject(DioException(
+            requestOptions: response.requestOptions,
+            type: DioExceptionType.cancel,
+            message: 'Account session changed.'));
+        return;
+      }
+    }
+    handler.next(response);
   }
 }

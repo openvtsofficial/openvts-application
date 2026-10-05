@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../core/theme/open_vts_spacing.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 
 class UserLogoutCard extends StatelessWidget {
-  const UserLogoutCard({
-    required this.onLogout,
-    super.key,
-  });
+  const UserLogoutCard({required this.onLogout, super.key});
 
   final Future<void> Function() onLogout;
 
@@ -42,7 +40,7 @@ class UserLogoutCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Sign out',
+                      context.mobileText('Sign out'),
                       style: TextStyle(
                         fontSize: 13.5,
                         fontWeight: FontWeight.w600,
@@ -51,7 +49,7 @@ class UserLogoutCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 1),
                     Text(
-                      'End this session on this device.',
+                      context.mobileText('End this session on this device.'),
                       style: TextStyle(
                         fontSize: 11,
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -64,7 +62,7 @@ class UserLogoutCard extends StatelessWidget {
           ),
           const SizedBox(height: OpenVtsSpacing.sm),
           OpenVtsButton(
-            label: 'Logout',
+            label: context.mobileText('Logout'),
             variant: OpenVtsButtonVariant.secondary,
             height: 38,
             onPressed: () => onLogout(),

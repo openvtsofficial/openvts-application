@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../controllers/user_driver_details_controller.dart';
@@ -17,8 +18,11 @@ class UserDriverDeleteSheet extends ConsumerWidget {
     super.key,
   });
 
-  final AutoDisposeStateNotifierProvider<UserDriverDetailsController,
-      UserDriverDetailsState> provider;
+  final AutoDisposeStateNotifierProvider<
+    UserDriverDetailsController,
+    UserDriverDetailsState
+  >
+  provider;
   final UserDriver driver;
 
   @override
@@ -41,7 +45,9 @@ class UserDriverDeleteSheet extends ConsumerWidget {
           ),
           const SizedBox(height: OpenVtsSpacing.xs),
           Text(
-            'This action cannot be undone. The driver and related assignments will be removed.',
+            context.mobileText(
+              'This action cannot be undone. The driver and related assignments will be removed.',
+            ),
             style: OpenVtsTypography.body.copyWith(
               color: OpenVtsColors.textSecondary,
             ),
@@ -51,17 +57,18 @@ class UserDriverDeleteSheet extends ConsumerWidget {
             children: [
               Expanded(
                 child: OpenVtsButton(
-                  label: 'Cancel',
+                  label: context.mobileText('Cancel'),
                   height: 40,
                   variant: OpenVtsButtonVariant.secondary,
-                  onPressed:
-                      isDeleting ? null : () => Navigator.of(context).pop(),
+                  onPressed: isDeleting
+                      ? null
+                      : () => Navigator.of(context).pop(),
                 ),
               ),
               const SizedBox(width: OpenVtsSpacing.sm),
               Expanded(
                 child: OpenVtsButton(
-                  label: 'Delete',
+                  label: context.mobileText('Delete'),
                   height: 40,
                   isLoading: isDeleting,
                   trailingIcon: Icons.delete_outline_rounded,

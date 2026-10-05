@@ -8,7 +8,9 @@ import '../../../../core/theme/open_vts_colors.dart';
 import '../../../../core/theme/open_vts_radius.dart';
 import '../../../../core/theme/open_vts_spacing.dart';
 import '../../../../core/theme/open_vts_typography.dart';
+import '../../../../shared/helpers/mobile_text.dart';
 import '../../../../shared/helpers/toast_helper.dart';
+import '../../../../shared/models/user_role.dart';
 import '../../../../shared/widgets/open_vts_bottom_sheet.dart';
 import '../../../../shared/widgets/open_vts_card.dart';
 import '../../../../shared/widgets/open_vts_detail_tab_strip.dart';
@@ -16,9 +18,11 @@ import '../../../../shared/widgets/open_vts_empty_state.dart';
 import '../../../../shared/widgets/open_vts_error_view.dart';
 import '../../../../shared/widgets/open_vts_loader.dart';
 import '../../../../shared/widgets/open_vts_page_scaffold.dart';
+import '../../../auth/controllers/auth_controller.dart';
 import '../../controllers/admin_providers.dart';
 import '../../models/admin_vehicle_model.dart';
 import '../../models/admin_vehicle_state.dart';
+import '../../widgets/admin_action_gate.dart';
 import 'widgets/admin_vehicle_commands_tab.dart';
 import 'widgets/admin_vehicle_config_tab.dart';
 import 'widgets/admin_vehicle_details_tab.dart';
@@ -27,6 +31,7 @@ import 'widgets/admin_vehicle_edit_sheet.dart';
 import 'widgets/admin_vehicle_events_tab.dart';
 import 'widgets/admin_vehicle_logs_tab.dart';
 import 'widgets/admin_vehicle_sensors_tab.dart';
+import 'widgets/admin_vehicle_service_sheet.dart';
 import 'widgets/admin_vehicle_users_tab.dart';
 
 class AdminVehicleDetailsScreen extends ConsumerStatefulWidget {
@@ -51,7 +56,8 @@ class _AdminVehicleDetailsScreenState
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final controller = ref.read(
-          adminVehicleDetailsControllerProvider(widget.vehicleId).notifier);
+        adminVehicleDetailsControllerProvider(widget.vehicleId).notifier,
+      );
       controller.loadInitial();
     });
   }
@@ -64,7 +70,8 @@ class _AdminVehicleDetailsScreenState
     final apiBaseUrl = ref.watch(apiBaseUrlProvider);
     final vehicle = state.vehicle;
 
-    final displayVehicle = vehicle?.primaryUser == null &&
+    final displayVehicle =
+        vehicle?.primaryUser == null &&
             widget.initialVehicle?.primaryUser != null
         ? vehicle?.copyWith(primaryUser: widget.initialVehicle!.primaryUser)
         : vehicle;
@@ -72,8 +79,8 @@ class _AdminVehicleDetailsScreenState
     final title = displayVehicle?.name.isNotEmpty == true
         ? displayVehicle!.name
         : (widget.initialVehicle?.name.isNotEmpty == true
-            ? widget.initialVehicle!.name
-            : 'Vehicle Details');
+              ? widget.initialVehicle!.name
+              : 'Vehicle Details');
 
     return OpenVtsPageScaffold(
       title: title,
@@ -86,16 +93,30 @@ class _AdminVehicleDetailsScreenState
         OpenVtsSpacing.xs,
       ),
       actions: [
+        if (ref.watch(authControllerProvider).user?.role == UserRole.admin)
+          IconButton(
+            tooltip: context.mobileText('Vehicle service'),
+            icon: const Icon(Icons.event_repeat_outlined),
+            onPressed: () => OpenVtsBottomSheet.show<void>(
+              context: context,
+              title: context.mobileText('Vehicle service'),
+              initialChildSize: 0.9,
+              minChildSize: 0.5,
+              maxChildSize: 0.96,
+              child: AdminVehicleServiceSheet(vehicleId: widget.vehicleId),
+            ),
+          ),
         Padding(
           padding: const EdgeInsets.only(right: OpenVtsSpacing.xxs),
           child: Center(
             child: _StatusChip(
-                isActive:
-                    displayVehicle?.isActive ?? vehicle?.isActive ?? true),
+              isActive: displayVehicle?.isActive ?? vehicle?.isActive ?? true,
+            ),
           ),
         ),
         _HeaderMenu(
-          isBusy: state.isUpdatingStatus ||
+          isBusy:
+              state.isUpdatingStatus ||
               state.isDeletingVehicle ||
               state.isUpdatingVehicle,
           onRefresh: () => controller.refreshCurrentTab(),
@@ -151,32 +172,39 @@ class _AdminVehicleDetailsScreenState
                     controller.setLogRange(from: from, to: to),
                 onLoadEvents: () => controller.loadEvents(),
                 onLoadMoreEvents: controller.loadMoreEvents,
-                onSetEventFilters: ({
-                  DateTime? from,
-                  DateTime? to,
-                  String? source,
-                  String? severity,
-                }) =>
-                    controller.applyEventFilters(
-                  from: from,
-                  to: to,
-                  source: source,
-                  severity: severity,
-                ),
+                onSetEventFilters:
+                    ({
+                      DateTime? from,
+                      DateTime? to,
+                      String? source,
+                      String? severity,
+                    }) => controller.applyEventFilters(
+                      from: from,
+                      to: to,
+                      source: source,
+                      severity: severity,
+                    ),
                 onClearEventFilters: controller.clearEventFilters,
                 onLoadCommands: controller.loadCommands,
-                onSendCommand: ({
-                  required String command,
-                  String? note,
-                }) =>
-                    controller.sendCommand(command: command, note: note),
+                onSendCommand:
+                    ({
+                      required String command,
+                      String? note,
+                      String? commandId,
+                    }) => controller.sendCommand(
+                      command: command,
+                      note: note,
+                      commandId: commandId,
+                    ),
                 onPollCommandStatus: controller.getCommandStatus,
                 onFetchCommandLog: controller.getCommandLog,
                 onLoadSensors: ({search}) =>
                     controller.loadSensors(search: search),
                 onCreateSensor: controller.createSensor,
                 onUpdateSensor: (sensorId, request) => controller.updateSensor(
-                    sensorId: sensorId, request: request),
+                  sensorId: sensorId,
+                  request: request,
+                ),
                 onDeleteSensor: controller.deleteSensor,
                 onRunSensor: (request) =>
                     controller.runSensor(request: request),
@@ -190,9 +218,9 @@ class _AdminVehicleDetailsScreenState
               ),
               const SizedBox(height: OpenVtsSpacing.lg),
             ] else
-              const OpenVtsEmptyState(
-                title: 'Vehicle unavailable',
-                message: 'Vehicle record is not available.',
+              OpenVtsEmptyState(
+                title: context.mobileText('Vehicle unavailable'),
+                message: context.mobileText('Vehicle record is not available.'),
               ),
           ],
         ),
@@ -209,7 +237,10 @@ class _AdminVehicleDetailsScreenState
   }
 
   Future<void> _onAction(
-      BuildContext context, WidgetRef ref, _Action action) async {
+    BuildContext context,
+    WidgetRef ref,
+    _Action action,
+  ) async {
     switch (action) {
       case _Action.edit:
         await _openEditSheet(context, ref);
@@ -228,7 +259,7 @@ class _AdminVehicleDetailsScreenState
 
     await OpenVtsBottomSheet.show<void>(
       context: context,
-      title: 'Edit Vehicle',
+      title: context.mobileText('Edit Vehicle'),
       initialChildSize: 0.9,
       minChildSize: 0.6,
       maxChildSize: 0.94,
@@ -245,7 +276,10 @@ class _AdminVehicleDetailsScreenState
               final next = innerRef.read(provider);
               if (next.sectionErrorMessage == null && context.mounted) {
                 Navigator.of(context).pop();
-                ToastHelper.showSuccess('Vehicle updated.', context: context);
+                ToastHelper.showSuccess(
+                  context.mobileText('Vehicle updated.'),
+                  context: context,
+                );
               } else if (context.mounted) {
                 ToastHelper.showError(
                   next.sectionErrorMessage ?? 'Unable to update vehicle.',
@@ -269,7 +303,9 @@ class _AdminVehicleDetailsScreenState
     if (!context.mounted) return;
     if (next.sectionErrorMessage == null) {
       ToastHelper.showSuccess(
-        vehicle.isActive ? 'Vehicle deactivated.' : 'Vehicle activated.',
+        vehicle.isActive
+            ? context.mobileText('Vehicle deactivated.')
+            : context.mobileText('Vehicle activated.'),
         context: context,
       );
     } else {
@@ -281,17 +317,17 @@ class _AdminVehicleDetailsScreenState
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Delete vehicle'),
-        content: const Text('This action cannot be undone.'),
+        title: Text(context.mobileText('Delete vehicle')),
+        content: Text(context.mobileText('This action cannot be undone.')),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Cancel'),
+            child: Text(context.mobileText('Cancel')),
           ),
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
             style: TextButton.styleFrom(foregroundColor: OpenVtsColors.error),
-            child: const Text('Delete'),
+            child: Text(context.mobileText('Delete')),
           ),
         ],
       ),
@@ -299,8 +335,9 @@ class _AdminVehicleDetailsScreenState
 
     if (confirmed != true) return;
 
-    final detailsProvider =
-        adminVehicleDetailsControllerProvider(widget.vehicleId);
+    final detailsProvider = adminVehicleDetailsControllerProvider(
+      widget.vehicleId,
+    );
     await ref.read(detailsProvider.notifier).deleteVehicle();
     final next = ref.read(detailsProvider);
     if (!context.mounted) return;
@@ -308,7 +345,10 @@ class _AdminVehicleDetailsScreenState
       final listProvider = adminVehiclesControllerProvider;
       await ref.read(listProvider.notifier).refresh();
       if (!context.mounted) return;
-      ToastHelper.showSuccess('Vehicle deleted.', context: context);
+      ToastHelper.showSuccess(
+        context.mobileText('Vehicle deleted.'),
+        context: context,
+      );
       if (context.canPop()) {
         context.pop();
       } else {
@@ -320,14 +360,9 @@ class _AdminVehicleDetailsScreenState
   }
 }
 
-enum _HeaderMenuAction {
-  refresh,
-  edit,
-  toggleStatus,
-  delete,
-}
+enum _HeaderMenuAction { refresh, edit, toggleStatus, delete }
 
-class _HeaderMenu extends StatelessWidget {
+class _HeaderMenu extends ConsumerWidget {
   const _HeaderMenu({
     required this.isBusy,
     required this.onRefresh,
@@ -343,9 +378,9 @@ class _HeaderMenu extends StatelessWidget {
   final VoidCallback onDelete;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return PopupMenuButton<_HeaderMenuAction>(
-      tooltip: 'Vehicle actions',
+      tooltip: context.mobileText('Vehicle actions'),
       enabled: !isBusy,
       icon: Icon(
         Icons.more_vert_rounded,
@@ -365,34 +400,47 @@ class _HeaderMenu extends StatelessWidget {
         }
       },
       itemBuilder: (context) => [
-        const PopupMenuItem(
+        PopupMenuItem(
           value: _HeaderMenuAction.refresh,
           height: 40,
-          child: _MenuRow(icon: Icons.refresh_rounded, label: 'Refresh'),
-        ),
-        const PopupMenuItem(
-          value: _HeaderMenuAction.edit,
-          height: 40,
-          child: _MenuRow(icon: Icons.edit_outlined, label: 'Edit'),
-        ),
-        const PopupMenuItem(
-          value: _HeaderMenuAction.toggleStatus,
-          height: 40,
           child: _MenuRow(
-            icon: Icons.toggle_off_outlined,
-            label: 'Toggle Status',
+            icon: Icons.refresh_rounded,
+            label: context.mobileText('Refresh'),
           ),
         ),
+        if (adminCanPerform(ref, 'vehicles.update'))
+          PopupMenuItem(
+            value: _HeaderMenuAction.edit,
+            height: 40,
+            child: _MenuRow(
+              icon: Icons.edit_outlined,
+              label: context.mobileText('Edit'),
+            ),
+          ),
+        if (adminCanPerform(ref, 'vehicles.update'))
+          PopupMenuItem(
+            value: _HeaderMenuAction.toggleStatus,
+            height: 40,
+            child: _MenuRow(
+              icon: Icons.toggle_off_outlined,
+              label: context.mobileText('Toggle Status'),
+            ),
+          ),
         const PopupMenuDivider(height: 8),
-        const PopupMenuItem(
-          value: _HeaderMenuAction.delete,
-          height: 40,
-          child: _MenuRow(
-            icon: Icons.delete_outline_rounded,
-            label: 'Delete',
-            isDestructive: true,
+        if (adminCanPerform(
+          ref,
+          'vehicles.delete',
+          scopes: const {'OWN', 'TENANT'},
+        ))
+          PopupMenuItem(
+            value: _HeaderMenuAction.delete,
+            height: 40,
+            child: _MenuRow(
+              icon: Icons.delete_outline_rounded,
+              label: context.mobileText('Delete'),
+              isDestructive: true,
+            ),
           ),
-        ),
       ],
     );
   }
@@ -419,10 +467,7 @@ class _MenuRow extends StatelessWidget {
       children: [
         Icon(icon, size: 16, color: color),
         const SizedBox(width: OpenVtsSpacing.xs),
-        Text(
-          label,
-          style: OpenVtsTypography.label.copyWith(color: color),
-        ),
+        Text(label, style: OpenVtsTypography.label.copyWith(color: color)),
       ],
     );
   }
@@ -440,7 +485,9 @@ class _StatusChip extends StatelessWidget {
         ? (isDark ? OpenVtsColors.darkTextPrimary : OpenVtsColors.brandInk)
         : Theme.of(context).colorScheme.onSurfaceVariant;
     return _MicroChip(
-      label: isActive ? 'Active' : 'Inactive',
+      label: isActive
+          ? context.mobileText('Active')
+          : context.mobileText('Inactive'),
       icon: isActive
           ? Icons.check_circle_outline_rounded
           : Icons.pause_circle_outline_rounded,
@@ -489,10 +536,7 @@ class _MicroChip extends StatelessWidget {
 }
 
 class _SummaryCard extends StatelessWidget {
-  const _SummaryCard({
-    required this.vehicle,
-    required this.isSyncing,
-  });
+  const _SummaryCard({required this.vehicle, required this.isSyncing});
 
   final AdminVehicleDetails vehicle;
   final bool isSyncing;
@@ -529,7 +573,9 @@ class _SummaryCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      vehicle.name.isEmpty ? 'Untitled Vehicle' : vehicle.name,
+                      vehicle.name.isEmpty
+                          ? context.mobileText('Untitled Vehicle')
+                          : vehicle.name,
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
@@ -562,8 +608,8 @@ class _SummaryCard extends StatelessWidget {
                   _StatusChip(isActive: vehicle.isActive),
                   if (vehicle.isLicenseBlocked) ...[
                     const SizedBox(height: 4),
-                    const _MicroChip(
-                      label: 'License Blocked',
+                    _MicroChip(
+                      label: context.mobileText('License Blocked'),
                       icon: Icons.lock_outline_rounded,
                       color: OpenVtsColors.error,
                     ),
@@ -576,12 +622,16 @@ class _SummaryCard extends StatelessWidget {
             const SizedBox(height: OpenVtsSpacing.sm),
             if (vehicle.imei.isNotEmpty)
               _CompactInfoLine(
-                  icon: Icons.device_hub_outlined, value: vehicle.imei),
+                icon: Icons.device_hub_outlined,
+                value: vehicle.imei,
+              ),
             if (vehicle.imei.isNotEmpty && vehicle.simNumber.isNotEmpty)
               const SizedBox(height: 4),
             if (vehicle.simNumber.isNotEmpty)
               _CompactInfoLine(
-                  icon: Icons.sim_card_outlined, value: vehicle.simNumber),
+                icon: Icons.sim_card_outlined,
+                value: vehicle.simNumber,
+              ),
           ],
           const SizedBox(height: OpenVtsSpacing.md),
           Divider(height: 1, color: colorScheme.outlineVariant),
@@ -591,7 +641,7 @@ class _SummaryCard extends StatelessWidget {
               Expanded(
                 child: _MetricTile(
                   icon: Icons.badge_outlined,
-                  label: 'Type',
+                  label: context.mobileText('Type'),
                   value: _displayValue(vehicle.vehicleType?.name ?? ''),
                 ),
               ),
@@ -610,7 +660,7 @@ class _SummaryCard extends StatelessWidget {
                 Expanded(
                   child: _MetricTile(
                     icon: Icons.person_outline_rounded,
-                    label: 'Primary User',
+                    label: context.mobileText('Primary User'),
                     value: vehicle.primaryUser?.displayName.isNotEmpty == true
                         ? vehicle.primaryUser!.displayName
                         : '-',
@@ -709,8 +759,8 @@ class _MetricTile extends StatelessWidget {
                 Text(
                   label,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                      ),
+                    color: colorScheme.onSurfaceVariant,
+                  ),
                 ),
                 const SizedBox(height: 2),
                 Text(
@@ -718,9 +768,9 @@ class _MetricTile extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: colorScheme.onSurface,
-                      ),
+                    fontWeight: FontWeight.w700,
+                    color: colorScheme.onSurface,
+                  ),
                 ),
               ],
             ),
@@ -731,7 +781,7 @@ class _MetricTile extends StatelessWidget {
   }
 }
 
-class _TabChips extends StatelessWidget {
+class _TabChips extends ConsumerWidget {
   const _TabChips({required this.selected, required this.onSelect});
 
   final AdminVehicleDetailsTab selected;
@@ -749,8 +799,9 @@ class _TabChips extends StatelessWidget {
   };
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final tabs = AdminVehicleDetailsTab.values
+        .where((tab) => adminCanPerform(ref, _vehicleTabCapability(tab)))
         .map(
           (tab) => OpenVtsDetailTabOption<AdminVehicleDetailsTab>(
             value: tab,
@@ -767,7 +818,7 @@ class _TabChips extends StatelessWidget {
   }
 }
 
-class _TabBody extends StatelessWidget {
+class _TabBody extends ConsumerWidget {
   const _TabBody({
     required this.state,
     required this.displayVehicle,
@@ -821,46 +872,59 @@ class _TabBody extends StatelessWidget {
     DateTime? to,
     String? source,
     String? severity,
-  }) onSetEventFilters;
+  })
+  onSetEventFilters;
   final Future<void> Function() onClearEventFilters;
   final Future<void> Function() onLoadCommands;
   final Future<void> Function({
     required String command,
     String? note,
-  }) onSendCommand;
+    String? commandId,
+  })
+  onSendCommand;
   final Future<AdminCommandStatus?> Function(String cmdId) onPollCommandStatus;
   final Future<AdminVehicleCommandItem?> Function(String cmdId)
-      onFetchCommandLog;
+  onFetchCommandLog;
   final Future<void> Function({String? search}) onLoadSensors;
   final Future<void> Function(AdminVehicleSensorUpsertRequest request)
-      onCreateSensor;
+  onCreateSensor;
   final Future<void> Function(
     String sensorId,
     AdminVehicleSensorUpsertRequest request,
-  ) onUpdateSensor;
+  )
+  onUpdateSensor;
   final Future<void> Function(String sensorId) onDeleteSensor;
   final Future<void> Function(AdminVehicleSensorRunRequest request) onRunSensor;
   final Future<void> Function() onLoadDocuments;
   final Future<void> Function(AdminVehicleDocumentRequest request)
-      onUploadDocument;
+  onUploadDocument;
   final Future<void> Function({
     required String docId,
     required AdminVehicleDocumentRequest request,
-  }) onUpdateDocument;
+  })
+  onUpdateDocument;
   final Future<void> Function(String docId) onDeleteDocument;
   final Future<void> Function(AdminVehicleConfigUpdateRequest request)
-      onUpdateConfig;
+  onUpdateConfig;
   final String apiBaseUrl;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (!adminCanPerform(ref, _vehicleTabCapability(state.selectedTab))) {
+      return OpenVtsEmptyState(
+        title: context.mobileText('Access restricted'),
+        message: context.mobileText(
+          'Your account does not have permission to view this section.',
+        ),
+      );
+    }
     switch (state.selectedTab) {
       case AdminVehicleDetailsTab.details:
         final vehicle = displayVehicle ?? state.vehicle;
         if (vehicle == null) {
-          return const OpenVtsEmptyState(
-            title: 'No details',
-            message: 'Vehicle details are unavailable.',
+          return OpenVtsEmptyState(
+            title: context.mobileText('No details'),
+            message: context.mobileText('Vehicle details are unavailable.'),
           );
         }
         return AdminVehicleDetailsOverviewTab(
@@ -899,9 +963,11 @@ class _TabBody extends StatelessWidget {
       case AdminVehicleDetailsTab.commands:
         final vehicle = state.vehicle;
         if (vehicle == null) {
-          return const OpenVtsEmptyState(
-            title: 'Vehicle unavailable',
-            message: 'Cannot load commands without vehicle details.',
+          return OpenVtsEmptyState(
+            title: context.mobileText('Vehicle unavailable'),
+            message: context.mobileText(
+              'Cannot load commands without vehicle details.',
+            ),
           );
         }
         return AdminVehicleCommandsTab(
@@ -948,9 +1014,9 @@ class _TabBody extends StatelessWidget {
       case AdminVehicleDetailsTab.config:
         final vehicle = state.vehicle;
         if (vehicle == null) {
-          return const OpenVtsEmptyState(
-            title: 'No config',
-            message: 'Vehicle details are unavailable.',
+          return OpenVtsEmptyState(
+            title: context.mobileText('No config'),
+            message: context.mobileText('Vehicle details are unavailable.'),
           );
         }
         return AdminVehicleConfigTab(
@@ -967,18 +1033,18 @@ class _TabBody extends StatelessWidget {
           isLoadingMore: state.isLoadingMoreEvents,
           onLoad: onLoadEvents,
           onLoadMore: onLoadMoreEvents,
-          onApplyFilters: ({
-            DateTime? from,
-            DateTime? to,
-            String? source,
-            String? severity,
-          }) =>
-              onSetEventFilters(
-            from: from,
-            to: to,
-            source: source,
-            severity: severity,
-          ),
+          onApplyFilters:
+              ({
+                DateTime? from,
+                DateTime? to,
+                String? source,
+                String? severity,
+              }) => onSetEventFilters(
+                from: from,
+                to: to,
+                source: source,
+                severity: severity,
+              ),
           onClearFilters: onClearEventFilters,
         );
     }
@@ -986,3 +1052,11 @@ class _TabBody extends StatelessWidget {
 }
 
 enum _Action { edit, toggleStatus, delete }
+
+String _vehicleTabCapability(AdminVehicleDetailsTab tab) => switch (tab) {
+  AdminVehicleDetailsTab.logs => 'vehicles.history.view',
+  AdminVehicleDetailsTab.events => 'vehicles.events.view',
+  AdminVehicleDetailsTab.commands => 'vehicles.commands.send',
+  AdminVehicleDetailsTab.config => 'vehicles.update',
+  _ => 'vehicles.view',
+};

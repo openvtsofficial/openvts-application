@@ -5,12 +5,14 @@ import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../core/utils/date_time_formatter.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/widgets/open_vts_bottom_sheet.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../../../shared/widgets/open_vts_empty_state.dart';
 import '../../../../../shared/widgets/open_vts_loader.dart';
 import '../../../models/admin_vehicle_model.dart';
+import '../../../widgets/admin_action_gate.dart';
 
 const DateTimeFormatter _cardDateFormatter = DateTimeFormatter();
 
@@ -50,27 +52,32 @@ class AdminVehicleUsersTab extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  'Assigned Users (${linkedUsers.length})',
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+                  context.mobileText("Assigned Users ({value1})", {
+                    'value1': (linkedUsers.length).toString(),
+                  }),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
                 ),
               ),
-              OpenVtsButton(
-                label: 'Assign User',
-                variant: OpenVtsButtonVariant.secondary,
-                onPressed: availableUsers.isEmpty
-                    ? null
-                    : () => _openAssignSheet(context),
+              AdminActionGate(
+                capability: 'vehicles.update',
+                child: OpenVtsButton(
+                  label: context.mobileText('Assign User'),
+                  variant: OpenVtsButtonVariant.secondary,
+                  onPressed: availableUsers.isEmpty
+                      ? null
+                      : () => _openAssignSheet(context),
+                ),
               ),
             ],
           ),
         ),
         const SizedBox(height: OpenVtsSpacing.sm),
         if (linkedUsers.isEmpty)
-          const OpenVtsEmptyState(
-            title: 'No users assigned',
-            message: 'Assign users to this vehicle.',
+          OpenVtsEmptyState(
+            title: context.mobileText('No users assigned'),
+            message: context.mobileText('Assign users to this vehicle.'),
           )
         else
           ...linkedUsers.map(
@@ -93,7 +100,7 @@ class AdminVehicleUsersTab extends StatelessWidget {
   Future<void> _openAssignSheet(BuildContext context) {
     return OpenVtsBottomSheet.show<void>(
       context: context,
-      title: 'Assign User',
+      title: context.mobileText('Assign User'),
       initialChildSize: 0.7,
       minChildSize: 0.4,
       maxChildSize: 0.9,
@@ -149,12 +156,10 @@ class _VehicleUserCard extends StatelessWidget {
                           child: Text(
                             user.displayName.isNotEmpty
                                 ? user.displayName
-                                : 'Unknown',
+                                : context.mobileText('Unknown'),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleSmall
+                            style: Theme.of(context).textTheme.titleSmall
                                 ?.copyWith(
                                   fontWeight: FontWeight.w700,
                                   letterSpacing: -0.2,
@@ -192,7 +197,7 @@ class _VehicleUserCard extends StatelessWidget {
                     ],
                     if (!hasContact) ...[
                       Text(
-                        'No contact information',
+                        context.mobileText('No contact information'),
                         style: OpenVtsTypography.meta.copyWith(
                           color: OpenVtsColors.textTertiary,
                           fontSize: 11,
@@ -208,12 +213,16 @@ class _VehicleUserCard extends StatelessWidget {
                 height: 40,
                 width: 104,
                 child: Builder(
-                  builder: (context) => OpenVtsButton(
-                    label: 'Unassign',
-                    isLoading: isUnlinking,
-                    onPressed:
-                        isUnlinking ? null : () => _showConfirmDialog(context),
-                    variant: OpenVtsButtonVariant.secondary,
+                  builder: (context) => AdminActionGate(
+                    capability: 'vehicles.update',
+                    child: OpenVtsButton(
+                      label: context.mobileText('Unassign'),
+                      isLoading: isUnlinking,
+                      onPressed: isUnlinking
+                          ? null
+                          : () => _showConfirmDialog(context),
+                      variant: OpenVtsButtonVariant.secondary,
+                    ),
                   ),
                 ),
               ),
@@ -225,7 +234,7 @@ class _VehicleUserCard extends StatelessWidget {
             const SizedBox(height: OpenVtsSpacing.sm),
             _InfoTile(
               icon: Icons.event_outlined,
-              label: 'Assigned',
+              label: context.mobileText('Assigned'),
               value: _cardDateFormatter.formatDateTime(user.assignedAt!),
             ),
           ],
@@ -238,24 +247,29 @@ class _VehicleUserCard extends StatelessWidget {
     return showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Unassign User?'),
+        title: Text(context.mobileText('Unassign User?')),
         content: Text(
-          'Remove ${user.displayName.isNotEmpty ? user.displayName : 'this user'} from this vehicle?',
+          context.mobileText("Remove {value1} from this vehicle?", {
+            'value1':
+                (user.displayName.isNotEmpty ? user.displayName : 'this user')
+                    .toString(),
+          }),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+            child: Text(context.mobileText('Cancel')),
           ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              onUnlink();
-            },
-            style: TextButton.styleFrom(
-              foregroundColor: OpenVtsColors.error,
+          AdminActionGate(
+            capability: 'vehicles.update',
+            child: TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                onUnlink();
+              },
+              style: TextButton.styleFrom(foregroundColor: OpenVtsColors.error),
+              child: Text(context.mobileText('Unassign')),
             ),
-            child: const Text('Unassign'),
           ),
         ],
       ),
@@ -318,11 +332,14 @@ class _PrimaryBadge extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.star_rounded,
-              size: 10, color: OpenVtsColors.brandInk),
+          const Icon(
+            Icons.star_rounded,
+            size: 10,
+            color: OpenVtsColors.brandInk,
+          ),
           const SizedBox(width: 2),
           Text(
-            'Primary',
+            context.mobileText('Primary'),
             style: OpenVtsTypography.meta.copyWith(
               color: OpenVtsColors.brandInk,
               fontSize: 10,
@@ -402,32 +419,34 @@ class _AssignUserSheetState extends State<_AssignUserSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final filtered = widget.users.where((user) {
-      final q = _query.trim().toLowerCase();
-      if (q.isEmpty) return true;
-      return <String>[
-        user.name,
-        user.username,
-        user.email,
-        user.mobileDisplay,
-      ].join(' ').toLowerCase().contains(q);
-    }).toList(growable: false);
+    final filtered = widget.users
+        .where((user) {
+          final q = _query.trim().toLowerCase();
+          if (q.isEmpty) return true;
+          return <String>[
+            user.name,
+            user.username,
+            user.email,
+            user.mobileDisplay,
+          ].join(' ').toLowerCase().contains(q);
+        })
+        .toList(growable: false);
 
     return ListView(
       padding: const EdgeInsets.all(OpenVtsSpacing.md),
       children: [
         TextField(
-          decoration: const InputDecoration(
-            hintText: 'Search unlinked users...',
-            prefixIcon: Icon(Icons.search_rounded),
+          decoration: InputDecoration(
+            hintText: context.mobileText('Search unlinked users...'),
+            prefixIcon: const Icon(Icons.search_rounded),
           ),
           onChanged: (value) => setState(() => _query = value),
         ),
         const SizedBox(height: OpenVtsSpacing.sm),
         if (filtered.isEmpty)
-          const OpenVtsEmptyState(
-            title: 'No users',
-            message: 'No unlinked users match your search.',
+          OpenVtsEmptyState(
+            title: context.mobileText('No users'),
+            message: context.mobileText('No unlinked users match your search.'),
           )
         else
           ...filtered.map(
@@ -438,17 +457,21 @@ class _AssignUserSheetState extends State<_AssignUserSheet> {
               // ignore: deprecated_member_use
               onChanged: (value) => setState(() => _selectedUserId = value),
               title: Text(
-                  user.displayName.isNotEmpty ? user.displayName : 'Unknown'),
+                user.displayName.isNotEmpty
+                    ? user.displayName
+                    : context.mobileText('Unknown'),
+              ),
               subtitle: Text(
-                [user.username, user.email]
-                    .where((item) => item.trim().isNotEmpty)
-                    .join(' • '),
+                [
+                  user.username,
+                  user.email,
+                ].where((item) => item.trim().isNotEmpty).join(' • '),
               ),
             ),
           ),
         const SizedBox(height: OpenVtsSpacing.sm),
         OpenVtsButton(
-          label: 'Assign',
+          label: context.mobileText('Assign'),
           isLoading: widget.isLinking,
           onPressed: _selectedUserId == null || widget.isLinking
               ? null

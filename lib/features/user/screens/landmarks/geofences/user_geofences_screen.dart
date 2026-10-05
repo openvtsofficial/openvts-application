@@ -5,6 +5,7 @@ import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../shared/widgets/open_vts_empty_state.dart';
@@ -41,7 +42,7 @@ class UserGeofencesScreen extends ConsumerWidget {
     final controller = ref.read(userGeofencesControllerProvider.notifier);
 
     return OpenVtsPageScaffold(
-      title: 'Geofence',
+      title: context.mobileText('Geofence'),
       headerMode: OpenVtsPageHeaderMode.closeable,
       padding: const EdgeInsets.fromLTRB(
         OpenVtsSpacing.sm,
@@ -58,8 +59,9 @@ class UserGeofencesScreen extends ConsumerWidget {
               _HeaderRow(
                 isRefreshing: state.isRefreshing,
                 onCreate: () => _openCreate(context),
-                onRefresh:
-                    state.isRefreshing ? null : () => controller.refresh(),
+                onRefresh: state.isRefreshing
+                    ? null
+                    : () => controller.refresh(),
                 onExport: () => UserLandmarkExportSheet.show(
                   context: context,
                   entityType: UserLandmarkEntityType.geofence,
@@ -133,7 +135,7 @@ class UserGeofencesScreen extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  'Delete geofence?',
+                  context.mobileText('Delete geofence?'),
                   style: OpenVtsTypography.titleSmall.copyWith(
                     color: OpenVtsColors.textPrimary,
                     fontWeight: FontWeight.w700,
@@ -141,7 +143,10 @@ class UserGeofencesScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '"${geofence.name}" will be permanently removed.',
+                  context.mobileText(
+                    "\"{value1}\" will be permanently removed.",
+                    {'value1': (geofence.name).toString()},
+                  ),
                   style: OpenVtsTypography.meta.copyWith(
                     color: OpenVtsColors.textSecondary,
                   ),
@@ -151,7 +156,7 @@ class UserGeofencesScreen extends ConsumerWidget {
                   children: [
                     Expanded(
                       child: OpenVtsButton(
-                        label: 'Cancel',
+                        label: context.mobileText('Cancel'),
                         onPressed: () => Navigator.of(ctx).pop(false),
                         variant: OpenVtsButtonVariant.secondary,
                       ),
@@ -159,7 +164,7 @@ class UserGeofencesScreen extends ConsumerWidget {
                     const SizedBox(width: OpenVtsSpacing.sm),
                     Expanded(
                       child: OpenVtsButton(
-                        label: 'Delete',
+                        label: context.mobileText('Delete'),
                         onPressed: () => Navigator.of(ctx).pop(true),
                       ),
                     ),
@@ -209,7 +214,7 @@ class _HeaderRow extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Draw and manage operational boundaries.',
+                context.mobileText('Draw and manage operational boundaries.'),
                 style: TextStyle(
                   fontSize: 12,
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -221,26 +226,26 @@ class _HeaderRow extends StatelessWidget {
         ),
         _HeaderIconButton(
           icon: Icons.refresh,
-          tooltip: 'Refresh',
+          tooltip: context.mobileText('Refresh'),
           onTap: onRefresh,
           showSpinner: isRefreshing,
         ),
         const SizedBox(width: 6),
         _HeaderIconButton(
           icon: Icons.file_upload_outlined,
-          tooltip: 'Import CSV',
+          tooltip: context.mobileText('Import CSV'),
           onTap: onImport,
         ),
         const SizedBox(width: 6),
         _HeaderIconButton(
           icon: Icons.file_download_outlined,
-          tooltip: 'Export KML',
+          tooltip: context.mobileText('Export KML'),
           onTap: onExport,
         ),
         const SizedBox(width: 6),
         _HeaderIconButton(
           icon: Icons.add,
-          tooltip: 'New geofence',
+          tooltip: context.mobileText('New geofence'),
           onTap: onCreate,
           primary: true,
         ),
@@ -289,9 +294,7 @@ class _HeaderIconButton extends StatelessWidget {
               ? const SizedBox(
                   width: 14,
                   height: 14,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                  ),
+                  child: CircularProgressIndicator(strokeWidth: 2),
                 )
               : Icon(icon, size: 16, color: fg),
         ),
@@ -415,16 +418,18 @@ class _ListBody extends StatelessWidget {
     }
     if (!hasGeofences) {
       return _EmptyState(
-        title: 'No geofences yet',
-        message: 'Create your first geofence to define operational boundaries.',
+        title: context.mobileText('No geofences yet'),
+        message: context.mobileText(
+          'Create your first geofence to define operational boundaries.',
+        ),
         actionLabel: 'Create geofence',
         onAction: () => UserGeofenceFormSheet.show(context: context),
       );
     }
     if (filtered.isEmpty) {
       return _EmptyState(
-        title: 'No matching geofences',
-        message: 'Try adjusting your filters.',
+        title: context.mobileText('No matching geofences'),
+        message: context.mobileText('Try adjusting your filters.'),
         actionLabel: 'Clear filters',
         onAction: () => controller.clearFilters(),
         secondary: true,

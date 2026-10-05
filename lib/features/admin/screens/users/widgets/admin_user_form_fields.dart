@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
+import '../../../../../shared/helpers/validation_localizations.dart';
 import '../../../../../shared/widgets/open_vts_text_field.dart';
 
 class AdminUserDropdownOption {
@@ -114,26 +116,29 @@ class AdminUserDropdownField extends StatelessWidget {
             isExpanded: true,
             items: menuItems,
             onChanged: isLoading ? null : onChanged,
-            validator: validator,
+            validator: context.localizedValidator(validator),
             dropdownColor: Theme.of(context).colorScheme.surface,
             selectedItemBuilder: resolvedSelectedLabel == null
                 ? null
-                : (context) => menuItems.map((item) {
-                      final compact = item.value == null
-                          ? ''
-                          : (resolvedSelectedLabel(item.value!) ?? item.value!);
-                      return Align(
-                        alignment: AlignmentDirectional.centerStart,
-                        child: Text(
-                          compact,
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
-                          style: OpenVtsTypography.body.copyWith(
-                            color: Theme.of(context).colorScheme.onSurface,
+                : (context) => menuItems
+                      .map((item) {
+                        final compact = item.value == null
+                            ? ''
+                            : (resolvedSelectedLabel(item.value!) ??
+                                  item.value!);
+                        return Align(
+                          alignment: AlignmentDirectional.centerStart,
+                          child: Text(
+                            compact,
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                            style: OpenVtsTypography.body.copyWith(
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
                           ),
-                        ),
-                      );
-                    }).toList(growable: false),
+                        );
+                      })
+                      .toList(growable: false),
             decoration: InputDecoration(
               hintText: hintText,
               prefixIcon: prefixIcon == null
@@ -166,11 +171,13 @@ class AdminUserDropdownField extends StatelessWidget {
       final v = option.value.trim();
       if (v.isEmpty || seen.contains(v)) continue;
       seen.add(v);
-      distinct.add(AdminUserDropdownOption(
-        value: v,
-        label: option.label.trim().isEmpty ? v : option.label,
-        isFallback: option.isFallback,
-      ));
+      distinct.add(
+        AdminUserDropdownOption(
+          value: v,
+          label: option.label.trim().isEmpty ? v : option.label,
+          isFallback: option.isFallback,
+        ),
+      );
     }
     return distinct;
   }
@@ -268,7 +275,7 @@ class _SearchableField extends StatelessWidget {
 
     return FormField<String>(
       initialValue: safeValue,
-      validator: validator,
+      validator: context.localizedValidator(validator),
       builder: (state) {
         return GestureDetector(
           onTap: disabled ? null : () => _openSheet(context),
@@ -380,12 +387,12 @@ class _DropdownSearchSheetState extends State<_DropdownSearchSheet> {
       _filtered = q.isEmpty
           ? widget.options
           : widget.options
-              .where(
-                (o) =>
-                    o.label.toLowerCase().contains(q) ||
-                    o.value.toLowerCase().contains(q),
-              )
-              .toList(growable: false);
+                .where(
+                  (o) =>
+                      o.label.toLowerCase().contains(q) ||
+                      o.value.toLowerCase().contains(q),
+                )
+                .toList(growable: false);
     });
   }
 
@@ -404,37 +411,42 @@ class _DropdownSearchSheetState extends State<_DropdownSearchSheet> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Theme.of(context)
-                    .colorScheme
-                    .onSurfaceVariant
-                    .withValues(alpha: 0.4),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
             const SizedBox(height: OpenVtsSpacing.sm),
             Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: OpenVtsSpacing.md),
+              padding: const EdgeInsets.symmetric(
+                horizontal: OpenVtsSpacing.md,
+              ),
               child: Text(
-                'Select ${widget.label}',
+                context.mobileText("Select {value1}", {
+                  'value1': (widget.label).toString(),
+                }),
                 style: Theme.of(context).textTheme.titleSmall,
               ),
             ),
             const SizedBox(height: OpenVtsSpacing.sm),
             Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: OpenVtsSpacing.md),
+              padding: const EdgeInsets.symmetric(
+                horizontal: OpenVtsSpacing.md,
+              ),
               child: TextField(
                 controller: _searchController,
                 autofocus: true,
                 onChanged: _onSearch,
                 decoration: InputDecoration(
-                  hintText: 'Search ${widget.label.toLowerCase()}…',
+                  hintText: context.mobileText("Search {value1}…", {
+                    'value1': (widget.label.toLowerCase()).toString(),
+                  }),
                   prefixIcon: const Icon(Icons.search_rounded, size: 20),
                   suffixIcon: _searchText.isNotEmpty
                       ? IconButton(
                           icon: const Icon(Icons.clear_rounded, size: 18),
-                          tooltip: 'Clear',
+                          tooltip: context.mobileText('Clear'),
                           onPressed: () {
                             _searchController.clear();
                             _onSearch('');
@@ -456,13 +468,11 @@ class _DropdownSearchSheetState extends State<_DropdownSearchSheet> {
                   ? Center(
                       child: Text(
                         _searchText.trim().isEmpty
-                            ? 'No options available'
+                            ? context.mobileText('No options available')
                             : 'No results for "$_searchText"',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurfaceVariant,
-                            ),
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
                       ),
                     )
                   : ListView.builder(
@@ -476,13 +486,13 @@ class _DropdownSearchSheetState extends State<_DropdownSearchSheet> {
                           title: Text(
                             option.label,
                             style: Theme.of(ctx).textTheme.bodyMedium?.copyWith(
-                                  color: isSelected
-                                      ? Theme.of(ctx).colorScheme.primary
-                                      : Theme.of(ctx).colorScheme.onSurface,
-                                  fontWeight: isSelected
-                                      ? FontWeight.w600
-                                      : FontWeight.normal,
-                                ),
+                              color: isSelected
+                                  ? Theme.of(ctx).colorScheme.primary
+                                  : Theme.of(ctx).colorScheme.onSurface,
+                              fontWeight: isSelected
+                                  ? FontWeight.w600
+                                  : FontWeight.normal,
+                            ),
                           ),
                           trailing: isSelected
                               ? Icon(
@@ -541,7 +551,7 @@ class AdminUserPrefixPhoneRow extends StatelessWidget {
         final wide = constraints.maxWidth >= _breakpoint;
 
         final prefixField = AdminUserDropdownField(
-          label: 'Mobile Prefix',
+          label: context.mobileText('Mobile Prefix'),
           value: prefixValue,
           options: prefixOptions,
           hintText: '+91',
@@ -554,7 +564,7 @@ class AdminUserPrefixPhoneRow extends StatelessWidget {
         );
 
         final numberField = OpenVtsTextField(
-          label: 'Mobile Number',
+          label: context.mobileText('Mobile Number'),
           controller: phoneController,
           keyboardType: TextInputType.phone,
           textInputAction: TextInputAction.next,
@@ -563,8 +573,10 @@ class AdminUserPrefixPhoneRow extends StatelessWidget {
         );
 
         if (wide) {
-          final prefixWidth =
-              (constraints.maxWidth * _prefixFlex).clamp(90.0, 160.0);
+          final prefixWidth = (constraints.maxWidth * _prefixFlex).clamp(
+            90.0,
+            160.0,
+          );
           return Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

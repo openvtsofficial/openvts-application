@@ -10,10 +10,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../../../../core/theme/open_vts_colors.dart';
-import '../../../../../../core/widgets/map_attribution.dart';
 import '../../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../../shared/widgets/open_vts_map_layer_selector.dart';
 import '../../../../controllers/user_landmark_geometry_editor_controller.dart';
@@ -119,7 +119,8 @@ class _UserGeofenceEditorScreenState
     _searchCtrl = TextEditingController();
     _searchFocus = FocusNode();
     _ownsNominatimDio = widget.searchClient == null;
-    _nominatimDio = widget.searchClient ??
+    _nominatimDio =
+        widget.searchClient ??
         Dio(
           BaseOptions(
             connectTimeout: const Duration(seconds: 6),
@@ -178,9 +179,9 @@ class _UserGeofenceEditorScreenState
     final geo = _ctrl.buildGeofenceGeoData();
     if (geo == null) return;
     final state = ref.read(userLandmarkGeometryEditorControllerProvider(_args));
-    Navigator.of(context).pop(
-      UserGeofenceEditorResult(geodata: geo, toleranceM: state.toleranceM),
-    );
+    Navigator.of(
+      context,
+    ).pop(UserGeofenceEditorResult(geodata: geo, toleranceM: state.toleranceM));
   }
 
   // ── Screen-to-LatLng conversion ──────────────────────────────────────────
@@ -207,7 +208,9 @@ class _UserGeofenceEditorScreenState
     final mapLocal = renderBox.globalToLocal(details.globalPosition);
     final geo = _offsetToLatLng(mapLocal);
     _ctrl.moveVertexSilently(
-        index, UserGeoPoint(lat: geo.latitude, lon: geo.longitude));
+      index,
+      UserGeoPoint(lat: geo.latitude, lon: geo.longitude),
+    );
   }
 
   void _onVertexPanEnd(DragEndDetails details, int index) {
@@ -237,7 +240,8 @@ class _UserGeofenceEditorScreenState
     final mapLocal = renderBox.globalToLocal(details.globalPosition);
     final geo = _offsetToLatLng(mapLocal);
     _ctrl.moveCircleCenterSilently(
-        UserGeoPoint(lat: geo.latitude, lon: geo.longitude));
+      UserGeoPoint(lat: geo.latitude, lon: geo.longitude),
+    );
   }
 
   void _onCircleCenterPanEnd(DragEndDetails _) {
@@ -339,12 +343,14 @@ class _UserGeofenceEditorScreenState
             final primary = _primaryLabel(item, addr);
             final secondary = _secondaryLabel(addr);
 
-            results.add(_NominatimResult(
-              primary: primary,
-              secondary: secondary,
-              lat: lat,
-              lon: lon,
-            ));
+            results.add(
+              _NominatimResult(
+                primary: primary,
+                secondary: secondary,
+                lat: lat,
+                lon: lon,
+              ),
+            );
           }
         }
       }
@@ -372,7 +378,8 @@ class _UserGeofenceEditorScreenState
   /// Best human-readable primary label from a Nominatim result.
   String _primaryLabel(Map<String, dynamic> item, Map<String, dynamic>? addr) {
     if (addr != null) {
-      final name = addr['name']?.toString().trim() ??
+      final name =
+          addr['name']?.toString().trim() ??
           addr['amenity']?.toString().trim() ??
           addr['building']?.toString().trim() ??
           addr['road']?.toString().trim();
@@ -452,8 +459,9 @@ class _UserGeofenceEditorScreenState
 
   @override
   Widget build(BuildContext context) {
-    final state =
-        ref.watch(userLandmarkGeometryEditorControllerProvider(_args));
+    final state = ref.watch(
+      userLandmarkGeometryEditorControllerProvider(_args),
+    );
     final ctrl = _ctrl;
 
     // Disable map interaction flags while a vertex/handle is being dragged so
@@ -461,9 +469,9 @@ class _UserGeofenceEditorScreenState
     final interactFlags = _dragActive
         ? InteractiveFlag.none
         : InteractiveFlag.drag |
-            InteractiveFlag.pinchZoom |
-            InteractiveFlag.doubleTapZoom |
-            InteractiveFlag.scrollWheelZoom;
+              InteractiveFlag.pinchZoom |
+              InteractiveFlag.doubleTapZoom |
+              InteractiveFlag.scrollWheelZoom;
 
     return Scaffold(
       backgroundColor: OpenVtsColors.background,
@@ -483,13 +491,15 @@ class _UserGeofenceEditorScreenState
                     child: FlutterMap(
                       mapController: _mapController,
                       options: MapOptions(
-                        initialCenter: widget.initialCenter ??
+                        initialCenter:
+                            widget.initialCenter ??
                             const LatLng(20.5937, 78.9629),
                         initialZoom: widget.initialCenter == null ? 5 : 14,
                         minZoom: 3,
                         maxZoom: 19,
-                        interactionOptions:
-                            InteractionOptions(flags: interactFlags),
+                        interactionOptions: InteractionOptions(
+                          flags: interactFlags,
+                        ),
                         onTap: (_, point) => _handleMapTap(point),
                       ),
                       children: _buildMapLayers(state, ctrl),
@@ -505,8 +515,9 @@ class _UserGeofenceEditorScreenState
                       children: [
                         Expanded(
                           child: Padding(
-                            padding:
-                                const EdgeInsets.only(left: OpenVtsSpacing.md),
+                            padding: const EdgeInsets.only(
+                              left: OpenVtsSpacing.md,
+                            ),
                             child: _ModeToggleBar(
                               mode: state.editorMode,
                               onSelect: ctrl.setMode,
@@ -514,8 +525,9 @@ class _UserGeofenceEditorScreenState
                           ),
                         ),
                         Padding(
-                          padding:
-                              const EdgeInsets.only(right: OpenVtsSpacing.sm),
+                          padding: const EdgeInsets.only(
+                            right: OpenVtsSpacing.sm,
+                          ),
                           child: OpenVtsMapLayerSelectorButton(
                             selectedLayerId: _selectedLayerId,
                             onLayerSelected: (layer) {
@@ -632,36 +644,45 @@ class _UserGeofenceEditorScreenState
       layers.add(MarkerLayer(markers: [_searchPinMarker(_searchPin!)]));
     }
 
-    layers.add(OpenVtsMapAttribution(layerId: _selectedLayerId));
     return layers;
   }
 
   // ── Circle layers ─────────────────────────────────────────────────────────
 
   void _buildCircleLayers(
-      List<Widget> layers, UserLandmarkGeometryEditorState state) {
+    List<Widget> layers,
+    UserLandmarkGeometryEditorState state,
+  ) {
     if (state.circleCenter == null) return;
     final center = state.circleCenter!.toLatLng();
 
     if ((state.circleRadiusM ?? 0) > 0) {
-      layers.add(CircleLayer(circles: [
-        CircleMarker(
-          point: center,
-          radius: state.circleRadiusM!,
-          useRadiusInMeter: true,
-          color: OpenVtsColors.info.withValues(alpha: 0.18),
-          borderColor: OpenVtsColors.brandInk,
-          borderStrokeWidth: 2,
+      layers.add(
+        CircleLayer(
+          circles: [
+            CircleMarker(
+              point: center,
+              radius: state.circleRadiusM!,
+              useRadiusInMeter: true,
+              color: OpenVtsColors.info.withValues(alpha: 0.18),
+              borderColor: OpenVtsColors.brandInk,
+              borderStrokeWidth: 2,
+            ),
+          ],
         ),
-      ]));
+      );
     }
 
-    layers.add(MarkerLayer(markers: [
-      _draggableCircleCenterMarker(
-        center,
-        isDragging: _draggingCircleCenter,
+    layers.add(
+      MarkerLayer(
+        markers: [
+          _draggableCircleCenterMarker(
+            center,
+            isDragging: _draggingCircleCenter,
+          ),
+        ],
       ),
-    ]));
+    );
   }
 
   // ── Polygon layers ────────────────────────────────────────────────────────
@@ -673,56 +694,72 @@ class _UserGeofenceEditorScreenState
   ) {
     final pts = state.points.map((p) => p.toLatLng()).toList();
     if (pts.length >= 3) {
-      layers.add(PolygonLayer(polygons: [
-        Polygon(
-          points: pts,
-          color: OpenVtsColors.info.withValues(alpha: 0.18),
-          borderColor: OpenVtsColors.brandInk,
-          borderStrokeWidth: 1.6,
+      layers.add(
+        PolygonLayer(
+          polygons: [
+            Polygon(
+              points: pts,
+              color: OpenVtsColors.info.withValues(alpha: 0.18),
+              borderColor: OpenVtsColors.brandInk,
+              borderStrokeWidth: 1.6,
+            ),
+          ],
         ),
-      ]));
+      );
     }
     if (pts.length >= 2) {
-      layers.add(PolylineLayer(polylines: [
-        Polyline(
-          points: pts,
-          color: OpenVtsColors.brandInk,
-          strokeWidth: 1.6,
+      layers.add(
+        PolylineLayer(
+          polylines: [
+            Polyline(
+              points: pts,
+              color: OpenVtsColors.brandInk,
+              strokeWidth: 1.6,
+            ),
+          ],
         ),
-      ]));
+      );
     }
-    layers.add(MarkerLayer(
-      markers: [
-        for (var i = 0; i < pts.length; i++)
-          _draggableVertexMarker(
-            pts[i],
-            index: i,
-            isSelected: state.selectedVertexIndex == i,
-            isDragging: _draggingIndex == i,
-            onTap: () => ctrl.selectVertex(i),
-            onPanStart: (d) => _onVertexPanStart(d, i),
-            onPanUpdate: (d) => _onVertexPanUpdate(d, i),
-            onPanEnd: (d) => _onVertexPanEnd(d, i),
-            onPanCancel: () => _onVertexPanCancel(i),
-          ),
-      ],
-    ));
+    layers.add(
+      MarkerLayer(
+        markers: [
+          for (var i = 0; i < pts.length; i++)
+            _draggableVertexMarker(
+              pts[i],
+              index: i,
+              isSelected: state.selectedVertexIndex == i,
+              isDragging: _draggingIndex == i,
+              onTap: () => ctrl.selectVertex(i),
+              onPanStart: (d) => _onVertexPanStart(d, i),
+              onPanUpdate: (d) => _onVertexPanUpdate(d, i),
+              onPanEnd: (d) => _onVertexPanEnd(d, i),
+              onPanCancel: () => _onVertexPanCancel(i),
+            ),
+        ],
+      ),
+    );
   }
 
   // ── Rectangle layers ──────────────────────────────────────────────────────
 
   void _buildRectangleLayers(
-      List<Widget> layers, UserLandmarkGeometryEditorState state) {
+    List<Widget> layers,
+    UserLandmarkGeometryEditorState state,
+  ) {
     final corners = state.rectangleCorners.map((p) => p.toLatLng()).toList();
     if (corners.length == 4) {
-      layers.add(PolygonLayer(polygons: [
-        Polygon(
-          points: corners,
-          color: OpenVtsColors.info.withValues(alpha: 0.18),
-          borderColor: OpenVtsColors.brandInk,
-          borderStrokeWidth: 1.6,
+      layers.add(
+        PolygonLayer(
+          polygons: [
+            Polygon(
+              points: corners,
+              color: OpenVtsColors.info.withValues(alpha: 0.18),
+              borderColor: OpenVtsColors.brandInk,
+              borderStrokeWidth: 1.6,
+            ),
+          ],
         ),
-      ]));
+      );
       // Show draggable handles at the two stored opposite corners (start/end).
       final handlePts = <LatLng>[];
       if (state.rectangleStart != null) {
@@ -731,24 +768,28 @@ class _UserGeofenceEditorScreenState
       if (state.rectangleEnd != null) {
         handlePts.add(state.rectangleEnd!.toLatLng());
       }
-      layers.add(MarkerLayer(
-        markers: [
-          for (var i = 0; i < handlePts.length; i++)
-            _draggableRectCornerMarker(
-              handlePts[i],
-              cornerIndex: i,
-              isDragging: _draggingRectCorner == i,
-              onPanStart: (d) => _onRectCornerPanStart(d, i),
-              onPanUpdate: (d) => _onRectCornerPanUpdate(d, i),
-              onPanEnd: (d) => _onRectCornerPanEnd(d, i),
-              onPanCancel: () => _onRectCornerPanCancel(i),
-            ),
-        ],
-      ));
+      layers.add(
+        MarkerLayer(
+          markers: [
+            for (var i = 0; i < handlePts.length; i++)
+              _draggableRectCornerMarker(
+                handlePts[i],
+                cornerIndex: i,
+                isDragging: _draggingRectCorner == i,
+                onPanStart: (d) => _onRectCornerPanStart(d, i),
+                onPanUpdate: (d) => _onRectCornerPanUpdate(d, i),
+                onPanEnd: (d) => _onRectCornerPanEnd(d, i),
+                onPanCancel: () => _onRectCornerPanCancel(i),
+              ),
+          ],
+        ),
+      );
     } else if (state.rectangleStart != null) {
-      layers.add(MarkerLayer(markers: [
-        _staticCornerMarker(state.rectangleStart!.toLatLng()),
-      ]));
+      layers.add(
+        MarkerLayer(
+          markers: [_staticCornerMarker(state.rectangleStart!.toLatLng())],
+        ),
+      );
     }
   }
 
@@ -761,30 +802,36 @@ class _UserGeofenceEditorScreenState
   ) {
     final pts = state.points.map((p) => p.toLatLng()).toList();
     if (pts.length >= 2) {
-      layers.add(PolylineLayer(polylines: [
-        Polyline(
-          points: pts,
-          color: OpenVtsColors.brandInk,
-          strokeWidth: 3,
+      layers.add(
+        PolylineLayer(
+          polylines: [
+            Polyline(
+              points: pts,
+              color: OpenVtsColors.brandInk,
+              strokeWidth: 3,
+            ),
+          ],
         ),
-      ]));
+      );
     }
-    layers.add(MarkerLayer(
-      markers: [
-        for (var i = 0; i < pts.length; i++)
-          _draggableVertexMarker(
-            pts[i],
-            index: i,
-            isSelected: state.selectedVertexIndex == i,
-            isDragging: _draggingIndex == i,
-            onTap: () => ctrl.selectVertex(i),
-            onPanStart: (d) => _onVertexPanStart(d, i),
-            onPanUpdate: (d) => _onVertexPanUpdate(d, i),
-            onPanEnd: (d) => _onVertexPanEnd(d, i),
-            onPanCancel: () => _onVertexPanCancel(i),
-          ),
-      ],
-    ));
+    layers.add(
+      MarkerLayer(
+        markers: [
+          for (var i = 0; i < pts.length; i++)
+            _draggableVertexMarker(
+              pts[i],
+              index: i,
+              isSelected: state.selectedVertexIndex == i,
+              isDragging: _draggingIndex == i,
+              onTap: () => ctrl.selectVertex(i),
+              onPanStart: (d) => _onVertexPanStart(d, i),
+              onPanUpdate: (d) => _onVertexPanUpdate(d, i),
+              onPanEnd: (d) => _onVertexPanEnd(d, i),
+              onPanCancel: () => _onVertexPanCancel(i),
+            ),
+        ],
+      ),
+    );
   }
 
   // ── Marker factories ──────────────────────────────────────────────────────
@@ -870,8 +917,10 @@ class _UserGeofenceEditorScreenState
   }
 
   /// Draggable circle center marker.
-  Marker _draggableCircleCenterMarker(LatLng point,
-      {required bool isDragging}) {
+  Marker _draggableCircleCenterMarker(
+    LatLng point, {
+    required bool isDragging,
+  }) {
     const hitSize = 44.0;
     const dotSize = 18.0;
 
@@ -957,25 +1006,25 @@ class _UserGeofenceEditorScreenState
 
   /// Static (non-draggable) corner for the first tap of a rectangle.
   Marker _staticCornerMarker(LatLng point) => Marker(
-        point: point,
-        width: 16,
-        height: 16,
-        child: Container(
-          decoration: BoxDecoration(
-            color: OpenVtsColors.brandInk,
-            border: Border.all(color: OpenVtsColors.white, width: 2),
-          ),
-        ),
-      );
+    point: point,
+    width: 16,
+    height: 16,
+    child: Container(
+      decoration: BoxDecoration(
+        color: OpenVtsColors.brandInk,
+        border: Border.all(color: OpenVtsColors.white, width: 2),
+      ),
+    ),
+  );
 
   /// Temporary pin shown after a search result is selected.
   Marker _searchPinMarker(LatLng point) => Marker(
-        point: point,
-        width: 32,
-        height: 40,
-        alignment: const Alignment(0, -1),
-        child: const _SearchPinWidget(),
-      );
+    point: point,
+    width: 32,
+    height: 40,
+    alignment: const Alignment(0, -1),
+    child: const _SearchPinWidget(),
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1000,10 +1049,7 @@ class _SearchPinWidget extends StatelessWidget {
           ),
           child: const Icon(Icons.search, size: 14, color: OpenVtsColors.white),
         ),
-        CustomPaint(
-          size: const Size(10, 8),
-          painter: _DropTailPainter(),
-        ),
+        CustomPaint(size: const Size(10, 8), painter: _DropTailPainter()),
       ],
     );
   }
@@ -1064,7 +1110,7 @@ class _EditorTopBar extends StatelessWidget {
             iconSize: 18,
             onPressed: onCancel,
             icon: Icon(Icons.close, color: textColor),
-            tooltip: 'Cancel',
+            tooltip: context.mobileText('Cancel'),
           ),
           Expanded(
             child: Text(
@@ -1089,7 +1135,7 @@ class _EditorTopBar extends StatelessWidget {
                 ),
               ),
               child: Text(
-                'Save',
+                context.mobileText('Save'),
                 style: OpenVtsTypography.label.copyWith(
                   color: textColor,
                   fontWeight: FontWeight.w700,
@@ -1187,8 +1233,9 @@ class _ModeChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final selectedBg =
-        isDark ? OpenVtsColors.brandInk : OpenVtsColors.textPrimary;
+    final selectedBg = isDark
+        ? OpenVtsColors.brandInk
+        : OpenVtsColors.textPrimary;
     final selectedFg = OpenVtsColors.white;
     final unselectedFg = isDark
         ? Theme.of(context).colorScheme.onSurface
@@ -1274,31 +1321,43 @@ class _EditorMapControls extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _ControlButton(icon: Icons.add, tooltip: 'Zoom in', onTap: onZoomIn),
+          _ControlButton(
+            icon: Icons.add,
+            tooltip: context.mobileText('Zoom in'),
+            onTap: onZoomIn,
+          ),
           const _ControlDivider(),
           _ControlButton(
-              icon: Icons.remove, tooltip: 'Zoom out', onTap: onZoomOut),
+            icon: Icons.remove,
+            tooltip: context.mobileText('Zoom out'),
+            onTap: onZoomOut,
+          ),
           const _ControlDivider(),
           _ControlButton(
-              icon: Icons.undo,
-              tooltip: 'Undo',
-              onTap: onUndo,
-              enabled: canUndo),
+            icon: Icons.undo,
+            tooltip: context.mobileText('Undo'),
+            onTap: onUndo,
+            enabled: canUndo,
+          ),
           _ControlButton(
-              icon: Icons.redo,
-              tooltip: 'Redo',
-              onTap: onRedo,
-              enabled: canRedo),
+            icon: Icons.redo,
+            tooltip: context.mobileText('Redo'),
+            onTap: onRedo,
+            enabled: canRedo,
+          ),
           const _ControlDivider(),
           _ControlButton(
-              icon: Icons.layers_clear_outlined,
-              tooltip: 'Clear',
-              onTap: onClear),
+            icon: Icons.layers_clear_outlined,
+            tooltip: context.mobileText('Clear'),
+            onTap: onClear,
+          ),
           if (showLockSquare) ...[
             const _ControlDivider(),
             _ControlButton(
               icon: lockSquare ? Icons.lock : Icons.lock_open,
-              tooltip: lockSquare ? 'Unlock square' : 'Lock square',
+              tooltip: lockSquare
+                  ? context.mobileText('Unlock square')
+                  : context.mobileText('Lock square'),
               onTap: onToggleLockSquare,
               active: lockSquare,
             ),
@@ -1407,8 +1466,9 @@ class _BottomEditorPanel extends StatelessWidget {
             const SizedBox(height: OpenVtsSpacing.xs),
             Text(
               state.validationError!,
-              style:
-                  OpenVtsTypography.meta.copyWith(color: OpenVtsColors.error),
+              style: OpenVtsTypography.meta.copyWith(
+                color: OpenVtsColors.error,
+              ),
             ),
           ],
         ],
@@ -1504,10 +1564,13 @@ class _CircleControlsState extends State<_CircleControls> {
                 decoration: InputDecoration(
                   isDense: true,
                   suffixText: 'm',
-                  suffixStyle:
-                      OpenVtsTypography.body.copyWith(color: textColor),
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                  suffixStyle: OpenVtsTypography.body.copyWith(
+                    color: textColor,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 8,
+                  ),
                   enabled: widget.state.circleCenter != null,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(OpenVtsRadius.button),
@@ -1565,8 +1628,9 @@ class _LineControlsState extends State<_LineControls> {
     final text = t == null ? '' : t.round().toString();
     if (text != _tolerance.text) {
       _tolerance.text = text;
-      _tolerance.selection =
-          TextSelection.collapsed(offset: _tolerance.text.length);
+      _tolerance.selection = TextSelection.collapsed(
+        offset: _tolerance.text.length,
+      );
     }
   }
 
@@ -1602,12 +1666,14 @@ class _LineControlsState extends State<_LineControls> {
             style: OpenVtsTypography.body.copyWith(color: textColor),
             decoration: InputDecoration(
               isDense: true,
-              labelText: 'Tolerance',
+              labelText: context.mobileText('Tolerance'),
               labelStyle: OpenVtsTypography.body.copyWith(color: textColor),
               suffixText: 'm',
               suffixStyle: OpenVtsTypography.body.copyWith(color: textColor),
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 8,
+                vertical: 8,
+              ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(OpenVtsRadius.button),
                 borderSide: BorderSide(color: borderColor),
@@ -1658,7 +1724,10 @@ class _VertexControls extends StatelessWidget {
         Row(
           children: [
             Text(
-              '$count point${count == 1 ? '' : 's'}',
+              context.mobileText("{value1} point{value2}", {
+                'value1': (count).toString(),
+                'value2': (count == 1 ? '' : 's').toString(),
+              }),
               style: OpenVtsTypography.meta.copyWith(color: textColor),
             ),
             const Spacer(),
@@ -1676,7 +1745,9 @@ class _VertexControls extends StatelessWidget {
                 onPressed: () => controller.removePoint(selected),
                 icon: const Icon(Icons.delete_outline, size: 14),
                 label: Text(
-                  'Remove #${selected + 1}',
+                  context.mobileText("Remove #{value1}", {
+                    'value1': (selected + 1).toString(),
+                  }),
                   style: OpenVtsTypography.meta.copyWith(
                     fontWeight: FontWeight.w600,
                     color: OpenVtsColors.error,
@@ -1713,14 +1784,28 @@ class _NudgeRow extends StatelessWidget {
       child: Row(
         children: [
           Text(
-            'Fine-adjust (${_stepM.toInt()} m)',
+            context.mobileText("Fine-adjust ({value1} m)", {
+              'value1': (_stepM.toInt()).toString(),
+            }),
             style: OpenVtsTypography.meta.copyWith(color: textColor),
           ),
           const SizedBox(width: OpenVtsSpacing.sm),
-          _NudgeBtn(icon: Icons.north, onTap: () => onNudge(north: _stepM)),
-          _NudgeBtn(icon: Icons.south, onTap: () => onNudge(north: -_stepM)),
-          _NudgeBtn(icon: Icons.east, onTap: () => onNudge(east: _stepM)),
-          _NudgeBtn(icon: Icons.west, onTap: () => onNudge(east: -_stepM)),
+          _NudgeBtn(
+            icon: Icons.north,
+            onTap: () => onNudge(north: _stepM),
+          ),
+          _NudgeBtn(
+            icon: Icons.south,
+            onTap: () => onNudge(north: -_stepM),
+          ),
+          _NudgeBtn(
+            icon: Icons.east,
+            onTap: () => onNudge(east: _stepM),
+          ),
+          _NudgeBtn(
+            icon: Icons.west,
+            onTap: () => onNudge(east: -_stepM),
+          ),
         ],
       ),
     );
@@ -1737,8 +1822,9 @@ class _NudgeBtn extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bgColor = isDark ? OpenVtsColors.brandInk : OpenVtsColors.textPrimary;
-    final borderColor =
-        isDark ? OpenVtsColors.white : OpenVtsColors.textPrimary;
+    final borderColor = isDark
+        ? OpenVtsColors.white
+        : OpenVtsColors.textPrimary;
 
     return Padding(
       padding: const EdgeInsets.only(left: 4),
@@ -1836,7 +1922,7 @@ class _SearchBar extends StatelessWidget {
               style: OpenVtsTypography.body.copyWith(color: textColor),
               decoration: InputDecoration(
                 isDense: true,
-                hintText: 'Search place or address...',
+                hintText: context.mobileText('Search place or address...'),
                 hintStyle: OpenVtsTypography.body.copyWith(color: hintColor),
                 prefixIcon: Icon(
                   Icons.search,
@@ -1858,11 +1944,11 @@ class _SearchBar extends StatelessWidget {
                         ),
                       )
                     : controller.text.isNotEmpty
-                        ? IconButton(
-                            icon: Icon(Icons.close, size: 18, color: textColor),
-                            onPressed: onClear,
-                          )
-                        : null,
+                    ? IconButton(
+                        icon: Icon(Icons.close, size: 18, color: textColor),
+                        onPressed: onClear,
+                      )
+                    : null,
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.symmetric(vertical: 10),
               ),
@@ -1873,9 +1959,7 @@ class _SearchBar extends StatelessWidget {
               constraints: const BoxConstraints(maxHeight: 220),
               decoration: BoxDecoration(
                 border: Border(
-                  top: BorderSide(
-                    color: borderColor.withValues(alpha: 0.3),
-                  ),
+                  top: BorderSide(color: borderColor.withValues(alpha: 0.3)),
                 ),
               ),
               child: ListView.builder(

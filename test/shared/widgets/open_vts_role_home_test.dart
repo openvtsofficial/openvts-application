@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:open_vts/l10n/app_localizations.dart';
 import 'package:open_vts/shared/widgets/open_vts_role_home.dart';
 
 const _homeRoute = '/home';
@@ -16,11 +17,7 @@ const _launcherItems = [
     icon: Icons.local_shipping_outlined,
     route: '/vehicles',
   ),
-  OpenVtsRoleHomeItem(
-    label: 'Maps',
-    icon: Icons.map_outlined,
-    route: '/maps',
-  ),
+  OpenVtsRoleHomeItem(label: 'Maps', icon: Icons.map_outlined, route: '/maps'),
   OpenVtsRoleHomeItem(
     label: 'Landmarks Studio',
     icon: Icons.place_outlined,
@@ -60,6 +57,9 @@ Future<void> _pumpRoleHome(
   ThemeMode themeMode = ThemeMode.light,
   List<OpenVtsRoleHomeItem> items = _launcherItems,
   int notificationBadgeCount = 7,
+  double textScale = 1,
+  bool accessAvailable = true,
+  bool notificationsAllowed = true,
 }) async {
   tester.view.devicePixelRatio = 1.0;
   tester.view.physicalSize = Size(width, height);
@@ -78,7 +78,8 @@ Future<void> _pumpRoleHome(
             items: items,
             notificationBadgeCount: notificationBadgeCount,
             onToggleTheme: () {},
-            onNotificationsPressed: () {},
+            onNotificationsPressed: notificationsAllowed ? () {} : null,
+            accessAvailable: accessAvailable,
             onProfilePressed: () {},
           );
         },
@@ -88,17 +89,25 @@ Future<void> _pumpRoleHome(
           path: item.route,
           builder: (context, state) {
             return Scaffold(
-              body: Center(
-                child: Text('Destination ${item.route}'),
-              ),
+              body: Center(child: Text('Destination ${item.route}')),
             );
           },
         ),
     ],
   );
 
+  addTearDown(router.dispose);
+
   await tester.pumpWidget(
     MaterialApp.router(
+      supportedLocales: AppLocalizations.supportedLocales,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(
+          context,
+        ).copyWith(textScaler: TextScaler.linear(textScale)),
+        child: child!,
+      ),
       theme: ThemeData.light(useMaterial3: true),
       darkTheme: ThemeData.dark(useMaterial3: true),
       themeMode: themeMode,
@@ -164,40 +173,38 @@ void main() {
   });
 
   group('OpenVtsRoleHome launcher layout', () {
-    for (final width in const [320.0, 360.0, 390.0, 412.0, 430.0]) {
-      testWidgets('shows 3 columns at ${width.toInt()} width', (tester) async {
-        await _pumpRoleHome(tester, width: width);
-
-        _expectGridColumns(tester, 3);
-        expect(tester.takeException(), isNull);
-      });
+    for (final viewport in const <int, int>{
+      320: 3,
+      360: 3,
+      390: 3,
+      412: 3,
+      430: 3,
+      520: 4,
+      768: 5,
+      980: 6,
+      1024: 6,
+    }.entries) {
+      testWidgets(
+        'shows ${viewport.value} columns at ${viewport.key.toInt()} width',
+        (tester) async {
+          await _pumpRoleHome(tester, width: viewport.key.toDouble());
+          _expectGridColumns(tester, viewport.value);
+          expect(tester.takeException(), isNull);
+        },
+      );
     }
 
-    testWidgets('shows 4 columns at 520 width', (tester) async {
-      await _pumpRoleHome(tester, width: 520);
-
-      _expectGridColumns(tester, 4);
-      expect(tester.takeException(), isNull);
-    });
-
-    testWidgets('shows 5 columns at 768 width', (tester) async {
-      await _pumpRoleHome(tester, width: 768);
-
-      _expectGridColumns(tester, 5);
-      expect(tester.takeException(), isNull);
-    });
-
-    testWidgets('shows 6 columns at 980 width', (tester) async {
-      await _pumpRoleHome(tester, width: 980);
-
-      _expectGridColumns(tester, 6);
-      expect(tester.takeException(), isNull);
-    });
-
-    testWidgets('shows 6 columns at 1024 width', (tester) async {
-      await _pumpRoleHome(tester, width: 1024);
-
-      _expectGridColumns(tester, 6);
+    testWidgets('large text keeps compact icons with enough space for labels', (
+      tester,
+    ) async {
+      await _pumpRoleHome(tester, width: 390, textScale: 2);
+      _expectGridColumns(tester, 2);
+      await tester.scrollUntilVisible(
+        find.text(_footerText),
+        300,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(find.text(_footerText), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 
@@ -225,31 +232,160 @@ void main() {
     ) async {
       await _pumpRoleHome(tester, width: 320);
 
-      final iconBoxSize = tester.getSize(find.byType(AnimatedContainer).first);
+      final iconBoxSize = tester.getSize(
+        find.ancestor(
+          of: find.text('Dashboard'),
+          matching: find.byType(InkWell),
+        ),
+      );
 
       expect(iconBoxSize.width, greaterThanOrEqualTo(44));
       expect(iconBoxSize.height, greaterThanOrEqualTo(44));
     });
 
-    testWidgets('renders notification badge, avatar fallback, and light theme',
-        (
-      tester,
-    ) async {
-      await _pumpRoleHome(tester, width: 390, notificationBadgeCount: 7);
+    testWidgets(
+      'renders notification badge, avatar fallback, and light theme',
+      (tester) async {
+        await _pumpRoleHome(tester, width: 390, notificationBadgeCount: 7);
 
-      expect(find.text('7'), findsOneWidget);
-      expect(find.text('QR'), findsOneWidget);
-      expect(find.text('User workspace'), findsOneWidget);
-      expect(tester.takeException(), isNull);
-    });
+        expect(find.text('7'), findsOneWidget);
+        expect(find.text('QR'), findsOneWidget);
+        expect(find.byTooltip('Profile'), findsOneWidget);
+        expect(find.text('User workspace'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
+    );
 
     testWidgets('renders cleanly in dark theme', (tester) async {
       await _pumpRoleHome(tester, width: 390, themeMode: ThemeMode.dark);
 
       expect(find.text('User workspace'), findsOneWidget);
+      expect(find.byTooltip('Light mode'), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.text(_footerText),
+        300,
+        scrollable: find.byType(Scrollable).first,
+      );
       expect(find.text(_footerText), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
+
+    testWidgets('exposes launcher icons as accessible buttons', (tester) async {
+      final semantics = tester.ensureSemantics();
+      try {
+        await _pumpRoleHome(tester, width: 390);
+        expect(find.bySemanticsLabel(RegExp('Dashboard')), findsOneWidget);
+        final node = tester.getSemantics(
+          find.bySemanticsLabel(RegExp('Dashboard')),
+        );
+        expect(
+          node,
+          matchesSemantics(
+            isButton: true,
+            hasTapAction: true,
+            hasFocusAction: true,
+            isFocusable: true,
+            label: 'Dashboard',
+          ),
+        );
+      } finally {
+        semantics.dispose();
+      }
+    });
+
+    testWidgets(
+      'shows only supplied permitted items and hides unauthorized notifications',
+      (tester) async {
+        await _pumpRoleHome(
+          tester,
+          width: 390,
+          items: [_launcherItems.first],
+          notificationsAllowed: false,
+        );
+        expect(find.text('Dashboard'), findsOneWidget);
+        expect(find.text('Vehicles'), findsNothing);
+        expect(find.byTooltip('Notifications'), findsNothing);
+      },
+    );
+
+    testWidgets('unavailable access explains how to retry an empty workspace', (
+      tester,
+    ) async {
+      await _pumpRoleHome(
+        tester,
+        width: 390,
+        items: [],
+        accessAvailable: false,
+      );
+      expect(
+        find.text(
+          'Workspace access could not be refreshed. Pull down to retry.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Dashboard'), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets(
+      'header keeps Language, theme, notifications, profile order and 48dp targets',
+      (tester) async {
+        await _pumpRoleHome(tester, width: 320, height: 568);
+        final keys = [
+          'home-language',
+          'home-theme',
+          'home-notifications',
+          'home-profile',
+        ];
+        double previousEnd = 0;
+        for (final key in keys) {
+          final action = find.byKey(ValueKey(key));
+          final rect = tester.getRect(action);
+          expect(rect.left, greaterThanOrEqualTo(previousEnd));
+          expect(rect.width, greaterThanOrEqualTo(48));
+          expect(rect.height, greaterThanOrEqualTo(48));
+          previousEnd = rect.right;
+        }
+        expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets(
+      'extreme accessibility text scrolls without overflow on a narrow phone',
+      (tester) async {
+        await _pumpRoleHome(tester, width: 320, height: 568, textScale: 3);
+        _expectGridColumns(tester, 1);
+        await tester.scrollUntilVisible(
+          find.text(_footerText),
+          300,
+          scrollable: find.byType(Scrollable).first,
+        );
+        expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets(
+      'restores centered icon boxes and labels instead of dashboard cards',
+      (tester) async {
+        await _pumpRoleHome(tester, width: 390);
+        final icon = find.byIcon(Icons.dashboard_outlined);
+        final label = find.text('Dashboard');
+        expect(
+          tester.getCenter(icon).dx,
+          closeTo(tester.getCenter(label).dx, 1),
+        );
+        expect(
+          tester.getBottomLeft(icon).dy,
+          lessThan(tester.getTopLeft(label).dy),
+        );
+        final iconBox = find.ancestor(
+          of: icon,
+          matching: find.byType(AnimatedContainer),
+        );
+        expect(tester.getSize(iconBox), const Size(54, 54));
+        expect(find.byIcon(Icons.arrow_outward_rounded), findsNothing);
+      },
+    );
 
     testWidgets('navigates when a launcher item is tapped', (tester) async {
       await _pumpRoleHome(tester, width: 390);
@@ -289,7 +425,9 @@ void main() {
       await _pumpRoleHome(tester, width: 1024);
 
       final footerTop = tester.getTopLeft(find.text(_footerText)).dy;
-      final lastGridLabelBottom = tester.getBottomLeft(find.text('Support')).dy;
+      final lastGridLabelBottom = tester
+          .getBottomLeft(find.text('Settings'))
+          .dy;
 
       expect(footerTop, greaterThan(lastGridLabelBottom));
       expect(tester.takeException(), isNull);

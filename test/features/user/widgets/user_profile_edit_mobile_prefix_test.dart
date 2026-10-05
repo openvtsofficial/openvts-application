@@ -40,6 +40,9 @@ class _FakeController extends StateNotifier<UserSettingsState>
   _FakeController(super.state);
 
   @override
+  Future<void> loadReferenceData({bool force = false}) async {}
+
+  @override
   dynamic noSuchMethod(Invocation invocation) {}
 }
 
@@ -78,12 +81,18 @@ Widget _pump({
 }
 
 // Scope text finders to the bottom-sheet picker only.
-Finder _inPicker(String text) => find.descendant(
-      of: find.byType(BottomSheet),
-      matching: find.text(text),
-    );
+Finder _inPicker(String text) =>
+    find.descendant(of: find.byType(BottomSheet), matching: find.text(text));
 
 Finder _searchField() => find.widgetWithText(TextField, 'Dial code or country');
+
+// Locate the phone input by its contract rather than localized label casing.
+Finder _manualPrefixInput() => find.byWidgetPredicate(
+  (widget) =>
+      widget is TextField &&
+      widget.keyboardType == TextInputType.phone &&
+      widget.decoration?.hintText == '+1',
+);
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -92,14 +101,15 @@ Finder _searchField() => find.widgetWithText(TextField, 'Dial code or country');
 void main() {
   group('UserProfileEditSheet — mobile prefix: catalogue path', () {
     testWidgets(
-        'renders OpenVtsSearchableDropdown when prefix catalogue is available',
-        (tester) async {
-      await tester.pumpWidget(_pump());
-      await tester.pumpAndSettle();
+      'renders OpenVtsSearchableDropdown when prefix catalogue is available',
+      (tester) async {
+        await tester.pumpWidget(_pump());
+        await tester.pumpAndSettle();
 
-      expect(find.byType(OpenVtsSearchableDropdown<String>), findsOneWidget);
-      expect(find.byType(DropdownButtonFormField<String>), findsNothing);
-    });
+        expect(find.byType(OpenVtsSearchableDropdown<String>), findsOneWidget);
+        expect(find.byType(DropdownButtonFormField<String>), findsNothing);
+      },
+    );
 
     testWidgets('shows pre-selected dial code in trigger', (tester) async {
       await tester.pumpWidget(_pump());
@@ -148,8 +158,9 @@ void main() {
       expect(_inPicker('+1'), findsNothing);
     });
 
-    testWidgets('searching by country code (uppercase) filters results',
-        (tester) async {
+    testWidgets('searching by country code (uppercase) filters results', (
+      tester,
+    ) async {
       await tester.pumpWidget(_pump(profile: _profileNoPrefix));
       await tester.pumpAndSettle();
 
@@ -178,8 +189,9 @@ void main() {
       expect(_inPicker('+91'), findsNothing);
     });
 
-    testWidgets('no-match query shows empty state without throwing',
-        (tester) async {
+    testWidgets('no-match query shows empty state without throwing', (
+      tester,
+    ) async {
       await tester.pumpWidget(_pump(profile: _profileNoPrefix));
       await tester.pumpAndSettle();
 
@@ -196,8 +208,9 @@ void main() {
   });
 
   group('UserProfileEditSheet — mobile prefix: selection', () {
-    testWidgets('selecting a prefix updates the trigger display',
-        (tester) async {
+    testWidgets('selecting a prefix updates the trigger display', (
+      tester,
+    ) async {
       await tester.pumpWidget(_pump(profile: _profileNoPrefix));
       await tester.pumpAndSettle();
 
@@ -210,8 +223,9 @@ void main() {
       expect(find.text('+44'), findsAtLeastNWidgets(1));
     });
 
-    testWidgets('search then select returns correct canonical dial code',
-        (tester) async {
+    testWidgets('search then select returns correct canonical dial code', (
+      tester,
+    ) async {
       await tester.pumpWidget(_pump(profile: _profileNoPrefix));
       await tester.pumpAndSettle();
 
@@ -230,38 +244,41 @@ void main() {
 
   group('UserProfileEditSheet — mobile prefix: manual fallback', () {
     testWidgets(
-        'renders TextFormField (not searchable dropdown) when no catalogue',
-        (tester) async {
-      await tester.pumpWidget(_pump(
-        profile: _profileNoPrefix,
-        prefixes: const [],
-      ));
-      await tester.pumpAndSettle();
+      'renders TextFormField (not searchable dropdown) when no catalogue',
+      (tester) async {
+        await tester.pumpWidget(
+          _pump(profile: _profileNoPrefix, prefixes: const []),
+        );
+        await tester.pumpAndSettle();
 
-      // No searchable dropdown when catalogue is empty.
-      expect(find.byType(OpenVtsSearchableDropdown<String>), findsNothing);
-      // The fallback TextFormField is rendered with the 'Mobile Prefix' label.
-      expect(
-        find.widgetWithText(TextFormField, 'Mobile Prefix'),
-        findsOneWidget,
-      );
-    });
+        // No searchable dropdown when catalogue is empty.
+        expect(find.byType(OpenVtsSearchableDropdown<String>), findsNothing);
+        // The fallback remains a validated form field with a phone keyboard.
+        expect(
+          find.ancestor(
+            of: _manualPrefixInput(),
+            matching: find.byType(TextFormField),
+          ),
+          findsOneWidget,
+        );
+      },
+    );
 
     testWidgets('manual field accepts typed dial code', (tester) async {
-      await tester.pumpWidget(_pump(
-        profile: _profileNoPrefix,
-        prefixes: const [],
-      ));
+      await tester.pumpWidget(
+        _pump(profile: _profileNoPrefix, prefixes: const []),
+      );
       await tester.pumpAndSettle();
 
       // Confirm no searchable dropdown — user must type manually.
       expect(find.byType(OpenVtsSearchableDropdown<String>), findsNothing);
 
-      // Find the manual prefix text field by its label and enter a value.
-      final prefixField = find.widgetWithText(TextFormField, 'Mobile Prefix');
+      // Type into the actual manual phone input and verify its controller value.
+      final prefixField = _manualPrefixInput();
       expect(prefixField, findsOneWidget);
       await tester.enterText(prefixField, '+49');
       expect(find.text('+49'), findsOneWidget);
+      expect(tester.widget<TextField>(prefixField).controller!.text, '+49');
     });
   });
 }

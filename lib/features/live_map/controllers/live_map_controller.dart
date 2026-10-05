@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter/widgets.dart';
 
 import '../../../core/socket/socket_service.dart';
 import '../../../shared/models/vehicle_summary.dart';
@@ -25,10 +24,9 @@ import '../services/live_map_vehicle_service.dart';
 ///    * admin / user → chunked `telemetry:subscribe { imeis: [...] }` and
 ///      `notif:subscribe { imeis: [...] }`, built from the REST baseline.
 ///
-/// Location smoothing, 120 ms telemetry batching and the 300-alert cap remain
-/// unchanged. Today-distance uses the local-day baseline supplied over HTTP.
-class LiveMapController extends StateNotifier<LiveMapState>
-    with WidgetsBindingObserver {
+/// The merge / dedupe / monotonic / 120 ms batch / 300-alert cap logic is
+/// preserved byte-for-byte.
+class LiveMapController extends StateNotifier<LiveMapState> {
   LiveMapController({
     required LiveMapVehicleService vehicleService,
     required LiveMapEventsService mapEventsService,
@@ -38,9 +36,7 @@ class LiveMapController extends StateNotifier<LiveMapState>
         _mapEventsService = mapEventsService,
         _socketService = socketService,
         _config = config,
-        super(const LiveMapState.initial()) {
-    WidgetsBinding.instance.addObserver(this);
-  }
+        super(const LiveMapState.initial());
 
   static const String _superadminScope = 'superadmin';
   static const String _demoScope = 'demo';
@@ -68,12 +64,6 @@ class LiveMapController extends StateNotifier<LiveMapState>
   final Map<String, dynamic> _pendingDeviceStatusUpdatesByAlias =
       <String, dynamic>{};
   Timer? _liveTelemetryPublishTimer;
-  Timer? _dayBoundaryTimer;
-  Timer? _dayDistanceRetryTimer;
-  DateTime? _activeLocalDayStart;
-  DateTime? _lastDayDistanceAttempt;
-  bool _isRefreshingDayDistance = false;
-  int _dayDistanceRetries = 0;
   bool _hasPendingTelemetryPublish = false;
   bool _isBootstrappingTelemetry = false;
   bool _didSeedTelemetry = false;
@@ -88,7 +78,6 @@ class LiveMapController extends StateNotifier<LiveMapState>
   LiveMapRoleConfig get config => _config;
 
   void initialize() {
-    _scheduleDayBoundary();
     unawaited(_initializeTelemetry());
     unawaited(_bootstrapAlerts());
     unawaited(_connectNotificationsSocket());
@@ -122,9 +111,6 @@ class LiveMapController extends StateNotifier<LiveMapState>
 
       _didSeedTelemetry = true;
       _hasTelemetryBaseline = true;
-      final now = DateTime.now();
-      _activeLocalDayStart = DateTime(now.year, now.month, now.day);
-      _lastDayDistanceAttempt = now;
       _replaceBaselineVehicles(telemetry.vehicles);
       _rebuildBaselineImeis();
       final didApplyPending = _applyPendingLiveUpdates();
@@ -139,12 +125,6 @@ class LiveMapController extends StateNotifier<LiveMapState>
       // the new IMEI hash is applied.
       _sendTelemetrySubscriptionIfNeeded();
       _sendNotificationSubscriptionIfNeeded();
-      // A paginated bootstrap may straddle midnight. Re-fetch that day instead
-      // of publishing the previous day's aggregate as Today.
-      if (_vehiclesByKey.values.any((vehicle) =>
-          vehicle.browserDayKey != null && vehicle.distanceKm == null)) {
-        unawaited(_refreshDayDistance(force: true));
-      }
 
       return true;
     } catch (error) {
@@ -159,108 +139,6 @@ class LiveMapController extends StateNotifier<LiveMapState>
       return false;
     } finally {
       _isBootstrappingTelemetry = false;
-    }
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState lifecycle) {
-    if (lifecycle != AppLifecycleState.resumed || !mounted) return;
-    final changedDay = _invalidatePreviousDayDistance();
-    _scheduleDayBoundary();
-    unawaited(_refreshDayDistance(force: changedDay));
-  }
-
-  void _scheduleDayBoundary() {
-    _dayBoundaryTimer?.cancel();
-    final now = DateTime.now();
-    final next = DateTime(now.year, now.month, now.day + 1);
-    _dayBoundaryTimer = Timer(next.difference(now), () {
-      if (!mounted) return;
-      final changedDay = _invalidatePreviousDayDistance();
-      unawaited(_refreshDayDistance(force: changedDay));
-      _scheduleDayBoundary();
-    });
-  }
-
-  bool _invalidatePreviousDayDistance() {
-    final now = DateTime.now();
-    final dayStart = DateTime(now.year, now.month, now.day);
-    if (_activeLocalDayStart?.isAtSameMomentAs(dayStart) == true) return false;
-    _activeLocalDayStart = dayStart;
-    _dayDistanceRetries = 0;
-    _dayDistanceRetryTimer?.cancel();
-    if (!_hasTelemetryBaseline) return false;
-    _vehiclesByKey = _vehiclesByKey.map((key, vehicle) => MapEntry(
-      key,
-      vehicle.copyWith(
-        distanceKm: null,
-        browserDayKey: VehicleSummary.localDayKey(now),
-        browserDayStart: dayStart,
-        browserDayBaseOdometer: null,
-      ),
-    ));
-    _publishMergedTelemetry();
-    return true;
-  }
-
-  /// Refresh only day counters: a slow REST response must not move live markers
-  /// back to an older position. Reconnect/resume attempts are throttled and
-  /// concurrent attempts coalesce; rollover failures have three bounded retries.
-  Future<void> _refreshDayDistance({bool force = false}) async {
-    if (!_hasTelemetryBaseline || _isRefreshingDayDistance || !mounted) return;
-    final now = DateTime.now();
-    if (!force && _lastDayDistanceAttempt != null &&
-        now.difference(_lastDayDistanceAttempt!) < const Duration(minutes: 1)) {
-      return;
-    }
-    _lastDayDistanceAttempt = now;
-    _isRefreshingDayDistance = true;
-    var hasLocalDayBaseline = false;
-    try {
-      final telemetry = await _vehicleService.getMapTelemetry();
-      if (!mounted) return;
-      var didChange = false;
-      for (final incoming in telemetry.vehicles) {
-        final key = _resolveStorageKey(
-          _vehiclesByKey, _vehicleKeyByAlias,
-          aliases: _identityAliasesForVehicle(incoming), allowCreate: false,
-        );
-        if (key == null) continue;
-        final current = _vehiclesByKey[key]!;
-        final refreshTime = DateTime.now();
-        final localStart = DateTime(
-          refreshTime.year, refreshTime.month, refreshTime.day,
-        );
-        hasLocalDayBaseline = hasLocalDayBaseline ||
-            (incoming.distanceKm != null &&
-             incoming.browserDayKey == VehicleSummary.localDayKey(refreshTime) &&
-             incoming.browserDayStart?.isAtSameMomentAs(localStart) == true);
-        final reconciled = current.withTodayDistanceFrom(
-          incoming, now: refreshTime, authoritativeBaseline: true,
-        );
-        if (!_isSameVehicleSnapshot(current, reconciled)) {
-          _vehiclesByKey[key] = reconciled;
-          didChange = true;
-        }
-      }
-      if (didChange) _publishMergedTelemetry();
-      if (hasLocalDayBaseline || _vehiclesByKey.isEmpty) {
-        _dayDistanceRetries = 0;
-        _dayDistanceRetryTimer?.cancel();
-      }
-    } catch (_) {
-      // Keep live tracking available while the analytics baseline is retried.
-    } finally {
-      _isRefreshingDayDistance = false;
-      if (mounted && !hasLocalDayBaseline && _vehiclesByKey.isNotEmpty &&
-          _dayDistanceRetries < 3) {
-        final delay = Duration(seconds: 30 * (1 << _dayDistanceRetries));
-        _dayDistanceRetries += 1;
-        _dayDistanceRetryTimer?.cancel();
-        _dayDistanceRetryTimer = Timer(delay, () {
-          unawaited(_refreshDayDistance(force: true));
-        });
-      }
     }
   }
 
@@ -386,8 +264,6 @@ class LiveMapController extends StateNotifier<LiveMapState>
     // Force re-send on every connect (server lost any prior subscription).
     _lastSentTelemetrySubscriptionHash = null;
     _sendTelemetrySubscriptionIfNeeded();
-    final changedDay = _invalidatePreviousDayDistance();
-    unawaited(_refreshDayDistance(force: changedDay));
   }
 
   void _handleTelemetryDisconnected(dynamic _) {
@@ -944,18 +820,12 @@ class LiveMapController extends StateNotifier<LiveMapState>
   void _replaceBaselineVehicles(Iterable<VehicleSummary> vehicles) {
     final updatedVehicles = <String, VehicleSummary>{};
     final updatedAliases = <String, String>{};
-    final now = DateTime.now();
     for (final vehicle in vehicles) {
-      final seeded = vehicle.browserDayKey == null
-          ? vehicle
-          : vehicle.withTodayDistanceFrom(
-              vehicle, now: now, authoritativeBaseline: true,
-            );
       _upsertVehicle(
         updatedVehicles,
         updatedAliases,
-        seeded,
-        aliases: _identityAliasesForVehicle(seeded),
+        vehicle,
+        aliases: _identityAliasesForVehicle(vehicle),
         allowCreate: true,
       );
     }
@@ -1085,13 +955,6 @@ class LiveMapController extends StateNotifier<LiveMapState>
       incoming: incoming,
       useIncomingLocation: useIncomingLocation,
     );
-    final dayDistance = current.withTodayDistanceFrom(
-      incoming, now: DateTime.now(),
-    );
-    if (current.browserDayBaseOdometer != null &&
-        dayDistance.browserDayBaseOdometer == null) {
-      unawaited(_refreshDayDistance(force: true));
-    }
     return current.copyWith(
       id: incoming.id.isNotEmpty ? incoming.id : current.id,
       imei: incoming.imei.isNotEmpty ? incoming.imei : current.imei,
@@ -1107,11 +970,8 @@ class LiveMapController extends StateNotifier<LiveMapState>
           ? incoming.hasValidLocation
           : current.hasValidLocation,
       updatedAt: resolvedUpdatedAt,
-      distanceKm: dayDistance.distanceKm,
-      browserDayKey: dayDistance.browserDayKey,
-      browserDayStart: dayDistance.browserDayStart,
-      browserDayBaseOdometer: dayDistance.browserDayBaseOdometer,
-      odometerKm: dayDistance.odometerKm,
+      distanceKm: incoming.distanceKm ?? current.distanceKm,
+      odometerKm: incoming.odometerKm ?? current.odometerKm,
       engineHoursToday: incoming.engineHoursToday ?? current.engineHoursToday,
       engineHours: incoming.engineHours ?? current.engineHours,
       totalEngineHours: incoming.totalEngineHours ?? current.totalEngineHours,
@@ -1210,9 +1070,6 @@ class LiveMapController extends StateNotifier<LiveMapState>
         left.hasValidLocation == right.hasValidLocation &&
         left.updatedAt == right.updatedAt &&
         left.distanceKm == right.distanceKm &&
-        left.browserDayKey == right.browserDayKey &&
-        left.browserDayStart == right.browserDayStart &&
-        left.browserDayBaseOdometer == right.browserDayBaseOdometer &&
         left.odometerKm == right.odometerKm &&
         left.engineHoursToday == right.engineHoursToday &&
         left.engineHours == right.engineHours &&
@@ -1473,9 +1330,6 @@ class LiveMapController extends StateNotifier<LiveMapState>
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    _dayBoundaryTimer?.cancel();
-    _dayDistanceRetryTimer?.cancel();
     _liveTelemetryPublishTimer?.cancel();
     _telemetryConnection?.disconnect();
     _notificationsConnection?.disconnect();

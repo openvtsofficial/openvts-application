@@ -8,6 +8,8 @@ import 'package:open_vts/core/utils/date_time_formatter.dart';
 import 'package:open_vts/features/user/models/user_support_model.dart';
 import 'package:open_vts/shared/widgets/open_vts_card.dart';
 
+import '../../../../../shared/helpers/mobile_text.dart';
+
 class UserSupportTicketCard extends ConsumerWidget {
   const UserSupportTicketCard({
     required this.ticket,
@@ -102,7 +104,7 @@ class UserSupportTicketCard extends ConsumerWidget {
                   Expanded(
                     child: Text(
                       activityDate == null
-                          ? 'No activity yet'
+                          ? context.mobileText('No activity yet')
                           : dateFormatter.formatDateTime(activityDate),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,

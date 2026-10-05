@@ -9,12 +9,12 @@ import '../../../core/theme/open_vts_colors.dart';
 import '../../../core/theme/open_vts_radius.dart';
 import '../../../core/theme/open_vts_spacing.dart';
 import '../../../core/theme/open_vts_typography.dart';
+import '../../../shared/helpers/mobile_text.dart';
 import '../../../shared/helpers/toast_helper.dart';
 import '../controllers/auth_controller.dart';
 import '../controllers/auth_state.dart';
 import '../widgets/login_form.dart';
 import '../widgets/mfa_login_form.dart';
-import '../../../core/widgets/app_legal_links.dart';
 
 class LoginScreen extends ConsumerWidget {
   const LoginScreen({super.key});
@@ -25,7 +25,9 @@ class LoginScreen extends ConsumerWidget {
       if (previous?.status != AuthStatus.authenticated &&
           next.status == AuthStatus.authenticated) {
         ToastHelper.showSuccess(
-          'Login successful',
+          next.isDemo
+              ? context.mobileText('Demo workspace opened')
+              : context.mobileText('Login successful'),
         );
       }
 
@@ -49,8 +51,9 @@ class LoginScreen extends ConsumerWidget {
     return Scaffold(
       body: DecoratedBox(
         decoration: BoxDecoration(
-          color:
-              isDark ? OpenVtsColors.darkBackground : OpenVtsColors.background,
+          color: isDark
+              ? OpenVtsColors.darkBackground
+              : OpenVtsColors.background,
         ),
         child: Stack(
           children: [
@@ -85,16 +88,25 @@ class LoginScreen extends ConsumerWidget {
                     child: _LoginPanel(
                       isLoading: isLoading,
                       errorMessage: authState.errorMessage,
+                      mfaForm: authState.mfaChallenge == null
+                          ? null
+                          : MfaLoginForm(
+                              isLoading: authState.isVerifyingMfa,
+                              onSubmit: ref
+                                  .read(authControllerProvider.notifier)
+                                  .verifyMfa,
+                              onCancel: ref
+                                  .read(authControllerProvider.notifier)
+                                  .cancelMfa,
+                            ),
                       onSubmit: (identifier, password) {
-                        ref.read(authControllerProvider.notifier).login(
-                              identifier: identifier,
-                              password: password,
-                            );
+                        ref
+                            .read(authControllerProvider.notifier)
+                            .login(identifier: identifier, password: password);
                       },
-                      mfaRequired: authState.mfaChallenge != null,
-                      isVerifyingMfa: authState.isVerifyingMfa,
-                      onVerifyMfa: (code) => ref.read(authControllerProvider.notifier).verifyMfaLogin(code),
-                      onCancelMfa: () => ref.read(authControllerProvider.notifier).cancelMfaLogin(),
+                      onDemo: () {
+                        ref.read(authControllerProvider.notifier).enterDemo();
+                      },
                     ),
                   ),
                 ),
@@ -142,7 +154,9 @@ class _ThemeToggleButton extends StatelessWidget {
 
     return IconButton(
       onPressed: onPressed,
-      tooltip: isDark ? 'Switch to light mode' : 'Switch to dark mode',
+      tooltip: isDark
+          ? context.mobileText('Switch to light mode')
+          : context.mobileText('Switch to dark mode'),
       icon: Icon(isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded),
       color: isDark ? OpenVtsColors.white : OpenVtsColors.brandInk,
       style: IconButton.styleFrom(
@@ -172,7 +186,7 @@ class _LoginSettingsButton extends StatelessWidget {
 
     return IconButton(
       onPressed: onPressed,
-      tooltip: 'Base URL settings',
+      tooltip: context.mobileText('Base URL settings'),
       icon: const Icon(Icons.settings_rounded),
       color: isDark ? OpenVtsColors.white : OpenVtsColors.brandInk,
       style: IconButton.styleFrom(
@@ -195,20 +209,16 @@ class _LoginPanel extends StatelessWidget {
   const _LoginPanel({
     required this.isLoading,
     required this.onSubmit,
-    required this.mfaRequired,
-    required this.isVerifyingMfa,
-    required this.onVerifyMfa,
-    required this.onCancelMfa,
+    required this.onDemo,
     this.errorMessage,
+    this.mfaForm,
   });
 
   final bool isLoading;
   final String? errorMessage;
+  final Widget? mfaForm;
   final void Function(String email, String password) onSubmit;
-  final bool mfaRequired;
-  final bool isVerifyingMfa;
-  final ValueChanged<String> onVerifyMfa;
-  final VoidCallback onCancelMfa;
+  final VoidCallback onDemo;
 
   @override
   Widget build(BuildContext context) {
@@ -242,7 +252,7 @@ class _LoginPanel extends StatelessWidget {
             height: 52,
             errorBuilder: (_, __, ___) {
               return Text(
-                'Open VTS',
+                context.mobileText('Open VTS'),
                 style: OpenVtsTypography.titleMedium.copyWith(
                   fontWeight: FontWeight.w700,
                   color: isDark ? OpenVtsColors.white : null,
@@ -251,13 +261,12 @@ class _LoginPanel extends StatelessWidget {
             },
           ),
           const SizedBox(height: OpenVtsSpacing.xl),
-          if (mfaRequired)
-            MfaLoginForm(isLoading: isVerifyingMfa,
-              onSubmit: onVerifyMfa, onCancel: onCancelMfa)
-          else
-            LoginForm(isLoading: isLoading, onSubmit: onSubmit),
-          const SizedBox(height: OpenVtsSpacing.md),
-          const AppLegalLinks(),
+          mfaForm ??
+              LoginForm(
+                isLoading: isLoading,
+                onSubmit: onSubmit,
+                onDemo: onDemo,
+              ),
           if (errorMessage != null) ...[
             const SizedBox(height: OpenVtsSpacing.md),
             Container(

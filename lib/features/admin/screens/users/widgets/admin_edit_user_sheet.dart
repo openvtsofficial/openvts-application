@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/utils/validators.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../shared/widgets/open_vts_text_field.dart';
@@ -62,8 +63,9 @@ class _AdminEditUserSheetState extends ConsumerState<AdminEditUserSheet> {
     _companyNameController = TextEditingController(
       text: _initialText(user.companyName),
     );
-    _addressController =
-        TextEditingController(text: _initialText(user.location));
+    _addressController = TextEditingController(
+      text: _initialText(user.location),
+    );
     _pincodeController = TextEditingController(text: user.pincode);
     _mobilePrefix = _blankToNull(user.mobilePrefix);
     _countryCode = _blankToNull(user.countryCode)?.toUpperCase();
@@ -105,10 +107,10 @@ class _AdminEditUserSheetState extends ConsumerState<AdminEditUserSheet> {
                   const SizedBox(height: OpenVtsSpacing.md),
                 ],
                 AdminUserFormSection(
-                  title: 'Identity',
+                  title: context.mobileText('Identity'),
                   children: [
                     OpenVtsTextField(
-                      label: 'Full Name',
+                      label: context.mobileText('Full Name'),
                       controller: _nameController,
                       textInputAction: TextInputAction.next,
                       prefixIcon: Icons.person_outline_rounded,
@@ -116,13 +118,13 @@ class _AdminEditUserSheetState extends ConsumerState<AdminEditUserSheet> {
                     ),
                     const SizedBox(height: OpenVtsSpacing.sm),
                     OpenVtsTextField(
-                      label: 'Email (optional)',
+                      label: context.mobileText('Email'),
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
                       textInputAction: TextInputAction.next,
                       autofillHints: const [AutofillHints.email],
                       prefixIcon: Icons.mail_outline_rounded,
-                      validator: Validators.adminEmailOptional,
+                      validator: Validators.email,
                     ),
                     const SizedBox(height: OpenVtsSpacing.sm),
                     AdminUserPrefixPhoneRow(
@@ -138,10 +140,10 @@ class _AdminEditUserSheetState extends ConsumerState<AdminEditUserSheet> {
                 ),
                 const SizedBox(height: OpenVtsSpacing.lg),
                 AdminUserFormSection(
-                  title: 'Login',
+                  title: context.mobileText('Login'),
                   children: [
                     OpenVtsTextField(
-                      label: 'Username',
+                      label: context.mobileText('Username'),
                       controller: _usernameController,
                       textInputAction: TextInputAction.next,
                       prefixIcon: Icons.alternate_email_rounded,
@@ -151,10 +153,10 @@ class _AdminEditUserSheetState extends ConsumerState<AdminEditUserSheet> {
                 ),
                 const SizedBox(height: OpenVtsSpacing.lg),
                 AdminUserFormSection(
-                  title: 'Company',
+                  title: context.mobileText('Company'),
                   children: [
                     OpenVtsTextField(
-                      label: 'Company Name',
+                      label: context.mobileText('Company Name'),
                       controller: _companyNameController,
                       textInputAction: TextInputAction.next,
                       prefixIcon: Icons.apartment_rounded,
@@ -162,7 +164,7 @@ class _AdminEditUserSheetState extends ConsumerState<AdminEditUserSheet> {
                     ),
                     const SizedBox(height: OpenVtsSpacing.sm),
                     OpenVtsTextField(
-                      label: 'Address',
+                      label: context.mobileText('Address'),
                       controller: _addressController,
                       textInputAction: TextInputAction.next,
                       prefixIcon: Icons.place_outlined,
@@ -173,13 +175,13 @@ class _AdminEditUserSheetState extends ConsumerState<AdminEditUserSheet> {
                 ),
                 const SizedBox(height: OpenVtsSpacing.lg),
                 AdminUserFormSection(
-                  title: 'Location',
+                  title: context.mobileText('Location'),
                   children: [
                     AdminUserDropdownField(
-                      label: 'Country',
+                      label: context.mobileText('Country'),
                       value: _countryCode,
                       options: _countryOptions,
-                      hintText: 'Select country',
+                      hintText: context.mobileText('Select country'),
                       prefixIcon: Icons.public_rounded,
                       isLoading: _isLoadingReferences,
                       validator: requiredDropdown,
@@ -187,43 +189,49 @@ class _AdminEditUserSheetState extends ConsumerState<AdminEditUserSheet> {
                     ),
                     const SizedBox(height: OpenVtsSpacing.sm),
                     AdminUserDropdownField(
-                      label: 'State (optional)',
+                      label: context.mobileText('State'),
                       value: _stateCode,
                       options: _stateOptions,
                       hintText: _countryCode == null
-                          ? 'Select a country first'
+                          ? context.mobileText('Select a country first')
                           : (_statesLoaded && _states.isEmpty)
-                              ? 'No states available'
-                              : 'Select state',
+                          ? context.mobileText('No states available')
+                          : context.mobileText('Select state'),
                       prefixIcon: Icons.map_outlined,
                       isLoading: _isLoadingStates,
-                      validator: null,
-                      onChanged: (_countryCode == null ||
+                      validator: (_statesLoaded && _states.isNotEmpty)
+                          ? requiredDropdown
+                          : null,
+                      onChanged:
+                          (_countryCode == null ||
                               (_statesLoaded && _states.isEmpty))
                           ? null
                           : _onStateChanged,
                     ),
                     const SizedBox(height: OpenVtsSpacing.sm),
                     AdminUserDropdownField(
-                      label: 'City (optional)',
+                      label: context.mobileText('City'),
                       value: _city,
                       options: _cityOptions,
                       hintText: _stateCode == null
-                          ? 'Select a state first'
+                          ? context.mobileText('Select a state first')
                           : (_citiesLoaded && _cities.isEmpty)
-                              ? 'No cities available'
-                              : 'Select city',
+                          ? context.mobileText('No cities available')
+                          : context.mobileText('Select city'),
                       prefixIcon: Icons.location_city_rounded,
                       isLoading: _isLoadingCities,
-                      validator: null,
-                      onChanged: (_stateCode == null ||
+                      validator: (_citiesLoaded && _cities.isNotEmpty)
+                          ? requiredDropdown
+                          : null,
+                      onChanged:
+                          (_stateCode == null ||
                               (_citiesLoaded && _cities.isEmpty))
                           ? null
                           : (value) => setState(() => _city = value),
                     ),
                     const SizedBox(height: OpenVtsSpacing.sm),
                     OpenVtsTextField(
-                      label: 'Pincode',
+                      label: context.mobileText('Pincode'),
                       controller: _pincodeController,
                       keyboardType: TextInputType.number,
                       textInputAction: TextInputAction.done,
@@ -244,7 +252,7 @@ class _AdminEditUserSheetState extends ConsumerState<AdminEditUserSheet> {
                 children: [
                   Expanded(
                     child: OpenVtsButton(
-                      label: 'Cancel',
+                      label: context.mobileText('Cancel'),
                       variant: OpenVtsButtonVariant.secondary,
                       onPressed: widget.isSubmitting
                           ? null
@@ -254,7 +262,7 @@ class _AdminEditUserSheetState extends ConsumerState<AdminEditUserSheet> {
                   const SizedBox(width: OpenVtsSpacing.sm),
                   Expanded(
                     child: OpenVtsButton(
-                      label: 'Save',
+                      label: context.mobileText('Save'),
                       onPressed: widget.isSubmitting ? null : _submit,
                       isLoading: widget.isSubmitting,
                       trailingIcon: Icons.check_rounded,
@@ -272,10 +280,8 @@ class _AdminEditUserSheetState extends ConsumerState<AdminEditUserSheet> {
   List<AdminUserDropdownOption> get _mobilePrefixOptions {
     return _mobilePrefixes
         .map(
-          (item) => AdminUserDropdownOption(
-            value: item.value,
-            label: item.label,
-          ),
+          (item) =>
+              AdminUserDropdownOption(value: item.value, label: item.label),
         )
         .toList(growable: false);
   }
@@ -283,10 +289,8 @@ class _AdminEditUserSheetState extends ConsumerState<AdminEditUserSheet> {
   List<AdminUserDropdownOption> get _countryOptions {
     return _countries
         .map(
-          (item) => AdminUserDropdownOption(
-            value: item.value,
-            label: item.label,
-          ),
+          (item) =>
+              AdminUserDropdownOption(value: item.value, label: item.label),
         )
         .toList(growable: false);
   }
@@ -294,10 +298,8 @@ class _AdminEditUserSheetState extends ConsumerState<AdminEditUserSheet> {
   List<AdminUserDropdownOption> get _stateOptions {
     return _states
         .map(
-          (item) => AdminUserDropdownOption(
-            value: item.value,
-            label: item.label,
-          ),
+          (item) =>
+              AdminUserDropdownOption(value: item.value, label: item.label),
         )
         .toList(growable: false);
   }
@@ -305,10 +307,8 @@ class _AdminEditUserSheetState extends ConsumerState<AdminEditUserSheet> {
   List<AdminUserDropdownOption> get _cityOptions {
     return _cities
         .map(
-          (item) => AdminUserDropdownOption(
-            value: item.value,
-            label: item.label,
-          ),
+          (item) =>
+              AdminUserDropdownOption(value: item.value, label: item.label),
         )
         .toList(growable: false);
   }
@@ -354,7 +354,7 @@ class _AdminEditUserSheetState extends ConsumerState<AdminEditUserSheet> {
         _isLoadingDetails = false;
       });
       ToastHelper.showError(
-        'Unable to load form options.',
+        context.mobileText('Unable to load form options.'),
         context: context,
       );
     }
@@ -424,7 +424,10 @@ class _AdminEditUserSheetState extends ConsumerState<AdminEditUserSheet> {
         return;
       }
       setState(() => _isLoadingStates = false);
-      ToastHelper.showError('Unable to load states.', context: context);
+      ToastHelper.showError(
+        context.mobileText('Unable to load states.'),
+        context: context,
+      );
     }
   }
 
@@ -444,11 +447,9 @@ class _AdminEditUserSheetState extends ConsumerState<AdminEditUserSheet> {
 
     setState(() => _isLoadingCities = true);
     try {
-      final cities =
-          await ref.read(adminUsersControllerProvider.notifier).getCities(
-                requestedCountry,
-                requestedState,
-              );
+      final cities = await ref
+          .read(adminUsersControllerProvider.notifier)
+          .getCities(requestedCountry, requestedState);
       if (!mounted ||
           _countryCode?.toUpperCase() != requestedCountry ||
           _stateCode?.toUpperCase() != requestedState) {
@@ -468,7 +469,10 @@ class _AdminEditUserSheetState extends ConsumerState<AdminEditUserSheet> {
         return;
       }
       setState(() => _isLoadingCities = false);
-      ToastHelper.showError('Unable to load cities.', context: context);
+      ToastHelper.showError(
+        context.mobileText('Unable to load cities.'),
+        context: context,
+      );
     }
   }
 

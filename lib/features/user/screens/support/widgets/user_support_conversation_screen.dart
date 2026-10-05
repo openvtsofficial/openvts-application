@@ -23,6 +23,8 @@ import 'package:open_vts/shared/widgets/open_vts_error_view.dart';
 import 'package:open_vts/shared/widgets/open_vts_loader.dart';
 import 'package:open_vts/shared/widgets/open_vts_page_scaffold.dart';
 
+import '../../../../../shared/helpers/mobile_text.dart';
+
 class UserSupportConversationScreen extends StatelessWidget {
   const UserSupportConversationScreen({required this.ticketId, super.key});
 
@@ -31,7 +33,7 @@ class UserSupportConversationScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return OpenVtsPageScaffold(
-      title: 'Support Ticket',
+      title: context.mobileText('Support Ticket'),
       headerMode: OpenVtsPageHeaderMode.standard,
       padding: EdgeInsets.zero,
       body: UserSupportConversationPane(ticketId: ticketId),
@@ -131,7 +133,10 @@ class _UserSupportConversationPaneState
   Future<void> _sendReply(UserSupportTicketDetail ticket) async {
     final message = _replyController.text.trim();
     if (ticket.isClosed) {
-      ToastHelper.showInfo('This ticket is closed.', context: context);
+      ToastHelper.showInfo(
+        context.mobileText('This ticket is closed.'),
+        context: context,
+      );
       return;
     }
     if (message.isEmpty) {
@@ -139,18 +144,21 @@ class _UserSupportConversationPaneState
     }
     if (message.length > userSupportMaxMessageLength) {
       ToastHelper.showError(
-        'Reply must be $userSupportMaxMessageLength characters or less.',
+        context.mobileText("Reply must be {value1} characters or less.", {
+          'value1': (userSupportMaxMessageLength).toString(),
+        }),
         context: context,
       );
       return;
     }
 
-    final detail =
-        await ref.read(userSupportControllerProvider.notifier).replyToTicket(
-              ticketId: ticket.id,
-              message: message,
-              attachments: _attachments,
-            );
+    final detail = await ref
+        .read(userSupportControllerProvider.notifier)
+        .replyToTicket(
+          ticketId: ticket.id,
+          message: message,
+          attachments: _attachments,
+        );
     if (!mounted) {
       return;
     }
@@ -321,7 +329,7 @@ class _ConversationHeader extends ConsumerWidget {
             children: [
               if (onBack != null) ...[
                 IconButton(
-                  tooltip: 'Back',
+                  tooltip: context.mobileText('Back'),
                   onPressed: onBack,
                   icon: const Icon(Icons.arrow_back_rounded),
                   constraints: const BoxConstraints(
@@ -360,7 +368,7 @@ class _ConversationHeader extends ConsumerWidget {
               ),
               const SizedBox(width: OpenVtsSpacing.sm),
               IconButton(
-                tooltip: 'Refresh',
+                tooltip: context.mobileText('Refresh'),
                 onPressed: isRefreshing ? null : onRefresh,
                 icon: isRefreshing
                     ? const SizedBox.square(
@@ -391,17 +399,27 @@ class _ConversationHeader extends ConsumerWidget {
               ),
               if (ticket.createdAt != null)
                 _MetaChip(
-                  label:
-                      'Created ${dateFormatter.formatDate(ticket.createdAt!)}',
+                  label: context.mobileText("Created {value1}", {
+                    'value1': (dateFormatter.formatDate(
+                      ticket.createdAt!,
+                    )).toString(),
+                  }),
                 ),
               if (ticket.updatedAt != null)
                 _MetaChip(
-                  label:
-                      'Updated ${dateFormatter.formatDate(ticket.updatedAt!)}',
+                  label: context.mobileText("Updated {value1}", {
+                    'value1': (dateFormatter.formatDate(
+                      ticket.updatedAt!,
+                    )).toString(),
+                  }),
                 ),
               if (ticket.closedAt != null)
                 _MetaChip(
-                  label: 'Closed ${dateFormatter.formatDate(ticket.closedAt!)}',
+                  label: context.mobileText("Closed {value1}", {
+                    'value1': (dateFormatter.formatDate(
+                      ticket.closedAt!,
+                    )).toString(),
+                  }),
                 ),
             ],
           ),
@@ -436,12 +454,13 @@ class _MessageTimeline extends StatelessWidget {
           controller: scrollController,
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.all(OpenVtsSpacing.lg),
-          children: const [
-            SizedBox(height: OpenVtsSpacing.xl),
+          children: [
+            const SizedBox(height: OpenVtsSpacing.xl),
             OpenVtsEmptyState(
-              title: 'No conversation yet',
-              message:
-                  'Replies will appear here once the ticket conversation starts.',
+              title: context.mobileText('No conversation yet'),
+              message: context.mobileText(
+                'Replies will appear here once the ticket conversation starts.',
+              ),
             ),
           ],
         ),
@@ -520,7 +539,7 @@ class _ReplyComposer extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 IconButton(
-                  tooltip: 'Attach file',
+                  tooltip: context.mobileText('Attach file'),
                   onPressed: onAttach,
                   constraints: const BoxConstraints(
                     minWidth: 40,
@@ -537,11 +556,11 @@ class _ReplyComposer extends StatelessWidget {
                     maxLines: 4,
                     maxLength: userSupportMaxMessageLength,
                     textInputAction: TextInputAction.newline,
-                    decoration: const InputDecoration(
-                      hintText: 'Write a reply...',
+                    decoration: InputDecoration(
+                      hintText: context.mobileText('Write a reply...'),
                       counterText: '',
                       isDense: true,
-                      contentPadding: EdgeInsets.symmetric(
+                      contentPadding: const EdgeInsets.symmetric(
                         horizontal: OpenVtsSpacing.sm,
                         vertical: OpenVtsSpacing.sm,
                       ),
@@ -550,7 +569,7 @@ class _ReplyComposer extends StatelessWidget {
                 ),
                 const SizedBox(width: OpenVtsSpacing.xs),
                 OpenVtsButton(
-                  label: 'Send',
+                  label: context.mobileText('Send'),
                   isLoading: isSending,
                   trailingIcon: isSending ? null : Icons.send_rounded,
                   onPressed: canSend ? onSend : null,
@@ -591,7 +610,9 @@ class _ClosedTicketNotice extends StatelessWidget {
             borderRadius: BorderRadius.circular(OpenVtsRadius.md),
           ),
           child: Text(
-            'This ticket is closed or resolved. Replies are disabled.',
+            context.mobileText(
+              'This ticket is closed or resolved. Replies are disabled.',
+            ),
             style: OpenVtsTypography.body.copyWith(
               color: colorScheme.onSurfaceVariant,
               fontWeight: FontWeight.w600,

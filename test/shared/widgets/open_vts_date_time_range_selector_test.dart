@@ -32,7 +32,17 @@ void main() {
       expect(find.text('Choose Date Range'), findsOneWidget);
       expect(find.text('Last Hour'), findsNothing);
 
-      await tester.tap(find.text('Last 7 Days'));
+      await tester.scrollUntilVisible(
+        find.text('Last 7 Days').hitTestable(),
+        200,
+        scrollable: find.byWidgetPredicate(
+          (widget) =>
+              widget is Scrollable &&
+              widget.axisDirection == AxisDirection.right,
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Last 7 Days').hitTestable());
       await tester.pumpAndSettle();
       await tester.tap(find.text('Apply'));
       await tester.pumpAndSettle();

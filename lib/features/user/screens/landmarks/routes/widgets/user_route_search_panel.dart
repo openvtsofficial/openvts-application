@@ -6,6 +6,7 @@ import '../../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../../shared/widgets/open_vts_button.dart';
 
 /// Isolated optional service: searches places via Nominatim and generates a
@@ -14,15 +15,15 @@ import '../../../../../../shared/widgets/open_vts_button.dart';
 /// blocks manual drawing in the editor.
 class _RouteGenerationService {
   _RouteGenerationService()
-      : _dio = Dio(
-          BaseOptions(
-            connectTimeout: const Duration(seconds: 6),
-            receiveTimeout: const Duration(seconds: 8),
-            headers: const <String, String>{
-              'User-Agent': 'OpenVTS-Mobile/1.0 (route-search)',
-            },
-          ),
-        );
+    : _dio = Dio(
+        BaseOptions(
+          connectTimeout: const Duration(seconds: 6),
+          receiveTimeout: const Duration(seconds: 8),
+          headers: const <String, String>{
+            'User-Agent': 'OpenVTS-Mobile/1.0 (route-search)',
+          },
+        ),
+      );
 
   final Dio _dio;
 
@@ -132,8 +133,10 @@ class _UserRouteSearchPanelState extends State<UserRouteSearchPanel> {
     super.dispose();
   }
 
-  Future<void> _runSearch(
-      {required bool isSource, required String query}) async {
+  Future<void> _runSearch({
+    required bool isSource,
+    required String query,
+  }) async {
     setState(() {
       if (isSource) {
         _loadingSource = true;
@@ -214,7 +217,7 @@ class _UserRouteSearchPanelState extends State<UserRouteSearchPanel> {
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
-                  'Generate from search',
+                  context.mobileText('Generate from search'),
                   style: OpenVtsTypography.label.copyWith(
                     color: fgColor,
                     fontWeight: FontWeight.w600,
@@ -235,7 +238,7 @@ class _UserRouteSearchPanelState extends State<UserRouteSearchPanel> {
           const SizedBox(height: OpenVtsSpacing.xs),
           _SearchInput(
             controller: _sourceController,
-            label: 'From',
+            label: context.mobileText('From'),
             picked: _source,
             loading: _loadingSource,
             suggestions: _sourceSuggestions,
@@ -254,7 +257,7 @@ class _UserRouteSearchPanelState extends State<UserRouteSearchPanel> {
           const SizedBox(height: OpenVtsSpacing.xs),
           _SearchInput(
             controller: _destController,
-            label: 'To',
+            label: context.mobileText('To'),
             picked: _dest,
             loading: _loadingDest,
             suggestions: _destSuggestions,
@@ -274,13 +277,14 @@ class _UserRouteSearchPanelState extends State<UserRouteSearchPanel> {
             const SizedBox(height: OpenVtsSpacing.xs),
             Text(
               _error!,
-              style:
-                  OpenVtsTypography.meta.copyWith(color: OpenVtsColors.error),
+              style: OpenVtsTypography.meta.copyWith(
+                color: OpenVtsColors.error,
+              ),
             ),
           ],
           const SizedBox(height: OpenVtsSpacing.sm),
           OpenVtsButton(
-            label: 'Generate route',
+            label: context.mobileText('Generate route'),
             onPressed: (_source != null && _dest != null) ? _generate : null,
             isLoading: _generating,
           ),
@@ -357,19 +361,18 @@ class _SearchInput extends StatelessWidget {
                         height: 14,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(fgColor),
+                          valueColor: AlwaysStoppedAnimation<Color>(fgColor),
                         ),
                       ),
                     )
                   : (picked != null
-                      ? IconButton(
-                          iconSize: 16,
-                          splashRadius: 18,
-                          onPressed: onClear,
-                          icon: Icon(Icons.close, color: fgColor),
-                        )
-                      : null),
+                        ? IconButton(
+                            iconSize: 16,
+                            splashRadius: 18,
+                            onPressed: onClear,
+                            icon: Icon(Icons.close, color: fgColor),
+                          )
+                        : null),
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: OpenVtsSpacing.sm,
               ),
@@ -403,9 +406,7 @@ class _SearchInput extends StatelessWidget {
               itemCount: suggestions.length,
               separatorBuilder: (_, __) => Divider(
                 height: 1,
-                color: isDark
-                    ? const Color(0xFF444444)
-                    : OpenVtsColors.divider,
+                color: isDark ? const Color(0xFF444444) : OpenVtsColors.divider,
               ),
               itemBuilder: (context, i) {
                 final s = suggestions[i];
@@ -420,9 +421,7 @@ class _SearchInput extends StatelessWidget {
                       s.label,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: OpenVtsTypography.meta.copyWith(
-                        color: fgColor,
-                      ),
+                      style: OpenVtsTypography.meta.copyWith(color: fgColor),
                     ),
                   ),
                 );

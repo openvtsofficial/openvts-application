@@ -5,6 +5,7 @@ import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../shared/widgets/open_vts_empty_state.dart';
@@ -54,8 +55,9 @@ class UserPoisScreen extends ConsumerWidget {
               _HeaderRow(
                 isRefreshing: state.isRefreshing,
                 onCreate: () => _openCreate(context),
-                onRefresh:
-                    state.isRefreshing ? null : () => controller.refresh(),
+                onRefresh: state.isRefreshing
+                    ? null
+                    : () => controller.refresh(),
                 onExport: () => UserLandmarkExportSheet.show(
                   context: context,
                   entityType: UserLandmarkEntityType.poi,
@@ -130,7 +132,7 @@ class UserPoisScreen extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  'Delete POI?',
+                  context.mobileText('Delete POI?'),
                   style: OpenVtsTypography.titleSmall.copyWith(
                     color: OpenVtsColors.textPrimary,
                     fontWeight: FontWeight.w700,
@@ -138,7 +140,10 @@ class UserPoisScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '"${poi.name}" will be permanently removed.',
+                  context.mobileText(
+                    "\"{value1}\" will be permanently removed.",
+                    {'value1': (poi.name).toString()},
+                  ),
                   style: OpenVtsTypography.meta.copyWith(
                     color: OpenVtsColors.textSecondary,
                   ),
@@ -148,7 +153,7 @@ class UserPoisScreen extends ConsumerWidget {
                   children: [
                     Expanded(
                       child: OpenVtsButton(
-                        label: 'Cancel',
+                        label: context.mobileText('Cancel'),
                         onPressed: () => Navigator.of(ctx).pop(false),
                         variant: OpenVtsButtonVariant.secondary,
                       ),
@@ -156,7 +161,7 @@ class UserPoisScreen extends ConsumerWidget {
                     const SizedBox(width: OpenVtsSpacing.sm),
                     Expanded(
                       child: OpenVtsButton(
-                        label: 'Delete',
+                        label: context.mobileText('Delete'),
                         onPressed: () => Navigator.of(ctx).pop(true),
                       ),
                     ),
@@ -204,7 +209,9 @@ class _HeaderRow extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Manage important places and operational points.',
+                context.mobileText(
+                  'Manage important places and operational points.',
+                ),
                 style: TextStyle(
                   fontSize: 12,
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -216,26 +223,26 @@ class _HeaderRow extends StatelessWidget {
         ),
         _HeaderIconButton(
           icon: Icons.refresh,
-          tooltip: 'Refresh',
+          tooltip: context.mobileText('Refresh'),
           onTap: onRefresh,
           showSpinner: isRefreshing,
         ),
         const SizedBox(width: 6),
         _HeaderIconButton(
           icon: Icons.file_upload_outlined,
-          tooltip: 'Import CSV',
+          tooltip: context.mobileText('Import CSV'),
           onTap: onImport,
         ),
         const SizedBox(width: 6),
         _HeaderIconButton(
           icon: Icons.file_download_outlined,
-          tooltip: 'Export KML',
+          tooltip: context.mobileText('Export KML'),
           onTap: onExport,
         ),
         const SizedBox(width: 6),
         _HeaderIconButton(
           icon: Icons.add,
-          tooltip: 'New POI',
+          tooltip: context.mobileText('New POI'),
           onTap: onCreate,
           primary: true,
         ),
@@ -284,9 +291,7 @@ class _HeaderIconButton extends StatelessWidget {
               ? const SizedBox(
                   width: 14,
                   height: 14,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                  ),
+                  child: CircularProgressIndicator(strokeWidth: 2),
                 )
               : Icon(icon, size: 16, color: fg),
         ),
@@ -446,16 +451,18 @@ class _ListBody extends StatelessWidget {
     }
     if (!hasPois) {
       return _EmptyState(
-        title: 'No POIs yet',
-        message: 'Create your first place to track operational points.',
+        title: context.mobileText('No POIs yet'),
+        message: context.mobileText(
+          'Create your first place to track operational points.',
+        ),
         actionLabel: 'Create POI',
         onAction: () => UserPoiFormSheet.show(context: context),
       );
     }
     if (filtered.isEmpty) {
       return _EmptyState(
-        title: 'No matching POIs',
-        message: 'Try adjusting your filters.',
+        title: context.mobileText('No matching POIs'),
+        message: context.mobileText('Try adjusting your filters.'),
         actionLabel: 'Clear filters',
         onAction: () => controller.clearFilters(),
         secondary: true,

@@ -8,6 +8,7 @@ import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../core/utils/date_time_formatter.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../shared/widgets/open_vts_bottom_sheet.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
@@ -21,8 +22,11 @@ import 'user_vehicle_document_sheet.dart';
 class UserVehicleDocumentsTabView extends ConsumerWidget {
   const UserVehicleDocumentsTabView({required this.provider, super.key});
 
-  final AutoDisposeStateNotifierProvider<UserVehicleDetailsController,
-      UserVehicleDetailsState> provider;
+  final AutoDisposeStateNotifierProvider<
+    UserVehicleDetailsController,
+    UserVehicleDetailsState
+  >
+  provider;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -34,7 +38,7 @@ class UserVehicleDocumentsTabView extends ConsumerWidget {
         state.isLoadingDocuments && state.documents.isEmpty;
 
     if (isInitialLoading) {
-      return const _LoadingCard(label: 'Loading documents');
+      return _LoadingCard(label: context.mobileText('Loading documents'));
     }
 
     if (state.sectionErrorMessage != null && state.documents.isEmpty) {
@@ -88,14 +92,13 @@ class UserVehicleDocumentsTabView extends ConsumerWidget {
   ) {
     return OpenVtsBottomSheet.show<void>(
       context: context,
-      title: document == null ? 'Upload Document' : 'Edit Document',
+      title: document == null
+          ? context.mobileText('Upload Document')
+          : context.mobileText('Edit Document'),
       initialChildSize: 0.86,
       minChildSize: 0.5,
       maxChildSize: 0.96,
-      child: UserVehicleDocumentSheet(
-        provider: provider,
-        document: document,
-      ),
+      child: UserVehicleDocumentSheet(provider: provider, document: document),
     );
   }
 
@@ -106,7 +109,10 @@ class UserVehicleDocumentsTabView extends ConsumerWidget {
   ) async {
     final url = _resolveDocumentUrl(document, baseUrl);
     if (url == null) {
-      ToastHelper.showError('File URL is not available.', context: context);
+      ToastHelper.showError(
+        context.mobileText('File URL is not available.'),
+        context: context,
+      );
       return;
     }
 
@@ -117,11 +123,17 @@ class UserVehicleDocumentsTabView extends ConsumerWidget {
       );
       if (!context.mounted) return;
       if (!launched) {
-        ToastHelper.showError('Could not open file.', context: context);
+        ToastHelper.showError(
+          context.mobileText('Could not open file.'),
+          context: context,
+        );
       }
     } catch (_) {
       if (context.mounted) {
-        ToastHelper.showError('Could not open file.', context: context);
+        ToastHelper.showError(
+          context.mobileText('Could not open file.'),
+          context: context,
+        );
       }
     }
   }
@@ -134,17 +146,17 @@ class UserVehicleDocumentsTabView extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Delete document'),
-        content: const Text('Delete this document?'),
+        title: Text(context.mobileText('Delete document')),
+        content: Text(context.mobileText('Delete this document?')),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Cancel'),
+            child: Text(context.mobileText('Cancel')),
           ),
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
             style: TextButton.styleFrom(foregroundColor: OpenVtsColors.error),
-            child: const Text('Delete'),
+            child: Text(context.mobileText('Delete')),
           ),
         ],
       ),
@@ -155,7 +167,10 @@ class UserVehicleDocumentsTabView extends ConsumerWidget {
     if (!context.mounted) return;
 
     if (ok) {
-      ToastHelper.showSuccess('Document deleted.', context: context);
+      ToastHelper.showSuccess(
+        context.mobileText('Document deleted.'),
+        context: context,
+      );
       return;
     }
 
@@ -200,7 +215,7 @@ class _SummaryCard extends StatelessWidget {
                     ),
                     const SizedBox(width: OpenVtsSpacing.xs),
                     Text(
-                      'Documents',
+                      context.mobileText('Documents'),
                       style: OpenVtsTypography.label.copyWith(
                         color: Theme.of(context).colorScheme.onSurface,
                         fontWeight: FontWeight.w800,
@@ -218,7 +233,11 @@ class _SummaryCard extends StatelessWidget {
                 ),
                 const SizedBox(height: OpenVtsSpacing.xs),
                 Text(
-                  '$documentCount files - $typeCount vehicle types',
+                  context
+                      .mobileText("{value1} files - {value2} vehicle types", {
+                        'value1': (documentCount).toString(),
+                        'value2': (typeCount).toString(),
+                      }),
                   style: OpenVtsTypography.meta.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontWeight: FontWeight.w700,
@@ -229,7 +248,7 @@ class _SummaryCard extends StatelessWidget {
           ),
           const SizedBox(width: OpenVtsSpacing.sm),
           OpenVtsButton(
-            label: 'Upload Document',
+            label: context.mobileText('Upload Document'),
             height: 34,
             isLoading: isUploading,
             trailingIcon: Icons.upload_file_rounded,
@@ -303,7 +322,7 @@ class _DocumentCard extends StatelessWidget {
               ),
               const SizedBox(width: OpenVtsSpacing.xs),
               PopupMenuButton<_DocumentAction>(
-                tooltip: 'Document actions',
+                tooltip: context.mobileText('Document actions'),
                 enabled: !isBusy,
                 icon: isBusy
                     ? const SizedBox(
@@ -322,26 +341,29 @@ class _DocumentCard extends StatelessWidget {
                       onDelete?.call();
                   }
                 },
-                itemBuilder: (context) => const [
+                itemBuilder: (context) => [
                   PopupMenuItem(
                     value: _DocumentAction.view,
                     height: 38,
                     child: _MenuRow(
                       icon: Icons.open_in_new_rounded,
-                      label: 'View',
+                      label: context.mobileText('View'),
                     ),
                   ),
                   PopupMenuItem(
                     value: _DocumentAction.edit,
                     height: 38,
-                    child: _MenuRow(icon: Icons.edit_outlined, label: 'Edit'),
+                    child: _MenuRow(
+                      icon: Icons.edit_outlined,
+                      label: context.mobileText('Edit'),
+                    ),
                   ),
                   PopupMenuItem(
                     value: _DocumentAction.delete,
                     height: 38,
                     child: _MenuRow(
                       icon: Icons.delete_outline_rounded,
-                      label: 'Delete',
+                      label: context.mobileText('Delete'),
                       isDestructive: true,
                     ),
                   ),
@@ -368,21 +390,28 @@ class _DocumentCard extends StatelessWidget {
               _MetaPill(
                 icon: Icons.event_outlined,
                 label: document.expiryAt == null
-                    ? 'No expiry'
+                    ? context.mobileText('No expiry')
                     : 'Expiry ${_dateText(document.expiryAt, formatter)}',
               ),
               _MetaPill(
                 icon: document.isVisible
                     ? Icons.visibility_outlined
                     : Icons.visibility_off_outlined,
-                label: document.isVisible ? 'Visible' : 'Hidden',
+                label: document.isVisible
+                    ? context.mobileText('Visible')
+                    : context.mobileText('Hidden'),
                 color: document.isVisible
                     ? Theme.of(context).colorScheme.onSurface
                     : Theme.of(context).colorScheme.onSurfaceVariant,
               ),
               _MetaPill(
                 icon: Icons.calendar_today_outlined,
-                label: 'Created ${_dateText(document.createdAt, formatter)}',
+                label: context.mobileText("Created {value1}", {
+                  'value1': (_dateText(
+                    document.createdAt,
+                    formatter,
+                  )).toString(),
+                }),
               ),
               for (final tag in document.tags.take(4))
                 _MetaPill(icon: Icons.label_outline_rounded, label: tag),
@@ -406,13 +435,13 @@ class _EmptyDocumentsCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const OpenVtsEmptyState(
-            title: 'No documents uploaded',
+          OpenVtsEmptyState(
+            title: context.mobileText('No documents uploaded'),
             message: '',
           ),
           const SizedBox(height: OpenVtsSpacing.sm),
           OpenVtsButton(
-            label: 'Upload Document',
+            label: context.mobileText('Upload Document'),
             height: 38,
             trailingIcon: Icons.upload_file_rounded,
             onPressed: onUpload,
@@ -475,7 +504,7 @@ class _ErrorCard extends StatelessWidget {
           ),
           const SizedBox(height: OpenVtsSpacing.sm),
           OpenVtsButton(
-            label: 'Retry',
+            label: context.mobileText('Retry'),
             height: 36,
             variant: OpenVtsButtonVariant.secondary,
             onPressed: onRetry,
@@ -582,11 +611,7 @@ class _InfoLine extends StatelessWidget {
 }
 
 class _MetaPill extends StatelessWidget {
-  const _MetaPill({
-    required this.icon,
-    required this.label,
-    this.color,
-  });
+  const _MetaPill({required this.icon, required this.label, this.color});
 
   final IconData icon;
   final String label;

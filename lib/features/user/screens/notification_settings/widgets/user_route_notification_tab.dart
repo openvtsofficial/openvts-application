@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/widgets/open_vts_empty_state.dart';
 import '../../../models/user_notification_settings_model.dart';
 import 'user_notification_channel_card.dart';
@@ -20,7 +21,7 @@ class UserRouteNotificationTab extends StatelessWidget {
   final UserNotificationPreferences preferences;
   final UserNotificationChannelFlags channelFlags;
   final void Function(UserNotificationChannel channel, bool value)
-      onChannelChanged;
+  onChannelChanged;
   final void Function(int vehicleId, int routeId, bool value) onRouteToggle;
 
   @override
@@ -29,66 +30,83 @@ class UserRouteNotificationTab extends StatelessWidget {
       for (final row in preferences.routeMatrix)
         '${row.vehicleId}:${row.routeId}': row.enabled,
     };
-    return Column(children: [
-      UserNotificationChannelCard(
-        selectedGroup: UserNotificationGroup.route,
-        flags: channelFlags,
-        onChanged: onChannelChanged,
-      ),
-      const SizedBox(height: OpenVtsSpacing.sm),
-      if (preferences.routes.isEmpty)
-        const OpenVtsEmptyState(
-          title: 'No routes available.',
-          message: 'Create routes to configure route deviation notifications.',
-        )
-      else if (preferences.vehicles.isEmpty)
-        const OpenVtsEmptyState(
-          title: 'No vehicles assigned yet.',
-          message: 'Assign vehicles to configure route notifications.',
-        )
-      else
-        ...preferences.vehicles.map((vehicle) => Padding(
+    return Column(
+      children: [
+        UserNotificationChannelCard(
+          selectedGroup: UserNotificationGroup.route,
+          flags: channelFlags,
+          onChanged: onChannelChanged,
+        ),
+        const SizedBox(height: OpenVtsSpacing.sm),
+        if (preferences.routes.isEmpty)
+          OpenVtsEmptyState(
+            title: context.mobileText('No routes available.'),
+            message: context.mobileText(
+              'Create routes to configure route deviation notifications.',
+            ),
+          )
+        else if (preferences.vehicles.isEmpty)
+          OpenVtsEmptyState(
+            title: context.mobileText('No vehicles assigned yet.'),
+            message: context.mobileText(
+              'Assign vehicles to configure route notifications.',
+            ),
+          )
+        else
+          ...preferences.vehicles.map(
+            (vehicle) => Padding(
               padding: const EdgeInsets.only(bottom: OpenVtsSpacing.sm),
               child: UserNotificationVehicleCard(
-                vehicleName:
-                    userNotificationVehicleName(vehicle.name, vehicle.id),
+                vehicleName: userNotificationVehicleName(
+                  vehicle.name,
+                  vehicle.id,
+                ),
                 plateNumber: userNotificationVehiclePlate(vehicle.plateNumber),
                 child: Column(
-                  children: preferences.routes.map((route) {
-                    final tolerance = route.toleranceMeters == null
-                        ? null
-                        : '${route.toleranceMeters!.round()} m tolerance';
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: OpenVtsSpacing.xs),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          UserNotificationCompactToggle(
-                            label: route.name.trim().isEmpty
-                                ? 'Route #${route.id}'
-                                : route.name.trim(),
-                            icon: Icons.alt_route_rounded,
-                            semanticsLabel:
-                                'Route deviation ${route.name} for ${vehicle.name}',
-                            value:
-                                enabled['${vehicle.id}:${route.id}'] ?? false,
-                            enabled: route.isActive,
-                            onChanged: (value) =>
-                                onRouteToggle(vehicle.id, route.id, value),
+                  children: preferences.routes
+                      .map((route) {
+                        final tolerance = route.toleranceMeters == null
+                            ? null
+                            : '${route.toleranceMeters!.round()} m tolerance';
+                        return Padding(
+                          padding: const EdgeInsets.only(
+                            bottom: OpenVtsSpacing.xs,
                           ),
-                          if (tolerance != null)
-                            Padding(
-                              padding: const EdgeInsets.only(left: 36),
-                              child: Text(tolerance,
-                                  style: OpenVtsTypography.meta),
-                            ),
-                        ],
-                      ),
-                    );
-                  }).toList(growable: false),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              UserNotificationCompactToggle(
+                                label: route.name.trim().isEmpty
+                                    ? 'Route #${route.id}'
+                                    : route.name.trim(),
+                                icon: Icons.alt_route_rounded,
+                                semanticsLabel:
+                                    'Route deviation ${route.name} for ${vehicle.name}',
+                                value:
+                                    enabled['${vehicle.id}:${route.id}'] ??
+                                    false,
+                                enabled: route.isActive,
+                                onChanged: (value) =>
+                                    onRouteToggle(vehicle.id, route.id, value),
+                              ),
+                              if (tolerance != null)
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 36),
+                                  child: Text(
+                                    tolerance,
+                                    style: OpenVtsTypography.meta,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        );
+                      })
+                      .toList(growable: false),
                 ),
               ),
-            )),
-    ]);
+            ),
+          ),
+      ],
+    );
   }
 }

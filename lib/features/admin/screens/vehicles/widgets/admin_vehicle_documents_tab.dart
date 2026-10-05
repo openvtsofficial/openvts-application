@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:open_vts/shared/helpers/toast_helper.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/utils/date_time_formatter.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/widgets/open_vts_bottom_sheet.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
@@ -11,6 +13,7 @@ import '../../../../../shared/widgets/open_vts_empty_state.dart';
 import '../../../../../shared/widgets/open_vts_loader.dart';
 import '../../../models/admin_vehicle_model.dart';
 import '../../../utils/vehicle_document_url_resolver.dart';
+import '../../../widgets/admin_action_gate.dart';
 import 'admin_vehicle_document_sheet.dart';
 
 class AdminVehicleDocumentsTab extends ConsumerWidget {
@@ -43,7 +46,8 @@ class AdminVehicleDocumentsTab extends ConsumerWidget {
   final Future<void> Function({
     required String docId,
     required AdminVehicleDocumentRequest request,
-  }) onUpdate;
+  })
+  onUpdate;
   final Future<void> Function(String docId) onDelete;
 
   @override
@@ -54,10 +58,13 @@ class AdminVehicleDocumentsTab extends ConsumerWidget {
         OpenVtsCard(
           child: Align(
             alignment: Alignment.centerRight,
-            child: OpenVtsButton(
-              label: 'Upload Document',
-              variant: OpenVtsButtonVariant.secondary,
-              onPressed: () => _openDocumentSheet(context),
+            child: AdminActionGate(
+              capability: 'vehicles.update',
+              child: OpenVtsButton(
+                label: context.mobileText('Upload Document'),
+                variant: OpenVtsButtonVariant.secondary,
+                onPressed: () => _openDocumentSheet(context),
+              ),
             ),
           ),
         ),
@@ -65,9 +72,9 @@ class AdminVehicleDocumentsTab extends ConsumerWidget {
         if (isLoading)
           const OpenVtsLoader()
         else if (documents.isEmpty)
-          const OpenVtsEmptyState(
-            title: 'No documents',
-            message: 'Upload documents for this vehicle.',
+          OpenVtsEmptyState(
+            title: context.mobileText('No documents'),
+            message: context.mobileText('Upload documents for this vehicle.'),
           )
         else
           ...documents.map(
@@ -77,15 +84,46 @@ class AdminVehicleDocumentsTab extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(doc.title,
-                        style: Theme.of(context).textTheme.titleSmall),
+                    Text(
+                      doc.title,
+                      style: Theme.of(context).textTheme.titleSmall,
+                    ),
                     const SizedBox(height: OpenVtsSpacing.xxs),
-                    Text('Document type: ${_safe(doc.docTypeName)}'),
-                    Text('File: ${_safe(doc.fileName)}'),
-                    Text('Expiry: ${formatter.formatDate(doc.expiryAt)}'),
-                    Text('Visibility: ${doc.isVisible ? 'Visible' : 'Hidden'}'),
-                    Text('Tags: ${_safe(doc.tags)}'),
-                    Text('Created: ${formatter.formatDate(doc.createdAt)}'),
+                    Text(
+                      context.mobileText("Document type: {value1}", {
+                        'value1': (_safe(doc.docTypeName)).toString(),
+                      }),
+                    ),
+                    Text(
+                      context.mobileText("File: {value1}", {
+                        'value1': (_safe(doc.fileName)).toString(),
+                      }),
+                    ),
+                    Text(
+                      context.mobileText("Expiry: {value1}", {
+                        'value1': (formatter.formatDate(
+                          doc.expiryAt,
+                        )).toString(),
+                      }),
+                    ),
+                    Text(
+                      context.mobileText("Visibility: {value1}", {
+                        'value1': (doc.isVisible ? 'Visible' : 'Hidden')
+                            .toString(),
+                      }),
+                    ),
+                    Text(
+                      context.mobileText("Tags: {value1}", {
+                        'value1': (_safe(doc.tags)).toString(),
+                      }),
+                    ),
+                    Text(
+                      context.mobileText("Created: {value1}", {
+                        'value1': (formatter.formatDate(
+                          doc.createdAt,
+                        )).toString(),
+                      }),
+                    ),
                     const SizedBox(height: OpenVtsSpacing.sm),
                     Wrap(
                       spacing: OpenVtsSpacing.xs,
@@ -93,18 +131,24 @@ class AdminVehicleDocumentsTab extends ConsumerWidget {
                       children: [
                         OutlinedButton(
                           onPressed: () => _openFile(context, doc),
-                          child: const Text('Open'),
+                          child: Text(context.mobileText('Open')),
                         ),
-                        OutlinedButton(
-                          onPressed: () =>
-                              _openDocumentSheet(context, initial: doc),
-                          child: const Text('Edit'),
+                        AdminActionGate(
+                          capability: 'vehicles.update',
+                          child: OutlinedButton(
+                            onPressed: () =>
+                                _openDocumentSheet(context, initial: doc),
+                            child: Text(context.mobileText('Edit')),
+                          ),
                         ),
-                        OutlinedButton(
-                          onPressed: isDeleting
-                              ? null
-                              : () => _confirmDelete(context, doc),
-                          child: const Text('Delete'),
+                        AdminActionGate(
+                          capability: 'vehicles.update',
+                          child: OutlinedButton(
+                            onPressed: isDeleting
+                                ? null
+                                : () => _confirmDelete(context, doc),
+                            child: Text(context.mobileText('Delete')),
+                          ),
                         ),
                       ],
                     ),
@@ -117,11 +161,15 @@ class AdminVehicleDocumentsTab extends ConsumerWidget {
     );
   }
 
-  Future<void> _openDocumentSheet(BuildContext context,
-      {AdminVehicleDocument? initial}) {
+  Future<void> _openDocumentSheet(
+    BuildContext context, {
+    AdminVehicleDocument? initial,
+  }) {
     return OpenVtsBottomSheet.show<void>(
       context: context,
-      title: initial == null ? 'Upload Document' : 'Edit Document',
+      title: initial == null
+          ? context.mobileText('Upload Document')
+          : context.mobileText('Edit Document'),
       initialChildSize: 0.86,
       minChildSize: 0.5,
       maxChildSize: 0.95,
@@ -146,20 +194,26 @@ class AdminVehicleDocumentsTab extends ConsumerWidget {
   }
 
   Future<void> _confirmDelete(
-      BuildContext context, AdminVehicleDocument doc) async {
+    BuildContext context,
+    AdminVehicleDocument doc,
+  ) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Delete document'),
-        content: Text('Delete ${doc.title}?'),
+        title: Text(context.mobileText('Delete document')),
+        content: Text(
+          context.mobileText("Delete {value1}?", {
+            'value1': (doc.title).toString(),
+          }),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Cancel'),
+            child: Text(context.mobileText('Cancel')),
           ),
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Delete'),
+            child: Text(context.mobileText('Delete')),
           ),
         ],
       ),
@@ -177,16 +231,18 @@ class AdminVehicleDocumentsTab extends ConsumerWidget {
       apiBaseUrl: apiBaseUrl,
     );
     if (uri == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Document URL is unavailable.')),
+      ToastHelper.showError(
+        context.mobileText('Document URL is unavailable.'),
+        context: context,
       );
       return;
     }
 
     final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!launched && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not open document.')),
+      ToastHelper.showError(
+        context.mobileText('Could not open document.'),
+        context: context,
       );
     }
   }

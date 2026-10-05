@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/access/workspace_scope_provider.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/api/api_endpoints.dart';
 import '../../../core/api/api_options.dart';
@@ -8,8 +9,10 @@ import '../../../core/providers/core_providers.dart';
 import '../../../shared/models/api_result.dart';
 import '../models/superadmin_calendar_model.dart';
 
-final superadminCalendarServiceProvider =
-    Provider<SuperadminCalendarService>((ref) {
+final superadminCalendarServiceProvider = Provider<SuperadminCalendarService>((
+  ref,
+) {
+  ref.watch(workspaceDataScopeProvider);
   return SuperadminCalendarService(ref.read(apiClientProvider));
 });
 
@@ -93,7 +96,8 @@ class SuperadminCalendarService {
   }
 
   Future<ApiResult<CalendarLinkedDetail>> getVehicleDetails(
-      String vehicleId) async {
+    String vehicleId,
+  ) async {
     try {
       final response = await _apiClient.get<CalendarLinkedDetail>(
         ApiEndpoints.superadmin.vehicleDetail(vehicleId),

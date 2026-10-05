@@ -11,6 +11,7 @@ import '../../../../core/theme/open_vts_radius.dart';
 import '../../../../core/theme/open_vts_spacing.dart';
 import '../../../../core/theme/open_vts_typography.dart';
 import '../../../../core/utils/date_time_formatter.dart';
+import '../../../../shared/helpers/mobile_text.dart';
 import '../../../../shared/widgets/dashboard/open_vts_dashboard_metric_card.dart';
 import '../../../../shared/widgets/open_vts_card.dart';
 import '../../../../shared/widgets/open_vts_error_view.dart';
@@ -39,7 +40,7 @@ class AdminDashboardScreen extends ConsumerWidget {
     final controller = ref.read(adminDashboardControllerProvider.notifier);
 
     return OpenVtsPageScaffold(
-      title: 'Dashboard',
+      title: context.mobileText('Dashboard'),
       headerMode: OpenVtsPageHeaderMode.closeable,
       padding: EdgeInsets.zero,
       body: _buildBody(context, state, controller),
@@ -115,9 +116,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                   const SizedBox(height: OpenVtsSpacing.sm),
                   AdminRecentUsersCard(users: dashboard.recent.users),
                   const SizedBox(height: OpenVtsSpacing.sm),
-                  AdminRecentVehiclesCard(
-                    vehicles: dashboard.recent.vehicles,
-                  ),
+                  AdminRecentVehiclesCard(vehicles: dashboard.recent.vehicles),
                   const SizedBox(height: OpenVtsSpacing.sm),
                   AdminRecentPaymentsCard(
                     payments: dashboard.recent.payments,
@@ -144,45 +143,54 @@ class _KpiGrid extends StatelessWidget {
     final currency = dashboard.selectedCurrency;
     final kpis = <_KpiData>[
       _KpiData(
-        title: 'All Vehicles',
+        title: context.mobileText('All Vehicles'),
         value: formatCompactNumber(dashboard.totals.totalVehicles),
-        subtitle: '${formatNumber(dashboard.totals.totalVehicles)} registered',
+        subtitle: context.mobileText("{value1} registered", {
+          'value1': (formatNumber(dashboard.totals.totalVehicles)).toString(),
+        }),
         icon: Icons.directions_car_outlined,
       ),
       _KpiData(
-        title: 'All Users',
+        title: context.mobileText('All Users'),
         value: formatCompactNumber(dashboard.totals.totalUsers),
-        subtitle: '${formatNumber(dashboard.totals.totalUsers)} registered',
+        subtitle: context.mobileText("{value1} registered", {
+          'value1': (formatNumber(dashboard.totals.totalUsers)).toString(),
+        }),
         icon: Icons.group_outlined,
       ),
       _KpiData(
-        title: 'Last Month Revenue',
+        title: context.mobileText('Last Month Revenue'),
         value: formatCurrency(dashboard.revenue.lastMonthRevenue, currency),
         icon: _currencyIcon(currency),
       ),
       _KpiData(
-        title: 'Pending Payments',
+        title: context.mobileText('Pending Payments'),
         value: formatCurrency(dashboard.revenue.pendingAmount, currency),
-        subtitle: '${dashboard.revenue.pendingCount} invoices',
+        subtitle: context.mobileText("{value1} invoices", {
+          'value1': (dashboard.revenue.pendingCount).toString(),
+        }),
         icon: Icons.credit_card_outlined,
       ),
       _KpiData(
-        title: 'Vehicle Expiry',
+        title: context.mobileText('Vehicle Expiry'),
         value: '${dashboard.expiry.thisWeek} / ${dashboard.expiry.thisMonth}',
-        subtitle: 'wk / mo',
+        subtitle: context.mobileText('wk / mo'),
         icon: Icons.calendar_today_outlined,
       ),
       _KpiData(
-        title: 'Device Installs',
+        title: context.mobileText('Device Installs'),
         value: formatCompactNumber(dashboard.installs.thisMonth),
-        subtitle: 'this month',
+        subtitle: context.mobileText('this month'),
         icon: Icons.build_outlined,
       ),
     ];
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount = constraints.maxWidth >= 760 ? 3 : 2;
+        final crossAxisCount = OpenVtsDashboardMetricCard.gridColumns(
+          context,
+          constraints.maxWidth,
+        );
 
         return GridView.builder(
           shrinkWrap: true,
@@ -192,7 +200,7 @@ class _KpiGrid extends StatelessWidget {
             crossAxisCount: crossAxisCount,
             mainAxisSpacing: OpenVtsSpacing.sm,
             crossAxisSpacing: OpenVtsSpacing.sm,
-            childAspectRatio: crossAxisCount == 3 ? 1.7 : 1.42,
+            mainAxisExtent: OpenVtsDashboardMetricCard.gridExtent(context),
           ),
           itemBuilder: (context, index) => _KpiCard(data: kpis[index]),
         );
@@ -231,31 +239,31 @@ class _VehicleLiveStatusSection extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final segments = <_StatusSegment>[
       _StatusSegment(
-        label: 'Connected',
+        label: context.mobileText('Connected'),
         value: status.connected,
         icon: Icons.wifi_rounded,
         color: isDark ? const Color(0xFFE5E7EB) : const Color(0xFF111827),
       ),
       _StatusSegment(
-        label: 'Running',
+        label: context.mobileText('Running'),
         value: status.running,
         icon: Icons.speed_outlined,
         color: isDark ? const Color(0xFFA1A1AA) : const Color(0xFF3F3F46),
       ),
       _StatusSegment(
-        label: 'Stop',
+        label: context.mobileText('Stop'),
         value: status.stop,
         icon: Icons.pause_circle_outline_rounded,
         color: isDark ? const Color(0xFF71717A) : const Color(0xFF6B7280),
       ),
       _StatusSegment(
-        label: 'Inactive',
+        label: context.mobileText('Inactive'),
         value: status.inactive,
         icon: Icons.warning_amber_rounded,
         color: isDark ? const Color(0xFF52525B) : const Color(0xFF9EA7B0),
       ),
       _StatusSegment(
-        label: 'No Data',
+        label: context.mobileText('No Data'),
         value: status.noData,
         icon: Icons.storage_outlined,
         color: isDark ? const Color(0xFF3F3F46) : const Color(0xFFD6DEE5),
@@ -277,7 +285,8 @@ class _VehicleLiveStatusSection extends StatelessWidget {
                   color: Theme.of(context).colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
                   border: Border.all(
-                      color: Theme.of(context).colorScheme.outlineVariant),
+                    color: Theme.of(context).colorScheme.outlineVariant,
+                  ),
                 ),
                 child: Icon(
                   Icons.directions_car_outlined,
@@ -288,7 +297,7 @@ class _VehicleLiveStatusSection extends StatelessWidget {
               const SizedBox(width: OpenVtsSpacing.xs),
               Flexible(
                 child: Text(
-                  'Vehicle Live Status',
+                  context.mobileText('Vehicle Live Status'),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: OpenVtsTypography.label.copyWith(
@@ -304,7 +313,8 @@ class _VehicleLiveStatusSection extends StatelessWidget {
                   color: Theme.of(context).colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
                   border: Border.all(
-                      color: Theme.of(context).colorScheme.outlineVariant),
+                    color: Theme.of(context).colorScheme.outlineVariant,
+                  ),
                 ),
                 child: Text(
                   'LIVE',
@@ -323,12 +333,12 @@ class _VehicleLiveStatusSection extends StatelessWidget {
             runSpacing: OpenVtsSpacing.xs,
             children: [
               _MetricPill(
-                label: 'Vehicles',
+                label: context.mobileText('Vehicles'),
                 value: formatNumber(totalVehicles),
                 icon: Icons.directions_car_outlined,
               ),
               _MetricPill(
-                label: 'Devices',
+                label: context.mobileText('Devices'),
                 value: formatNumber(status.installedDevices),
                 icon: Icons.memory_outlined,
               ),
@@ -346,7 +356,7 @@ class _VehicleLiveStatusSection extends StatelessWidget {
                   icon: segment.icon,
                 ),
               _StatusPill(
-                label: 'No Device',
+                label: context.mobileText('No Device'),
                 value: status.noDevice,
                 icon: Icons.wifi_off_outlined,
               ),
@@ -368,9 +378,7 @@ class _VehicleLiveStatusSection extends StatelessWidget {
                             1,
                             ((segment.value / barTotal) * 1000).round(),
                           ),
-                          child: ColoredBox(
-                            color: segment.color,
-                          ),
+                          child: ColoredBox(color: segment.color),
                         ),
                   ],
                 ),
@@ -390,7 +398,7 @@ class _VehicleLiveStatusSection extends StatelessWidget {
                 ),
               if (status.noDevice > 0)
                 _StatusLegendItem(
-                  label: 'No Device',
+                  label: context.mobileText('No Device'),
                   count: status.noDevice,
                   color: Theme.of(context).colorScheme.outline,
                 ),
@@ -433,7 +441,8 @@ class _RevenueForecastSection extends StatelessWidget {
                   color: Theme.of(context).colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
                   border: Border.all(
-                      color: Theme.of(context).colorScheme.outlineVariant),
+                    color: Theme.of(context).colorScheme.outlineVariant,
+                  ),
                 ),
                 child: Icon(
                   Icons.trending_up_rounded,
@@ -444,7 +453,7 @@ class _RevenueForecastSection extends StatelessWidget {
               const SizedBox(width: OpenVtsSpacing.xs),
               Flexible(
                 child: Text(
-                  'Revenue Forecast',
+                  context.mobileText('Revenue Forecast'),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: OpenVtsTypography.label.copyWith(
@@ -461,13 +470,13 @@ class _RevenueForecastSection extends StatelessWidget {
             children: [
               Expanded(
                 child: _PrimaryValueBlock(
-                  label: 'This month',
+                  label: context.mobileText('This month'),
                   value: formatCurrency(currentMonthRevenue, currency),
                 ),
               ),
               const SizedBox(width: OpenVtsSpacing.sm),
               _InlineMetric(
-                label: 'Target',
+                label: context.mobileText('Target'),
                 value: formatCurrency(target, currency),
               ),
             ],
@@ -476,7 +485,9 @@ class _RevenueForecastSection extends StatelessWidget {
           Row(
             children: [
               Text(
-                '${collectedPct.round()}% collected',
+                context.mobileText("{value1}% collected", {
+                  'value1': (collectedPct.round()).toString(),
+                }),
                 style: OpenVtsTypography.meta.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                   fontWeight: FontWeight.w700,
@@ -485,7 +496,9 @@ class _RevenueForecastSection extends StatelessWidget {
               const SizedBox(width: OpenVtsSpacing.sm),
               Expanded(
                 child: Text(
-                  'Projected ${formatCurrency(projected, currency)}',
+                  context.mobileText("Projected {value1}", {
+                    'value1': (formatCurrency(projected, currency)).toString(),
+                  }),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.end,
@@ -506,21 +519,22 @@ class _RevenueForecastSection extends StatelessWidget {
           Row(
             children: [
               _RevenueLegendItem(
-                label: 'Collected',
+                label: context.mobileText('Collected'),
                 color: Theme.of(context).colorScheme.primary,
               ),
               const SizedBox(width: OpenVtsSpacing.sm),
               _RevenueLegendItem(
-                label: 'Projected',
-                color: Theme.of(context)
-                    .colorScheme
-                    .primary
-                    .withValues(alpha: 0.45),
+                label: context.mobileText('Projected'),
+                color: Theme.of(
+                  context,
+                ).colorScheme.primary.withValues(alpha: 0.45),
               ),
               const SizedBox(width: OpenVtsSpacing.sm),
               Expanded(
                 child: Text(
-                  'Delta ${formatCurrency(delta, currency)}',
+                  context.mobileText("Delta {value1}", {
+                    'value1': (formatCurrency(delta, currency)).toString(),
+                  }),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.end,
@@ -539,11 +553,11 @@ class _RevenueForecastSection extends StatelessWidget {
                 child: Column(
                   children: [
                     _InfoRow(
-                      label: 'Last month revenue',
+                      label: context.mobileText('Last month revenue'),
                       value: formatCurrency(revenue.lastMonthRevenue, currency),
                     ),
                     _InfoRow(
-                      label: 'Pending payments',
+                      label: context.mobileText('Pending payments'),
                       value:
                           '${formatCurrency(revenue.pendingAmount, currency)} · '
                           '${revenue.pendingCount} invoices',
@@ -562,13 +576,14 @@ class _RevenueForecastSection extends StatelessWidget {
                   ),
                   foregroundColor: Theme.of(context).colorScheme.onSurface,
                   side: BorderSide(
-                      color: Theme.of(context).colorScheme.outlineVariant),
+                    color: Theme.of(context).colorScheme.outlineVariant,
+                  ),
                   textStyle: OpenVtsTypography.meta.copyWith(
                     fontWeight: FontWeight.w800,
                   ),
                 ),
                 icon: const Icon(Icons.arrow_forward_rounded, size: 15),
-                label: const Text('View Payments'),
+                label: Text(context.mobileText('View Payments')),
               ),
             ],
           ),
@@ -651,8 +666,11 @@ class _StatusPill extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon,
-              size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
+          Icon(
+            icon,
+            size: 14,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
           const SizedBox(width: OpenVtsSpacing.xxs),
           Text(
             label,
@@ -732,8 +750,10 @@ class _RevenueProgressBar extends StatelessWidget {
       height: 12,
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final markerDx = (constraints.maxWidth * markerLeft)
-              .clamp(1.0, constraints.maxWidth - 2);
+          final markerDx = (constraints.maxWidth * markerLeft).clamp(
+            1.0,
+            constraints.maxWidth - 2,
+          );
 
           return Stack(
             clipBehavior: Clip.none,
@@ -744,13 +764,14 @@ class _RevenueProgressBar extends StatelessWidget {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
                   child: ColoredBox(
-                    color:
-                        Theme.of(context).colorScheme.surfaceContainerHighest,
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.surfaceContainerHighest,
                     child: Align(
                       alignment: Alignment.centerLeft,
                       child: FractionallySizedBox(
-                        widthFactor:
-                            (collectedPct.clamp(0, 100) / 100).toDouble(),
+                        widthFactor: (collectedPct.clamp(0, 100) / 100)
+                            .toDouble(),
                         child: ColoredBox(
                           color: Theme.of(context).colorScheme.primary,
                         ),
@@ -766,10 +787,9 @@ class _RevenueProgressBar extends StatelessWidget {
                 child: Container(
                   width: 2,
                   decoration: BoxDecoration(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .primary
-                        .withValues(alpha: 0.45),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.primary.withValues(alpha: 0.45),
                     borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
                   ),
                 ),
@@ -926,10 +946,7 @@ class _InfoRow extends StatelessWidget {
 }
 
 class _InlineErrorBanner extends StatelessWidget {
-  const _InlineErrorBanner({
-    required this.message,
-    required this.onRetry,
-  });
+  const _InlineErrorBanner({required this.message, required this.onRetry});
 
   final String message;
   final VoidCallback onRetry;
@@ -940,9 +957,7 @@ class _InlineErrorBanner extends StatelessWidget {
       decoration: BoxDecoration(
         color: OpenVtsColors.error.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(OpenVtsRadius.md),
-        border: Border.all(
-          color: OpenVtsColors.error.withValues(alpha: 0.18),
-        ),
+        border: Border.all(color: OpenVtsColors.error.withValues(alpha: 0.18)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(OpenVtsSpacing.sm),
@@ -967,7 +982,7 @@ class _InlineErrorBanner extends StatelessWidget {
             ),
             TextButton(
               onPressed: onRetry,
-              child: const Text('Retry'),
+              child: Text(context.mobileText('Retry')),
             ),
           ],
         ),

@@ -5,6 +5,7 @@ import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 
 const String _mobilePushTestTooltip =
@@ -52,7 +53,8 @@ class UserMobilePushDiagnosticsCard extends StatelessWidget {
               color: isDark ? Colors.black : OpenVtsColors.surface,
               borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
               border: Border.all(
-                  color: isDark ? OpenVtsColors.white : OpenVtsColors.border),
+                color: isDark ? OpenVtsColors.white : OpenVtsColors.border,
+              ),
             ),
             child: Icon(
               Icons.phone_android_rounded,
@@ -63,7 +65,7 @@ class UserMobilePushDiagnosticsCard extends StatelessWidget {
             ),
           ),
           title: Text(
-            'Mobile Push Diagnostics',
+            context.mobileText('Mobile Push Diagnostics'),
             style: OpenVtsTypography.meta.copyWith(
               color: isDark ? OpenVtsColors.white : OpenVtsColors.textPrimary,
               fontWeight: FontWeight.w700,
@@ -85,43 +87,43 @@ class UserMobilePushDiagnosticsCard extends StatelessWidget {
               runSpacing: OpenVtsSpacing.xs,
               children: [
                 _DiagnosticPill(
-                  label: 'Platform',
+                  label: context.mobileText('Platform'),
                   value: state.platform.apiValue,
                 ),
                 _DiagnosticPill(
-                  label: 'Current step',
+                  label: context.mobileText('Current step'),
                   value: _testStepLabel(state.testStep),
                 ),
                 _DiagnosticPill(
-                  label: 'Firebase initialized',
+                  label: context.mobileText('Firebase initialized'),
                   value: state.isInitialized ? 'yes' : 'no',
                 ),
                 _DiagnosticPill(
-                  label: 'Permission',
+                  label: context.mobileText('Permission'),
                   value: _fallback(state.permissionStatus, 'unknown'),
                 ),
                 _DiagnosticPill(
-                  label: 'FCM token last 10',
+                  label: context.mobileText('FCM token last 10'),
                   value: _fallback(state.fcmTokenLast10, 'not cached'),
                 ),
                 _DiagnosticPill(
-                  label: 'Registered token last 10',
+                  label: context.mobileText('Registered token last 10'),
                   value: _fallback(state.registeredTokenLast10, 'not set'),
                 ),
                 _DiagnosticPill(
-                  label: 'Backend tokens',
+                  label: context.mobileText('Backend tokens'),
                   value:
                       state.registeredTokenCount?.toString() ?? 'not checked',
                 ),
                 _DiagnosticPill(
-                  label: 'Backend verified',
+                  label: context.mobileText('Backend verified'),
                   value: _backendVerifiedLabel(
                     state.currentTokenVerifiedByBackend,
                     state.registeredTokenCount,
                   ),
                 ),
                 _DiagnosticPill(
-                  label: 'Last checked',
+                  label: context.mobileText('Last checked'),
                   value: _formatCheckedAt(state.tokenDiagnosticsUpdatedAt),
                 ),
               ],
@@ -157,12 +159,12 @@ class UserMobilePushDiagnosticsCard extends StatelessWidget {
                 children: [
                   _CompactDiagnosticButton(
                     icon: Icons.sync_rounded,
-                    label: 'Retry registration',
+                    label: context.mobileText('Retry registration'),
                     onTap: onRetryRegistration,
                   ),
                   _CompactDiagnosticButton(
                     icon: Icons.send_to_mobile_rounded,
-                    label: 'Send test',
+                    label: context.mobileText('Send test'),
                     tooltip: _mobilePushTestTooltip,
                     isLoading: state.isTesting,
                     onTap: onSendTestNotification,
@@ -328,7 +330,8 @@ class _DiagnosticPill extends StatelessWidget {
         color: isDark ? Colors.black : OpenVtsColors.surfaceElevated,
         borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
         border: Border.all(
-            color: isDark ? OpenVtsColors.white : OpenVtsColors.border),
+          color: isDark ? OpenVtsColors.white : OpenVtsColors.border,
+        ),
       ),
       child: RichText(
         text: TextSpan(
@@ -375,11 +378,11 @@ class _CompactDiagnosticButton extends StatelessWidget {
     final disabled = onTap == null && !isLoading;
     final foregroundColor = disabled
         ? (isDark
-            ? OpenVtsColors.white.withValues(alpha: 0.5)
-            : OpenVtsColors.textTertiary)
+              ? OpenVtsColors.white.withValues(alpha: 0.5)
+              : OpenVtsColors.textTertiary)
         : (isDark
-            ? OpenVtsColors.white.withValues(alpha: 0.7)
-            : OpenVtsColors.textSecondary);
+              ? OpenVtsColors.white.withValues(alpha: 0.7)
+              : OpenVtsColors.textSecondary);
 
     final child = InkWell(
       borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
@@ -393,7 +396,8 @@ class _CompactDiagnosticButton extends StatelessWidget {
               : (isDark ? Colors.black : OpenVtsColors.surfaceElevated),
           borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
           border: Border.all(
-              color: isDark ? OpenVtsColors.white : OpenVtsColors.border),
+            color: isDark ? OpenVtsColors.white : OpenVtsColors.border,
+          ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -404,22 +408,18 @@ class _CompactDiagnosticButton extends StatelessWidget {
                 child: CircularProgressIndicator(strokeWidth: 2),
               )
             else
-              Icon(
-                icon,
-                size: 14,
-                color: foregroundColor,
-              ),
+              Icon(icon, size: 14, color: foregroundColor),
             const SizedBox(width: OpenVtsSpacing.xxs),
             Text(
               label,
               style: OpenVtsTypography.meta.copyWith(
                 color: disabled
                     ? (isDark
-                        ? OpenVtsColors.white.withValues(alpha: 0.5)
-                        : OpenVtsColors.textTertiary)
+                          ? OpenVtsColors.white.withValues(alpha: 0.5)
+                          : OpenVtsColors.textTertiary)
                     : (isDark
-                        ? OpenVtsColors.white
-                        : OpenVtsColors.textPrimary),
+                          ? OpenVtsColors.white
+                          : OpenVtsColors.textPrimary),
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -433,9 +433,6 @@ class _CompactDiagnosticButton extends StatelessWidget {
       return child;
     }
 
-    return Tooltip(
-      message: message,
-      child: child,
-    );
+    return Tooltip(message: message, child: child);
   }
 }

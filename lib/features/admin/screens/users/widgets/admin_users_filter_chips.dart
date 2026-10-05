@@ -4,6 +4,7 @@ import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../models/admin_users_model.dart';
 import '../../../models/admin_users_state.dart';
 
@@ -44,37 +45,37 @@ class AdminUsersFilterChips extends StatelessWidget {
         padding: EdgeInsets.zero,
         children: [
           _AdminFilterChip(
-            label: 'All',
+            label: context.mobileText('All'),
             selected: statusFilter == AdminUserStatusFilter.all,
             onTap: () => onStatusChanged(AdminUserStatusFilter.all),
           ),
           const SizedBox(width: OpenVtsSpacing.xs),
           _AdminFilterChip(
-            label: 'Active',
+            label: context.mobileText('Active'),
             selected: statusFilter == AdminUserStatusFilter.active,
             onTap: () => onStatusChanged(AdminUserStatusFilter.active),
           ),
           const SizedBox(width: OpenVtsSpacing.xs),
           _AdminFilterChip(
-            label: 'Inactive',
+            label: context.mobileText('Inactive'),
             selected: statusFilter == AdminUserStatusFilter.inactive,
             onTap: () => onStatusChanged(AdminUserStatusFilter.inactive),
           ),
           const SizedBox(width: OpenVtsSpacing.xs),
           _AdminFilterChip(
-            label: 'All',
+            label: context.mobileText('All'),
             selected: verifiedFilter == AdminUserVerifiedFilter.all,
             onTap: () => onVerifiedChanged(AdminUserVerifiedFilter.all),
           ),
           const SizedBox(width: OpenVtsSpacing.xs),
           _AdminFilterChip(
-            label: 'Verified',
+            label: context.mobileText('Verified'),
             selected: verifiedFilter == AdminUserVerifiedFilter.verified,
             onTap: () => onVerifiedChanged(AdminUserVerifiedFilter.verified),
           ),
           const SizedBox(width: OpenVtsSpacing.xs),
           _AdminFilterChip(
-            label: 'Unverified',
+            label: context.mobileText('Unverified'),
             selected: verifiedFilter == AdminUserVerifiedFilter.unverified,
             onTap: () => onVerifiedChanged(AdminUserVerifiedFilter.unverified),
           ),
@@ -116,30 +117,31 @@ class _CountryFilterChip extends StatelessWidget {
     // code itself if for some reason no option matches.
     String label;
     if (selected) {
-      final match = countryOptions.where(
-        (o) => o.value == countryFilter,
-      );
+      final match = countryOptions.where((o) => o.value == countryFilter);
       label = match.isNotEmpty ? match.first.label : countryFilter!;
     } else {
       label = 'All Countries';
     }
 
     return PopupMenuButton<String>(
-      tooltip: 'Country filter',
+      tooltip: context.mobileText('Country filter'),
       onSelected: (value) => onCountryChanged(value.isEmpty ? null : value),
       itemBuilder: (context) {
         return [
           _menuItem('', 'All Countries', countryFilter == null),
           for (final option in countryOptions)
             _menuItem(
-                option.value, option.label, countryFilter == option.value),
+              option.value,
+              option.label,
+              countryFilter == option.value,
+            ),
         ];
       },
       child: Material(
         color: selected
             ? (Theme.of(context).brightness == Brightness.dark
-                ? Colors.black
-                : OpenVtsColors.white)
+                  ? Colors.black
+                  : OpenVtsColors.white)
             : Colors.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
@@ -195,11 +197,7 @@ class _CountryFilterChip extends StatelessWidget {
     );
   }
 
-  PopupMenuItem<String> _menuItem(
-    String value,
-    String label,
-    bool selected,
-  ) {
+  PopupMenuItem<String> _menuItem(String value, String label, bool selected) {
     return PopupMenuItem<String>(
       value: value,
       child: Row(
@@ -231,11 +229,13 @@ class _AdminFilterChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final backgroundColor =
-        selected ? (isDark ? Colors.black : Colors.white) : Colors.transparent;
+    final backgroundColor = selected
+        ? (isDark ? Colors.black : Colors.white)
+        : Colors.transparent;
     final textColor = isDark ? Colors.white : Colors.black;
-    final borderColor =
-        isDark ? Colors.white : Colors.black.withValues(alpha: 0.2);
+    final borderColor = isDark
+        ? Colors.white
+        : Colors.black.withValues(alpha: 0.2);
 
     return Material(
       color: backgroundColor,

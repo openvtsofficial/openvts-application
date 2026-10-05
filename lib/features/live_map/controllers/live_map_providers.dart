@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/access/workspace_scope_provider.dart';
 import '../../../core/providers/core_providers.dart';
 import '../../superadmin/models/superadmin_map_overlay_model.dart';
 import '../../superadmin/models/superadmin_vehicle_history_model.dart';
@@ -27,15 +28,13 @@ final currentLiveMapConfigProvider = Provider<LiveMapRoleConfig>((ref) {
 });
 
 /// Role-aware vehicle service for the currently scoped live map.
-final liveMapVehicleServiceProvider = Provider<LiveMapVehicleService>(
-  (ref) {
-    return LiveMapVehicleService(
-      apiClient: ref.watch(apiClientProvider),
-      config: ref.watch(currentLiveMapConfigProvider),
-    );
-  },
-  dependencies: <ProviderOrFamily>[currentLiveMapConfigProvider],
-);
+final liveMapVehicleServiceProvider = Provider<LiveMapVehicleService>((ref) {
+  ref.watch(workspaceDataScopeProvider);
+  return LiveMapVehicleService(
+    apiClient: ref.watch(apiClientProvider),
+    config: ref.watch(currentLiveMapConfigProvider),
+  );
+}, dependencies: <ProviderOrFamily>[currentLiveMapConfigProvider]);
 
 /// Role-aware vehicle drilldown controller for replay/logs/events/sensors/commands.
 final liveMapVehicleControllerProvider = Provider<LiveMapVehicleController>(
@@ -49,75 +48,74 @@ final liveMapVehicleControllerProvider = Provider<LiveMapVehicleController>(
 );
 
 /// Role-aware map alert/event service for the currently scoped live map.
-final liveMapEventsServiceProvider = Provider<LiveMapEventsService>(
-  (ref) {
-    return LiveMapEventsService(
-      apiClient: ref.watch(apiClientProvider),
-      config: ref.watch(currentLiveMapConfigProvider),
-    );
-  },
-  dependencies: <ProviderOrFamily>[currentLiveMapConfigProvider],
-);
+final liveMapEventsServiceProvider = Provider<LiveMapEventsService>((ref) {
+  ref.watch(workspaceDataScopeProvider);
+  return LiveMapEventsService(
+    apiClient: ref.watch(apiClientProvider),
+    config: ref.watch(currentLiveMapConfigProvider),
+  );
+}, dependencies: <ProviderOrFamily>[currentLiveMapConfigProvider]);
 
 /// Role-aware live map controller (telemetry + alerts) for the scoped role.
 final liveMapControllerProvider =
     StateNotifierProvider.autoDispose<LiveMapController, LiveMapState>(
-  (ref) {
-    final controller = LiveMapController(
-      vehicleService: ref.watch(liveMapVehicleServiceProvider),
-      mapEventsService: ref.watch(liveMapEventsServiceProvider),
-      socketService: ref.watch(socketServiceProvider),
-      config: ref.watch(currentLiveMapConfigProvider),
+      (ref) {
+        final controller = LiveMapController(
+          vehicleService: ref.watch(liveMapVehicleServiceProvider),
+          mapEventsService: ref.watch(liveMapEventsServiceProvider),
+          socketService: ref.watch(socketServiceProvider),
+          config: ref.watch(currentLiveMapConfigProvider),
+        );
+        controller.initialize();
+        return controller;
+      },
+      dependencies: <ProviderOrFamily>[
+        currentLiveMapConfigProvider,
+        liveMapVehicleServiceProvider,
+        liveMapEventsServiceProvider,
+      ],
     );
-    controller.initialize();
-    return controller;
-  },
-  dependencies: <ProviderOrFamily>[
-    currentLiveMapConfigProvider,
-    liveMapVehicleServiceProvider,
-    liveMapEventsServiceProvider,
-  ],
-);
 
 /// Role-map socket facade used by drawer widgets without reading core services.
-final liveMapSocketControllerProvider = Provider<LiveMapSocketController>(
-  (ref) {
-    return LiveMapSocketController(
-      ref.watch(socketServiceProvider),
-      ref.watch(currentLiveMapConfigProvider),
-    );
-  },
-  dependencies: <ProviderOrFamily>[currentLiveMapConfigProvider],
-);
+final liveMapSocketControllerProvider = Provider<LiveMapSocketController>((
+  ref,
+) {
+  return LiveMapSocketController(
+    ref.watch(socketServiceProvider),
+    ref.watch(currentLiveMapConfigProvider),
+  );
+}, dependencies: <ProviderOrFamily>[currentLiveMapConfigProvider]);
 
 /// Role-aware vehicle-details lookup keyed by IMEI.
 final liveMapVehicleDetailsProvider =
     FutureProvider.family<LiveMapVehicleDetails, String>(
-  (ref, imei) {
-    return ref
-        .watch(liveMapVehicleServiceProvider)
-        .getVehicleDetailsByImei(imei);
-  },
-  dependencies: <ProviderOrFamily>[
-    currentLiveMapConfigProvider,
-    liveMapVehicleServiceProvider,
-  ],
-);
+      (ref, imei) {
+        return ref
+            .watch(liveMapVehicleServiceProvider)
+            .getVehicleDetailsByImei(imei);
+      },
+      dependencies: <ProviderOrFamily>[
+        currentLiveMapConfigProvider,
+        liveMapVehicleServiceProvider,
+      ],
+    );
 
 /// Role-aware vehicle history controller (Quick Track tab).
 final liveMapVehicleHistoryControllerProvider =
-    StateNotifierProvider.autoDispose<LiveMapVehicleHistoryController,
-        SuperadminVehicleHistoryState>(
-  (ref) {
-    return LiveMapVehicleHistoryController(
-      ref.watch(liveMapVehicleServiceProvider),
+    StateNotifierProvider.autoDispose<
+      LiveMapVehicleHistoryController,
+      SuperadminVehicleHistoryState
+    >(
+      (ref) {
+        return LiveMapVehicleHistoryController(
+          ref.watch(liveMapVehicleServiceProvider),
+        );
+      },
+      dependencies: <ProviderOrFamily>[
+        currentLiveMapConfigProvider,
+        liveMapVehicleServiceProvider,
+      ],
     );
-  },
-  dependencies: <ProviderOrFamily>[
-    currentLiveMapConfigProvider,
-    liveMapVehicleServiceProvider,
-  ],
-);
 
 /// Role-aware geofence overlay.
 final liveMapGeofencesProvider = FutureProvider<List<SuperadminMapGeofence>>(

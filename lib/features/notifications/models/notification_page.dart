@@ -101,7 +101,6 @@ int? _extractInt(Map<String, dynamic>? root, List<String> keys) {
   }
 
   for (final nestedKey in const [
-    'data',
     'summary',
     'counts',
     'meta',
@@ -130,7 +129,7 @@ bool? _extractBool(Map<String, dynamic>? root, List<String> keys) {
     }
   }
 
-  for (final nestedKey in const ['data', 'meta', 'pagination']) {
+  for (final nestedKey in const ['meta', 'pagination']) {
     final nested = _extractBool(_asMap(root[nestedKey]), keys);
     if (nested != null) {
       return nested;

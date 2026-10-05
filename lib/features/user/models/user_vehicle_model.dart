@@ -326,6 +326,9 @@ class UserVehicleDetails {
     required this.gmtOffset,
     required this.device,
     required this.plan,
+    this.primaryExpiry,
+    this.secondaryExpiry,
+    this.registrationAt,
   });
 
   final String id;
@@ -344,6 +347,9 @@ class UserVehicleDetails {
   final String? gmtOffset;
   final UserVehicleDeviceMini? device;
   final UserVehiclePlanMini? plan;
+  final DateTime? primaryExpiry;
+  final DateTime? secondaryExpiry;
+  final DateTime? registrationAt;
 
   String get title {
     final normalizedName = name.trim();
@@ -455,6 +461,9 @@ class UserVehicleDetails {
       ]),
       device: device,
       plan: plan,
+      primaryExpiry: _firstDate(source, const ['primaryExpiry']),
+      secondaryExpiry: _firstDate(source, const ['secondaryExpiry']),
+      registrationAt: _firstDate(source, const ['registrationAt']),
     );
   }
 }

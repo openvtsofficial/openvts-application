@@ -4,6 +4,7 @@ import '../../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../../shared/helpers/mobile_text.dart';
 import '../../../../models/user_landmark_model.dart';
 
 /// Compact filter bar for the POI list. The widget is stateless; the parent
@@ -55,14 +56,15 @@ class UserPoiFilterBar extends StatelessWidget {
                 _FilterGroup(
                   children: [
                     _FilterChip(
-                      label: 'All categories',
+                      label: context.mobileText('All categories'),
                       selected: categoryFilter == null,
                       onTap: () => onCategoryChanged(null),
                     ),
                     for (final category in categories)
                       _FilterChip(
                         label: category,
-                        selected: categoryFilter?.toLowerCase() ==
+                        selected:
+                            categoryFilter?.toLowerCase() ==
                             category.toLowerCase(),
                         onTap: () => onCategoryChanged(category),
                       ),
@@ -99,8 +101,9 @@ class _SearchField extends StatefulWidget {
 }
 
 class _SearchFieldState extends State<_SearchField> {
-  late final TextEditingController _controller =
-      TextEditingController(text: widget.value);
+  late final TextEditingController _controller = TextEditingController(
+    text: widget.value,
+  );
 
   @override
   void didUpdateWidget(covariant _SearchField oldWidget) {
@@ -130,7 +133,7 @@ class _SearchFieldState extends State<_SearchField> {
         textInputAction: TextInputAction.search,
         decoration: InputDecoration(
           isDense: true,
-          hintText: 'Search by name or category',
+          hintText: context.mobileText('Search by name or category'),
           hintStyle: OpenVtsTypography.body.copyWith(
             color: OpenVtsColors.textTertiary,
           ),

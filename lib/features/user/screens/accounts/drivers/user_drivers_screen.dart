@@ -5,6 +5,7 @@ import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
@@ -30,7 +31,7 @@ class UserDriversScreen extends ConsumerWidget {
     final controller = ref.read(userDriversControllerProvider.notifier);
 
     return OpenVtsPageScaffold(
-      title: 'Drivers',
+      title: context.mobileText('Drivers'),
       headerMode: OpenVtsPageHeaderMode.closeable,
       padding: const EdgeInsets.fromLTRB(
         OpenVtsSpacing.sm,
@@ -111,7 +112,9 @@ class UserDriversScreen extends ConsumerWidget {
   }
 
   Future<void> _openCreateDriverSheet(
-      BuildContext context, WidgetRef ref) async {
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
     final controller = ref.read(userDriversControllerProvider.notifier);
 
     final created = await showModalBottomSheet<UserDriver>(
@@ -120,16 +123,17 @@ class UserDriversScreen extends ConsumerWidget {
       useSafeArea: true,
       showDragHandle: true,
       backgroundColor: Theme.of(context).colorScheme.surface,
-      builder: (_) => UserDriverCreateSheet(
-        onSubmit: controller.createDriver,
-      ),
+      builder: (_) => UserDriverCreateSheet(onSubmit: controller.createDriver),
     );
 
     if (!context.mounted || created == null) {
       return;
     }
 
-    ToastHelper.showSuccess('Driver created.', context: context);
+    ToastHelper.showSuccess(
+      context.mobileText('Driver created.'),
+      context: context,
+    );
   }
 }
 
@@ -155,7 +159,7 @@ class _DriversHeaderCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Drivers',
+                context.mobileText('Drivers'),
                 style: OpenVtsTypography.label.copyWith(
                   color: Theme.of(context).colorScheme.onSurface,
                   fontWeight: FontWeight.w800,
@@ -163,7 +167,9 @@ class _DriversHeaderCard extends StatelessWidget {
               ),
               const SizedBox(height: OpenVtsSpacing.xxs),
               Text(
-                'Manage drivers, assignments, documents, and activity.',
+                context.mobileText(
+                  'Manage drivers, assignments, documents, and activity.',
+                ),
                 style: OpenVtsTypography.meta.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
@@ -178,7 +184,7 @@ class _DriversHeaderCard extends StatelessWidget {
               SizedBox(
                 height: 34,
                 child: OpenVtsButton(
-                  label: 'Refresh',
+                  label: context.mobileText('Refresh'),
                   height: 34,
                   variant: OpenVtsButtonVariant.secondary,
                   trailingIcon: Icons.refresh_rounded,
@@ -189,7 +195,7 @@ class _DriversHeaderCard extends StatelessWidget {
               SizedBox(
                 height: 34,
                 child: OpenVtsButton(
-                  label: 'Create Driver',
+                  label: context.mobileText('Create Driver'),
                   height: 34,
                   trailingIcon: Icons.person_add_alt_1_rounded,
                   onPressed: state.isCreating ? null : onCreate,
@@ -280,13 +286,15 @@ class _EmptyDriversState extends StatelessWidget {
       return OpenVtsCard(
         child: Column(
           children: [
-            const OpenVtsEmptyState(
-              title: 'No drivers',
-              message: 'Create your first driver to start assignments.',
+            OpenVtsEmptyState(
+              title: context.mobileText('No drivers'),
+              message: context.mobileText(
+                'Create your first driver to start assignments.',
+              ),
             ),
             const SizedBox(height: OpenVtsSpacing.sm),
             OpenVtsButton(
-              label: 'Create Driver',
+              label: context.mobileText('Create Driver'),
               trailingIcon: Icons.person_add_alt_1_rounded,
               onPressed: onCreate,
             ),
@@ -299,13 +307,15 @@ class _EmptyDriversState extends StatelessWidget {
       return OpenVtsCard(
         child: Column(
           children: [
-            const OpenVtsEmptyState(
-              title: 'No matching drivers',
-              message: 'Try adjusting the current filters or search query.',
+            OpenVtsEmptyState(
+              title: context.mobileText('No matching drivers'),
+              message: context.mobileText(
+                'Try adjusting the current filters or search query.',
+              ),
             ),
             const SizedBox(height: OpenVtsSpacing.sm),
             OpenVtsButton(
-              label: 'Clear Filters',
+              label: context.mobileText('Clear Filters'),
               variant: OpenVtsButtonVariant.secondary,
               trailingIcon: Icons.filter_alt_off_outlined,
               onPressed: onClearFilters,
@@ -315,9 +325,9 @@ class _EmptyDriversState extends StatelessWidget {
       );
     }
 
-    return const OpenVtsEmptyState(
-      title: 'No drivers available',
-      message: 'Pull to refresh or add a new driver.',
+    return OpenVtsEmptyState(
+      title: context.mobileText('No drivers available'),
+      message: context.mobileText('Pull to refresh or add a new driver.'),
     );
   }
 }

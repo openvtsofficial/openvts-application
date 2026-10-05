@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../core/theme/open_vts_spacing.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
+import '../../../../../shared/helpers/validation_localizations.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../../../shared/widgets/open_vts_empty_state.dart';
 import '../../../models/admin_vehicle_model.dart';
+import '../../../widgets/admin_action_gate.dart';
 
 class AdminVehicleConfigTab extends StatefulWidget {
   const AdminVehicleConfigTab({
@@ -62,9 +65,9 @@ class _AdminVehicleConfigTabState extends State<AdminVehicleConfigTab> {
   @override
   Widget build(BuildContext context) {
     if (widget.vehicle.device == null) {
-      return const OpenVtsEmptyState(
-        title: 'No device',
-        message: 'No device assigned to this vehicle.',
+      return OpenVtsEmptyState(
+        title: context.mobileText('No device'),
+        message: context.mobileText('No device assigned to this vehicle.'),
       );
     }
 
@@ -75,40 +78,53 @@ class _AdminVehicleConfigTabState extends State<AdminVehicleConfigTab> {
           children: [
             TextFormField(
               controller: _speedController,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(labelText: 'Speed Variation'),
-              validator: (v) => _validateNonNegative(v, 'Speed variation'),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              decoration: InputDecoration(
+                labelText: context.mobileText('Speed Variation'),
+              ),
+              validator: context.localizedValidator((v) => _validateNonNegative(v, 'Speed variation')),
             ),
             const SizedBox(height: OpenVtsSpacing.sm),
             TextFormField(
               controller: _distanceController,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              decoration:
-                  const InputDecoration(labelText: 'Distance Variation'),
-              validator: (v) => _validateNonNegative(v, 'Distance variation'),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              decoration: InputDecoration(
+                labelText: context.mobileText('Distance Variation'),
+              ),
+              validator: context.localizedValidator((v) => _validateNonNegative(v, 'Distance variation')),
             ),
             const SizedBox(height: OpenVtsSpacing.sm),
             TextFormField(
               controller: _odometerController,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(labelText: 'Odometer'),
-              validator: (v) => _validateNonNegative(v, 'Odometer'),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              decoration: InputDecoration(
+                labelText: context.mobileText('Odometer'),
+              ),
+              validator: context.localizedValidator((v) => _validateNonNegative(v, 'Odometer')),
             ),
             const SizedBox(height: OpenVtsSpacing.sm),
             TextFormField(
               controller: _engineHoursController,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(labelText: 'Engine Hours'),
-              validator: (v) => _validateNonNegative(v, 'Engine hours'),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              decoration: InputDecoration(
+                labelText: context.mobileText('Engine Hours'),
+              ),
+              validator: context.localizedValidator((v) => _validateNonNegative(v, 'Engine hours')),
             ),
             const SizedBox(height: OpenVtsSpacing.sm),
             DropdownButtonFormField<String>(
               initialValue: _ignitionSource,
-              decoration: const InputDecoration(labelText: 'Ignition Source'),
+              decoration: InputDecoration(
+                labelText: context.mobileText('Ignition Source'),
+              ),
               items: const [
                 DropdownMenuItem(value: 'ACC', child: Text('ACC')),
                 DropdownMenuItem(value: 'MOTION', child: Text('MOTION')),
@@ -123,17 +139,20 @@ class _AdminVehicleConfigTabState extends State<AdminVehicleConfigTab> {
               children: [
                 Expanded(
                   child: OpenVtsButton(
-                    label: 'Reset',
+                    label: context.mobileText('Reset'),
                     variant: OpenVtsButtonVariant.secondary,
                     onPressed: widget.isSaving ? null : _reset,
                   ),
                 ),
                 const SizedBox(width: OpenVtsSpacing.xs),
                 Expanded(
-                  child: OpenVtsButton(
-                    label: 'Save Config',
-                    isLoading: widget.isSaving,
-                    onPressed: widget.isSaving ? null : _save,
+                  child: AdminActionGate(
+                    capability: 'vehicles.update',
+                    child: OpenVtsButton(
+                      label: context.mobileText('Save Config'),
+                      isLoading: widget.isSaving,
+                      onPressed: widget.isSaving ? null : _save,
+                    ),
                   ),
                 ),
               ],
@@ -152,18 +171,18 @@ class _AdminVehicleConfigTabState extends State<AdminVehicleConfigTab> {
   }
 
   void _reset() {
-    _speedController.text =
-        (widget.vehicle.device?.speedVariation ?? 0).toString();
-    _distanceController.text =
-        (widget.vehicle.device?.distanceVariation ?? 0).toString();
-    _odometerController.text =
-        (widget.vehicle.device?.odometer ?? 0).toString();
-    _engineHoursController.text =
-        (widget.vehicle.device?.engineHours ?? 0).toString();
+    _speedController.text = (widget.vehicle.device?.speedVariation ?? 0)
+        .toString();
+    _distanceController.text = (widget.vehicle.device?.distanceVariation ?? 0)
+        .toString();
+    _odometerController.text = (widget.vehicle.device?.odometer ?? 0)
+        .toString();
+    _engineHoursController.text = (widget.vehicle.device?.engineHours ?? 0)
+        .toString();
     _ignitionSource =
         (widget.vehicle.device?.ignitionSource.trim().toUpperCase() == 'MOTION')
-            ? 'MOTION'
-            : 'ACC';
+        ? 'MOTION'
+        : 'ACC';
     setState(() {});
   }
 

@@ -1,9 +1,10 @@
 import 'package:dio/dio.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../../core/api/api_client.dart';
 import '../../../core/api/api_endpoints.dart';
 import '../../../core/api/api_options.dart';
-import '../models/admin_subscription_policy.dart';
+import '../../../shared/models/user_role.dart';
 import '../models/admin_payments_model.dart';
 import '../models/admin_users_model.dart';
 
@@ -11,6 +12,8 @@ class AdminPaymentsService {
   AdminPaymentsService(this._apiClient);
 
   final ApiClient _apiClient;
+  final _renewalKeys = Expando<String>('renewalIdempotency');
+  bool get _isTeam => _apiClient.activeRole == UserRole.team;
 
   static final Options _readOptions = normalReadOptions();
 
@@ -76,7 +79,7 @@ class AdminPaymentsService {
 
   Future<List<AdminUserListItem>> getUsers() async {
     final response = await _apiClient.get<dynamic>(
-      ApiEndpoints.admin.users,
+      _isTeam ? TeamContextEndpoints.paymentUsers : ApiEndpoints.admin.users,
       options: _readOptions,
       parser: (json) => json,
     );
@@ -84,9 +87,21 @@ class AdminPaymentsService {
     return parseAdminUsers(response.data);
   }
 
+  Future<List<AdminUserListItem>> getRenewalUsers() async {
+    if (!_isTeam) return getUsers();
+    final response = await _apiClient.get<dynamic>(
+      TeamContextEndpoints.renewalUsers,
+      options: _readOptions,
+      parser: (v) => v,
+    );
+    return parseAdminUsers(response.data);
+  }
+
   Future<List<AdminRenewVehicleOption>> getLinkedVehicles(String userId) async {
     final response = await _apiClient.get<dynamic>(
-      ApiEndpoints.admin.linkedVehiclesByUserId(userId.trim()),
+      _isTeam
+          ? TeamContextEndpoints.renewalVehicles(userId.trim())
+          : ApiEndpoints.admin.linkedVehiclesByUserId(userId.trim()),
       options: _readOptions,
       parser: (json) => json,
     );
@@ -99,11 +114,16 @@ class AdminPaymentsService {
   }
 
   Future<AdminPaymentTransaction?> renewVehicles(
-      AdminRenewPaymentRequest request) async {
-    AdminSubscriptionPolicy.requireRenewalsAllowed();
+    AdminRenewPaymentRequest request,
+  ) async {
     final response = await _apiClient.post<dynamic>(
       ApiEndpoints.admin.renewVehiclesPayment,
-      data: request.toJson(),
+      data: {
+        ...request.toJson(),
+        'idempotencyKey':
+            request.idempotencyKey ??
+            (_renewalKeys[request] ??= const Uuid().v4()),
+      },
       options: _mutationOptions,
       parser: (json) => json,
     );

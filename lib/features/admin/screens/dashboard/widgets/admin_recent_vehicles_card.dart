@@ -6,6 +6,7 @@ import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../core/utils/date_time_formatter.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../models/admin_dashboard_model.dart';
 import 'admin_dashboard_list_card.dart';
 
@@ -19,15 +20,17 @@ class AdminRecentVehiclesCard extends ConsumerWidget {
     final formatter = ref.watch(appDateFormatterProvider);
 
     return AdminDashboardListCard(
-      title: 'Recent Vehicles',
+      title: context.mobileText('Recent Vehicles'),
       icon: Icons.directions_car_outlined,
       viewAllRoute: RoutePaths.adminVehicles,
       emptyTitle: 'No recent vehicles',
-      emptyMessage: 'New vehicles will appear here.',
+      emptyMessage: context.mobileText('New vehicles will appear here.'),
       itemCount: vehicles.length,
       itemBuilder: (context, index) {
         return _RecentVehicleRow(
-            vehicle: vehicles[index], formatter: formatter);
+          vehicle: vehicles[index],
+          formatter: formatter,
+        );
       },
     );
   }
@@ -68,7 +71,9 @@ class _RecentVehicleRow extends StatelessWidget {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  vehicle.hasDevice ? (vehicle.imei ?? 'No IMEI') : 'No Device',
+                  vehicle.hasDevice
+                      ? (vehicle.imei ?? 'No IMEI')
+                      : context.mobileText('No Device'),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: OpenVtsTypography.meta.copyWith(
@@ -88,14 +93,16 @@ class _RecentVehicleRow extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 AdminDashboardStatusChip(
-                  label: status.label,
+                  label: context.mobileText(status.label),
                   icon: status.icon,
                   color: status.color,
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  adminDashboardRelativeDate(vehicle.createdAt,
-                      formatter: formatter),
+                  adminDashboardRelativeDate(
+                    vehicle.createdAt,
+                    formatter: formatter,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.end,

@@ -10,6 +10,7 @@ import '../../../../core/theme/open_vts_colors.dart';
 import '../../../../core/theme/open_vts_radius.dart';
 import '../../../../core/theme/open_vts_spacing.dart';
 import '../../../../core/theme/open_vts_typography.dart';
+import '../../../../shared/helpers/mobile_text.dart';
 import '../../../../shared/helpers/toast_helper.dart';
 import '../../../../shared/widgets/open_vts_button.dart';
 import '../../../../shared/widgets/open_vts_card.dart';
@@ -50,7 +51,7 @@ class _UserShareTrackLinksScreenState
     final apiBaseUrl = ref.watch(apiBaseUrlProvider);
 
     return OpenVtsPageScaffold(
-      title: 'Track Links',
+      title: context.mobileText('Track Links'),
       headerMode: OpenVtsPageHeaderMode.closeable,
       body: RefreshIndicator(
         onRefresh: controller.refresh,
@@ -84,9 +85,7 @@ class _UserShareTrackLinksScreenState
                 child: SizedBox(height: OpenVtsSpacing.sm),
               ),
               SliverToBoxAdapter(
-                child: _SearchCard(
-                  onChanged: _setSearchQueryDebounced,
-                ),
+                child: _SearchCard(onChanged: _setSearchQueryDebounced),
               ),
               if (state.errorMessage != null) ...[
                 const SliverToBoxAdapter(
@@ -100,12 +99,13 @@ class _UserShareTrackLinksScreenState
                 child: SizedBox(height: OpenVtsSpacing.sm),
               ),
               if (state.links.isEmpty)
-                const SliverFillRemaining(
+                SliverFillRemaining(
                   hasScrollBody: false,
                   child: OpenVtsEmptyState(
-                    title: 'No share links',
-                    message:
-                        'Create a public track link to share live vehicle tracking.',
+                    title: context.mobileText('No share links'),
+                    message: context.mobileText(
+                      'Create a public track link to share live vehicle tracking.',
+                    ),
                   ),
                 )
               else
@@ -123,12 +123,15 @@ class _UserShareTrackLinksScreenState
                     return UserShareTrackLinkCard(
                       link: link,
                       publicUrl: hasUrl ? publicUrl : null,
-                      isBusy: state.isUpdating(link.endpointId) ||
+                      isBusy:
+                          state.isUpdating(link.endpointId) ||
                           state.isDeleting(link.endpointId),
-                      onCopy:
-                          hasUrl ? () => _copyUrl(context, publicUrl) : null,
-                      onOpen:
-                          hasUrl ? () => _openUrl(context, publicUrl) : null,
+                      onCopy: hasUrl
+                          ? () => _copyUrl(context, publicUrl)
+                          : null,
+                      onOpen: hasUrl
+                          ? () => _openUrl(context, publicUrl)
+                          : null,
                       onQr: hasUrl
                           ? () => _openQrSheet(context, publicUrl)
                           : null,
@@ -173,13 +176,19 @@ class _UserShareTrackLinksScreenState
   Future<void> _copyUrl(BuildContext context, String url) async {
     await Clipboard.setData(ClipboardData(text: url));
     if (!context.mounted) return;
-    ToastHelper.showSuccess('Link copied.', context: context);
+    ToastHelper.showSuccess(
+      context.mobileText('Link copied.'),
+      context: context,
+    );
   }
 
   Future<void> _openUrl(BuildContext context, String url) async {
     final uri = Uri.tryParse(url);
     if (uri == null || !uri.hasScheme) {
-      ToastHelper.showError('Public URL is not available.', context: context);
+      ToastHelper.showError(
+        context.mobileText('Public URL is not available.'),
+        context: context,
+      );
       return;
     }
 
@@ -190,11 +199,17 @@ class _UserShareTrackLinksScreenState
       );
       if (!context.mounted) return;
       if (!launched) {
-        ToastHelper.showError('Could not open link.', context: context);
+        ToastHelper.showError(
+          context.mobileText('Could not open link.'),
+          context: context,
+        );
       }
     } catch (_) {
       if (context.mounted) {
-        ToastHelper.showError('Could not open link.', context: context);
+        ToastHelper.showError(
+          context.mobileText('Could not open link.'),
+          context: context,
+        );
       }
     }
   }
@@ -203,10 +218,7 @@ class _UserShareTrackLinksScreenState
     BuildContext context, {
     UserShareTrackLink? link,
   }) {
-    return UserShareTrackLinkFormSheet.show<void>(
-      context: context,
-      link: link,
-    );
+    return UserShareTrackLinkFormSheet.show<void>(context: context, link: link);
   }
 
   Future<void> _openQrSheet(BuildContext context, String url) {
@@ -226,7 +238,10 @@ class _UserShareTrackLinksScreenState
     );
 
     if (deleted == true && context.mounted) {
-      ToastHelper.showSuccess('Track link deleted.', context: context);
+      ToastHelper.showSuccess(
+        context.mobileText('Track link deleted.'),
+        context: context,
+      );
     }
   }
 }
@@ -279,7 +294,7 @@ class _HeaderCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Share Track Links',
+                      context.mobileText('Share Track Links'),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: OpenVtsTypography.titleSmall.copyWith(
@@ -292,7 +307,9 @@ class _HeaderCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      'Create secure public links for live vehicle tracking.',
+                      context.mobileText(
+                        'Create secure public links for live vehicle tracking.',
+                      ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: OpenVtsTypography.meta.copyWith(
@@ -317,7 +334,7 @@ class _HeaderCard extends StatelessWidget {
                     onPressed: onNew,
                     icon: const Icon(Icons.add_rounded, size: 18),
                     label: Text(
-                      'New Link',
+                      context.mobileText('New Link'),
                       style: OpenVtsTypography.label.copyWith(
                         fontWeight: FontWeight.w800,
                       ),
@@ -326,8 +343,9 @@ class _HeaderCard extends StatelessWidget {
                       backgroundColor: OpenVtsColors.brandInk,
                       foregroundColor: OpenVtsColors.white,
                       shape: RoundedRectangleBorder(
-                        borderRadius:
-                            BorderRadius.circular(OpenVtsRadius.button),
+                        borderRadius: BorderRadius.circular(
+                          OpenVtsRadius.button,
+                        ),
                       ),
                     ),
                   ),
@@ -337,7 +355,7 @@ class _HeaderCard extends StatelessWidget {
               SizedBox.square(
                 dimension: 36,
                 child: IconButton(
-                  tooltip: 'Refresh',
+                  tooltip: context.mobileText('Refresh'),
                   onPressed: onRefresh,
                   icon: isRefreshing
                       ? const SizedBox(
@@ -362,7 +380,10 @@ class _HeaderCard extends StatelessWidget {
           if (totalCount > 0) ...[
             const SizedBox(height: OpenVtsSpacing.xs),
             Text(
-              '$visibleCount of $totalCount links',
+              context.mobileText("{value1} of {value2} links", {
+                'value1': (visibleCount).toString(),
+                'value2': (totalCount).toString(),
+              }),
               style: OpenVtsTypography.meta.copyWith(
                 color: OpenVtsColors.textTertiary,
                 fontSize: 11,
@@ -386,7 +407,7 @@ class _SearchCard extends StatelessWidget {
     return OpenVtsCard(
       padding: const EdgeInsets.all(OpenVtsSpacing.sm),
       child: OpenVtsSearchField(
-        hintText: 'Search by code...',
+        hintText: context.mobileText('Search by code...'),
         onChanged: onChanged,
       ),
     );
@@ -402,7 +423,9 @@ class _LoadMoreButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return OpenVtsButton(
-      label: isLoading ? 'Loading...' : 'Load more',
+      label: isLoading
+          ? context.mobileText('Loading...')
+          : context.mobileText('Load more'),
       onPressed: onPressed,
       isLoading: isLoading,
       variant: OpenVtsButtonVariant.secondary,

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/core_providers.dart';
 import '../../../core/theme/open_vts_spacing.dart';
 import '../../../core/theme/open_vts_typography.dart';
+import '../../../shared/helpers/mobile_text.dart';
 import '../../../shared/widgets/open_vts_button.dart';
 import '../../../shared/widgets/open_vts_card.dart';
 
@@ -25,29 +26,26 @@ class MobilePushDiagnosticsCard extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Mobile Push Diagnostics',
+            context.mobileText('Mobile Push Diagnostics'),
             style: OpenVtsTypography.label.copyWith(
               fontWeight: FontWeight.w600,
             ),
           ),
-          const SizedBox(height: OpenVtsSpacing.sm),
-          const Text(
-            'Notifications are optional. Enable them to receive vehicle alerts. '
-            'Your push token is shared with this server and Firebase for delivery.',
-          ),
           const SizedBox(height: OpenVtsSpacing.md),
           _DiagnosticRow(
-            label: 'Platform',
+            label: context.mobileText('Platform'),
             value: pushState.platform.apiValue.toUpperCase(),
           ),
           _DiagnosticRow(
-            label: 'Permission',
+            label: context.mobileText('Permission'),
             value: _formatPermissionStatus(pushState.permissionStatus),
-            valueColor:
-                _getPermissionColor(pushState.isPermissionGranted, theme),
+            valueColor: _getPermissionColor(
+              pushState.isPermissionGranted,
+              theme,
+            ),
           ),
           _DiagnosticRow(
-            label: 'Firebase',
+            label: context.mobileText('Firebase'),
             value: pushState.isInitialized ? 'Initialized' : 'Not Initialized',
             valueColor: pushState.isInitialized
                 ? theme.colorScheme.primary
@@ -55,27 +53,27 @@ class MobilePushDiagnosticsCard extends ConsumerWidget {
           ),
           if (pushState.configVersion != null)
             _DiagnosticRow(
-              label: 'Config Version',
+              label: context.mobileText('Config Version'),
               value: pushState.configVersion!,
             ),
           if (pushState.fcmTokenLast10 != null)
             _DiagnosticRow(
-              label: 'FCM Token',
+              label: context.mobileText('FCM Token'),
               value: '***${pushState.fcmTokenLast10}',
             ),
           if (pushState.registeredTokenLast10 != null)
             _DiagnosticRow(
-              label: 'Registered',
+              label: context.mobileText('Registered'),
               value: '***${pushState.registeredTokenLast10}',
             ),
           if (pushState.registeredTokenCount != null)
             _DiagnosticRow(
-              label: 'Backend Tokens',
+              label: context.mobileText('Backend Tokens'),
               value: pushState.registeredTokenCount.toString(),
             ),
           if (pushState.currentTokenVerifiedByBackend != null)
             _DiagnosticRow(
-              label: 'Verified',
+              label: context.mobileText('Verified'),
               value: pushState.currentTokenVerifiedByBackend! ? 'Yes' : 'No',
               valueColor: pushState.currentTokenVerifiedByBackend!
                   ? theme.colorScheme.primary
@@ -85,7 +83,9 @@ class MobilePushDiagnosticsCard extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.only(top: OpenVtsSpacing.md),
               child: Text(
-                'Error: ${pushState.lastError}',
+                context.mobileText("Error: {value1}", {
+                  'value1': (pushState.lastError).toString(),
+                }),
                 style: OpenVtsTypography.meta.copyWith(
                   color: theme.colorScheme.error,
                 ),
@@ -96,9 +96,9 @@ class MobilePushDiagnosticsCard extends ConsumerWidget {
             children: [
               Expanded(
                 child: OpenVtsButton(
-                  label: 'Enable/Refresh',
+                  label: context.mobileText('Enable/Refresh'),
                   isLoading: pushState.isInitializing,
-                  onPressed: !pushState.isInitializing && !pushState.isTesting
+                  onPressed: pushState.isInitialized
                       ? () async {
                           await ref
                               .read(mobilePushControllerProvider.notifier)
@@ -110,13 +110,14 @@ class MobilePushDiagnosticsCard extends ConsumerWidget {
               const SizedBox(width: OpenVtsSpacing.sm),
               Expanded(
                 child: OpenVtsButton(
-                  label: 'Test Push',
+                  label: context.mobileText('Test Push'),
                   isLoading: pushState.isTesting,
                   variant: OpenVtsButtonVariant.secondary,
-                  onPressed: !pushState.isInitializing && !pushState.isTesting
+                  onPressed: pushState.isInitialized
                       ? () async {
-                          final controller =
-                              ref.read(mobilePushControllerProvider.notifier);
+                          final controller = ref.read(
+                            mobilePushControllerProvider.notifier,
+                          );
                           await controller.sendTestNotification();
                         }
                       : null,
@@ -150,10 +151,7 @@ class _DiagnosticRow extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: OpenVtsTypography.meta,
-          ),
+          Text(label, style: OpenVtsTypography.meta),
           Text(
             value,
             style: OpenVtsTypography.meta.copyWith(

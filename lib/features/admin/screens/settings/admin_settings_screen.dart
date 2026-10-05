@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/widgets/app_legal_links.dart';
 import '../../../../core/theme/open_vts_colors.dart';
 import '../../../../core/theme/open_vts_radius.dart';
 import '../../../../core/theme/open_vts_spacing.dart';
@@ -11,6 +10,8 @@ import '../../../../core/theme/open_vts_typography.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../shared/widgets/open_vts_card.dart';
 import '../../../../shared/widgets/open_vts_page_scaffold.dart';
+import '../../../auth/controllers/security_controller.dart';
+import '../../../auth/screens/security_screen.dart';
 import '../../controllers/admin_providers.dart';
 import '../../models/admin_settings_model.dart';
 import '../../models/admin_settings_state.dart';
@@ -19,7 +20,8 @@ import 'widgets/admin_profile_settings_section.dart';
 import 'widgets/admin_smtp_settings_section.dart';
 
 class AdminSettingsScreen extends ConsumerStatefulWidget {
-  const AdminSettingsScreen({super.key});
+  const AdminSettingsScreen({super.key, this.openSecurity = false});
+  final bool openSecurity;
 
   @override
   ConsumerState<AdminSettingsScreen> createState() =>
@@ -32,9 +34,30 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
+      if (widget.openSecurity) {
+        ref
+            .read(adminSettingsControllerProvider.notifier)
+            .selectSection(AdminSettingsSection.security);
+        return;
+      }
       unawaited(
-          ref.read(adminSettingsControllerProvider.notifier).loadInitial());
+        ref.read(adminSettingsControllerProvider.notifier).loadInitial(),
+      );
     });
+  }
+
+  @override
+  void didUpdateWidget(covariant AdminSettingsScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.openSecurity && !oldWidget.openSecurity) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          ref
+              .read(adminSettingsControllerProvider.notifier)
+              .selectSection(AdminSettingsSection.security);
+        }
+      });
+    }
   }
 
   @override
@@ -50,9 +73,11 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
         OpenVtsSpacing.md,
       ),
       body: RefreshIndicator(
-        onRefresh: () => ref
-            .read(adminSettingsControllerProvider.notifier)
-            .refreshCurrentSection(),
+        onRefresh: () => state.selectedSection == AdminSettingsSection.security
+            ? ref.read(securityControllerProvider.notifier).load()
+            : ref
+                  .read(adminSettingsControllerProvider.notifier)
+                  .refreshCurrentSection(),
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
@@ -61,7 +86,6 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
             _SectionSelector(selected: state.selectedSection),
             const SizedBox(height: OpenVtsSpacing.sm),
             _SectionContent(state: state),
-            const AppLegalLinks(),
           ],
         ),
       ),
@@ -145,6 +169,7 @@ const _kSections = <_SectionItem>[
   _SectionItem(AdminSettingsSection.profile, Icons.person_outline_rounded),
   _SectionItem(AdminSettingsSection.localization, Icons.public_rounded),
   _SectionItem(AdminSettingsSection.smtp, Icons.mail_outline_rounded),
+  _SectionItem(AdminSettingsSection.security, Icons.shield_outlined),
 ];
 
 String _sectionLabel(AppLocalizations l10n, AdminSettingsSection section) {
@@ -152,6 +177,7 @@ String _sectionLabel(AppLocalizations l10n, AdminSettingsSection section) {
     AdminSettingsSection.profile => l10n.profile,
     AdminSettingsSection.localization => l10n.localization,
     AdminSettingsSection.smtp => l10n.smtp,
+    AdminSettingsSection.security => l10n.security,
   };
 }
 
@@ -163,7 +189,7 @@ class _SectionSelector extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return SizedBox(
-      height: 36,
+      height: 48,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 2),
@@ -254,6 +280,8 @@ class _SectionContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     switch (state.selectedSection) {
+      case AdminSettingsSection.security:
+        return const SecurityScreen(embedded: true);
       case AdminSettingsSection.profile:
         return ProfileSettingsSection(state: state);
       case AdminSettingsSection.localization:

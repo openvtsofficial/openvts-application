@@ -5,6 +5,7 @@ import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../models/admin_vehicle_model.dart';
 
 class AdminVehicleCard extends StatelessWidget {
@@ -21,15 +22,16 @@ class AdminVehicleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final name =
-        vehicle.name.trim().isEmpty ? 'Untitled Vehicle' : vehicle.name.trim();
+    final name = vehicle.name.trim().isEmpty
+        ? 'Untitled Vehicle'
+        : vehicle.name.trim();
     final plate = vehicle.plateNumber.trim();
     final typeName = vehicle.vehicleTypeName.trim();
     final statusLabel = vehicle.isLicenseBlocked
         ? 'License Blocked'
         : vehicle.isActive
-            ? 'Active'
-            : 'Inactive';
+        ? 'Active'
+        : 'Inactive';
     final createdValue = vehicle.createdAt == null
         ? '-'
         : _createdFormat.format(vehicle.createdAt!.toLocal());
@@ -108,9 +110,9 @@ class _CardHeader extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: -0.2,
-                        ),
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: -0.2,
+                    ),
                   ),
                   if (plate.isNotEmpty) _PlateBadge(plate: plate),
                 ],
@@ -314,11 +316,7 @@ class _InfoField extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(
-          icon,
-          size: 16,
-          color: colorScheme.onSurfaceVariant,
-        ),
+        Icon(icon, size: 16, color: colorScheme.onSurfaceVariant),
         const SizedBox(width: OpenVtsSpacing.xs),
         Expanded(
           child: RichText(
@@ -386,9 +384,9 @@ class _CreatedFooter extends StatelessWidget {
                       height: 1.4,
                     ),
                     children: [
-                      const TextSpan(
-                        text: 'Created : ',
-                        style: TextStyle(fontWeight: FontWeight.w700),
+                      TextSpan(
+                        text: context.mobileText('Created : '),
+                        style: const TextStyle(fontWeight: FontWeight.w700),
                       ),
                       TextSpan(
                         text: createdValue,
@@ -407,10 +405,7 @@ class _CreatedFooter extends StatelessWidget {
 }
 
 class _RoundedSurface extends StatelessWidget {
-  const _RoundedSurface({
-    required this.child,
-    this.onTap,
-  });
+  const _RoundedSurface({required this.child, this.onTap});
 
   final Widget child;
   final VoidCallback? onTap;
@@ -436,11 +431,7 @@ class _RoundedSurface extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       borderRadius: radius,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: radius,
-        child: surface,
-      ),
+      child: InkWell(onTap: onTap, borderRadius: radius, child: surface),
     );
   }
 }

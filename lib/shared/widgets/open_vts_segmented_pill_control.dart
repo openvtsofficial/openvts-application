@@ -71,27 +71,24 @@ class OpenVtsSegmentedPillControl<T> extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final outerBackgroundColor =
-        isDark ? OpenVtsColors.darkSurface : OpenVtsColors.background;
-    final outerBorderColor =
-        isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border;
+    final outerBackgroundColor = isDark
+        ? OpenVtsColors.darkSurface
+        : OpenVtsColors.background;
+    final outerBorderColor = isDark
+        ? OpenVtsColors.darkBorder
+        : OpenVtsColors.border;
 
+    final expandSegments = equalWidth && !allowHorizontalScroll;
     final Widget segmentRow = Row(
-      mainAxisSize: equalWidth ? MainAxisSize.max : MainAxisSize.min,
+      mainAxisSize: expandSegments ? MainAxisSize.max : MainAxisSize.min,
       children: [
         for (int i = 0; i < segments.length; i++) ...[
-          if (equalWidth)
-            Expanded(
-              child: _buildSegment(context, segments[i], isDark),
-            )
+          if (expandSegments)
+            Expanded(child: _buildSegment(context, segments[i], isDark))
           else
             _buildSegment(context, segments[i], isDark),
           if (i < segments.length - 1)
-            Container(
-              width: 1,
-              height: 32,
-              color: outerBorderColor,
-            ),
+            Container(width: 1, height: 32, color: outerBorderColor),
         ],
       ],
     );
@@ -132,101 +129,103 @@ class OpenVtsSegmentedPillControl<T> extends StatelessWidget {
     final textColor = isSelected
         ? (isDark ? OpenVtsColors.darkTextPrimary : OpenVtsColors.white)
         : (isDark
-            ? OpenVtsColors.darkTextPrimary
-            : OpenVtsColors.textSecondary);
+              ? OpenVtsColors.darkTextPrimary
+              : OpenVtsColors.textSecondary);
 
     final borderColor = isDark
         ? OpenVtsColors.darkBorder
         : (isSelected ? OpenVtsColors.brandInk : OpenVtsColors.border);
 
-    return Material(
-      color: backgroundColor,
-      child: InkWell(
-        onTap: () => onChanged(segment.value),
-        child: Container(
-          constraints: const BoxConstraints(minHeight: 34),
-          padding: const EdgeInsets.symmetric(
-            horizontal: OpenVtsSpacing.sm,
-            vertical: OpenVtsSpacing.xs,
-          ),
-          decoration: isSelected
-              ? BoxDecoration(
-                  border: Border.all(color: borderColor, width: 1),
-                  borderRadius: BorderRadius.circular(OpenVtsRadius.pill - 1),
-                )
-              : null,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (segment.icon != null) ...[
-                Icon(
-                  segment.icon,
-                  size: 16,
-                  color: textColor,
-                ),
-                const SizedBox(width: OpenVtsSpacing.xxs),
-              ],
-              if (segment.showDot) ...[
-                Container(
-                  width: 6,
-                  height: 6,
-                  decoration: BoxDecoration(
-                    color: isDark
-                        ? OpenVtsColors.darkTextPrimary
-                        : OpenVtsColors.textPrimary,
-                    shape: BoxShape.circle,
-                    border: Border.all(
+    return Semantics(
+      selected: isSelected,
+      button: true,
+      child: Material(
+        color: backgroundColor,
+        child: InkWell(
+          onTap: () => onChanged(segment.value),
+          child: Container(
+            constraints: const BoxConstraints(minHeight: 48),
+            padding: const EdgeInsets.symmetric(
+              horizontal: OpenVtsSpacing.sm,
+              vertical: OpenVtsSpacing.xs,
+            ),
+            decoration: isSelected
+                ? BoxDecoration(
+                    border: Border.all(color: borderColor, width: 1),
+                    borderRadius: BorderRadius.circular(OpenVtsRadius.pill - 1),
+                  )
+                : null,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (segment.icon != null) ...[
+                  Icon(segment.icon, size: 16, color: textColor),
+                  const SizedBox(width: OpenVtsSpacing.xxs),
+                ],
+                if (segment.showDot) ...[
+                  Container(
+                    width: 6,
+                    height: 6,
+                    decoration: BoxDecoration(
                       color: isDark
                           ? OpenVtsColors.darkTextPrimary
                           : OpenVtsColors.textPrimary,
-                      width: 1,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: isDark
+                            ? OpenVtsColors.darkTextPrimary
+                            : OpenVtsColors.textPrimary,
+                        width: 1,
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: OpenVtsSpacing.xxs),
-              ],
-              Flexible(
-                child: Text(
-                  segment.label,
-                  style: OpenVtsTypography.meta.copyWith(
-                    color: textColor,
-                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              if (segment.badgeCount != null && segment.badgeCount! > 0) ...[
-                const SizedBox(width: OpenVtsSpacing.xxs),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: OpenVtsSpacing.xxs,
-                    vertical: 1,
-                  ),
-                  decoration: BoxDecoration(
-                    color: isDark
-                        ? OpenVtsColors.darkSurface
-                        : OpenVtsColors.surface,
-                    border: Border.all(
-                      color: isDark
-                          ? OpenVtsColors.darkBorder
-                          : OpenVtsColors.border,
-                      width: 1,
-                    ),
-                    borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-                  ),
+                  const SizedBox(width: OpenVtsSpacing.xxs),
+                ],
+                Flexible(
                   child: Text(
-                    segment.badgeCount.toString(),
+                    segment.label,
                     style: OpenVtsTypography.meta.copyWith(
                       color: textColor,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                      height: 1.2,
+                      fontWeight: isSelected
+                          ? FontWeight.w700
+                          : FontWeight.w600,
                     ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
+                if (segment.badgeCount != null && segment.badgeCount! > 0) ...[
+                  const SizedBox(width: OpenVtsSpacing.xxs),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: OpenVtsSpacing.xxs,
+                      vertical: 1,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? OpenVtsColors.darkSurface
+                          : OpenVtsColors.surface,
+                      border: Border.all(
+                        color: isDark
+                            ? OpenVtsColors.darkBorder
+                            : OpenVtsColors.border,
+                        width: 1,
+                      ),
+                      borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
+                    ),
+                    child: Text(
+                      segment.badgeCount.toString(),
+                      style: OpenVtsTypography.meta.copyWith(
+                        color: textColor,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        height: 1.2,
+                      ),
+                    ),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),

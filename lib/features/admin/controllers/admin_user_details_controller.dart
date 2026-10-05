@@ -542,7 +542,7 @@ class AdminUserDetailsController extends StateNotifier<AdminUserDetailsState> {
       sectionErrorMessage: null,
     );
     try {
-      await _service.deleteDocument(docId);
+      await _service.deleteDocument(docId, userId: _userId);
       state = state.copyWith(isDeletingDocument: false);
       await loadDocuments();
       return true;

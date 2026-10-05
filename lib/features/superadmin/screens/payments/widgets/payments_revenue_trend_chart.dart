@@ -5,15 +5,13 @@ import 'package:intl/intl.dart';
 
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../../../shared/widgets/open_vts_empty_state.dart';
 import '../../../models/superadmin_payments_model.dart';
 
 class PaymentsRevenueTrendChart extends StatelessWidget {
-  const PaymentsRevenueTrendChart({
-    required this.analytics,
-    super.key,
-  });
+  const PaymentsRevenueTrendChart({required this.analytics, super.key});
 
   final SuperadminTransactionsAnalytics analytics;
 
@@ -26,23 +24,25 @@ class PaymentsRevenueTrendChart extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Revenue Trend',
+            context.mobileText('Revenue Trend'),
             style: OpenVtsTypography.titleSmall.copyWith(
               color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: OpenVtsSpacing.xxs),
           Text(
-            'Daily totals for selected range',
+            context.mobileText('Daily totals for selected range'),
             style: OpenVtsTypography.meta.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
           const SizedBox(height: OpenVtsSpacing.sm),
           if (points.isEmpty)
-            const OpenVtsEmptyState(
-              title: 'No trend data',
-              message: 'Daily revenue points are not available for this range.',
+            OpenVtsEmptyState(
+              title: context.mobileText('No trend data'),
+              message: context.mobileText(
+                'Daily revenue points are not available for this range.',
+              ),
             )
           else
             _TrendChartBody(points: points),
@@ -61,24 +61,25 @@ class PaymentsRevenueTrendChart extends StatelessWidget {
       return const <_TrendPoint>[];
     }
 
-    final points = series.points
-        .map(
-          (point) => _TrendPoint(
-            date: point.dateTime ?? DateTime.tryParse(point.date),
-            dateRaw: point.date,
-            value: point.totalAmountAsDouble ?? 0,
-          ),
-        )
-        .toList(growable: false)
-      ..sort((left, right) {
-        final leftDate = left.date;
-        final rightDate = right.date;
-        if (leftDate != null && rightDate != null) {
-          return leftDate.compareTo(rightDate);
-        }
+    final points =
+        series.points
+            .map(
+              (point) => _TrendPoint(
+                date: point.dateTime ?? DateTime.tryParse(point.date),
+                dateRaw: point.date,
+                value: point.totalAmountAsDouble ?? 0,
+              ),
+            )
+            .toList(growable: false)
+          ..sort((left, right) {
+            final leftDate = left.date;
+            final rightDate = right.date;
+            if (leftDate != null && rightDate != null) {
+              return leftDate.compareTo(rightDate);
+            }
 
-        return left.dateRaw.compareTo(right.dateRaw);
-      });
+            return left.dateRaw.compareTo(right.dateRaw);
+          });
 
     return points;
   }
@@ -99,10 +100,7 @@ class _TrendChartBody extends StatelessWidget {
           height: 166,
           child: Row(
             children: [
-              SizedBox(
-                width: 38,
-                child: _YAxisLabels(values: yAxisValues),
-              ),
+              SizedBox(width: 38, child: _YAxisLabels(values: yAxisValues)),
               const SizedBox(width: OpenVtsSpacing.xs),
               Expanded(
                 child: CustomPaint(
@@ -151,12 +149,12 @@ class _TrendChartBody extends StatelessWidget {
     final snapped = normalized <= 1
         ? 1
         : normalized <= 2
-            ? 2
-            : normalized <= 2.5
-                ? 2.5
-                : normalized <= 5
-                    ? 5
-                    : 10;
+        ? 2
+        : normalized <= 2.5
+        ? 2.5
+        : normalized <= 5
+        ? 5
+        : 10;
 
     return snapped * magnitude;
   }
@@ -219,16 +217,8 @@ class _RevenueTrendPainter extends CustomPainter {
     );
 
     final lastPoint = offsets.last;
-    canvas.drawCircle(
-      lastPoint,
-      5,
-      Paint()..color = colorScheme.surface,
-    );
-    canvas.drawCircle(
-      lastPoint,
-      3,
-      Paint()..color = colorScheme.primary,
-    );
+    canvas.drawCircle(lastPoint, 5, Paint()..color = colorScheme.surface);
+    canvas.drawCircle(lastPoint, 3, Paint()..color = colorScheme.primary);
   }
 
   @override
@@ -247,7 +237,11 @@ class _RevenueTrendPainter extends CustomPainter {
     for (var index = 0; index <= horizontalLines; index++) {
       final y = rect.top + (rect.height * index / horizontalLines);
       _drawDashedLine(
-          canvas, Offset(rect.left, y), Offset(rect.right, y), paint);
+        canvas,
+        Offset(rect.left, y),
+        Offset(rect.right, y),
+        paint,
+      );
     }
   }
 
@@ -259,11 +253,7 @@ class _RevenueTrendPainter extends CustomPainter {
       value: points.first.value,
     );
 
-    canvas.drawCircle(
-      offset,
-      3,
-      Paint()..color = colorScheme.primary,
-    );
+    canvas.drawCircle(offset, 3, Paint()..color = colorScheme.primary);
   }
 
   List<Offset> _mapToOffsets(Rect rect) {
@@ -286,8 +276,9 @@ class _RevenueTrendPainter extends CustomPainter {
     required double value,
   }) {
     final safeMax = maxValue <= 0 ? 1 : maxValue;
-    final x =
-        total <= 1 ? rect.left : rect.left + (rect.width * index / (total - 1));
+    final x = total <= 1
+        ? rect.left
+        : rect.left + (rect.width * index / (total - 1));
     final y = rect.bottom - ((value / safeMax) * rect.height);
 
     return Offset(x, y.clamp(rect.top, rect.bottom));
@@ -304,13 +295,17 @@ class _RevenueTrendPainter extends CustomPainter {
 
       final control1 = Offset(
         current.dx + (next.dx - previous.dx) / 6,
-        (current.dy + (next.dy - previous.dy) / 6)
-            .clamp(bounds.top, bounds.bottom),
+        (current.dy + (next.dy - previous.dy) / 6).clamp(
+          bounds.top,
+          bounds.bottom,
+        ),
       );
       final control2 = Offset(
         next.dx - (afterNext.dx - current.dx) / 6,
-        (next.dy - (afterNext.dy - current.dy) / 6)
-            .clamp(bounds.top, bounds.bottom),
+        (next.dy - (afterNext.dy - current.dy) / 6).clamp(
+          bounds.top,
+          bounds.bottom,
+        ),
       );
 
       path.cubicTo(
@@ -326,12 +321,7 @@ class _RevenueTrendPainter extends CustomPainter {
     return path;
   }
 
-  void _drawDashedLine(
-    Canvas canvas,
-    Offset start,
-    Offset end,
-    Paint paint,
-  ) {
+  void _drawDashedLine(Canvas canvas, Offset start, Offset end, Paint paint) {
     const dashWidth = 5.0;
     const dashSpace = 4.0;
 
@@ -419,8 +409,8 @@ class _XAxisLabels extends StatelessWidget {
                 textAlign: labels.first == item
                     ? TextAlign.left
                     : labels.last == item
-                        ? TextAlign.right
-                        : TextAlign.center,
+                    ? TextAlign.right
+                    : TextAlign.center,
                 style: OpenVtsTypography.meta.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                   fontSize: 11,
@@ -432,8 +422,10 @@ class _XAxisLabels extends StatelessWidget {
     );
   }
 
-  List<String> _sampleLabels(List<_TrendPoint> source,
-      {required int maxLabels}) {
+  List<String> _sampleLabels(
+    List<_TrendPoint> source, {
+    required int maxLabels,
+  }) {
     if (source.length <= maxLabels) {
       return source.map(_shortLabel).toList(growable: false);
     }

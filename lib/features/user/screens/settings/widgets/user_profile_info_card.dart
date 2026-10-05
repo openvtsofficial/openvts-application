@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../core/theme/open_vts_spacing.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../models/user_settings_model.dart';
 
 class UserProfileInfoCard extends StatelessWidget {
-  const UserProfileInfoCard({
-    required this.profile,
-    super.key,
-  });
+  const UserProfileInfoCard({required this.profile, super.key});
 
   final UserSettingsProfile profile;
 
@@ -40,22 +38,22 @@ class UserProfileInfoCard extends StatelessWidget {
           ),
           const SizedBox(height: OpenVtsSpacing.xs),
           _InfoRow(
-            label: 'Name',
+            label: context.mobileText('Name'),
             value: _orDash(profile.name),
             icon: Icons.person_outline,
           ),
           _InfoRow(
-            label: 'Username',
+            label: context.mobileText('Username'),
             value: _orDash(profile.username),
             icon: Icons.alternate_email,
           ),
           _InfoRow(
-            label: 'Email',
+            label: context.mobileText('Email'),
             value: _orDash(profile.email),
             icon: Icons.mail_outline_rounded,
           ),
           _InfoRow(
-            label: 'Mobile',
+            label: context.mobileText('Mobile'),
             value: _orDash(_join(profile.mobilePrefix, profile.mobileNumber)),
             icon: Icons.phone_outlined,
           ),
@@ -103,8 +101,11 @@ class _InfoRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon,
-              size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
+          Icon(
+            icon,
+            size: 14,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
           const SizedBox(width: 8),
           SizedBox(
             width: 100,

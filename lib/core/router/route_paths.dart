@@ -27,6 +27,7 @@ class RoutePaths {
   static const superadminReports = '/superadmin/reports';
   static const superadminProfile = '/superadmin/profile';
   static const superadminSettings = '/superadmin/settings';
+  static const superadminSecurity = '/superadmin/security';
 
   static const adminHome = '/admin';
   static const adminDashboard = '/admin/dashboard';
@@ -59,7 +60,8 @@ class RoutePaths {
   static const adminReports = '/admin/reports';
   static const adminProfile = '/admin/profile';
   static const adminSettings = '/admin/settings';
-  static const adminRoles = '/admin/roles';
+  static const adminTransactions = '/admin/transactions';
+  static const adminSecurity = '/admin/security';
 
   static const userHome = '/user';
   static const userDashboard = '/user/dashboard';
@@ -109,4 +111,18 @@ class RoutePaths {
   static const userNotificationCenter = '/user/notifications/center';
   static const userProfile = '/user/profile';
   static const userSettings = '/user/settings';
+  static const userSecurity = '/user/security';
+  static const userOperations = '/user/operations';
+  static const userMessages = '/user/messages';
+
+  static const driverHome = '/driver';
+  static const driverDashboard = '/driver/dashboard';
+  static const driverTrips = '/driver/trips';
+  static const driverCalendar = '/driver/calendar';
+  static const driverDocuments = '/driver/documents';
+  static const driverMessages = '/driver/messages';
+  static const driverNotifications = '/driver/notifications';
+  static const driverProfile = '/driver/profile';
+  static const driverSettings = '/driver/settings';
+  static const driverSecurity = '/driver/security';
 }

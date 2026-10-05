@@ -4,6 +4,8 @@ import 'package:open_vts/core/theme/open_vts_spacing.dart';
 import 'package:open_vts/core/theme/open_vts_typography.dart';
 import 'package:open_vts/shared/widgets/open_vts_button.dart';
 
+import '../../../shared/helpers/mobile_text.dart';
+
 class OpenVtsSupportEmptyState extends StatelessWidget {
   const OpenVtsSupportEmptyState({
     required this.hasActiveFilters,
@@ -39,15 +41,21 @@ class OpenVtsSupportEmptyState extends StatelessWidget {
             ),
             const SizedBox(height: OpenVtsSpacing.sm),
             Text(
-              hasActiveFilters ? 'No matching tickets' : 'No tickets',
+              hasActiveFilters
+                  ? context.mobileText('No matching tickets')
+                  : context.mobileText('No tickets'),
               textAlign: TextAlign.center,
               style: OpenVtsTypography.titleSmall.copyWith(fontSize: 16),
             ),
             const SizedBox(height: OpenVtsSpacing.xs),
             Text(
               hasActiveFilters
-                  ? 'Try a different search or status filter.'
-                  : 'Create a ticket and the team will follow up here.',
+                  ? context.mobileText(
+                      'Try a different search or status filter.',
+                    )
+                  : context.mobileText(
+                      'Create a ticket and the team will follow up here.',
+                    ),
               textAlign: TextAlign.center,
               style: OpenVtsTypography.body.copyWith(
                 color: colorScheme.onSurfaceVariant,
@@ -58,7 +66,7 @@ class OpenVtsSupportEmptyState extends StatelessWidget {
               SizedBox(
                 width: 172,
                 child: OpenVtsButton(
-                  label: 'Create ticket',
+                  label: context.mobileText('Create ticket'),
                   onPressed: onCreatePressed,
                   trailingIcon: Icons.add_rounded,
                   height: 40,

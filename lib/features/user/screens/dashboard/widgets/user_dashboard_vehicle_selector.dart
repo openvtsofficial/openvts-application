@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/widgets/open_vts_searchable_dropdown.dart';
 import '../../../models/user_dashboard_model.dart';
 
@@ -53,15 +54,15 @@ class UserDashboardVehicleSelector extends StatelessWidget {
   Widget build(BuildContext context) {
     final options = [
       if (includeAll)
-        const OpenVtsDropdownOption<String>(
+        OpenVtsDropdownOption<String>(
           value: 'all',
-          label: 'All Vehicles',
+          label: context.mobileText('All Vehicles'),
         ),
       for (final vehicle in vehicles) userDashboardVehicleOption(vehicle),
     ];
 
     return OpenVtsSearchableDropdown<String>(
-      label: 'Vehicle',
+      label: context.mobileText('Vehicle'),
       options: options,
       value: value,
       searchHintText: 'Search by name, plate, IMEI or ID',

@@ -4,6 +4,7 @@ import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../core/utils/date_time_formatter.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../../../shared/widgets/open_vts_status_chip.dart';
 import '../../../models/admin_logs_model.dart';
@@ -32,42 +33,49 @@ class AdminVehicleEventLogCard extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: Text(item.title.isEmpty ? 'Vehicle Event' : item.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: OpenVtsTypography.label
-                          .copyWith(fontWeight: FontWeight.w700)),
+                  child: Text(
+                    item.title.isEmpty
+                        ? context.mobileText('Vehicle Event')
+                        : item.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: OpenVtsTypography.label.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                 ),
                 OpenVtsStatusChip(
                   label: item.severity,
                   type: item.severity == 'CRITICAL'
                       ? OpenVtsStatusType.error
                       : item.severity == 'WARNING'
-                          ? OpenVtsStatusType.warning
-                          : OpenVtsStatusType.info,
+                      ? OpenVtsStatusType.warning
+                      : OpenVtsStatusType.info,
                 ),
               ],
             ),
             const SizedBox(height: OpenVtsSpacing.xs),
-            Text(item.message,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: OpenVtsTypography.body.copyWith(fontSize: 13)),
+            Text(
+              item.message,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: OpenVtsTypography.body.copyWith(fontSize: 13),
+            ),
             const SizedBox(height: OpenVtsSpacing.xs),
             _InfoRow(
               icon: Icons.directions_car_outlined,
-              label: 'Vehicle',
+              label: context.mobileText('Vehicle'),
               value:
                   '${item.vehicleName.isEmpty ? '-' : item.vehicleName}${item.plateNumber.isEmpty ? '' : ' (${item.plateNumber})'}',
             ),
             _InfoRow(
               icon: Icons.hub_outlined,
-              label: 'Source',
+              label: context.mobileText('Source'),
               value: item.source.isEmpty ? '-' : item.source,
             ),
             _InfoRow(
               icon: Icons.person_outline,
-              label: 'User',
+              label: context.mobileText('User'),
               value: item.userName.isEmpty ? '-' : item.userName,
             ),
             _InfoRow(
@@ -105,18 +113,22 @@ class _InfoRow extends StatelessWidget {
           Icon(icon, size: 14, color: OpenVtsColors.textSecondary),
           const SizedBox(width: OpenVtsSpacing.xs),
           if (label.isNotEmpty) ...[
-            Text('$label: ',
-                style: OpenVtsTypography.meta.copyWith(
-                    color: OpenVtsColors.textSecondary,
-                    fontWeight: FontWeight.w500)),
+            Text(
+              '$label: ',
+              style: OpenVtsTypography.meta.copyWith(
+                color: OpenVtsColors.textSecondary,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ],
           Expanded(
             child: Text(
               value.trim().isEmpty ? '—' : value.trim(),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: OpenVtsTypography.meta
-                  .copyWith(color: OpenVtsColors.textSecondary),
+              style: OpenVtsTypography.meta.copyWith(
+                color: OpenVtsColors.textSecondary,
+              ),
             ),
           ),
         ],

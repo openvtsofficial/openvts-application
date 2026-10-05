@@ -6,20 +6,20 @@ import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../core/utils/date_time_formatter.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../shared/widgets/open_vts_bottom_sheet.dart';
 import '../../../controllers/admin_providers.dart';
 import '../../../models/admin_team_model.dart';
 import 'admin_change_password_sheet.dart';
 import 'admin_create_team_sheet.dart';
+import 'admin_team_activity_sheet.dart';
+import 'admin_team_permissions_sheet.dart';
 
 const DateTimeFormatter _cardDateFormatter = DateTimeFormatter();
 
 class AdminTeamCard extends ConsumerWidget {
-  const AdminTeamCard({
-    required this.team,
-    super.key,
-  });
+  const AdminTeamCard({required this.team, super.key});
 
   final AdminTeamListItem team;
 
@@ -70,9 +70,9 @@ class _CardHeader extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: -0.2,
-                          ),
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -0.2,
+                      ),
                     ),
                   ),
                   const SizedBox(width: OpenVtsSpacing.xs),
@@ -150,56 +150,60 @@ class _TeamCardMenu extends ConsumerWidget {
     return PopupMenuButton<String>(
       onSelected: (value) => _handleMenuAction(context, ref, value),
       itemBuilder: (context) => [
-        const PopupMenuItem(
+        PopupMenuItem(
           value: 'edit',
           child: Row(
             children: [
-              Icon(Icons.edit_outlined, size: 18),
-              SizedBox(width: OpenVtsSpacing.sm),
-              Text('Edit'),
+              const Icon(Icons.edit_outlined, size: 18),
+              const SizedBox(width: OpenVtsSpacing.sm),
+              Text(context.mobileText('Edit')),
             ],
           ),
         ),
-        const PopupMenuItem(
+        PopupMenuItem(
+          value: 'permissions',
+          child: Text(context.mobileText('Permissions')),
+        ),
+        PopupMenuItem(
           value: 'password',
           child: Row(
             children: [
-              Icon(Icons.lock_outline_rounded, size: 18),
-              SizedBox(width: OpenVtsSpacing.sm),
-              Text('Change Password'),
+              const Icon(Icons.lock_outline_rounded, size: 18),
+              const SizedBox(width: OpenVtsSpacing.sm),
+              Text(context.mobileText('Change Password')),
             ],
           ),
         ),
         if (team.isActive)
-          const PopupMenuItem(
+          PopupMenuItem(
             value: 'setInactive',
             child: Row(
               children: [
-                Icon(Icons.pause_circle_outline_rounded, size: 18),
-                SizedBox(width: OpenVtsSpacing.sm),
-                Text('Set Inactive'),
+                const Icon(Icons.pause_circle_outline_rounded, size: 18),
+                const SizedBox(width: OpenVtsSpacing.sm),
+                Text(context.mobileText('Set Inactive')),
               ],
             ),
           )
         else
-          const PopupMenuItem(
+          PopupMenuItem(
             value: 'setActive',
             child: Row(
               children: [
-                Icon(Icons.check_circle_outline_rounded, size: 18),
-                SizedBox(width: OpenVtsSpacing.sm),
-                Text('Set Active'),
+                const Icon(Icons.check_circle_outline_rounded, size: 18),
+                const SizedBox(width: OpenVtsSpacing.sm),
+                Text(context.mobileText('Set Active')),
               ],
             ),
           ),
         const PopupMenuDivider(),
-        const PopupMenuItem(
+        PopupMenuItem(
           value: 'logs',
           child: Row(
             children: [
-              Icon(Icons.history_rounded, size: 18),
-              SizedBox(width: OpenVtsSpacing.sm),
-              Text('Activity Logs'),
+              const Icon(Icons.history_rounded, size: 18),
+              const SizedBox(width: OpenVtsSpacing.sm),
+              Text(context.mobileText('Activity Logs')),
             ],
           ),
         ),
@@ -230,17 +234,48 @@ class _TeamCardMenu extends ConsumerWidget {
     switch (action) {
       case 'edit':
         _showEditTeamSheet(context, ref);
+      case 'permissions':
+        await OpenVtsBottomSheet.show<void>(
+          context: context,
+          title: context.mobileText("{value1} · Permissions", {
+            'value1': (team.teamName).toString(),
+          }),
+          initialChildSize: .9,
+          minChildSize: .5,
+          maxChildSize: .96,
+          child: AdminTeamPermissionsSheet(memberId: team.id),
+        );
       case 'password':
         _showPasswordSheet(context, ref);
       case 'setInactive':
-        await controller.updateTeamStatus(team.id, false);
+        final ok = await controller.updateTeamStatus(team.id, false);
         if (context.mounted) {
-          ToastHelper.showSuccess('Team deactivated.', context: context);
+          if (ok) {
+            ToastHelper.showSuccess(
+              context.mobileText('Team deactivated.'),
+              context: context,
+            );
+          } else {
+            ToastHelper.showError(
+              context.mobileText('Unable to update team member status.'),
+              context: context,
+            );
+          }
         }
       case 'setActive':
-        await controller.updateTeamStatus(team.id, true);
+        final ok = await controller.updateTeamStatus(team.id, true);
         if (context.mounted) {
-          ToastHelper.showSuccess('Team activated.', context: context);
+          if (ok) {
+            ToastHelper.showSuccess(
+              context.mobileText('Team activated.'),
+              context: context,
+            );
+          } else {
+            ToastHelper.showError(
+              context.mobileText('Unable to update team member status.'),
+              context: context,
+            );
+          }
         }
       case 'logs':
         _showActivityLogsSheet(context);
@@ -250,7 +285,7 @@ class _TeamCardMenu extends ConsumerWidget {
   Future<void> _showEditTeamSheet(BuildContext context, WidgetRef ref) async {
     return OpenVtsBottomSheet.show<void>(
       context: context,
-      title: 'Edit Team Member',
+      title: context.mobileText('Edit Team Member'),
       initialChildSize: 0.9,
       minChildSize: 0.5,
       maxChildSize: 0.96,
@@ -273,8 +308,9 @@ class _TeamCardMenu extends ConsumerWidget {
       useSafeArea: true,
       backgroundColor: Theme.of(context).colorScheme.surface,
       shape: const RoundedRectangleBorder(
-        borderRadius:
-            BorderRadius.vertical(top: Radius.circular(OpenVtsRadius.xl)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(OpenVtsRadius.xl),
+        ),
       ),
       builder: (context) {
         return SizedBox(
@@ -293,53 +329,15 @@ class _TeamCardMenu extends ConsumerWidget {
     );
   }
 
-  Future<void> _showActivityLogsSheet(BuildContext context) async {
-    return showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius:
-            BorderRadius.vertical(top: Radius.circular(OpenVtsRadius.xl)),
-      ),
-      builder: (context) {
-        return SizedBox(
-          height: MediaQuery.of(context).size.height * 0.8,
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(OpenVtsSpacing.md),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'Activity Logs',
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close_rounded),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  ],
-                ),
-              ),
-              const Divider(),
-              Expanded(
-                child: Center(
-                  child: Text(
-                    'No activity logs available for this team member.',
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
+  Future<void> _showActivityLogsSheet(BuildContext context) =>
+      OpenVtsBottomSheet.show<void>(
+        context: context,
+        title: context.mobileText('Team activity'),
+        initialChildSize: .85,
+        minChildSize: .5,
+        maxChildSize: .96,
+        child: AdminTeamActivitySheet(memberId: team.id),
+      );
 }
 
 // ---------------------------------------------------------------------------
@@ -382,10 +380,7 @@ class _CardInfoGrid extends StatelessWidget {
             ),
             const SizedBox(width: OpenVtsSpacing.sm),
             Expanded(
-              child: _InfoRow(
-                icon: Icons.call_outlined,
-                value: phoneValue,
-              ),
+              child: _InfoRow(icon: Icons.call_outlined, value: phoneValue),
             ),
           ],
         );
@@ -395,10 +390,7 @@ class _CardInfoGrid extends StatelessWidget {
 }
 
 class _InfoRow extends StatelessWidget {
-  const _InfoRow({
-    required this.icon,
-    required this.value,
-  });
+  const _InfoRow({required this.icon, required this.value});
 
   final IconData icon;
   final String value;
@@ -455,7 +447,7 @@ class _CardMetricsRow extends StatelessWidget {
             icon: team.isActive
                 ? Icons.check_circle_outline_rounded
                 : Icons.pause_circle_outline_rounded,
-            label: 'Status',
+            label: context.mobileText('Status'),
             value: team.statusLabel,
             color: team.isActive
                 ? (isDark ? Colors.white : OpenVtsColors.brandInk)
@@ -468,7 +460,7 @@ class _CardMetricsRow extends StatelessWidget {
           flex: 2,
           child: _MetricCell(
             icon: Icons.schedule_outlined,
-            label: 'Created',
+            label: context.mobileText('Created'),
             value: createdValue,
             color: isDark
                 ? OpenVtsColors.darkTextSecondary
@@ -498,8 +490,9 @@ class _MetricCell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final defaultIconColor =
-        isDark ? OpenVtsColors.darkTextSecondary : OpenVtsColors.textSecondary;
+    final defaultIconColor = isDark
+        ? OpenVtsColors.darkTextSecondary
+        : OpenVtsColors.textSecondary;
 
     return Container(
       padding: const EdgeInsetsDirectional.symmetric(

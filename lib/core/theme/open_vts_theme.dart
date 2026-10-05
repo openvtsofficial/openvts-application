@@ -7,98 +7,161 @@ import 'open_vts_typography.dart';
 class OpenVtsTheme {
   const OpenVtsTheme._();
 
-  static TextTheme _interTextTheme(ThemeData base, Color textColor) {
-    return base.textTheme.apply(
+  static ThemeData get light => _build(Brightness.light);
+  static ThemeData get dark => _build(Brightness.dark);
+
+  static ThemeData _build(Brightness brightness) {
+    final isDark = brightness == Brightness.dark;
+    final base = ThemeData(useMaterial3: true, brightness: brightness);
+    final foreground = isDark
+        ? OpenVtsColors.darkTextPrimary
+        : OpenVtsColors.textPrimary;
+    final background = isDark
+        ? OpenVtsColors.darkBackground
+        : OpenVtsColors.background;
+    final border = isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border;
+    final scheme = isDark
+        ? const ColorScheme.dark(
+            primary: OpenVtsColors.white,
+            onPrimary: OpenVtsColors.brandInk,
+            secondary: OpenVtsColors.darkTextSecondary,
+            surface: OpenVtsColors.darkSurface,
+            onSurface: OpenVtsColors.darkTextPrimary,
+            onSurfaceVariant: OpenVtsColors.darkTextSecondary,
+            outline: OpenVtsColors.darkTextSecondary,
+            outlineVariant: OpenVtsColors.darkBorder,
+            error: Color(0xFFFF8A80),
+          )
+        : const ColorScheme.light(
+            primary: OpenVtsColors.brandInk,
+            onPrimary: OpenVtsColors.white,
+            secondary: OpenVtsColors.brandInkSoft,
+            surface: OpenVtsColors.surfaceElevated,
+            onSurface: OpenVtsColors.textPrimary,
+            onSurfaceVariant: OpenVtsColors.textSecondary,
+            outline: OpenVtsColors.textSecondary,
+            outlineVariant: OpenVtsColors.border,
+            error: OpenVtsColors.error,
+          );
+    final buttonShape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(OpenVtsRadius.button),
+    );
+    final sheetShape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(OpenVtsRadius.xl),
+    );
+    final textTheme = base.textTheme.apply(
       fontFamily: OpenVtsTypography.primaryFontFamily,
       fontFamilyFallback: OpenVtsTypography.fontFallback,
-      bodyColor: textColor,
-      displayColor: textColor,
+      bodyColor: foreground,
+      displayColor: foreground,
     );
-  }
-
-  static ThemeData get light {
-    final base = ThemeData.light(useMaterial3: true);
-    final textTheme = _interTextTheme(base, OpenVtsColors.textPrimary);
+    final buttonStyle = ButtonStyle(
+      minimumSize: const WidgetStatePropertyAll(Size(48, 48)),
+      padding: const WidgetStatePropertyAll(
+        EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      ),
+      shape: WidgetStatePropertyAll(buttonShape),
+      textStyle: const WidgetStatePropertyAll(OpenVtsTypography.label),
+      tapTargetSize: MaterialTapTargetSize.padded,
+      visualDensity: VisualDensity.standard,
+    );
+    OutlineInputBorder inputBorder(Color color, [double width = 1]) =>
+        OutlineInputBorder(
+          borderRadius: BorderRadius.circular(OpenVtsRadius.md),
+          borderSide: BorderSide(color: color, width: width),
+        );
 
     return base.copyWith(
-      scaffoldBackgroundColor: OpenVtsColors.background,
-      colorScheme: const ColorScheme.light(
-        primary: OpenVtsColors.brandInk,
-        secondary: OpenVtsColors.brandInkSoft,
-        surface: OpenVtsColors.surfaceElevated,
-        error: OpenVtsColors.error,
-      ),
+      scaffoldBackgroundColor: background,
+      colorScheme: scheme,
       textTheme: textTheme,
+      dividerTheme: DividerThemeData(color: border, thickness: 1, space: 1),
       appBarTheme: AppBarTheme(
-        backgroundColor: OpenVtsColors.background,
-        foregroundColor: OpenVtsColors.textPrimary,
+        backgroundColor: background,
+        foregroundColor: foreground,
+        surfaceTintColor: Colors.transparent,
         elevation: 0,
+        scrolledUnderElevation: 0,
         centerTitle: false,
         titleTextStyle: OpenVtsTypography.titleSmall.copyWith(
-          color: OpenVtsColors.textPrimary,
+          color: foreground,
         ),
       ),
-      inputDecorationTheme: InputDecorationTheme(
+      inputDecorationTheme: InputDecorationThemeData(
         filled: true,
-        fillColor: OpenVtsColors.white,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(OpenVtsRadius.md),
-          borderSide: const BorderSide(color: OpenVtsColors.border),
+        fillColor: scheme.surface,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 14,
         ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(OpenVtsRadius.md),
-          borderSide: const BorderSide(color: OpenVtsColors.border),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(OpenVtsRadius.md),
-          borderSide: const BorderSide(color: OpenVtsColors.brandInk),
+        border: inputBorder(border),
+        enabledBorder: inputBorder(border),
+        disabledBorder: inputBorder(border),
+        focusedBorder: inputBorder(scheme.primary, 1.5),
+        errorBorder: inputBorder(scheme.error),
+        focusedErrorBorder: inputBorder(scheme.error, 1.5),
+        errorMaxLines: 4,
+        helperMaxLines: 4,
+        prefixIconColor: scheme.onSurfaceVariant,
+        suffixIconColor: scheme.onSurfaceVariant,
+      ),
+      filledButtonTheme: FilledButtonThemeData(style: buttonStyle),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: buttonStyle.copyWith(
+          elevation: const WidgetStatePropertyAll(0),
+          backgroundColor: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.disabled)
+                ? scheme.onSurface.withValues(alpha: 0.08)
+                : scheme.primary,
+          ),
+          foregroundColor: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.disabled)
+                ? scheme.onSurface.withValues(alpha: 0.38)
+                : scheme.onPrimary,
+          ),
+          surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
         ),
       ),
-    );
-  }
-
-  static ThemeData get dark {
-    final base = ThemeData.dark(useMaterial3: true);
-    final textTheme = _interTextTheme(base, OpenVtsColors.darkTextPrimary);
-
-    return base.copyWith(
-      scaffoldBackgroundColor: OpenVtsColors.darkBackground,
-      colorScheme: const ColorScheme.dark(
-        primary: OpenVtsColors.white,
-        secondary: OpenVtsColors.darkTextSecondary,
-        surface: OpenVtsColors.darkSurface,
-        error: OpenVtsColors.error,
-      ),
-      textTheme: textTheme,
-      appBarTheme: AppBarTheme(
-        backgroundColor: OpenVtsColors.darkBackground,
-        foregroundColor: OpenVtsColors.darkTextPrimary,
-        elevation: 0,
-        centerTitle: false,
-        titleTextStyle: OpenVtsTypography.titleSmall.copyWith(
-          color: OpenVtsColors.darkTextPrimary,
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: buttonStyle.copyWith(
+          side: WidgetStatePropertyAll(BorderSide(color: border)),
         ),
       ),
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: OpenVtsColors.darkSurface,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(OpenVtsRadius.md),
-          borderSide: const BorderSide(color: OpenVtsColors.darkBorder),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(OpenVtsRadius.md),
-          borderSide: const BorderSide(color: OpenVtsColors.darkBorder),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(OpenVtsRadius.md),
-          borderSide: const BorderSide(color: OpenVtsColors.white),
+      textButtonTheme: TextButtonThemeData(style: buttonStyle),
+      iconButtonTheme: const IconButtonThemeData(
+        style: ButtonStyle(
+          minimumSize: WidgetStatePropertyAll(Size(48, 48)),
+          tapTargetSize: MaterialTapTargetSize.padded,
         ),
       ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: scheme.surface,
+        surfaceTintColor: Colors.transparent,
+        shape: sheetShape,
+        titleTextStyle: textTheme.titleLarge?.copyWith(
+          fontWeight: FontWeight.w600,
+        ),
+        contentTextStyle: textTheme.bodyMedium,
+      ),
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: scheme.surface,
+        surfaceTintColor: Colors.transparent,
+        clipBehavior: Clip.antiAlias,
+        constraints: const BoxConstraints(maxWidth: 640),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(OpenVtsRadius.xl),
+          ),
+        ),
+      ),
+      popupMenuTheme: PopupMenuThemeData(
+        color: scheme.surface,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(OpenVtsRadius.md),
+        ),
+      ),
+      listTileTheme: ListTileThemeData(iconColor: scheme.onSurfaceVariant),
     );
   }
 }

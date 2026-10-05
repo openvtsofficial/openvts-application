@@ -3,10 +3,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/utils/date_time_formatter.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../../../shared/widgets/open_vts_error_view.dart';
 import '../../../../../shared/widgets/open_vts_loader.dart';
@@ -83,24 +83,26 @@ class _AdminDetailsVehiclesTabState
   List<SuperadminAdminVehicle> _applyFilters(
     List<SuperadminAdminVehicle> vehicles,
   ) {
-    return vehicles.where((v) {
-      switch (_filter) {
-        case _VehicleFilter.all:
-          break;
-        case _VehicleFilter.activeLicense:
-          if (v.isLicenseBlocked) return false;
-        case _VehicleFilter.blockedLicense:
-          if (!v.isLicenseBlocked) return false;
-        case _VehicleFilter.expiring:
-          if (!_isExpiringSoon(v.primaryExpiry)) return false;
-      }
-      if (_debouncedQuery.isEmpty) return true;
-      return v.name.toLowerCase().contains(_debouncedQuery) ||
-          v.imei.toLowerCase().contains(_debouncedQuery) ||
-          v.simNumber.toLowerCase().contains(_debouncedQuery) ||
-          v.vehicleTypeName.toLowerCase().contains(_debouncedQuery) ||
-          v.vehicleTypeSlug.toLowerCase().contains(_debouncedQuery);
-    }).toList(growable: false);
+    return vehicles
+        .where((v) {
+          switch (_filter) {
+            case _VehicleFilter.all:
+              break;
+            case _VehicleFilter.activeLicense:
+              if (v.isLicenseBlocked) return false;
+            case _VehicleFilter.blockedLicense:
+              if (!v.isLicenseBlocked) return false;
+            case _VehicleFilter.expiring:
+              if (!_isExpiringSoon(v.primaryExpiry)) return false;
+          }
+          if (_debouncedQuery.isEmpty) return true;
+          return v.name.toLowerCase().contains(_debouncedQuery) ||
+              v.imei.toLowerCase().contains(_debouncedQuery) ||
+              v.simNumber.toLowerCase().contains(_debouncedQuery) ||
+              v.vehicleTypeName.toLowerCase().contains(_debouncedQuery) ||
+              v.vehicleTypeSlug.toLowerCase().contains(_debouncedQuery);
+        })
+        .toList(growable: false);
   }
 
   @override
@@ -109,8 +111,9 @@ class _AdminDetailsVehiclesTabState
     final vehicles = ref.watch(provider.select((s) => s.vehicles));
     final isLoading = ref.watch(provider.select((s) => s.isLoadingVehicles));
     final hasLoaded = ref.watch(provider.select((s) => s.hasLoadedVehicles));
-    final errorMessage =
-        ref.watch(provider.select((s) => s.vehiclesErrorMessage));
+    final errorMessage = ref.watch(
+      provider.select((s) => s.vehiclesErrorMessage),
+    );
     final controller = ref.read(provider.notifier);
 
     if (isLoading && !hasLoaded) {
@@ -126,7 +129,7 @@ class _AdminDetailsVehiclesTabState
           padding: const EdgeInsets.symmetric(vertical: OpenVtsSpacing.md),
           child: OpenVtsErrorView(
             message: errorMessage.trim().isEmpty
-                ? 'Unable to load vehicles. Retry.'
+                ? context.mobileText('Unable to load vehicles. Retry.')
                 : errorMessage,
             onRetry: () => controller.loadVehicles(force: true),
           ),
@@ -136,8 +139,9 @@ class _AdminDetailsVehiclesTabState
 
     final total = vehicles.length;
     final blocked = vehicles.where((v) => v.isLicenseBlocked).length;
-    final expiring =
-        vehicles.where((v) => _isExpiringSoon(v.primaryExpiry)).length;
+    final expiring = vehicles
+        .where((v) => _isExpiringSoon(v.primaryExpiry))
+        .length;
     final filtered = _getFiltered(vehicles);
 
     return Column(
@@ -157,21 +161,15 @@ class _AdminDetailsVehiclesTabState
               final theme = Theme.of(ctx);
               return Text(
                 errorMessage.trim().isEmpty
-                    ? 'Unable to refresh vehicles.'
+                    ? context.mobileText('Unable to refresh vehicles.')
                     : errorMessage,
-                style: TextStyle(
-                  fontSize: 11,
-                  color: theme.colorScheme.error,
-                ),
+                style: TextStyle(fontSize: 11, color: theme.colorScheme.error),
               );
             },
           ),
         ],
         const SizedBox(height: OpenVtsSpacing.sm),
-        _SearchField(
-          controller: _search,
-          onChanged: _onSearchChanged,
-        ),
+        _SearchField(controller: _search, onChanged: _onSearchChanged),
         const SizedBox(height: OpenVtsSpacing.xs),
         _FilterChips(
           value: _filter,
@@ -179,9 +177,11 @@ class _AdminDetailsVehiclesTabState
         ),
         const SizedBox(height: OpenVtsSpacing.sm),
         if (vehicles.isEmpty)
-          const _EmptyState(message: 'No vehicles assigned.')
+          _EmptyState(message: context.mobileText('No vehicles assigned.'))
         else if (filtered.isEmpty)
-          const _EmptyState(message: 'No vehicles match your search.')
+          _EmptyState(
+            message: context.mobileText('No vehicles match your search.'),
+          )
         else
           ListView.separated(
             shrinkWrap: true,
@@ -228,7 +228,7 @@ class _SummaryRow extends StatelessWidget {
       children: [
         Expanded(
           child: _SummaryTile(
-            label: 'Vehicles',
+            label: context.mobileText('Vehicles'),
             value: total.toString(),
             icon: Icons.directions_car_outlined,
           ),
@@ -236,7 +236,7 @@ class _SummaryRow extends StatelessWidget {
         const SizedBox(width: OpenVtsSpacing.xs),
         Expanded(
           child: _SummaryTile(
-            label: 'Blocked',
+            label: context.mobileText('Blocked'),
             value: blocked.toString(),
             icon: Icons.lock_outline,
           ),
@@ -244,7 +244,7 @@ class _SummaryRow extends StatelessWidget {
         const SizedBox(width: OpenVtsSpacing.xs),
         Expanded(
           child: _SummaryTile(
-            label: 'Expired',
+            label: context.mobileText('Expired'),
             value: expiring.toString(),
             icon: Icons.schedule_outlined,
           ),
@@ -270,11 +270,7 @@ class _SummaryRow extends StatelessWidget {
                       color: onSurfaceVariant,
                     ),
                   )
-                : Icon(
-                    Icons.refresh,
-                    size: 16,
-                    color: onSurfaceVariant,
-                  ),
+                : Icon(Icons.refresh, size: 16, color: onSurfaceVariant),
           ),
         ),
       ],
@@ -320,10 +316,7 @@ class _SummaryTile extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             label,
-            style: TextStyle(
-              fontSize: 10,
-              color: onSurfaceVariant,
-            ),
+            style: TextStyle(fontSize: 10, color: onSurfaceVariant),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -359,27 +352,17 @@ class _SearchField extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: OpenVtsSpacing.sm),
       child: Row(
         children: [
-          Icon(
-            Icons.search,
-            size: 16,
-            color: onSurfaceVariant,
-          ),
+          Icon(Icons.search, size: 16, color: onSurfaceVariant),
           const SizedBox(width: OpenVtsSpacing.xs),
           Expanded(
             child: TextField(
               controller: controller,
               onChanged: (_) => onChanged(),
-              style: TextStyle(
-                fontSize: 13,
-                color: onSurface,
-              ),
+              style: TextStyle(fontSize: 13, color: onSurface),
               decoration: InputDecoration(
                 isDense: true,
-                hintText: 'Search name, IMEI, SIM, type',
-                hintStyle: TextStyle(
-                  fontSize: 12,
-                  color: onSurfaceVariant,
-                ),
+                hintText: context.mobileText('Search name, IMEI, SIM, type'),
+                hintStyle: TextStyle(fontSize: 12, color: onSurfaceVariant),
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.symmetric(vertical: 12),
               ),
@@ -391,11 +374,7 @@ class _SearchField extends StatelessWidget {
                 controller.clear();
                 onChanged();
               },
-              child: Icon(
-                Icons.close,
-                size: 16,
-                color: onSurfaceVariant,
-              ),
+              child: Icon(Icons.close, size: 16, color: onSurfaceVariant),
             ),
         ],
       ),
@@ -448,11 +427,13 @@ class _FilterChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final backgroundColor =
-        selected ? (isDark ? Colors.black : Colors.white) : Colors.transparent;
+    final backgroundColor = selected
+        ? (isDark ? Colors.black : Colors.white)
+        : Colors.transparent;
     final textColor = isDark ? Colors.white : Colors.black;
-    final borderColor =
-        isDark ? Colors.white : Colors.black.withValues(alpha: 0.2);
+    final borderColor = isDark
+        ? Colors.white
+        : Colors.black.withValues(alpha: 0.2);
 
     return InkWell(
       onTap: onTap,
@@ -467,8 +448,9 @@ class _FilterChip extends StatelessWidget {
           color: backgroundColor,
           borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
           border: Border.all(
-            color:
-                selected ? (isDark ? Colors.white : Colors.black) : borderColor,
+            color: selected
+                ? (isDark ? Colors.white : Colors.black)
+                : borderColor,
           ),
         ),
         child: Text(
@@ -517,7 +499,9 @@ class _VehicleCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      vehicle.name.isNotEmpty ? vehicle.name : 'Vehicle',
+                      vehicle.name.isNotEmpty
+                          ? vehicle.name
+                          : context.mobileText('Vehicle'),
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
@@ -531,10 +515,7 @@ class _VehicleCard extends StatelessWidget {
                       vehicle.vehicleTypeName.isNotEmpty
                           ? vehicle.vehicleTypeName
                           : '—',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: onSurfaceVariant,
-                      ),
+                      style: TextStyle(fontSize: 11, color: onSurfaceVariant),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -561,12 +542,16 @@ class _VehicleCard extends StatelessWidget {
               if (vehicle.gmtOffset.isNotEmpty)
                 _MetaChip(
                   icon: Icons.public,
-                  label: 'GMT ${vehicle.gmtOffset}',
+                  label: context.mobileText("GMT {value1}", {
+                    'value1': (vehicle.gmtOffset).toString(),
+                  }),
                 ),
               if (vehicle.createdAt != null)
                 _MetaChip(
                   icon: Icons.calendar_today_outlined,
-                  label: 'Added ${fmt.formatDate(vehicle.createdAt!)}',
+                  label: context.mobileText("Added {value1}", {
+                    'value1': (fmt.formatDate(vehicle.createdAt!)).toString(),
+                  }),
                 ),
             ],
           ),
@@ -639,11 +624,7 @@ class _VehicleIcon extends StatelessWidget {
         borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
         border: Border.all(color: outlineVariant),
       ),
-      child: Icon(
-        _iconForSlug(slug),
-        size: 20,
-        color: onSurface,
-      ),
+      child: Icon(_iconForSlug(slug), size: 20, color: onSurface),
     );
   }
 }
@@ -671,7 +652,7 @@ class _BlockedBadge extends StatelessWidget {
           Icon(Icons.lock_outline, size: 11, color: onSurface),
           const SizedBox(width: 4),
           Text(
-            'Blocked',
+            context.mobileText('Blocked'),
             style: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.w700,
@@ -704,19 +685,13 @@ class _MetaRow extends StatelessWidget {
             width: 40,
             child: Text(
               label,
-              style: TextStyle(
-                fontSize: 11,
-                color: onSurfaceVariant,
-              ),
+              style: TextStyle(fontSize: 11, color: onSurfaceVariant),
             ),
           ),
           Expanded(
             child: Text(
               value,
-              style: TextStyle(
-                fontSize: 12,
-                color: onSurface,
-              ),
+              style: TextStyle(fontSize: 12, color: onSurface),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
@@ -751,13 +726,7 @@ class _MetaChip extends StatelessWidget {
         children: [
           Icon(icon, size: 11, color: onSurfaceVariant),
           const SizedBox(width: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 10,
-              color: onSurfaceVariant,
-            ),
-          ),
+          Text(label, style: TextStyle(fontSize: 10, color: onSurfaceVariant)),
         ],
       ),
     );

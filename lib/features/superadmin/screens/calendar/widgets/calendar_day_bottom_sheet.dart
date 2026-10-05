@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../../../shared/widgets/open_vts_empty_state.dart';
 import '../../../../../shared/widgets/open_vts_error_view.dart';
@@ -39,15 +40,15 @@ class _CalendarDayBottomSheetState
       error: (err, stack) => Padding(
         padding: const EdgeInsets.all(OpenVtsSpacing.md),
         child: OpenVtsErrorView(
-          message: 'Failed to load details',
+          message: context.mobileText('Failed to load details'),
           onRetry: () => ref.refresh(calendarDayDetailsProvider(widget.date)),
         ),
       ),
       data: (details) {
         if (details.isEmpty) {
-          return const OpenVtsEmptyState(
-            title: 'No Data',
-            message: 'There are no events on this day',
+          return OpenVtsEmptyState(
+            title: context.mobileText('No Data'),
+            message: context.mobileText('There are no events on this day'),
           );
         }
 
@@ -56,15 +57,15 @@ class _CalendarDayBottomSheetState
             : details.where((d) {
                 final linkedDetail = d.isUser
                     ? ref
-                        .read(calendarUserDetailsProvider(d.userId!))
-                        .asData
-                        ?.value
+                          .read(calendarUserDetailsProvider(d.userId!))
+                          .asData
+                          ?.value
                     : d.isVehicle
-                        ? ref
-                            .read(calendarVehicleDetailsProvider(d.vehicleId!))
-                            .asData
-                            ?.value
-                        : null;
+                    ? ref
+                          .read(calendarVehicleDetailsProvider(d.vehicleId!))
+                          .asData
+                          ?.value
+                    : null;
                 return d.matchesQuery(_query, linkedDetail);
               }).toList();
 
@@ -78,15 +79,17 @@ class _CalendarDayBottomSheetState
                 OpenVtsSpacing.sm,
               ),
               child: OpenVtsSearchField(
-                hintText: 'Search users, vehicles…',
+                hintText: context.mobileText('Search users, vehicles…'),
                 onChanged: _onSearchChanged,
               ),
             ),
             Expanded(
               child: filtered.isEmpty
-                  ? const OpenVtsEmptyState(
-                      title: 'No matching records',
-                      message: 'Try a different search term',
+                  ? OpenVtsEmptyState(
+                      title: context.mobileText('No matching records'),
+                      message: context.mobileText(
+                        'Try a different search term',
+                      ),
                     )
                   : ListView.separated(
                       padding: const EdgeInsets.fromLTRB(
@@ -120,8 +123,8 @@ class _CalendarDayEventTile extends ConsumerWidget {
     final linkedDetailAsync = detail.isUser
         ? ref.watch(calendarUserDetailsProvider(detail.userId!))
         : detail.isVehicle
-            ? ref.watch(calendarVehicleDetailsProvider(detail.vehicleId!))
-            : const AsyncValue<CalendarLinkedDetail?>.data(null);
+        ? ref.watch(calendarVehicleDetailsProvider(detail.vehicleId!))
+        : const AsyncValue<CalendarLinkedDetail?>.data(null);
 
     final linkedDetail = linkedDetailAsync.asData?.value;
     final title = _resolveTitle(detail, linkedDetail);
@@ -174,8 +177,9 @@ class _CalendarDayEventTile extends ConsumerWidget {
                         item,
                         style: OpenVtsTypography.meta.copyWith(
                           color: isDark
-                              ? OpenVtsColors.darkTextSecondary
-                                  .withValues(alpha: 0.7)
+                              ? OpenVtsColors.darkTextSecondary.withValues(
+                                  alpha: 0.7,
+                                )
                               : OpenVtsColors.textTertiary,
                         ),
                       ),

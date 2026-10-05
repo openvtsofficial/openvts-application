@@ -12,8 +12,10 @@ import 'package:open_vts/shared/widgets/open_vts_card.dart';
 import 'package:open_vts/shared/widgets/open_vts_error_view.dart';
 import 'package:open_vts/shared/widgets/open_vts_search_field.dart';
 
-typedef UserSupportTicketPreviewBuilder = String? Function(
-    UserSupportTicketListItem ticket, UserSupportState state);
+import '../../../../../shared/helpers/mobile_text.dart';
+
+typedef UserSupportTicketPreviewBuilder =
+    String? Function(UserSupportTicketListItem ticket, UserSupportState state);
 
 class UserSupportTicketListView extends StatelessWidget {
   const UserSupportTicketListView({
@@ -69,7 +71,7 @@ class UserSupportTicketListView extends StatelessWidget {
                 vertical: OpenVtsSpacing.xxs,
               ),
               child: OpenVtsSearchField(
-                hintText: 'Search subject, number, status',
+                hintText: context.mobileText('Search subject, number, status'),
                 onChanged: onSearchChanged,
               ),
             ),
@@ -167,7 +169,7 @@ class _SupportHeader extends StatelessWidget {
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
               : const Icon(Icons.add_rounded, size: 17),
-          label: const Text('Create'),
+          label: Text(context.mobileText('Create')),
         );
 
         final colorScheme = Theme.of(context).colorScheme;
@@ -257,15 +259,21 @@ class _SupportEmptyState extends StatelessWidget {
             ),
             const SizedBox(height: OpenVtsSpacing.sm),
             Text(
-              hasActiveFilters ? 'No matching tickets' : 'No tickets',
+              hasActiveFilters
+                  ? context.mobileText('No matching tickets')
+                  : context.mobileText('No tickets'),
               textAlign: TextAlign.center,
               style: OpenVtsTypography.titleSmall.copyWith(fontSize: 16),
             ),
             const SizedBox(height: OpenVtsSpacing.xs),
             Text(
               hasActiveFilters
-                  ? 'Try a different search or status filter.'
-                  : 'Create a ticket and the team will follow up here.',
+                  ? context.mobileText(
+                      'Try a different search or status filter.',
+                    )
+                  : context.mobileText(
+                      'Create a ticket and the team will follow up here.',
+                    ),
               textAlign: TextAlign.center,
               style: OpenVtsTypography.body.copyWith(
                 color: colorScheme.onSurfaceVariant,
@@ -276,7 +284,7 @@ class _SupportEmptyState extends StatelessWidget {
               SizedBox(
                 width: 172,
                 child: OpenVtsButton(
-                  label: 'Create ticket',
+                  label: context.mobileText('Create ticket'),
                   onPressed: onCreatePressed,
                   trailingIcon: Icons.add_rounded,
                   height: 40,

@@ -7,6 +7,7 @@ import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../controllers/user_providers.dart';
 import '../../../models/user_dashboard_model.dart';
 import 'user_dashboard_vehicle_selector.dart';
@@ -35,10 +36,11 @@ class _UserUsageLast7DaysWidgetState
   @override
   void initState() {
     super.initState();
-    _selectedVehicleId = userDashboardPropString(
-          widget.config.props,
-          const ['vehicleId', 'vehicle_id'],
-        ) ??
+    _selectedVehicleId =
+        userDashboardPropString(widget.config.props, const [
+          'vehicleId',
+          'vehicle_id',
+        ]) ??
         'all';
   }
 
@@ -83,11 +85,12 @@ class _UserUsageLast7DaysWidgetState
 
   Widget _buildBody(
     AsyncValue<
-            ({
-              List<UserDashboardVehicleOption> vehicles,
-              UserDashboardUsageLast7Days usage,
-            })>
-        state,
+      ({
+        List<UserDashboardVehicleOption> vehicles,
+        UserDashboardUsageLast7Days usage,
+      })
+    >
+    state,
   ) {
     if (state.hasError) {
       return UserDashboardWidgetError(
@@ -117,18 +120,18 @@ class _UserUsageLast7DaysWidgetState
           children: [
             Expanded(
               child: UserDashboardMetricTile(
-                label: 'Driven',
+                label: context.mobileText('Driven'),
                 value: userDashboardFormatDistance(usage.totals.drivenKm),
-                subtitle: 'last 7 days',
+                subtitle: context.mobileText('last 7 days'),
               ),
             ),
             const SizedBox(width: OpenVtsSpacing.xs),
             Expanded(
               child: UserDashboardMetricTile(
-                label: 'Engine',
+                label: context.mobileText('Engine'),
                 value: userDashboardFormatHours(usage.totals.engineHours),
                 subtitle: selectedVehicleId == 'all'
-                    ? 'all vehicles'
+                    ? context.mobileText('all vehicles')
                     : _vehicleName(data.vehicles, selectedVehicleId),
               ),
             ),
@@ -136,8 +139,10 @@ class _UserUsageLast7DaysWidgetState
         ),
         const SizedBox(height: OpenVtsSpacing.md),
         if (usage.points.isEmpty)
-          const UserDashboardWidgetEmpty(
-            message: 'No usage data for the selected range.',
+          UserDashboardWidgetEmpty(
+            message: context.mobileText(
+              'No usage data for the selected range.',
+            ),
             icon: Icons.bar_chart_rounded,
           )
         else
@@ -181,10 +186,7 @@ class _UsageChart extends StatelessWidget {
 }
 
 class _UsageChartPainter extends CustomPainter {
-  _UsageChartPainter(
-    this.points, {
-    required this.textColor,
-  });
+  _UsageChartPainter(this.points, {required this.textColor});
 
   final List<UserDashboardUsagePoint> points;
   final Color textColor;
@@ -212,19 +214,24 @@ class _UsageChartPainter extends CustomPainter {
     final hourScale = math.max(maxHours, 1);
 
     final gridPaint = Paint()
-      ..color = OpenVtsColors.border // Keep as constant in CustomPainter
+      ..color = OpenVtsColors
+          .border // Keep as constant in CustomPainter
       ..strokeWidth = 1;
     for (var line = 0; line < 4; line++) {
       final y = top + chartHeight * line / 3;
       canvas.drawLine(
-          Offset(left, y), Offset(size.width - right, y), gridPaint);
+        Offset(left, y),
+        Offset(size.width - right, y),
+        gridPaint,
+      );
     }
 
     final barPaint = Paint()
       ..color = OpenVtsColors.brandInk
       ..style = PaintingStyle.fill;
     final barTrackPaint = Paint()
-      ..color = OpenVtsColors.surface // Keep as constant in CustomPainter
+      ..color = OpenVtsColors
+          .surface // Keep as constant in CustomPainter
       ..style = PaintingStyle.fill;
     final slot = chartWidth / points.length;
     final barWidth = math.min(18.0, slot * 0.42).toDouble();
@@ -252,7 +259,8 @@ class _UsageChartPainter extends CustomPainter {
       );
       canvas.drawRRect(barRect, barPaint);
 
-      final hourY = origin.dy -
+      final hourY =
+          origin.dy -
           chartHeight * (point.engineHours / hourScale).clamp(0.0, 1.0);
       linePoints.add(Offset(centerX, hourY));
     }

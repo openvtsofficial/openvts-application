@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../../../shared/widgets/open_vts_empty_state.dart';
 
@@ -27,23 +28,25 @@ class PaymentsStatusDistribution extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Status Distribution',
+            context.mobileText('Status Distribution'),
             style: OpenVtsTypography.titleSmall.copyWith(
               color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: OpenVtsSpacing.xxs),
           Text(
-            'Success, pending, and failed share',
+            context.mobileText('Success, pending, and failed share'),
             style: OpenVtsTypography.meta.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
           const SizedBox(height: OpenVtsSpacing.sm),
           if (total <= 0)
-            const OpenVtsEmptyState(
-              title: 'No status data',
-              message: 'Status distribution is not available for this range.',
+            OpenVtsEmptyState(
+              title: context.mobileText('No status data'),
+              message: context.mobileText(
+                'Status distribution is not available for this range.',
+              ),
             )
           else ...[
             ClipRRect(
@@ -68,18 +71,14 @@ class PaymentsStatusDistribution extends StatelessWidget {
                           Expanded(
                             flex: pending,
                             child: DecoratedBox(
-                              decoration: BoxDecoration(
-                                color: scheme.tertiary,
-                              ),
+                              decoration: BoxDecoration(color: scheme.tertiary),
                             ),
                           ),
                         if (failed > 0)
                           Expanded(
                             flex: failed,
                             child: DecoratedBox(
-                              decoration: BoxDecoration(
-                                color: scheme.error,
-                              ),
+                              decoration: BoxDecoration(color: scheme.error),
                             ),
                           ),
                       ],
@@ -97,19 +96,19 @@ class PaymentsStatusDistribution extends StatelessWidget {
                   runSpacing: OpenVtsSpacing.xs,
                   children: [
                     _LegendItem(
-                      label: 'Success',
+                      label: context.mobileText('Success'),
                       value: success,
                       total: total,
                       color: scheme.secondary,
                     ),
                     _LegendItem(
-                      label: 'Pending',
+                      label: context.mobileText('Pending'),
                       value: pending,
                       total: total,
                       color: scheme.tertiary,
                     ),
                     _LegendItem(
-                      label: 'Failed',
+                      label: context.mobileText('Failed'),
                       value: failed,
                       total: total,
                       color: scheme.error,
@@ -151,8 +150,9 @@ class _LegendItem extends StatelessWidget {
           decoration: BoxDecoration(
             color: color,
             borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
-            border:
-                Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+            border: Border.all(
+              color: Theme.of(context).colorScheme.outlineVariant,
+            ),
           ),
         ),
         const SizedBox(width: OpenVtsSpacing.xxs),

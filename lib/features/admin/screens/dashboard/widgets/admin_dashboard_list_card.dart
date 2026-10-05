@@ -6,12 +6,11 @@ import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../core/utils/date_time_formatter.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 
-typedef AdminDashboardListItemBuilder = Widget Function(
-  BuildContext context,
-  int index,
-);
+typedef AdminDashboardListItemBuilder =
+    Widget Function(BuildContext context, int index);
 
 class AdminDashboardListCard extends StatelessWidget {
   const AdminDashboardListCard({
@@ -52,11 +51,10 @@ class AdminDashboardListCard extends StatelessWidget {
             child: Row(
               children: [
                 Expanded(
-                    child: AdminDashboardListHeading(title: title, icon: icon)),
+                  child: AdminDashboardListHeading(title: title, icon: icon),
+                ),
                 if (viewAllRoute != null)
-                  _ViewAllButton(
-                    onPressed: () => context.push(viewAllRoute!),
-                  ),
+                  _ViewAllButton(onPressed: () => context.push(viewAllRoute!)),
               ],
             ),
           ),
@@ -100,11 +98,15 @@ class AdminDashboardListHeading extends StatelessWidget {
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-            border:
-                Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+            border: Border.all(
+              color: Theme.of(context).colorScheme.outlineVariant,
+            ),
           ),
-          child: Icon(icon,
-              size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
+          child: Icon(
+            icon,
+            size: 16,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
         ),
         const SizedBox(width: OpenVtsSpacing.xs),
         Flexible(
@@ -172,8 +174,11 @@ class AdminDashboardLeadingIcon extends StatelessWidget {
         borderRadius: BorderRadius.circular(OpenVtsRadius.md),
         border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
-      child: Icon(icon,
-          size: 17, color: Theme.of(context).colorScheme.onSurfaceVariant),
+      child: Icon(
+        icon,
+        size: 17,
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
+      ),
     );
   }
 }
@@ -252,10 +257,14 @@ class AdminDashboardCompactEmpty extends StatelessWidget {
                 color: Theme.of(context).colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(OpenVtsRadius.md),
                 border: Border.all(
-                    color: Theme.of(context).colorScheme.outlineVariant),
+                  color: Theme.of(context).colorScheme.outlineVariant,
+                ),
               ),
-              child: Icon(icon,
-                  size: 18, color: Theme.of(context).colorScheme.outline),
+              child: Icon(
+                icon,
+                size: 18,
+                color: Theme.of(context).colorScheme.outline,
+              ),
             ),
             const SizedBox(height: OpenVtsSpacing.xs),
             Text(
@@ -353,12 +362,12 @@ class _ViewAllButton extends StatelessWidget {
           fontWeight: FontWeight.w800,
         ),
       ),
-      child: const Row(
+      child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text('View All'),
-          SizedBox(width: 3),
-          Icon(Icons.arrow_forward_rounded, size: 14),
+          Text(context.mobileText('View All')),
+          const SizedBox(width: 3),
+          const Icon(Icons.arrow_forward_rounded, size: 14),
         ],
       ),
     );
@@ -366,8 +375,10 @@ class _ViewAllButton extends StatelessWidget {
 }
 
 String adminDashboardInitials(String value) {
-  final parts =
-      value.trim().split(RegExp(r'\s+')).where((part) => part.isNotEmpty);
+  final parts = value
+      .trim()
+      .split(RegExp(r'\s+'))
+      .where((part) => part.isNotEmpty);
   final letters = parts.take(2).map((part) => part.characters.first).join();
   if (letters.isNotEmpty) {
     return letters.toUpperCase();
@@ -406,8 +417,10 @@ String adminDashboardFormatNumber(num value) {
 
 /// Format relative time with fallback to formatted date.
 /// The [formatter] should come from ref.watch(appDateFormatterProvider) in ConsumerWidgets.
-String adminDashboardRelativeDate(DateTime? value,
-    {AppDateFormatter? formatter}) {
+String adminDashboardRelativeDate(
+  DateTime? value, {
+  AppDateFormatter? formatter,
+}) {
   if (value == null) {
     return '-';
   }
@@ -439,8 +452,10 @@ String adminDashboardRelativeDate(DateTime? value,
   return DateFormat('dd MMM yyyy').format(localValue);
 }
 
-String adminDashboardContactLabel(
-    {required String email, required String username}) {
+String adminDashboardContactLabel({
+  required String email,
+  required String username,
+}) {
   if (email.trim().isNotEmpty) {
     return email.trim();
   }

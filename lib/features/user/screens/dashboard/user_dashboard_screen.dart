@@ -5,6 +5,7 @@ import '../../../../core/theme/open_vts_radius.dart';
 import '../../../../core/theme/open_vts_spacing.dart';
 import '../../../../core/theme/open_vts_typography.dart';
 import '../../../../core/utils/date_time_formatter.dart';
+import '../../../../shared/helpers/mobile_text.dart';
 import '../../../../shared/widgets/open_vts_empty_state.dart';
 import '../../../../shared/widgets/open_vts_error_view.dart';
 import '../../../../shared/widgets/open_vts_loader.dart';
@@ -55,16 +56,19 @@ class _UserDashboardScreenState extends ConsumerState<UserDashboardScreen>
     if (ref.read(userDashboardControllerProvider).isRefreshing) return;
     if (_resumeRefreshPending) return;
     _resumeRefreshPending = true;
-    controller.refresh().then((_) {
-      if (!mounted) return;
-      setState(() {
-        _resumeRefreshPending = false;
-        _refreshTick++;
-      });
-    }).catchError((_) {
-      if (!mounted) return;
-      setState(() => _resumeRefreshPending = false);
-    });
+    controller
+        .refresh()
+        .then((_) {
+          if (!mounted) return;
+          setState(() {
+            _resumeRefreshPending = false;
+            _refreshTick++;
+          });
+        })
+        .catchError((_) {
+          if (!mounted) return;
+          setState(() => _resumeRefreshPending = false);
+        });
   }
 
   Future<void> _refresh() async {
@@ -87,7 +91,7 @@ class _UserDashboardScreenState extends ConsumerState<UserDashboardScreen>
     final controller = ref.read(userDashboardControllerProvider.notifier);
 
     return OpenVtsPageScaffold(
-      title: 'Dashboard',
+      title: context.mobileText('Dashboard'),
       headerMode: OpenVtsPageHeaderMode.closeable,
       padding: EdgeInsets.zero,
       body: RefreshIndicator(
@@ -163,10 +167,11 @@ class _DashboardBody extends StatelessWidget {
     if (!state.hasDashboards) {
       return SizedBox(
         height: MediaQuery.sizeOf(context).height * 0.62,
-        child: const OpenVtsEmptyState(
-          title: 'No dashboard configured',
-          message:
-              'Create a dashboard from the web application to view it here.',
+        child: OpenVtsEmptyState(
+          title: context.mobileText('No dashboard configured'),
+          message: context.mobileText(
+            'Create a dashboard from the web application to view it here.',
+          ),
         ),
       );
     }
@@ -209,9 +214,11 @@ class _DashboardBody extends StatelessWidget {
         else if (!state.hasOrderedWidgets)
           SizedBox(
             height: MediaQuery.sizeOf(context).height * 0.46,
-            child: const OpenVtsEmptyState(
-              title: 'No widgets configured',
-              message: 'This saved dashboard has no widgets yet.',
+            child: OpenVtsEmptyState(
+              title: context.mobileText('No widgets configured'),
+              message: context.mobileText(
+                'This saved dashboard has no widgets yet.',
+              ),
             ),
           )
         else
@@ -275,7 +282,7 @@ class _DashboardHeader extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Dashboard',
+              context.mobileText('Dashboard'),
               style: OpenVtsTypography.titleSmall.copyWith(
                 color: Theme.of(context).colorScheme.onSurface,
                 fontSize: 20,
@@ -329,10 +336,7 @@ class _DashboardHeader extends StatelessWidget {
 }
 
 class _UpdatedTimePill extends ConsumerWidget {
-  const _UpdatedTimePill({
-    required this.updatedAt,
-    required this.isRefreshing,
-  });
+  const _UpdatedTimePill({required this.updatedAt, required this.isRefreshing});
 
   final DateTime? updatedAt;
   final bool isRefreshing;
@@ -361,7 +365,7 @@ class _UpdatedTimePill extends ConsumerWidget {
             ),
             const SizedBox(width: OpenVtsSpacing.xxs),
             Text(
-              'Refreshing',
+              context.mobileText('Refreshing'),
               style: OpenVtsTypography.meta.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
                 fontWeight: FontWeight.w700,
@@ -401,8 +405,9 @@ class _DashboardSelectorButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final selected =
-        dashboards.where((item) => item.id == selectedDashboardId).firstOrNull;
+    final selected = dashboards
+        .where((item) => item.id == selectedDashboardId)
+        .firstOrNull;
 
     return OutlinedButton.icon(
       onPressed: () => _openSelector(context),
@@ -452,7 +457,7 @@ class _DashboardSelectorButton extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(
-                    'Select dashboard',
+                    context.mobileText('Select dashboard'),
                     style: OpenVtsTypography.titleSmall.copyWith(
                       color: Theme.of(context).colorScheme.onSurface,
                       fontWeight: FontWeight.w800,
@@ -479,9 +484,12 @@ class _DashboardSelectorButton extends StatelessWidget {
                       ),
                       subtitle: dashboard.updatedAt == null
                           ? null
-                          : Text(userDashboardFormatDateTime(
-                              dashboard.updatedAt,
-                              formatter: formatter)),
+                          : Text(
+                              userDashboardFormatDateTime(
+                                dashboard.updatedAt,
+                                formatter: formatter,
+                              ),
+                            ),
                       onTap: () => Navigator.of(context).pop(dashboard.id),
                     ),
                 ],
@@ -510,7 +518,7 @@ class _RefreshIconButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return IconButton(
-      tooltip: 'Refresh dashboard',
+      tooltip: context.mobileText('Refresh dashboard'),
       onPressed: isRefreshing ? null : () => onRefresh(),
       style: IconButton.styleFrom(
         minimumSize: const Size.square(34),
@@ -560,10 +568,7 @@ class _DashboardWidgetList extends StatelessWidget {
 }
 
 class _DashboardInlineError extends StatelessWidget {
-  const _DashboardInlineError({
-    required this.message,
-    required this.onRetry,
-  });
+  const _DashboardInlineError({required this.message, required this.onRetry});
 
   final String message;
   final Future<void> Function() onRetry;
@@ -573,11 +578,13 @@ class _DashboardInlineError extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(OpenVtsSpacing.sm),
       decoration: BoxDecoration(
-        color:
-            Theme.of(context).colorScheme.errorContainer.withValues(alpha: 0.4),
+        color: Theme.of(
+          context,
+        ).colorScheme.errorContainer.withValues(alpha: 0.4),
         borderRadius: BorderRadius.circular(OpenVtsRadius.md),
         border: Border.all(
-            color: Theme.of(context).colorScheme.error.withValues(alpha: 0.3)),
+          color: Theme.of(context).colorScheme.error.withValues(alpha: 0.3),
+        ),
       ),
       child: Row(
         children: [
@@ -601,10 +608,11 @@ class _DashboardInlineError extends StatelessWidget {
             style: TextButton.styleFrom(
               minimumSize: const Size(52, 28),
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              padding:
-                  const EdgeInsets.symmetric(horizontal: OpenVtsSpacing.xs),
+              padding: const EdgeInsets.symmetric(
+                horizontal: OpenVtsSpacing.xs,
+              ),
             ),
-            child: const Text('Retry'),
+            child: Text(context.mobileText('Retry')),
           ),
         ],
       ),

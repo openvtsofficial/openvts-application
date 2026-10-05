@@ -8,6 +8,7 @@ import '../../../../core/theme/open_vts_radius.dart';
 import '../../../../core/theme/open_vts_spacing.dart';
 import '../../../../core/theme/open_vts_typography.dart';
 import '../../../../core/utils/date_time_formatter.dart';
+import '../../../../shared/helpers/mobile_text.dart';
 import '../../../../shared/helpers/toast_helper.dart';
 import '../../../../shared/models/user_role.dart';
 import '../../../../shared/widgets/open_vts_button.dart';
@@ -45,11 +46,11 @@ class _SuperadminAdministratorsScreenState
     );
 
     return OpenVtsPageScaffold(
-      title: 'Admin',
+      title: context.mobileText('Admin'),
       headerMode: OpenVtsPageHeaderMode.closeable,
       actions: [
         IconButton(
-          tooltip: 'Refresh administrators',
+          tooltip: context.mobileText('Refresh administrators'),
           onPressed: controller.refresh,
           icon: state.isRefreshing
               ? const SizedBox.square(
@@ -68,32 +69,28 @@ class _SuperadminAdministratorsScreenState
       body: state.isInitialLoading && !state.hasItems
           ? const OpenVtsLoader()
           : state.errorMessage != null && !state.hasItems
-              ? OpenVtsErrorView(
-                  message: state.errorMessage ??
-                      'Administrators could not be loaded.',
-                  onRetry: controller.refresh,
-                )
-              : _AdministratorsBody(
-                  state: state,
-                  controller: controller,
-                  onCreate: () => _openCreateAdmin(context),
-                  onOpenFilters: () => _openFiltersSheet(context, ref),
-                  onOpenSort: () => _openSortSheet(context, ref),
-                  onToggleActive: (admin, value) => _handleActiveToggle(
-                    context,
-                    ref,
-                    admin,
-                    value,
-                  ),
-                  onDelete: (admin) => _handleDelete(context, ref, admin),
-                  onLogin: (admin) => _handleLogin(context, ref, admin),
-                  onOpenDetails: (admin) {
-                    context.push(
-                      RoutePaths.superadminAdministratorDetailsPath(admin.id),
-                      extra: admin,
-                    );
-                  },
-                ),
+          ? OpenVtsErrorView(
+              message:
+                  state.errorMessage ?? 'Administrators could not be loaded.',
+              onRetry: controller.refresh,
+            )
+          : _AdministratorsBody(
+              state: state,
+              controller: controller,
+              onCreate: () => _openCreateAdmin(context),
+              onOpenFilters: () => _openFiltersSheet(context, ref),
+              onOpenSort: () => _openSortSheet(context, ref),
+              onToggleActive: (admin, value) =>
+                  _handleActiveToggle(context, ref, admin, value),
+              onDelete: (admin) => _handleDelete(context, ref, admin),
+              onLogin: (admin) => _handleLogin(context, ref, admin),
+              onOpenDetails: (admin) {
+                context.push(
+                  RoutePaths.superadminAdministratorDetailsPath(admin.id),
+                  extra: admin,
+                );
+              },
+            ),
     );
   }
 
@@ -102,8 +99,9 @@ class _SuperadminAdministratorsScreenState
   }
 
   Future<void> _openFiltersSheet(BuildContext context, WidgetRef ref) async {
-    final controller =
-        ref.read(superadminAdministratorsControllerProvider.notifier);
+    final controller = ref.read(
+      superadminAdministratorsControllerProvider.notifier,
+    );
     final state = ref.read(superadminAdministratorsControllerProvider);
 
     var selectedStatus = state.statusFilter;
@@ -122,10 +120,10 @@ class _SuperadminAdministratorsScreenState
         return StatefulBuilder(
           builder: (context, setSheetState) {
             return _OptionsSheet(
-              title: 'Filter administrators',
+              title: context.mobileText('Filter administrators'),
               sections: [
                 _OptionsSheetSection(
-                  label: 'Status',
+                  label: context.mobileText('Status'),
                   child: Wrap(
                     spacing: OpenVtsSpacing.xs,
                     runSpacing: OpenVtsSpacing.xs,
@@ -161,8 +159,9 @@ class _SuperadminAdministratorsScreenState
   }
 
   Future<void> _openSortSheet(BuildContext context, WidgetRef ref) async {
-    final controller =
-        ref.read(superadminAdministratorsControllerProvider.notifier);
+    final controller = ref.read(
+      superadminAdministratorsControllerProvider.notifier,
+    );
     final state = ref.read(superadminAdministratorsControllerProvider);
 
     await showModalBottomSheet<void>(
@@ -177,10 +176,10 @@ class _SuperadminAdministratorsScreenState
       ),
       builder: (sheetContext) {
         return _OptionsSheet(
-          title: 'Sort administrators',
+          title: context.mobileText('Sort administrators'),
           sections: [
             _OptionsSheetSection(
-              label: 'Order by',
+              label: context.mobileText('Order by'),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: SuperadminAdministratorSortOption.values
@@ -239,21 +238,22 @@ class _SuperadminAdministratorsScreenState
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('Delete administrator'),
+          title: Text(context.mobileText('Delete administrator')),
           content: Text(
-            'Remove ${administrator.name} from the platform? This action cannot be undone.',
+            context.mobileText(
+              "Remove {value1} from the platform? This action cannot be undone.",
+              {'value1': (administrator.name).toString()},
+            ),
           ),
           actions: [
             TextButton(
               onPressed: () => dialogContext.pop(false),
-              child: const Text('Cancel'),
+              child: Text(context.mobileText('Cancel')),
             ),
             TextButton(
               onPressed: () => dialogContext.pop(true),
-              style: TextButton.styleFrom(
-                foregroundColor: OpenVtsColors.error,
-              ),
-              child: const Text('Delete'),
+              style: TextButton.styleFrom(foregroundColor: OpenVtsColors.error),
+              child: Text(context.mobileText('Delete')),
             ),
           ],
         );
@@ -272,7 +272,9 @@ class _SuperadminAdministratorsScreenState
         return;
       }
       ToastHelper.showSuccess(
-        '${administrator.name} deleted.',
+        context.mobileText("{value1} deleted.", {
+          'value1': (administrator.name).toString(),
+        }),
         context: context,
       );
     } catch (error) {
@@ -319,7 +321,9 @@ class _SuperadminAdministratorsScreenState
         }
 
         ToastHelper.showSuccess(
-          'Signed in as ${administrator.name}.',
+          context.mobileText("Signed in as {value1}.", {
+            'value1': (administrator.name).toString(),
+          }),
           context: context,
         );
         context.go(RoutePaths.adminHome);
@@ -331,7 +335,7 @@ class _SuperadminAdministratorsScreenState
         ToastHelper.showSuccess(message, context: context);
       } else {
         ToastHelper.showInfo(
-          'Admin login request completed.',
+          context.mobileText('Admin login request completed.'),
           context: context,
         );
       }
@@ -380,10 +384,7 @@ class _AdministratorsBody extends StatelessWidget {
 
     return Column(
       children: [
-        _AdministratorsHeaderCard(
-          count: filteredCount,
-          onCreate: onCreate,
-        ),
+        _AdministratorsHeaderCard(count: filteredCount, onCreate: onCreate),
         const SizedBox(height: OpenVtsSpacing.sm),
         _AdministratorsToolbar(
           searchQuery: state.searchQuery,
@@ -401,11 +402,13 @@ class _AdministratorsBody extends StatelessWidget {
             child: filteredCount == 0
                 ? ListView(
                     physics: const AlwaysScrollableScrollPhysics(),
-                    children: const [
-                      SizedBox(height: OpenVtsSpacing.section),
+                    children: [
+                      const SizedBox(height: OpenVtsSpacing.section),
                       OpenVtsEmptyState(
-                        title: 'No administrators found',
-                        message: 'Try a different search or filter.',
+                        title: context.mobileText('No administrators found'),
+                        message: context.mobileText(
+                          'Try a different search or filter.',
+                        ),
                       ),
                     ],
                   )
@@ -431,7 +434,8 @@ class _AdministratorsBody extends StatelessWidget {
                       final administrator = visible[index];
                       return _AdministratorCard(
                         administrator: administrator,
-                        isBusy: state.isToggling(administrator.id) ||
+                        isBusy:
+                            state.isToggling(administrator.id) ||
                             state.isDeleting(administrator.id) ||
                             state.isLoggingIn(administrator.id),
                         isToggling: state.isToggling(administrator.id),
@@ -493,11 +497,13 @@ class _AdministratorsHeaderCard extends StatelessWidget {
           const SizedBox(width: OpenVtsSpacing.sm),
           Expanded(
             child: Text(
-              '$count Admin',
+              context.mobileText("{value1} Admin", {
+                'value1': (count).toString(),
+              }),
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: -0.2,
-                  ),
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.2,
+              ),
             ),
           ),
           const SizedBox(width: OpenVtsSpacing.sm),
@@ -522,7 +528,7 @@ class _PrimaryCreateButton extends StatelessWidget {
     return ElevatedButton.icon(
       onPressed: onPressed,
       icon: const Icon(Icons.add_rounded, size: 18),
-      label: const Text('Create Admin'),
+      label: Text(context.mobileText('Create Admin')),
       style: ElevatedButton.styleFrom(
         backgroundColor: background,
         foregroundColor: foreground,
@@ -615,14 +621,14 @@ class _AdministratorsToolbarState extends State<_AdministratorsToolbar> {
           const SizedBox(width: OpenVtsSpacing.xs),
           _SquareIconButton(
             icon: Icons.filter_alt_outlined,
-            tooltip: 'Filter administrators',
+            tooltip: context.mobileText('Filter administrators'),
             onPressed: widget.onOpenFilters,
             showDot: widget.hasActiveFilters,
           ),
           const SizedBox(width: OpenVtsSpacing.xs),
           _SquareIconButton(
             icon: Icons.swap_vert_rounded,
-            tooltip: 'Sort administrators',
+            tooltip: context.mobileText('Sort administrators'),
             onPressed: widget.onOpenSort,
           ),
           const SizedBox(width: OpenVtsSpacing.xs),
@@ -637,10 +643,7 @@ class _AdministratorsToolbarState extends State<_AdministratorsToolbar> {
 }
 
 class _SearchInput extends StatelessWidget {
-  const _SearchInput({
-    required this.controller,
-    required this.onChanged,
-  });
+  const _SearchInput({required this.controller, required this.onChanged});
 
   final TextEditingController controller;
   final ValueChanged<String> onChanged;
@@ -700,7 +703,7 @@ class _SearchInput extends StatelessWidget {
               fillColor: fillColor,
               isDense: true,
               isCollapsed: false,
-              hintText: 'Search by name, email\u2026',
+              hintText: context.mobileText('Search by name, email\u2026'),
               hintStyle: _baseStyle.copyWith(
                 color: Theme.of(context).brightness == Brightness.dark
                     ? OpenVtsColors.darkTextSecondary.withValues(alpha: 0.6)
@@ -731,7 +734,7 @@ class _SearchInput extends StatelessWidget {
                         end: OpenVtsSpacing.xxs,
                       ),
                       child: IconButton(
-                        tooltip: 'Clear search',
+                        tooltip: context.mobileText('Clear search'),
                         onPressed: () {
                           controller.clear();
                           onChanged('');
@@ -803,11 +806,7 @@ class _SquareIconButton extends StatelessWidget {
                   border: Border.all(color: _softBorderColor(context)),
                 ),
                 alignment: Alignment.center,
-                child: Icon(
-                  icon,
-                  size: 18,
-                  color: _primaryInkColor(context),
-                ),
+                child: Icon(icon, size: 18, color: _primaryInkColor(context)),
               ),
               if (showDot)
                 PositionedDirectional(
@@ -835,10 +834,7 @@ class _SquareIconButton extends StatelessWidget {
 }
 
 class _RecordsPerPageDropdown extends StatelessWidget {
-  const _RecordsPerPageDropdown({
-    required this.value,
-    required this.onChanged,
-  });
+  const _RecordsPerPageDropdown({required this.value, required this.onChanged});
 
   final int value;
   final ValueChanged<int> onChanged;
@@ -992,9 +988,9 @@ class _CardHeader extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: -0.2,
-                    ),
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -0.2,
+                ),
               ),
               const SizedBox(height: 2),
               Text(
@@ -1087,7 +1083,9 @@ class _StatusToggle extends StatelessWidget {
     }
 
     return Tooltip(
-      message: isActive ? 'Deactivate administrator' : 'Activate administrator',
+      message: isActive
+          ? context.mobileText('Deactivate administrator')
+          : context.mobileText('Activate administrator'),
       child: SizedBox(
         width: 44,
         height: 44,
@@ -1131,7 +1129,7 @@ class _CardMenu extends StatelessWidget {
     }
 
     return PopupMenuButton<_AdministratorMenuAction>(
-      tooltip: 'More options',
+      tooltip: context.mobileText('More options'),
       onSelected: (action) {
         switch (action) {
           case _AdministratorMenuAction.login:
@@ -1143,13 +1141,13 @@ class _CardMenu extends StatelessWidget {
         }
       },
       itemBuilder: (context) => [
-        const PopupMenuItem(
+        PopupMenuItem(
           value: _AdministratorMenuAction.login,
           child: Row(
             children: [
-              Icon(Icons.login_rounded, size: 16),
-              SizedBox(width: OpenVtsSpacing.xs),
-              Text('Login as admin'),
+              const Icon(Icons.login_rounded, size: 16),
+              const SizedBox(width: OpenVtsSpacing.xs),
+              Text(context.mobileText('Login as admin')),
             ],
           ),
         ),
@@ -1162,7 +1160,11 @@ class _CardMenu extends StatelessWidget {
                 size: 16,
               ),
               const SizedBox(width: OpenVtsSpacing.xs),
-              Text(isActive ? 'Deactivate' : 'Activate'),
+              Text(
+                isActive
+                    ? context.mobileText('Deactivate')
+                    : context.mobileText('Activate'),
+              ),
             ],
           ),
         ),
@@ -1178,7 +1180,7 @@ class _CardMenu extends StatelessWidget {
               ),
               const SizedBox(width: OpenVtsSpacing.xs),
               Text(
-                'Delete',
+                context.mobileText('Delete'),
                 style: OpenVtsTypography.label.copyWith(
                   color: OpenVtsColors.error,
                 ),
@@ -1230,25 +1232,13 @@ class _CardInfoGrid extends StatelessWidget {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _InfoRow(
-                icon: Icons.mail_outline_rounded,
-                value: emailValue,
-              ),
+              _InfoRow(icon: Icons.mail_outline_rounded, value: emailValue),
               const SizedBox(height: OpenVtsSpacing.xs),
-              _InfoRow(
-                icon: Icons.call_outlined,
-                value: phoneValue,
-              ),
+              _InfoRow(icon: Icons.call_outlined, value: phoneValue),
               const SizedBox(height: OpenVtsSpacing.xs),
-              _InfoRow(
-                icon: Icons.business_outlined,
-                value: companyValue,
-              ),
+              _InfoRow(icon: Icons.business_outlined, value: companyValue),
               const SizedBox(height: OpenVtsSpacing.xs),
-              _InfoRow(
-                icon: Icons.outlined_flag_rounded,
-                value: countryValue,
-              ),
+              _InfoRow(icon: Icons.outlined_flag_rounded, value: countryValue),
             ],
           );
         }
@@ -1267,10 +1257,7 @@ class _CardInfoGrid extends StatelessWidget {
                 ),
                 const SizedBox(width: OpenVtsSpacing.sm),
                 Expanded(
-                  child: _InfoRow(
-                    icon: Icons.call_outlined,
-                    value: phoneValue,
-                  ),
+                  child: _InfoRow(icon: Icons.call_outlined, value: phoneValue),
                 ),
               ],
             ),
@@ -1301,10 +1288,7 @@ class _CardInfoGrid extends StatelessWidget {
 }
 
 class _InfoRow extends StatelessWidget {
-  const _InfoRow({
-    required this.icon,
-    required this.value,
-  });
+  const _InfoRow({required this.icon, required this.value});
 
   final IconData icon;
   final String value;
@@ -1355,8 +1339,8 @@ class _CardMetricsRow extends StatelessWidget {
     final lastLoginValue = lastLogin != null
         ? '${_administratorsDateFormatter.formatDate(lastLogin)} \u2022 ${_administratorsDateFormatter.formatTime(lastLogin)}'
         : (administrator.lastLoginText?.trim().isNotEmpty == true
-            ? administrator.lastLoginText!.trim()
-            : '\u2014');
+              ? administrator.lastLoginText!.trim()
+              : '\u2014');
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -1370,7 +1354,7 @@ class _CardMetricsRow extends StatelessWidget {
                   Expanded(
                     child: _MetricCell(
                       icon: Icons.local_shipping_outlined,
-                      label: 'Vehicles',
+                      label: context.mobileText('Vehicles'),
                       value: administrator.totalVehicles.toString(),
                     ),
                   ),
@@ -1378,7 +1362,7 @@ class _CardMetricsRow extends StatelessWidget {
                   Expanded(
                     child: _MetricCell(
                       icon: Icons.credit_card_outlined,
-                      label: 'Credits',
+                      label: context.mobileText('Credits'),
                       value: administrator.totalCredits.toString(),
                     ),
                   ),
@@ -1387,7 +1371,7 @@ class _CardMetricsRow extends StatelessWidget {
               const SizedBox(height: OpenVtsSpacing.xs),
               _MetricCell(
                 icon: Icons.schedule_outlined,
-                label: 'Last login',
+                label: context.mobileText('Last login'),
                 value: lastLoginValue,
               ),
             ],
@@ -1399,7 +1383,7 @@ class _CardMetricsRow extends StatelessWidget {
             Expanded(
               child: _MetricCell(
                 icon: Icons.local_shipping_outlined,
-                label: 'Vehicles',
+                label: context.mobileText('Vehicles'),
                 value: administrator.totalVehicles.toString(),
               ),
             ),
@@ -1407,7 +1391,7 @@ class _CardMetricsRow extends StatelessWidget {
             Expanded(
               child: _MetricCell(
                 icon: Icons.credit_card_outlined,
-                label: 'Credits',
+                label: context.mobileText('Credits'),
                 value: administrator.totalCredits.toString(),
               ),
             ),
@@ -1416,7 +1400,7 @@ class _CardMetricsRow extends StatelessWidget {
               flex: 2,
               child: _MetricCell(
                 icon: Icons.schedule_outlined,
-                label: 'Last login',
+                label: context.mobileText('Last login'),
                 value: lastLoginValue,
               ),
             ),
@@ -1526,7 +1510,10 @@ class _PaginationFooter extends StatelessWidget {
       child: Column(
         children: [
           Text(
-            'Showing $showingCount of $totalCount',
+            context.mobileText("Showing {value1} of {value2}", {
+              'value1': (showingCount).toString(),
+              'value2': (totalCount).toString(),
+            }),
             style: OpenVtsTypography.meta.copyWith(
               color: Theme.of(context).brightness == Brightness.dark
                   ? OpenVtsColors.darkTextSecondary
@@ -1547,7 +1534,10 @@ class _PaginationFooter extends StatelessWidget {
                     horizontal: OpenVtsSpacing.sm,
                   ),
                   child: Text(
-                    'Page $currentPage of $pageCount',
+                    context.mobileText("Page {value1} of {value2}", {
+                      'value1': (currentPage).toString(),
+                      'value2': (pageCount).toString(),
+                    }),
                     style: OpenVtsTypography.label.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
@@ -1597,8 +1587,8 @@ class _PageButton extends StatelessWidget {
             color: enabled
                 ? _primaryInkColor(context)
                 : (Theme.of(context).brightness == Brightness.dark
-                    ? OpenVtsColors.darkTextSecondary.withValues(alpha: 0.5)
-                    : OpenVtsColors.textTertiary),
+                      ? OpenVtsColors.darkTextSecondary.withValues(alpha: 0.5)
+                      : OpenVtsColors.textTertiary),
           ),
         ),
       ),
@@ -1658,9 +1648,9 @@ class _OptionsSheet extends StatelessWidget {
                   child: Text(
                     title,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
+                      fontWeight: FontWeight.w700,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
                   ),
                 ),
                 IconButton(
@@ -1670,7 +1660,7 @@ class _OptionsSheet extends StatelessWidget {
                     size: 20,
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
-                  tooltip: 'Close',
+                  tooltip: context.mobileText('Close'),
                 ),
               ],
             ),
@@ -1739,11 +1729,13 @@ class _ChoiceChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final backgroundColor =
-        selected ? (isDark ? Colors.black : Colors.white) : Colors.transparent;
+    final backgroundColor = selected
+        ? (isDark ? Colors.black : Colors.white)
+        : Colors.transparent;
     final textColor = isDark ? Colors.white : Colors.black;
-    final borderColor =
-        isDark ? Colors.white : Colors.black.withValues(alpha: 0.2);
+    final borderColor = isDark
+        ? Colors.white
+        : Colors.black.withValues(alpha: 0.2);
 
     return Material(
       color: backgroundColor,
@@ -1863,11 +1855,7 @@ class _RoundedSurface extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       borderRadius: radius,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: radius,
-        child: surface,
-      ),
+      child: InkWell(onTap: onTap, borderRadius: radius, child: surface),
     );
   }
 }

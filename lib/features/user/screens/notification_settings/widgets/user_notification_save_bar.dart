@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 
@@ -38,6 +39,26 @@ class UserNotificationSaveBar extends StatelessWidget {
         child: LayoutBuilder(
           builder: (context, constraints) {
             final isPhone = constraints.maxWidth < 430;
+            final resetLabel = context.mobileText('Reset');
+            final saveLabel = isPhone
+                ? context.mobileText('Save')
+                : context.mobileText('Save Changes');
+            double labelWidth(String label) {
+              final painter = TextPainter(
+                text: TextSpan(text: label, style: OpenVtsTypography.label),
+                textDirection: Directionality.of(context),
+                textScaler: MediaQuery.textScalerOf(context),
+              )..layout();
+              return painter.width.ceilToDouble();
+            }
+
+            // Reserve room for status while allowing long/scaled labels to wrap.
+            final resetWidth = (labelWidth(resetLabel) + 40).clamp(
+              72.0,
+              constraints.maxWidth * .32,
+            );
+            final saveWidth = (labelWidth(saveLabel) + 40 + (isSaving ? 26 : 0))
+                .clamp(96.0, constraints.maxWidth * .42);
             return Row(
               children: [
                 Expanded(
@@ -57,9 +78,9 @@ class UserNotificationSaveBar extends StatelessWidget {
                 ),
                 const SizedBox(width: OpenVtsSpacing.xs),
                 SizedBox(
-                  width: isPhone ? 72 : 98,
+                  width: resetWidth,
                   child: OpenVtsButton(
-                    label: 'Reset',
+                    label: resetLabel,
                     height: 44,
                     variant: OpenVtsButtonVariant.secondary,
                     onPressed: canReset ? onReset : null,
@@ -67,11 +88,9 @@ class UserNotificationSaveBar extends StatelessWidget {
                 ),
                 const SizedBox(width: OpenVtsSpacing.xs),
                 SizedBox(
-                  width: isPhone ? 96 : 132,
+                  width: saveWidth,
                   child: OpenVtsButton(
-                    label: isSaving
-                        ? 'Saving…'
-                        : (isPhone ? 'Save' : 'Save Changes'),
+                    label: saveLabel,
                     height: 44,
                     isLoading: isSaving,
                     onPressed: canSave ? onSave : null,

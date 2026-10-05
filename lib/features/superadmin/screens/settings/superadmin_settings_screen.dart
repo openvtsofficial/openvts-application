@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/widgets/app_legal_links.dart';
 import '../../../../core/theme/open_vts_colors.dart';
 import '../../../../core/theme/open_vts_radius.dart';
 import '../../../../core/theme/open_vts_spacing.dart';
@@ -11,6 +10,7 @@ import '../../../../core/theme/open_vts_typography.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../shared/widgets/open_vts_card.dart';
 import '../../../../shared/widgets/open_vts_page_scaffold.dart';
+import '../../../auth/screens/security_screen.dart';
 import '../../controllers/superadmin_providers.dart';
 import '../../models/superadmin_settings_model.dart';
 import '../../models/superadmin_settings_state.dart';
@@ -20,7 +20,8 @@ import 'widgets/profile_settings_section.dart';
 import 'widgets/white_label_settings_section.dart';
 
 class SuperadminSettingsScreen extends ConsumerStatefulWidget {
-  const SuperadminSettingsScreen({super.key});
+  const SuperadminSettingsScreen({super.key, this.openSecurity = false});
+  final bool openSecurity;
 
   @override
   ConsumerState<SuperadminSettingsScreen> createState() =>
@@ -34,10 +35,30 @@ class _SuperadminSettingsScreenState
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
+      if (widget.openSecurity) {
+        ref
+            .read(superadminSettingsControllerProvider.notifier)
+            .selectSection(SuperadminSettingsSection.security);
+        return;
+      }
       unawaited(
         ref.read(superadminSettingsControllerProvider.notifier).loadInitial(),
       );
     });
+  }
+
+  @override
+  void didUpdateWidget(covariant SuperadminSettingsScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.openSecurity && !oldWidget.openSecurity) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          ref
+              .read(superadminSettingsControllerProvider.notifier)
+              .selectSection(SuperadminSettingsSection.security);
+        }
+      });
+    }
   }
 
   @override
@@ -62,7 +83,6 @@ class _SuperadminSettingsScreenState
           _SectionSelector(selected: state.selectedSection),
           const SizedBox(height: OpenVtsSpacing.sm),
           _SectionContent(state: state),
-            const AppLegalLinks(),
         ],
       ),
     );
@@ -153,27 +173,32 @@ class _SectionItem {
 }
 
 List<_SectionItem> _buildSections(AppLocalizations l10n) => [
-      _SectionItem(
-        SuperadminSettingsSection.profile,
-        l10n.profile,
-        Icons.person_outline_rounded,
-      ),
-      _SectionItem(
-        SuperadminSettingsSection.whiteLabel,
-        l10n.whiteLabel,
-        Icons.palette_outlined,
-      ),
-      _SectionItem(
-        SuperadminSettingsSection.localization,
-        l10n.localization,
-        Icons.public_rounded,
-      ),
-      _SectionItem(
-        SuperadminSettingsSection.general,
-        l10n.settings,
-        Icons.settings_suggest_outlined,
-      ),
-    ];
+  _SectionItem(
+    SuperadminSettingsSection.profile,
+    l10n.profile,
+    Icons.person_outline_rounded,
+  ),
+  _SectionItem(
+    SuperadminSettingsSection.whiteLabel,
+    l10n.whiteLabel,
+    Icons.palette_outlined,
+  ),
+  _SectionItem(
+    SuperadminSettingsSection.localization,
+    l10n.localization,
+    Icons.public_rounded,
+  ),
+  _SectionItem(
+    SuperadminSettingsSection.general,
+    l10n.settings,
+    Icons.settings_suggest_outlined,
+  ),
+  _SectionItem(
+    SuperadminSettingsSection.security,
+    l10n.security,
+    Icons.shield_outlined,
+  ),
+];
 
 class _SectionSelector extends ConsumerWidget {
   const _SectionSelector({required this.selected});
@@ -184,7 +209,7 @@ class _SectionSelector extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final sections = _buildSections(AppLocalizations.of(context));
     return SizedBox(
-      height: 36,
+      height: 48,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 2),
@@ -276,6 +301,8 @@ class _SectionContent extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     switch (state.selectedSection) {
+      case SuperadminSettingsSection.security:
+        return const SecurityScreen(embedded: true);
       case SuperadminSettingsSection.profile:
         return ProfileSettingsSection(state: state);
       case SuperadminSettingsSection.whiteLabel:

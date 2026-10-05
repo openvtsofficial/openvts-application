@@ -4,6 +4,7 @@ import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../core/utils/date_time_formatter.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../models/admin_logs_model.dart';
 
@@ -28,24 +29,30 @@ class AdminActivityLogCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(item.humanAction,
-                style: OpenVtsTypography.label
-                    .copyWith(fontWeight: FontWeight.w700)),
+            Text(
+              item.humanAction,
+              style: OpenVtsTypography.label.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
             const SizedBox(height: OpenVtsSpacing.xxs),
-            Text(item.action,
-                style: OpenVtsTypography.meta
-                    .copyWith(color: OpenVtsColors.textSecondary)),
+            Text(
+              item.action,
+              style: OpenVtsTypography.meta.copyWith(
+                color: OpenVtsColors.textSecondary,
+              ),
+            ),
             const SizedBox(height: OpenVtsSpacing.xs),
             if (item.entity.isNotEmpty)
               _InfoRow(
                 icon: Icons.category_outlined,
-                label: 'Entity',
+                label: context.mobileText('Entity'),
                 value:
                     '${item.entity}${item.entityId.isEmpty ? '' : ' • ${item.entityId}'}',
               ),
             _InfoRow(
               icon: Icons.person_outline,
-              label: 'By',
+              label: context.mobileText('By'),
               value:
                   '${item.actorDisplay}${item.userLoginType.isEmpty ? '' : ' • ${item.userLoginType}'}',
             ),
@@ -54,7 +61,7 @@ class AdminActivityLogCard extends StatelessWidget {
                 item.platform.isNotEmpty)
               _InfoRow(
                 icon: Icons.devices_outlined,
-                label: 'Device',
+                label: context.mobileText('Device'),
                 value:
                     '${item.ip.isEmpty ? '-' : item.ip} • ${item.browser.isEmpty ? '-' : item.browser}',
               ),
@@ -93,18 +100,22 @@ class _InfoRow extends StatelessWidget {
           Icon(icon, size: 14, color: OpenVtsColors.textSecondary),
           const SizedBox(width: OpenVtsSpacing.xs),
           if (label.isNotEmpty) ...[
-            Text('$label: ',
-                style: OpenVtsTypography.meta.copyWith(
-                    color: OpenVtsColors.textSecondary,
-                    fontWeight: FontWeight.w500)),
+            Text(
+              '$label: ',
+              style: OpenVtsTypography.meta.copyWith(
+                color: OpenVtsColors.textSecondary,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ],
           Expanded(
             child: Text(
               value.trim().isEmpty ? '—' : value.trim(),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: OpenVtsTypography.meta
-                  .copyWith(color: OpenVtsColors.textSecondary),
+              style: OpenVtsTypography.meta.copyWith(
+                color: OpenVtsColors.textSecondary,
+              ),
             ),
           ),
         ],

@@ -8,6 +8,7 @@ import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../core/utils/unit_formatter.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/widgets/open_vts_date_time_range_selector.dart';
 import '../../../controllers/user_providers.dart';
 import '../../../models/user_dashboard_model.dart';
@@ -39,10 +40,11 @@ class _UserDayNightComparisonWidgetState
   @override
   void initState() {
     super.initState();
-    _selectedVehicleId = userDashboardPropString(
-          widget.config.props,
-          const ['vehicleId', 'vehicle_id'],
-        ) ??
+    _selectedVehicleId =
+        userDashboardPropString(widget.config.props, const [
+          'vehicleId',
+          'vehicle_id',
+        ]) ??
         'all';
     _range = _initialRange(widget.config.props);
   }
@@ -96,7 +98,8 @@ class _UserDayNightComparisonWidgetState
 
     if (orderedEnd.difference(orderedStart) > const Duration(days: 60)) {
       throw Exception(
-          'Day / night comparison supports a maximum range of 60 days.');
+        'Day / night comparison supports a maximum range of 60 days.',
+      );
     }
     return _ResolvedDateRange(start: orderedStart, end: orderedEnd);
   }
@@ -127,11 +130,12 @@ class _UserDayNightComparisonWidgetState
 
   Widget _buildBody(
     AsyncValue<
-            ({
-              List<UserDashboardVehicleOption> vehicles,
-              UserDashboardDayNightComparison comparison,
-            })>
-        state,
+      ({
+        List<UserDashboardVehicleOption> vehicles,
+        UserDashboardDayNightComparison comparison,
+      })
+    >
+    state,
     UnitFormatter unitFormatter,
   ) {
     if (state.hasError) {
@@ -163,14 +167,14 @@ class _UserDayNightComparisonWidgetState
         ),
         const SizedBox(height: OpenVtsSpacing.sm),
         SegmentedButton<_DayNightMetric>(
-          segments: const [
+          segments: [
             ButtonSegment(
               value: _DayNightMetric.drivenKm,
-              label: Text('Driven KM'),
+              label: Text(context.mobileText('Driven KM')),
             ),
             ButtonSegment(
               value: _DayNightMetric.engineHours,
-              label: Text('Engine Hours'),
+              label: Text(context.mobileText('Engine Hours')),
             ),
           ],
           selected: {_metric},
@@ -185,8 +189,8 @@ class _UserDayNightComparisonWidgetState
         ),
         const SizedBox(height: OpenVtsSpacing.sm),
         OpenVtsDateTimeRangeField(
-          label: 'Range',
-          title: 'Day / Night Range',
+          label: context.mobileText('Range'),
+          title: context.mobileText('Day / Night Range'),
           value: _range,
           dateTimeEnabled: false,
           lastDate: DateTime.now(),
@@ -199,7 +203,7 @@ class _UserDayNightComparisonWidgetState
           children: [
             Expanded(
               child: UserDashboardMetricTile(
-                label: 'Day',
+                label: context.mobileText('Day'),
                 value: _metric.format(dayTotal),
                 subtitle: '${userDashboardFormatDecimal(dayPercent)}%',
               ),
@@ -207,7 +211,7 @@ class _UserDayNightComparisonWidgetState
             const SizedBox(width: OpenVtsSpacing.xs),
             Expanded(
               child: UserDashboardMetricTile(
-                label: 'Night',
+                label: context.mobileText('Night'),
                 value: _metric.format(nightTotal),
                 subtitle: '${userDashboardFormatDecimal(nightPercent)}%',
               ),
@@ -216,15 +220,16 @@ class _UserDayNightComparisonWidgetState
         ),
         const SizedBox(height: OpenVtsSpacing.md),
         if (comparison.points.isEmpty)
-          const UserDashboardWidgetEmpty(
-            message: 'No day or night data for this range.',
+          UserDashboardWidgetEmpty(
+            message: context.mobileText('No day or night data for this range.'),
             icon: Icons.dark_mode_outlined,
           )
         else
           _DayNightChart(
-              points: comparison.points,
-              metric: _metric,
-              unitFormatter: unitFormatter),
+            points: comparison.points,
+            metric: _metric,
+            unitFormatter: unitFormatter,
+          ),
       ],
     );
   }
@@ -233,8 +238,10 @@ class _UserDayNightComparisonWidgetState
     final from = userDashboardPropDateTime(props, const ['from']);
     final to = userDashboardPropDateTime(props, const ['to']);
     if (from != null || to != null) {
-      return OpenVtsDateTimeRange(start: from, end: to)
-          .normalized(dateTimeEnabled: false);
+      return OpenVtsDateTimeRange(
+        start: from,
+        end: to,
+      ).normalized(dateTimeEnabled: false);
     }
     return _todayRange();
   }
@@ -281,7 +288,9 @@ class _DayWindowLabel extends StatelessWidget {
           const SizedBox(width: OpenVtsSpacing.xs),
           Expanded(
             child: Text(
-              'Day window: $label',
+              context.mobileText("Day window: {value1}", {
+                'value1': (label).toString(),
+              }),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: OpenVtsTypography.meta.copyWith(
@@ -297,10 +306,11 @@ class _DayWindowLabel extends StatelessWidget {
 }
 
 class _DayNightChart extends StatelessWidget {
-  const _DayNightChart(
-      {required this.points,
-      required this.metric,
-      required this.unitFormatter});
+  const _DayNightChart({
+    required this.points,
+    required this.metric,
+    required this.unitFormatter,
+  });
 
   final List<UserDashboardDayNightPoint> points;
   final _DayNightMetric metric;
@@ -347,8 +357,9 @@ class _DayNightChartPainter extends CustomPainter {
     final chartWidth = math.max(size.width - left - right, 1).toDouble();
     final chartHeight = math.max(size.height - top - bottom, 1).toDouble();
     final origin = Offset(left, top + chartHeight);
-    final visiblePoints =
-        points.length > 14 ? points.sublist(points.length - 14) : points;
+    final visiblePoints = points.length > 14
+        ? points.sublist(points.length - 14)
+        : points;
     final maxValue = visiblePoints.fold<double>(0, (maxValue, point) {
       return math.max(
         maxValue,
@@ -363,7 +374,10 @@ class _DayNightChartPainter extends CustomPainter {
     for (var line = 0; line < 4; line++) {
       final y = top + chartHeight * line / 3;
       canvas.drawLine(
-          Offset(left, y), Offset(size.width - right, y), gridPaint);
+        Offset(left, y),
+        Offset(size.width - right, y),
+        gridPaint,
+      );
     }
 
     final dayPaint = Paint()
@@ -378,15 +392,21 @@ class _DayNightChartPainter extends CustomPainter {
     for (var index = 0; index < visiblePoints.length; index++) {
       final point = visiblePoints[index];
       final centerX = left + slot * index + slot / 2;
-      final dayHeight = chartHeight *
+      final dayHeight =
+          chartHeight *
           (metric.valueOf(point.day) / scale).clamp(0.0, 1.0).toDouble();
-      final nightHeight = chartHeight *
+      final nightHeight =
+          chartHeight *
           (metric.valueOf(point.night) / scale).clamp(0.0, 1.0).toDouble();
 
       canvas.drawRRect(
         RRect.fromRectAndRadius(
-          Rect.fromLTWH(centerX - barWidth - 1, origin.dy - dayHeight, barWidth,
-              dayHeight),
+          Rect.fromLTWH(
+            centerX - barWidth - 1,
+            origin.dy - dayHeight,
+            barWidth,
+            dayHeight,
+          ),
           const Radius.circular(6),
         ),
         dayPaint,
@@ -394,7 +414,11 @@ class _DayNightChartPainter extends CustomPainter {
       canvas.drawRRect(
         RRect.fromRectAndRadius(
           Rect.fromLTWH(
-              centerX + 1, origin.dy - nightHeight, barWidth, nightHeight),
+            centerX + 1,
+            origin.dy - nightHeight,
+            barWidth,
+            nightHeight,
+          ),
           const Radius.circular(6),
         ),
         nightPaint,
@@ -412,8 +436,12 @@ class _DayNightChartPainter extends CustomPainter {
       }
     }
 
-    _paintLabel(canvas, metric.shortLabel(unitFormatter), const Offset(0, top),
-        alignment: TextAlign.left);
+    _paintLabel(
+      canvas,
+      metric.shortLabel(unitFormatter),
+      const Offset(0, top),
+      alignment: TextAlign.left,
+    );
   }
 
   void _paintLabel(

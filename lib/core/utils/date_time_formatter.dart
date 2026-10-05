@@ -1,6 +1,8 @@
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../providers/app_preferences_provider.dart';
 
 // ---------------------------------------------------------------------------
@@ -11,15 +13,18 @@ import '../providers/app_preferences_provider.dart';
 
 String _globalDatePattern = 'dd MMM yyyy';
 String _globalTimePattern = 'hh:mm a';
+String _globalDisplayLocale = 'en';
 
 /// Called by the preferences controller whenever localization settings change.
 /// This updates the format used by every [DateTimeFormatter] instance in the app.
 void updateGlobalDateFormatConfig({
   required String datePattern,
   required bool use24Hour,
+  String locale = 'en',
 }) {
   _globalDatePattern = _toIntlPattern(datePattern);
   _globalTimePattern = use24Hour ? 'HH:mm' : 'hh:mm a';
+  _globalDisplayLocale = locale;
 }
 
 // ---------------------------------------------------------------------------
@@ -32,26 +37,28 @@ class DateTimeFormatter {
 
   String formatDateTime(DateTime value) {
     try {
-      return DateFormat('$_globalDatePattern, $_globalTimePattern')
-          .format(value);
+      return DateFormat(
+        '$_globalDatePattern, $_globalTimePattern',
+        _globalDisplayLocale,
+      ).format(value);
     } catch (_) {
-      return DateFormat('dd MMM yyyy, hh:mm a').format(value);
+      return DateFormat('dd MMM yyyy, hh:mm a', 'en_US').format(value);
     }
   }
 
   String formatDate(DateTime value) {
     try {
-      return DateFormat(_globalDatePattern).format(value);
+      return DateFormat(_globalDatePattern, _globalDisplayLocale).format(value);
     } catch (_) {
-      return DateFormat('dd MMM yyyy').format(value);
+      return DateFormat('dd MMM yyyy', 'en_US').format(value);
     }
   }
 
   String formatTime(DateTime value) {
     try {
-      return DateFormat(_globalTimePattern).format(value);
+      return DateFormat(_globalTimePattern, _globalDisplayLocale).format(value);
     } catch (_) {
-      return DateFormat('hh:mm a').format(value);
+      return DateFormat('hh:mm a', 'en_US').format(value);
     }
   }
 }
@@ -66,11 +73,13 @@ class AppDateFormatter {
     required this.datePattern,
     required this.use24Hour,
     this.timezone = '',
+    this.locale = 'en',
   });
 
   final String datePattern;
   final bool use24Hour;
   final String timezone;
+  final String locale;
 
   String get _intlDatePattern => _toIntlPattern(datePattern);
 
@@ -88,7 +97,10 @@ class AppDateFormatter {
     if (value == null) return '';
     try {
       final adjusted = _applyTimezone(value);
-      return DateFormat('$_intlDatePattern, $_timePattern').format(adjusted);
+      return DateFormat(
+        '$_intlDatePattern, $_timePattern',
+        locale,
+      ).format(adjusted);
     } catch (_) {
       return _fallbackDateTime(value);
     }
@@ -98,7 +110,7 @@ class AppDateFormatter {
     if (value == null) return '';
     try {
       final adjusted = _applyTimezone(value);
-      return DateFormat(_intlDatePattern).format(adjusted);
+      return DateFormat(_intlDatePattern, locale).format(adjusted);
     } catch (_) {
       return _fallbackDate(value);
     }
@@ -108,7 +120,7 @@ class AppDateFormatter {
     if (value == null) return '';
     try {
       final adjusted = _applyTimezone(value);
-      return DateFormat(_timePattern).format(adjusted);
+      return DateFormat(_timePattern, locale).format(adjusted);
     } catch (_) {
       return _fallbackTime(value);
     }
@@ -119,26 +131,31 @@ class AppDateFormatter {
     if (value == null) return '';
     final now = DateTime.now();
     final diff = now.difference(value);
-    if (diff.inSeconds < 60 && diff.inSeconds >= 0) return 'just now';
+    final l10n = lookupAppLocalizations(Locale(flutterLanguageCodeFor(locale)));
+    if (diff.inSeconds < 60 && diff.inSeconds >= 0) return l10n.relativeJustNow;
     if (diff.inMinutes < 60 && diff.inMinutes >= 0) {
-      return '${diff.inMinutes}m ago';
+      return l10n.relativeMinutesAgo(diff.inMinutes);
     }
-    if (diff.inHours < 24 && diff.inHours >= 0) return '${diff.inHours}h ago';
-    if (diff.inDays < 7 && diff.inDays >= 0) return '${diff.inDays}d ago';
-    if (diff.inDays == 1) return 'yesterday';
+    if (diff.inHours < 24 && diff.inHours >= 0) {
+      return l10n.relativeHoursAgo(diff.inHours);
+    }
+    if (diff.inDays < 7 && diff.inDays >= 0) {
+      return l10n.relativeDaysAgo(diff.inDays);
+    }
+    if (diff.inDays == 1) return l10n.relativeYesterday;
     return formatDate(value);
   }
 
   static String _fallbackDateTime(DateTime value) {
-    return DateFormat('dd MMM yyyy, hh:mm a').format(value);
+    return DateFormat('dd MMM yyyy, hh:mm a', 'en_US').format(value);
   }
 
   static String _fallbackDate(DateTime value) {
-    return DateFormat('dd MMM yyyy').format(value);
+    return DateFormat('dd MMM yyyy', 'en_US').format(value);
   }
 
   static String _fallbackTime(DateTime value) {
-    return DateFormat('hh:mm a').format(value);
+    return DateFormat('hh:mm a', 'en_US').format(value);
   }
 
   /// Parse timezone offset like "+05:30", "-08:00" to Duration
@@ -184,5 +201,6 @@ final appDateFormatterProvider = Provider<AppDateFormatter>((ref) {
     datePattern: prefs.dateFormat,
     use24Hour: prefs.use24Hour,
     timezone: prefs.timezone,
+    locale: prefs.languageCode,
   );
 });

@@ -9,6 +9,7 @@ enum SuperadminSettingsSection {
   whiteLabel,
   localization,
   general,
+  security,
 }
 
 enum SuperadminSmtpType {
@@ -214,19 +215,37 @@ class SuperadminAddressSettings {
 
     return SuperadminAddressSettings(
       id: _firstInt(source, const ['id', 'addressId']),
-      addressLine: _firstString(
-          source, const ['addressLine', 'address_line', 'address', 'line']),
-      countryCode: _firstString(
-          source, const ['countryCode', 'country_code', 'country']),
-      stateCode:
-          _firstString(source, const ['stateCode', 'state_code', 'state']),
+      addressLine: _firstString(source, const [
+        'addressLine',
+        'address_line',
+        'address',
+        'line',
+      ]),
+      countryCode: _firstString(source, const [
+        'countryCode',
+        'country_code',
+        'country',
+      ]),
+      stateCode: _firstString(source, const [
+        'stateCode',
+        'state_code',
+        'state',
+      ]),
       cityName: cityName,
       cityId: cityId,
       cityCode: cityCode,
-      pincode: _firstString(
-          source, const ['pincode', 'pinCode', 'pin_code', 'zip', 'zipCode']),
-      fullAddress: _firstString(
-          source, const ['fullAddress', 'full_address', 'formatted']),
+      pincode: _firstString(source, const [
+        'pincode',
+        'pinCode',
+        'pin_code',
+        'zip',
+        'zipCode',
+      ]),
+      fullAddress: _firstString(source, const [
+        'fullAddress',
+        'full_address',
+        'formatted',
+      ]),
     );
   }
 
@@ -285,13 +304,13 @@ class SuperadminSocialLinks {
   }
 
   Map<String, dynamic> toJson() => <String, dynamic>{
-        'facebook': facebook ?? '',
-        'twitter': twitter ?? '',
-        'linkedin': linkedin ?? '',
-        'instagram': instagram ?? '',
-        'youtube': youtube ?? '',
-        'github': github ?? '',
-      };
+    'facebook': facebook ?? '',
+    'twitter': twitter ?? '',
+    'linkedin': linkedin ?? '',
+    'instagram': instagram ?? '',
+    'youtube': youtube ?? '',
+    'github': github ?? '',
+  };
 
   Map<String, dynamic> toJsonNonEmpty() {
     final result = <String, dynamic>{};
@@ -475,7 +494,7 @@ class SuperadminProfileSettings {
         'zip',
         'zipCode',
         'fullAddress',
-        'formatted'
+        'formatted',
       ]) {
         if (source.containsKey(key)) {
           rootLevelAddressFields[key] = source[key];
@@ -493,23 +512,25 @@ class SuperadminProfileSettings {
       username: _firstString(source, const ['username', 'userName']),
       email: _firstString(source, const ['email']),
       mobilePrefix: _firstString(source, const ['mobilePrefix', 'phonePrefix']),
-      mobileNumber:
-          _firstString(source, const ['mobileNumber', 'phoneNumber', 'mobile']),
-      profileUrl:
-          _firstString(source, const ['profileUrl', 'avatar', 'profile']),
+      mobileNumber: _firstString(source, const [
+        'mobileNumber',
+        'phoneNumber',
+        'mobile',
+      ]),
+      profileUrl: _firstString(source, const [
+        'profileUrl',
+        'avatar',
+        'profile',
+      ]),
       credits: _firstDouble(source, const ['credits', 'balance']),
       createdAt: _firstDate(source, const ['createdAt', 'created']),
       updatedAt: _firstDate(source, const ['updatedAt', 'modified']),
-      isEmailVerified: _firstBool(
-            source,
-            const ['isEmailVerified', 'emailVerified'],
-          ) ??
+      isEmailVerified:
+          _firstBool(source, const ['isEmailVerified', 'emailVerified']) ??
           false,
       emailVerifiedAt: _firstDate(source, const ['emailVerifiedAt']),
-      isMobileVerified: _firstBool(
-            source,
-            const ['isMobileVerified', 'mobileVerified'],
-          ) ??
+      isMobileVerified:
+          _firstBool(source, const ['isMobileVerified', 'mobileVerified']) ??
           false,
       mobileVerifiedAt: _firstDate(source, const ['mobileVerifiedAt']),
       company: companyMap != null
@@ -518,7 +539,8 @@ class SuperadminProfileSettings {
       address: addressMap != null
           ? SuperadminAddressSettings.fromJson(addressMap)
           : null,
-      cityName: _firstString(addressMap ?? const <String, dynamic>{}, const [
+      cityName:
+          _firstString(addressMap ?? const <String, dynamic>{}, const [
             'cityName',
             'city_name',
             'city',
@@ -682,9 +704,9 @@ class SuperadminChangePasswordRequest {
   final String newPassword;
 
   Map<String, dynamic> toJson() => <String, dynamic>{
-        'currentPassword': currentPassword,
-        'newPassword': newPassword,
-      };
+    'currentPassword': currentPassword,
+    'newPassword': newPassword,
+  };
 }
 
 // =====================================================================
@@ -854,43 +876,44 @@ class SuperadminLocalizationSettings {
   final SuperadminTheme theme;
   final String timezoneOffset;
   final SuperadminUnits units;
-  final double defaultLat;
-  final double defaultLon;
-  final int mapZoom;
+  final double? defaultLat;
+  final double? defaultLon;
+  final int? mapZoom;
 
   factory SuperadminLocalizationSettings.fromJson(dynamic json) {
     final source = _unwrap(json);
     return SuperadminLocalizationSettings(
       language: _firstString(source, const ['language', 'lang']) ?? 'en',
-      layoutDirection:
-          SuperadminLayoutDirection.fromValue(source['layoutDirection']),
+      layoutDirection: SuperadminLayoutDirection.fromValue(
+        source['layoutDirection'],
+      ),
       dateFormat: _firstString(source, const ['dateFormat']) ?? 'YYYY-MM-DD',
       use24Hour: _firstBool(source, const ['use24Hour']) ?? true,
       theme: SuperadminTheme.fromValue(source['theme']),
       timezoneOffset:
           _firstString(source, const ['timezoneOffset', 'timezone']) ??
-              '+00:00',
+          '+00:00',
       units: SuperadminUnits.fromValue(
         source['distanceUnit'] ?? source['units'] ?? source['measurementUnit'],
       ),
-      defaultLat: _firstDouble(source, const ['defaultLat', 'lat']) ?? 0,
-      defaultLon: _firstDouble(source, const ['defaultLon', 'lon', 'lng']) ?? 0,
-      mapZoom: _firstInt(source, const ['mapZoom', 'zoom']) ?? 10,
+      defaultLat: _firstDouble(source, const ['defaultLat', 'lat']),
+      defaultLon: _firstDouble(source, const ['defaultLon', 'lon', 'lng']),
+      mapZoom: _firstInt(source, const ['mapZoom', 'zoom']),
     );
   }
 
   Map<String, dynamic> toJson() => <String, dynamic>{
-        'language': language,
-        'layoutDirection': layoutDirection.apiValue,
-        'dateFormat': dateFormat,
-        'use24Hour': use24Hour,
-        'theme': theme.apiValue,
-        'timezoneOffset': timezoneOffset,
-        'units': units.apiValue,
-        'defaultLat': defaultLat,
-        'defaultLon': defaultLon,
-        'mapZoom': mapZoom,
-      };
+    'language': language,
+    'layoutDirection': layoutDirection.apiValue,
+    'dateFormat': dateFormat,
+    'use24Hour': use24Hour,
+    'theme': theme.apiValue,
+    'timezoneOffset': timezoneOffset,
+    'units': units.apiValue,
+    'defaultLat': defaultLat,
+    'defaultLon': defaultLon,
+    'mapZoom': mapZoom,
+  };
 
   SuperadminLocalizationSettings copyWith({
     String? language,
@@ -920,10 +943,7 @@ class SuperadminLocalizationSettings {
 }
 
 class SuperadminLanguageOption {
-  const SuperadminLanguageOption({
-    required this.code,
-    required this.label,
-  });
+  const SuperadminLanguageOption({required this.code, required this.label});
 
   final String code;
   final String label;
@@ -946,10 +966,7 @@ class SuperadminLanguageOption {
 }
 
 class SuperadminDateFormatOption {
-  const SuperadminDateFormatOption({
-    required this.value,
-    required this.label,
-  });
+  const SuperadminDateFormatOption({required this.value, required this.label});
 
   final String value;
   final String label;
@@ -966,8 +983,10 @@ class SuperadminDateFormatOption {
   }
 
   static List<SuperadminDateFormatOption> listFromJson(dynamic json) {
-    final list =
-        _extractList(json, keys: const ['dateFormats', 'items', 'data']);
+    final list = _extractList(
+      json,
+      keys: const ['dateFormats', 'items', 'data'],
+    );
     return list
         .map(SuperadminDateFormatOption.fromJson)
         .where((entry) => entry.value.isNotEmpty)
@@ -1008,12 +1027,12 @@ class SuperadminSoftwareConfig {
   }
 
   Map<String, dynamic> toJson() => <String, dynamic>{
-        'geocodingPrecision': geocodingPrecision.apiValue,
-        'backupDays': backupDays,
-        'allowDemoLogin': allowDemoLogin,
-        'allowSignup': allowSignup,
-        'signupCredits': signupCredits,
-      };
+    'geocodingPrecision': geocodingPrecision.apiValue,
+    'backupDays': backupDays,
+    'allowDemoLogin': allowDemoLogin,
+    'allowSignup': allowSignup,
+    'signupCredits': signupCredits,
+  };
 
   SuperadminSoftwareConfig copyWith({
     SuperadminGeocodingPrecision? geocodingPrecision,
@@ -1066,8 +1085,11 @@ class SuperadminDataRetentionTableResult {
       deletedRows: _firstInt(source, const ['deletedRows', 'deleted']) ?? 0,
       olderRows: _firstInt(source, const ['olderRows', 'older']) ?? 0,
       failed: _firstBool(source, const ['failed']) ?? false,
-      errorMessage:
-          _firstString(source, const ['errorMessage', 'error', 'message']),
+      errorMessage: _firstString(source, const [
+        'errorMessage',
+        'error',
+        'message',
+      ]),
       durationMs: _firstInt(source, const ['durationMs', 'duration']),
     );
   }
@@ -1106,8 +1128,10 @@ class SuperadminDataRetentionSummary {
 
   factory SuperadminDataRetentionSummary.fromJson(dynamic json) {
     final source = _unwrap(json);
-    final tablesList =
-        _extractList(source['tables'], keys: const ['tables', 'items']);
+    final tablesList = _extractList(
+      source['tables'],
+      keys: const ['tables', 'items'],
+    );
     return SuperadminDataRetentionSummary(
       startedAt: _firstDate(source, const ['startedAt', 'started']),
       finishedAt: _firstDate(source, const ['finishedAt', 'finished']),

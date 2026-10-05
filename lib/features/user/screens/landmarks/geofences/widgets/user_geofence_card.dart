@@ -6,6 +6,7 @@ import '../../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../../core/utils/date_time_formatter.dart';
+import '../../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../../shared/widgets/open_vts_card.dart';
 import '../../../../../../shared/widgets/open_vts_status_chip.dart';
 import '../../../../models/user_landmark_model.dart';
@@ -66,7 +67,7 @@ class UserGeofenceCard extends ConsumerWidget {
                           children: [
                             Text(
                               geofence.name.isEmpty
-                                  ? 'Untitled geofence'
+                                  ? context.mobileText('Untitled geofence')
                                   : geofence.name,
                               style: OpenVtsTypography.titleSmall.copyWith(
                                 color: Theme.of(context).colorScheme.onSurface,
@@ -86,8 +87,9 @@ class UserGeofenceCard extends ConsumerWidget {
                                   type: OpenVtsStatusType.neutral,
                                 ),
                                 OpenVtsStatusChip(
-                                  label:
-                                      geofence.isActive ? 'Active' : 'Inactive',
+                                  label: geofence.isActive
+                                      ? context.mobileText('Active')
+                                      : context.mobileText('Inactive'),
                                   type: geofence.isActive
                                       ? OpenVtsStatusType.success
                                       : OpenVtsStatusType.neutral,
@@ -99,12 +101,12 @@ class UserGeofenceCard extends ConsumerWidget {
                       ),
                       _RowAction(
                         icon: Icons.edit_outlined,
-                        tooltip: 'Edit',
+                        tooltip: context.mobileText('Edit'),
                         onTap: onEdit,
                       ),
                       _RowAction(
                         icon: Icons.delete_outline,
-                        tooltip: 'Delete',
+                        tooltip: context.mobileText('Delete'),
                         onTap: isDeleting ? null : onDelete,
                         destructive: true,
                       ),
@@ -129,8 +131,9 @@ class UserGeofenceCard extends ConsumerWidget {
                         child: Text(
                           _geometrySummary(geofence),
                           style: OpenVtsTypography.meta.copyWith(
-                            color:
-                                Theme.of(context).colorScheme.onSurfaceVariant,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -190,7 +193,8 @@ class UserGeofenceCard extends ConsumerWidget {
         final count = (g.geodata is UserLineGeoData)
             ? (g.geodata as UserLineGeoData).coordinates.length
             : 0;
-        final tolerance = g.toleranceMeters ??
+        final tolerance =
+            g.toleranceMeters ??
             (g.geodata is UserLineGeoData
                 ? (g.geodata as UserLineGeoData).toleranceM
                 : null);

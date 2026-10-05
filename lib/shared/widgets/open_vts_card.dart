@@ -19,25 +19,20 @@ class OpenVtsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final card = Container(
-      width: double.infinity,
-      padding: padding,
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+    final content = Padding(padding: padding, child: child);
+    return Material(
+      color: Theme.of(context).colorScheme.surface,
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(OpenVtsRadius.lg),
-        border: Border.all(
+        side: BorderSide(
           color: isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border,
         ),
       ),
-      child: child,
-    );
-
-    if (onTap == null) return card;
-
-    return InkWell(
-      borderRadius: BorderRadius.circular(OpenVtsRadius.lg),
-      onTap: onTap,
-      child: card,
+      child: SizedBox(
+        width: double.infinity,
+        child: onTap == null ? content : InkWell(onTap: onTap, child: content),
+      ),
     );
   }
 }

@@ -51,11 +51,8 @@ void main() {
     final search = find.byType(TextField).last;
     await tester.enterText(search, 'ASHA_ADMIN');
     await tester.pump();
-    final results = find.byType(ListView);
-    final asha = find.descendant(
-      of: results,
-      matching: find.text('Asha Rao'),
-    );
+    final results = find.byType(SliverList);
+    final asha = find.descendant(of: results, matching: find.text('Asha Rao'));
     expect(asha, findsOneWidget);
     expect(
       find.descendant(of: results, matching: find.text('Bob Smith')),

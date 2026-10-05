@@ -7,21 +7,26 @@ import '../../../../core/theme/open_vts_colors.dart';
 import '../../../../core/theme/open_vts_radius.dart';
 import '../../../../core/theme/open_vts_spacing.dart';
 import '../../../../core/theme/open_vts_typography.dart';
+import '../../../../shared/helpers/mobile_text.dart';
 import '../../../../shared/helpers/toast_helper.dart';
+import '../../../../shared/models/user_role.dart';
 import '../../../../shared/widgets/open_vts_bottom_sheet.dart';
 import '../../../../shared/widgets/open_vts_button.dart';
 import '../../../../shared/widgets/open_vts_card.dart';
 import '../../../../shared/widgets/open_vts_page_scaffold.dart';
 import '../../../../shared/widgets/open_vts_text_field.dart';
+import '../../../auth/controllers/auth_controller.dart';
 import '../../controllers/admin_providers.dart';
 import '../../controllers/admin_user_details_controller.dart';
 import '../../models/admin_user_details_model.dart';
 import '../../models/admin_user_details_state.dart';
 import '../../models/admin_users_model.dart' show AdminUserListItem;
+import '../../widgets/admin_action_gate.dart';
 import 'widgets/admin_user_documents_tab.dart';
 import 'widgets/admin_user_drivers_tab.dart';
 import 'widgets/admin_user_logs_tab.dart';
 import 'widgets/admin_user_payments_tab.dart';
+import 'widgets/admin_user_permissions_sheet.dart';
 import 'widgets/admin_user_profile_tab.dart';
 import 'widgets/admin_user_tickets_tab.dart';
 import 'widgets/admin_user_vehicles_tab.dart';
@@ -47,8 +52,9 @@ class _AdminUserDetailsScreenState
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final controller =
-          ref.read(adminUserDetailsControllerProvider(widget.userId).notifier);
+      final controller = ref.read(
+        adminUserDetailsControllerProvider(widget.userId).notifier,
+      );
       // Seed initial data if available
       if (widget.initialUser != null) {
         controller.seedInitialData(lastLogin: widget.initialUser!.updatedAt);
@@ -81,13 +87,27 @@ class _AdminUserDetailsScreenState
         OpenVtsSpacing.xs,
       ),
       actions: [
+        if (ref.watch(authControllerProvider).user?.role == UserRole.admin)
+          IconButton(
+            tooltip: context.mobileText('Permissions'),
+            icon: const Icon(Icons.admin_panel_settings_outlined),
+            onPressed: () => OpenVtsBottomSheet.show<void>(
+              context: context,
+              title: context.mobileText('Permissions'),
+              initialChildSize: 0.9,
+              minChildSize: 0.5,
+              maxChildSize: 0.96,
+              child: AdminUserPermissionsSheet(userId: widget.userId),
+            ),
+          ),
         Padding(
           padding: const EdgeInsets.only(right: OpenVtsSpacing.xxs),
           child: Center(child: _StatusChip(isActive: user.isActive)),
         ),
         _HeaderMenu(
           isActive: user.isActive,
-          isBusy: state.isUpdatingStatus ||
+          isBusy:
+              state.isUpdatingStatus ||
               state.isChangingPassword ||
               state.isLoadingProfile,
           onRefresh: () => controller.refreshCurrentTab(),
@@ -159,7 +179,9 @@ class _AdminUserDetailsScreenState
     }
     if (ok) {
       ToastHelper.showSuccess(
-        next ? 'User activated.' : 'User deactivated.',
+        next
+            ? context.mobileText('User activated.')
+            : context.mobileText('User deactivated.'),
         context: context,
       );
     } else {
@@ -175,7 +197,7 @@ class _AdminUserDetailsScreenState
     final provider = adminUserDetailsControllerProvider(widget.userId);
     return OpenVtsBottomSheet.show<void>(
       context: context,
-      title: 'Change Password',
+      title: context.mobileText('Change Password'),
       initialChildSize: 0.46,
       minChildSize: 0.36,
       maxChildSize: 0.72,
@@ -186,9 +208,9 @@ class _AdminUserDetailsScreenState
             isSubmitting: state.isChangingPassword,
             errorMessage: state.sectionErrorMessage,
             onSubmit: (password) async {
-              final ok = await ref.read(provider.notifier).updatePassword(
-                    password,
-                  );
+              final ok = await ref
+                  .read(provider.notifier)
+                  .updatePassword(password);
               if (!sheetContext.mounted) {
                 return;
               }
@@ -198,7 +220,7 @@ class _AdminUserDetailsScreenState
                   return;
                 }
                 ToastHelper.showSuccess(
-                  'Password updated.',
+                  context.mobileText('Password updated.'),
                   context: context,
                 );
               } else {
@@ -252,7 +274,9 @@ class _AdminUserDetailsScreenState
         return;
       }
       ToastHelper.showSuccess(
-        'Signed in as ${user.displayName}.',
+        context.mobileText("Signed in as {value1}.", {
+          'value1': (user.displayName).toString(),
+        }),
         context: context,
       );
       context.go(RoutePaths.userHome);
@@ -273,19 +297,22 @@ class _AdminUserDetailsScreenState
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('Delete user'),
+          title: Text(context.mobileText('Delete user')),
           content: Text(
-            'Remove ${user.displayName} from this administrator account?',
+            context.mobileText(
+              "Remove {value1} from this administrator account?",
+              {'value1': (user.displayName).toString()},
+            ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('Cancel'),
+              child: Text(context.mobileText('Cancel')),
             ),
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(true),
               style: TextButton.styleFrom(foregroundColor: OpenVtsColors.error),
-              child: const Text('Delete'),
+              child: Text(context.mobileText('Delete')),
             ),
           ],
         );
@@ -301,7 +328,10 @@ class _AdminUserDetailsScreenState
       if (!mounted) {
         return;
       }
-      ToastHelper.showSuccess('User deleted.', context: context);
+      ToastHelper.showSuccess(
+        context.mobileText('User deleted.'),
+        context: context,
+      );
       context.go(RoutePaths.adminUsers);
     } catch (_) {
       if (!mounted) {
@@ -326,7 +356,7 @@ enum _HeaderMenuAction {
   deleteUser,
 }
 
-class _HeaderMenu extends StatelessWidget {
+class _HeaderMenu extends ConsumerWidget {
   const _HeaderMenu({
     required this.isActive,
     required this.isBusy,
@@ -350,9 +380,9 @@ class _HeaderMenu extends StatelessWidget {
   final VoidCallback onDelete;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return PopupMenuButton<_HeaderMenuAction>(
-      tooltip: 'User actions',
+      tooltip: context.mobileText('User actions'),
       enabled: !isBusy,
       icon: const Icon(
         Icons.more_vert_rounded,
@@ -378,51 +408,74 @@ class _HeaderMenu extends StatelessWidget {
         }
       },
       itemBuilder: (context) => [
-        const PopupMenuItem(
+        PopupMenuItem(
           value: _HeaderMenuAction.refresh,
           height: 40,
-          child: _MenuRow(icon: Icons.refresh_rounded, label: 'Refresh'),
-        ),
-        const PopupMenuItem(
-          value: _HeaderMenuAction.editProfile,
-          height: 40,
-          child: _MenuRow(icon: Icons.edit_outlined, label: 'Edit Profile'),
-        ),
-        const PopupMenuItem(
-          value: _HeaderMenuAction.editCompany,
-          height: 40,
-          child:
-              _MenuRow(icon: Icons.apartment_outlined, label: 'Edit Company'),
-        ),
-        PopupMenuItem(
-          value: _HeaderMenuAction.toggleStatus,
-          height: 40,
           child: _MenuRow(
-            icon:
-                isActive ? Icons.toggle_off_outlined : Icons.toggle_on_outlined,
-            label: isActive ? 'Deactivate' : 'Activate',
+            icon: Icons.refresh_rounded,
+            label: context.mobileText('Refresh'),
           ),
         ),
-        const PopupMenuItem(
-          value: _HeaderMenuAction.changePassword,
-          height: 40,
-          child: _MenuRow(icon: Icons.key_rounded, label: 'Change Password'),
-        ),
-        const PopupMenuItem(
-          value: _HeaderMenuAction.loginAsUser,
-          height: 40,
-          child: _MenuRow(icon: Icons.login_rounded, label: 'Login as User'),
-        ),
+        if (adminCanPerform(ref, 'users.update'))
+          PopupMenuItem(
+            value: _HeaderMenuAction.editProfile,
+            height: 40,
+            child: _MenuRow(
+              icon: Icons.edit_outlined,
+              label: context.mobileText('Edit Profile'),
+            ),
+          ),
+        if (adminCanPerform(ref, 'users.update'))
+          PopupMenuItem(
+            value: _HeaderMenuAction.editCompany,
+            height: 40,
+            child: _MenuRow(
+              icon: Icons.apartment_outlined,
+              label: context.mobileText('Edit Company'),
+            ),
+          ),
+        if (adminCanPerform(ref, 'users.update'))
+          PopupMenuItem(
+            value: _HeaderMenuAction.toggleStatus,
+            height: 40,
+            child: _MenuRow(
+              icon: isActive
+                  ? Icons.toggle_off_outlined
+                  : Icons.toggle_on_outlined,
+              label: isActive
+                  ? context.mobileText('Deactivate')
+                  : context.mobileText('Activate'),
+            ),
+          ),
+        if (adminCanPerform(ref, 'users.update'))
+          PopupMenuItem(
+            value: _HeaderMenuAction.changePassword,
+            height: 40,
+            child: _MenuRow(
+              icon: Icons.key_rounded,
+              label: context.mobileText('Change Password'),
+            ),
+          ),
+        if (adminCanPerform(ref, 'users.update'))
+          PopupMenuItem(
+            value: _HeaderMenuAction.loginAsUser,
+            height: 40,
+            child: _MenuRow(
+              icon: Icons.login_rounded,
+              label: context.mobileText('Login as User'),
+            ),
+          ),
         const PopupMenuDivider(height: 8),
-        const PopupMenuItem(
-          value: _HeaderMenuAction.deleteUser,
-          height: 40,
-          child: _MenuRow(
-            icon: Icons.delete_outline_rounded,
-            label: 'Delete User',
-            isDestructive: true,
+        if (adminCanPerform(ref, 'users.delete'))
+          PopupMenuItem(
+            value: _HeaderMenuAction.deleteUser,
+            height: 40,
+            child: _MenuRow(
+              icon: Icons.delete_outline_rounded,
+              label: context.mobileText('Delete User'),
+              isDestructive: true,
+            ),
           ),
-        ),
       ],
     );
   }
@@ -450,10 +503,7 @@ class _MenuRow extends StatelessWidget {
       children: [
         Icon(icon, size: 16, color: color),
         const SizedBox(width: OpenVtsSpacing.xs),
-        Text(
-          label,
-          style: OpenVtsTypography.label.copyWith(color: color),
-        ),
+        Text(label, style: OpenVtsTypography.label.copyWith(color: color)),
       ],
     );
   }
@@ -536,8 +586,8 @@ class _SummaryCard extends StatelessWidget {
                   _StatusChip(isActive: user.isActive),
                   if (user.isEmailVerified) ...[
                     const SizedBox(height: 4),
-                    const _MicroChip(
-                      label: 'Verified',
+                    _MicroChip(
+                      label: context.mobileText('Verified'),
                       icon: Icons.verified_outlined,
                       color: OpenVtsColors.success,
                     ),
@@ -570,7 +620,7 @@ class _SummaryCard extends StatelessWidget {
               Expanded(
                 child: _MetricTile(
                   icon: Icons.directions_car_outlined,
-                  label: 'Vehicles',
+                  label: context.mobileText('Vehicles'),
                   value: resolvedVehicleCount == null
                       ? '—'
                       : resolvedVehicleCount.toString(),
@@ -591,7 +641,7 @@ class _SummaryCard extends StatelessWidget {
                 Expanded(
                   child: _MetricTile(
                     icon: Icons.apartment_outlined,
-                    label: 'Company',
+                    label: context.mobileText('Company'),
                     value: _displayValue(user.company),
                   ),
                 ),
@@ -646,7 +696,9 @@ class _StatusChip extends StatelessWidget {
         ? (isDark ? OpenVtsColors.white : OpenVtsColors.brandInk)
         : Theme.of(context).colorScheme.outline;
     return _MicroChip(
-      label: isActive ? 'Active' : 'Inactive',
+      label: isActive
+          ? context.mobileText('Active')
+          : context.mobileText('Inactive'),
       icon: isActive
           ? Icons.check_circle_outline_rounded
           : Icons.pause_circle_outline_rounded,
@@ -674,8 +726,9 @@ class _MicroChip extends StatelessWidget {
       decoration: BoxDecoration(
         color: color.withValues(alpha: isDark ? 0.15 : 0.06),
         borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
-        border:
-            Border.all(color: color.withValues(alpha: isDark ? 0.35 : 0.22)),
+        border: Border.all(
+          color: color.withValues(alpha: isDark ? 0.35 : 0.22),
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -713,11 +766,7 @@ class _ContactLineWithVerification extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: OpenVtsSpacing.xxs),
       child: Row(
         children: [
-          Icon(
-            icon,
-            size: 14,
-            color: Theme.of(context).colorScheme.outline,
-          ),
+          Icon(icon, size: 14, color: Theme.of(context).colorScheme.outline),
           const SizedBox(width: OpenVtsSpacing.xs),
           Flexible(
             child: Text(
@@ -732,7 +781,9 @@ class _ContactLineWithVerification extends StatelessWidget {
           ),
           const SizedBox(width: 4),
           Tooltip(
-            message: isVerified ? 'Email verified' : 'Email unverified',
+            message: isVerified
+                ? context.mobileText('Email verified')
+                : context.mobileText('Email unverified'),
             child: Icon(
               isVerified
                   ? Icons.check_circle_rounded
@@ -759,11 +810,7 @@ class _CompactInfoLine extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: OpenVtsSpacing.xxs),
       child: Row(
         children: [
-          Icon(
-            icon,
-            size: 14,
-            color: Theme.of(context).colorScheme.outline,
-          ),
+          Icon(icon, size: 14, color: Theme.of(context).colorScheme.outline),
           const SizedBox(width: OpenVtsSpacing.xs),
           Expanded(
             child: Text(
@@ -804,10 +851,9 @@ class _MetricTile extends StatelessWidget {
         color: Theme.of(context).colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(OpenVtsRadius.md),
         border: Border.all(
-          color: Theme.of(context)
-              .colorScheme
-              .outlineVariant
-              .withValues(alpha: 0.7),
+          color: Theme.of(
+            context,
+          ).colorScheme.outlineVariant.withValues(alpha: 0.7),
         ),
       ),
       child: Row(
@@ -826,8 +872,8 @@ class _MetricTile extends StatelessWidget {
                 Text(
                   label,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                 ),
                 const SizedBox(height: 2),
                 Text(
@@ -835,9 +881,9 @@ class _MetricTile extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
+                    fontWeight: FontWeight.w700,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
                 ),
               ],
             ),
@@ -949,10 +995,7 @@ class _TabContent extends StatelessWidget {
   Widget build(BuildContext context) {
     switch (state.selectedTab) {
       case AdminUserDetailsTab.profile:
-        return AdminUserProfileTab(
-          userId: userId,
-          initialUser: initialUser,
-        );
+        return AdminUserProfileTab(userId: userId, initialUser: initialUser);
       case AdminUserDetailsTab.vehicles:
         return AdminUserVehiclesTab(userId: userId);
       case AdminUserDetailsTab.drivers:
@@ -992,7 +1035,7 @@ class _SectionErrorCard extends StatelessWidget {
               const SizedBox(width: OpenVtsSpacing.xs),
               Expanded(
                 child: Text(
-                  'Unable to load',
+                  context.mobileText('Unable to load'),
                   style: OpenVtsTypography.label.copyWith(
                     color: OpenVtsColors.textPrimary,
                     fontWeight: FontWeight.w800,
@@ -1010,7 +1053,7 @@ class _SectionErrorCard extends StatelessWidget {
           ),
           const SizedBox(height: OpenVtsSpacing.sm),
           OpenVtsButton(
-            label: 'Retry',
+            label: context.mobileText('Retry'),
             height: 34,
             variant: OpenVtsButtonVariant.secondary,
             onPressed: onRetry,
@@ -1082,13 +1125,15 @@ class _PasswordSheetState extends State<_PasswordSheet> {
         padding: const EdgeInsets.all(OpenVtsSpacing.md),
         children: [
           OpenVtsTextField(
-            label: 'New password',
+            label: context.mobileText('New password'),
             controller: _passwordController,
             obscureText: _obscurePassword,
             textInputAction: TextInputAction.next,
             prefixIcon: Icons.lock_outline_rounded,
             suffixIcon: IconButton(
-              tooltip: _obscurePassword ? 'Show password' : 'Hide password',
+              tooltip: _obscurePassword
+                  ? context.mobileText('Show password')
+                  : context.mobileText('Hide password'),
               onPressed: () {
                 setState(() => _obscurePassword = !_obscurePassword);
               },
@@ -1103,13 +1148,15 @@ class _PasswordSheetState extends State<_PasswordSheet> {
           ),
           const SizedBox(height: OpenVtsSpacing.sm),
           OpenVtsTextField(
-            label: 'Confirm password',
+            label: context.mobileText('Confirm password'),
             controller: _confirmController,
             obscureText: _obscureConfirm,
             textInputAction: TextInputAction.done,
             prefixIcon: Icons.lock_reset_rounded,
             suffixIcon: IconButton(
-              tooltip: _obscureConfirm ? 'Show password' : 'Hide password',
+              tooltip: _obscureConfirm
+                  ? context.mobileText('Show password')
+                  : context.mobileText('Hide password'),
               onPressed: () {
                 setState(() => _obscureConfirm = !_obscureConfirm);
               },
@@ -1134,7 +1181,7 @@ class _PasswordSheetState extends State<_PasswordSheet> {
           ],
           const SizedBox(height: OpenVtsSpacing.lg),
           OpenVtsButton(
-            label: 'Update Password',
+            label: context.mobileText('Update Password'),
             height: 40,
             isLoading: widget.isSubmitting,
             onPressed: widget.isSubmitting ? null : _submit,
@@ -1149,11 +1196,11 @@ class _PasswordSheetState extends State<_PasswordSheet> {
     if (!_formKey.currentState!.validate()) {
       return;
     }
-    await widget.onSubmit(_passwordController.text.trim());
+    await widget.onSubmit(_passwordController.text);
   }
 
   String? _passwordValidator(String? value) {
-    final normalized = value?.trim() ?? '';
+    final normalized = value ?? '';
     if (normalized.isEmpty) {
       return 'Required';
     }
@@ -1164,11 +1211,11 @@ class _PasswordSheetState extends State<_PasswordSheet> {
   }
 
   String? _confirmValidator(String? value) {
-    final normalized = value?.trim() ?? '';
+    final normalized = value ?? '';
     if (normalized.isEmpty) {
       return 'Required';
     }
-    if (normalized != _passwordController.text.trim()) {
+    if (normalized != _passwordController.text) {
       return 'Passwords do not match';
     }
     return null;

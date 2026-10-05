@@ -5,22 +5,24 @@ import '../../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../../features/user/utils/user_report_format.dart';
+import '../../../../../../shared/helpers/mobile_text.dart';
 import '../../../../models/user_landmark_model.dart';
 import '../../../../models/user_report_model.dart';
 import '../../../../models/user_report_state.dart';
 import '../../../../models/user_vehicle_model.dart';
-import '../../../../../../features/user/utils/user_report_format.dart';
 
 // ---------------------------------------------------------------------------
 // Overspeed filter
 // ---------------------------------------------------------------------------
 
 class UserOverspeedReportFilter extends StatefulWidget {
-  const UserOverspeedReportFilter(
-      {required this.filters,
-      required this.onChanged,
-      this.disabled = false,
-      super.key});
+  const UserOverspeedReportFilter({
+    required this.filters,
+    required this.onChanged,
+    this.disabled = false,
+    super.key,
+  });
   final OverspeedFilters filters;
   final ValueChanged<OverspeedFilters> onChanged;
   final bool disabled;
@@ -54,10 +56,13 @@ class _UserOverspeedReportFilterState extends State<UserOverspeedReportFilter> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Speed Limit',
-            style: OpenVtsTypography.meta.copyWith(
-                fontWeight: FontWeight.w600,
-                color: OpenVtsColors.textSecondary)),
+        Text(
+          context.mobileText('Speed Limit'),
+          style: OpenVtsTypography.meta.copyWith(
+            fontWeight: FontWeight.w600,
+            color: OpenVtsColors.textSecondary,
+          ),
+        ),
         const SizedBox(height: 6),
         Wrap(
           spacing: OpenVtsSpacing.xs,
@@ -67,7 +72,9 @@ class _UserOverspeedReportFilterState extends State<UserOverspeedReportFilter> {
               final isSelected =
                   !_useCustom && widget.filters.speedLimitKmh == preset;
               return _FilterChip(
-                label: '$preset km/h',
+                label: context.mobileText("{value1} km/h", {
+                  'value1': (preset).toString(),
+                }),
                 selected: isSelected,
                 onTap: widget.disabled
                     ? null
@@ -76,19 +83,20 @@ class _UserOverspeedReportFilterState extends State<UserOverspeedReportFilter> {
                           _useCustom = false;
                           _customError = null;
                         });
-                        widget
-                            .onChanged(OverspeedFilters(speedLimitKmh: preset));
+                        widget.onChanged(
+                          OverspeedFilters(speedLimitKmh: preset),
+                        );
                       },
               );
             }),
             _FilterChip(
-              label: 'Custom…',
+              label: context.mobileText('Custom…'),
               selected: _useCustom,
               onTap: widget.disabled
                   ? null
                   : () => setState(() {
-                        _useCustom = true;
-                      }),
+                      _useCustom = true;
+                    }),
             ),
           ],
         ),
@@ -107,15 +115,19 @@ class _UserOverspeedReportFilterState extends State<UserOverspeedReportFilter> {
                 isDense: true,
                 errorText: _customError,
                 border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(OpenVtsRadius.md)),
+                  borderRadius: BorderRadius.circular(OpenVtsRadius.md),
+                ),
               ),
               onChanged: (v) {
                 final parsed = validateSpeedLimit(v);
-                setState(() => _customError = parsed == null
-                    ? 'Enter a value between $kSpeedLimitMin and $kSpeedLimitMax'
-                    : null);
-                if (parsed != null)
+                setState(
+                  () => _customError = parsed == null
+                      ? 'Enter a value between $kSpeedLimitMin and $kSpeedLimitMax'
+                      : null,
+                );
+                if (parsed != null) {
                   widget.onChanged(OverspeedFilters(speedLimitKmh: parsed));
+                }
               },
             ),
           ),
@@ -130,13 +142,14 @@ class _UserOverspeedReportFilterState extends State<UserOverspeedReportFilter> {
 // ---------------------------------------------------------------------------
 
 class UserGeofenceReportFilter extends StatefulWidget {
-  const UserGeofenceReportFilter(
-      {required this.filters,
-      required this.geofences,
-      required this.onChanged,
-      this.isLoading = false,
-      this.disabled = false,
-      super.key});
+  const UserGeofenceReportFilter({
+    required this.filters,
+    required this.geofences,
+    required this.onChanged,
+    this.isLoading = false,
+    this.disabled = false,
+    super.key,
+  });
   final GeofenceFilters filters;
   final List<UserGeofence> geofences;
   final ValueChanged<GeofenceFilters> onChanged;
@@ -168,37 +181,51 @@ class _UserGeofenceReportFilterState extends State<UserGeofenceReportFilter> {
         Row(
           children: [
             Expanded(
-                child: Text('Geofences',
-                    style: OpenVtsTypography.meta.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: OpenVtsColors.textSecondary))),
+              child: Text(
+                context.mobileText('Geofences'),
+                style: OpenVtsTypography.meta.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: OpenVtsColors.textSecondary,
+                ),
+              ),
+            ),
             if (widget.filters.geofenceIds.isNotEmpty)
               TextButton(
-                  onPressed: () => widget.onChanged(const GeofenceFilters()),
-                  child: Text('Clear (${widget.filters.geofenceIds.length})',
-                      style: OpenVtsTypography.meta)),
+                onPressed: () => widget.onChanged(const GeofenceFilters()),
+                child: Text(
+                  context.mobileText("Clear ({value1})", {
+                    'value1': (widget.filters.geofenceIds.length).toString(),
+                  }),
+                  style: OpenVtsTypography.meta,
+                ),
+              ),
           ],
         ),
         const SizedBox(height: 4),
         if (widget.isLoading)
           const Padding(
-              padding: EdgeInsets.all(8),
-              child: CircularProgressIndicator(strokeWidth: 2))
+            padding: EdgeInsets.all(8),
+            child: CircularProgressIndicator(strokeWidth: 2),
+          )
         else if (widget.geofences.isEmpty)
-          Text('No active geofences — all geofences included.',
-              style: OpenVtsTypography.meta
-                  .copyWith(color: OpenVtsColors.textSecondary))
+          Text(
+            context.mobileText('No active geofences — all geofences included.'),
+            style: OpenVtsTypography.meta.copyWith(
+              color: OpenVtsColors.textSecondary,
+            ),
+          )
         else ...[
           SizedBox(
             height: 36,
             child: TextField(
               onChanged: (q) => setState(() => _query = q),
               decoration: InputDecoration(
-                hintText: 'Search geofences…',
+                hintText: context.mobileText('Search geofences…'),
                 prefixIcon: const Icon(Icons.search_rounded, size: 14),
                 isDense: true,
                 border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(OpenVtsRadius.md)),
+                  borderRadius: BorderRadius.circular(OpenVtsRadius.md),
+                ),
               ),
             ),
           ),
@@ -214,12 +241,14 @@ class _UserGeofenceReportFilterState extends State<UserGeofenceReportFilter> {
                 onTap: widget.disabled
                     ? null
                     : () {
-                        final ids =
-                            List<String>.from(widget.filters.geofenceIds);
-                        if (isSelected)
+                        final ids = List<String>.from(
+                          widget.filters.geofenceIds,
+                        );
+                        if (isSelected) {
                           ids.remove(g.id);
-                        else
+                        } else {
                           ids.add(g.id);
+                        }
                         widget.onChanged(GeofenceFilters(geofenceIds: ids));
                       },
               );
@@ -227,10 +256,14 @@ class _UserGeofenceReportFilterState extends State<UserGeofenceReportFilter> {
           ),
           if (widget.filters.geofenceIds.isEmpty)
             Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text('No selection = all geofences.',
-                    style: OpenVtsTypography.meta
-                        .copyWith(color: OpenVtsColors.textSecondary))),
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                context.mobileText('No selection = all geofences.'),
+                style: OpenVtsTypography.meta.copyWith(
+                  color: OpenVtsColors.textSecondary,
+                ),
+              ),
+            ),
         ],
       ],
     );
@@ -286,62 +319,82 @@ class UserSensorReportFilter extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Vehicle',
-            style: OpenVtsTypography.meta.copyWith(
-                fontWeight: FontWeight.w600,
-                color: OpenVtsColors.textSecondary)),
+        Text(
+          context.mobileText('Vehicle'),
+          style: OpenVtsTypography.meta.copyWith(
+            fontWeight: FontWeight.w600,
+            color: OpenVtsColors.textSecondary,
+          ),
+        ),
         const SizedBox(height: 4),
         _SensorVehiclePicker(
-            selected: _selectedVehicle,
-            vehicles: vehicles,
-            onChanged: onVehicleChanged,
-            disabled: disabled,
-            error: vehicleError),
+          selected: _selectedVehicle,
+          vehicles: vehicles,
+          onChanged: onVehicleChanged,
+          disabled: disabled,
+          error: vehicleError,
+        ),
         const SizedBox(height: OpenVtsSpacing.sm),
-        Text('Sensor',
-            style: OpenVtsTypography.meta.copyWith(
-                fontWeight: FontWeight.w600,
-                color: OpenVtsColors.textSecondary)),
+        Text(
+          context.mobileText('Sensor'),
+          style: OpenVtsTypography.meta.copyWith(
+            fontWeight: FontWeight.w600,
+            color: OpenVtsColors.textSecondary,
+          ),
+        ),
         const SizedBox(height: 4),
         if (vehicleId == null || vehicleId!.isEmpty)
-          Text('Select a vehicle first',
-              style: OpenVtsTypography.meta
-                  .copyWith(color: OpenVtsColors.textSecondary))
+          Text(
+            context.mobileText('Select a vehicle first'),
+            style: OpenVtsTypography.meta.copyWith(
+              color: OpenVtsColors.textSecondary,
+            ),
+          )
         else if (isLoadingSensors)
           const SizedBox(
-              height: 32,
-              child: Center(child: CircularProgressIndicator(strokeWidth: 2)))
+            height: 32,
+            child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+          )
         else if (sensorLoadError != null)
           Row(
             children: [
               Expanded(
-                child: Text(sensorLoadError!,
-                    style: OpenVtsTypography.meta
-                        .copyWith(color: OpenVtsColors.error)),
+                child: Text(
+                  sensorLoadError!,
+                  style: OpenVtsTypography.meta.copyWith(
+                    color: OpenVtsColors.error,
+                  ),
+                ),
               ),
               TextButton(
                 onPressed: disabled ? null : onRetrySensorLoad,
-                child: const Text('Retry'),
+                child: Text(context.mobileText('Retry')),
               ),
             ],
           )
         else if (sensors.isEmpty)
-          Text('No sensors configured for this vehicle',
-              style: OpenVtsTypography.meta
-                  .copyWith(color: OpenVtsColors.textSecondary))
+          Text(
+            context.mobileText('No sensors configured for this vehicle'),
+            style: OpenVtsTypography.meta.copyWith(
+              color: OpenVtsColors.textSecondary,
+            ),
+          )
         else
           _SensorSelect(
-              sensors: sensors,
-              selected: selectedSensor,
-              onChanged: (s) => onFiltersChanged(
-                  SensorFilters(sensorIds: s != null ? [s.id.toString()] : [])),
-              disabled: disabled,
-              isDark: isDark),
+            sensors: sensors,
+            selected: selectedSensor,
+            onChanged: (s) => onFiltersChanged(
+              SensorFilters(sensorIds: s != null ? [s.id.toString()] : []),
+            ),
+            disabled: disabled,
+            isDark: isDark,
+          ),
         if (sensorError != null) ...[
           const SizedBox(height: 3),
-          Text(sensorError!,
-              style:
-                  OpenVtsTypography.meta.copyWith(color: OpenVtsColors.error)),
+          Text(
+            sensorError!,
+            style: OpenVtsTypography.meta.copyWith(color: OpenVtsColors.error),
+          ),
         ],
       ],
     );
@@ -349,12 +402,13 @@ class UserSensorReportFilter extends StatelessWidget {
 }
 
 class _SensorVehiclePicker extends StatelessWidget {
-  const _SensorVehiclePicker(
-      {required this.selected,
-      required this.vehicles,
-      required this.onChanged,
-      required this.disabled,
-      this.error});
+  const _SensorVehiclePicker({
+    required this.selected,
+    required this.vehicles,
+    required this.onChanged,
+    required this.disabled,
+    this.error,
+  });
   final UserReportVehicleOption? selected;
   final List<UserReportVehicleOption> vehicles;
   final ValueChanged<String?> onChanged;
@@ -371,45 +425,61 @@ class _SensorVehiclePicker extends StatelessWidget {
           onTap: disabled ? null : () => _pick(context),
           child: Container(
             padding: const EdgeInsets.symmetric(
-                horizontal: OpenVtsSpacing.sm, vertical: 10),
+              horizontal: OpenVtsSpacing.sm,
+              vertical: 10,
+            ),
             decoration: BoxDecoration(
               color: isDark ? OpenVtsColors.darkSurface : OpenVtsColors.white,
               borderRadius: BorderRadius.circular(OpenVtsRadius.md),
               border: Border.all(
-                  color: error != null
-                      ? OpenVtsColors.error
-                      : (isDark
+                color: error != null
+                    ? OpenVtsColors.error
+                    : (isDark
                           ? OpenVtsColors.darkBorder
-                          : OpenVtsColors.border)),
+                          : OpenVtsColors.border),
+              ),
             ),
-            child: Row(children: [
-              const Icon(Icons.directions_car_outlined, size: 16),
-              const SizedBox(width: 6),
-              Expanded(
-                  child: Text(selected?.displayName ?? 'Select a vehicle',
-                      style: OpenVtsTypography.body.copyWith(
-                          color: selected == null
-                              ? (isDark
-                                  ? OpenVtsColors.darkTextSecondary
-                                  : OpenVtsColors.textSecondary)
-                              : null))),
-              const Icon(Icons.unfold_more_rounded, size: 18),
-            ]),
+            child: Row(
+              children: [
+                const Icon(Icons.directions_car_outlined, size: 16),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    selected?.displayName ?? 'Select a vehicle',
+                    style: OpenVtsTypography.body.copyWith(
+                      color: selected == null
+                          ? (isDark
+                                ? OpenVtsColors.darkTextSecondary
+                                : OpenVtsColors.textSecondary)
+                          : null,
+                    ),
+                  ),
+                ),
+                const Icon(Icons.unfold_more_rounded, size: 18),
+              ],
+            ),
           ),
         ),
         if (error != null)
           Padding(
-              padding: const EdgeInsets.only(top: 3),
-              child: Text(error!,
-                  style: OpenVtsTypography.meta
-                      .copyWith(color: OpenVtsColors.error))),
+            padding: const EdgeInsets.only(top: 3),
+            child: Text(
+              error!,
+              style: OpenVtsTypography.meta.copyWith(
+                color: OpenVtsColors.error,
+              ),
+            ),
+          ),
       ],
     );
   }
 
   Future<void> _pick(BuildContext context) async {
-    final id = await _VehicleSearchSheet.show(context,
-        vehicles: vehicles, selectedId: selected?.id);
+    final id = await _VehicleSearchSheet.show(
+      context,
+      vehicles: vehicles,
+      selectedId: selected?.id,
+    );
     if (id != null) onChanged(id);
   }
 }
@@ -419,16 +489,21 @@ class _VehicleSearchSheet extends StatefulWidget {
   final List<UserReportVehicleOption> vehicles;
   final String? selectedId;
 
-  static Future<String?> show(BuildContext context,
-      {required List<UserReportVehicleOption> vehicles, String? selectedId}) {
+  static Future<String?> show(
+    BuildContext context, {
+    required List<UserReportVehicleOption> vehicles,
+    String? selectedId,
+  }) {
     return showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: Theme.of(context).colorScheme.surface,
       shape: const RoundedRectangleBorder(
-          borderRadius:
-              BorderRadius.vertical(top: Radius.circular(OpenVtsRadius.xl))),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(OpenVtsRadius.xl),
+        ),
+      ),
       builder: (_) =>
           _VehicleSearchSheet(vehicles: vehicles, selectedId: selectedId),
     );
@@ -451,10 +526,12 @@ class _VehicleSearchSheetState extends State<_VehicleSearchSheet> {
     final q = _q.trim().toLowerCase();
     if (q.isEmpty) return widget.vehicles;
     return widget.vehicles
-        .where((v) =>
-            v.name.toLowerCase().contains(q) ||
-            (v.plateNumber?.toLowerCase().contains(q) ?? false) ||
-            v.imei.toLowerCase().contains(q))
+        .where(
+          (v) =>
+              v.name.toLowerCase().contains(q) ||
+              (v.plateNumber?.toLowerCase().contains(q) ?? false) ||
+              v.imei.toLowerCase().contains(q),
+        )
         .toList();
   }
 
@@ -471,46 +548,63 @@ class _VehicleSearchSheetState extends State<_VehicleSearchSheet> {
         children: [
           const SizedBox(height: OpenVtsSpacing.sm),
           Center(
-              child: Container(
-                  height: 4,
-                  width: 40,
-                  decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.outlineVariant,
-                      borderRadius: BorderRadius.circular(2)))),
+            child: Container(
+              height: 4,
+              width: 40,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.outlineVariant,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.all(OpenVtsSpacing.md),
-            child: Row(children: [
-              const Expanded(
-                  child: Text('Select Vehicle',
-                      style: OpenVtsTypography.titleSmall)),
-              IconButton(
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    context.mobileText('Select Vehicle'),
+                    style: OpenVtsTypography.titleSmall,
+                  ),
+                ),
+                IconButton(
                   icon: const Icon(Icons.close_rounded, size: 20),
-                  onPressed: () => Navigator.of(context).maybePop()),
-            ]),
+                  onPressed: () => Navigator.of(context).maybePop(),
+                ),
+              ],
+            ),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: OpenVtsSpacing.md),
             child: SizedBox(
-                height: 40,
-                child: TextField(
-                    controller: _ctrl,
-                    onChanged: (q) => setState(() => _q = q),
-                    decoration: InputDecoration(
-                        hintText: 'Search by name or plate…',
-                        prefixIcon: const Icon(Icons.search_rounded, size: 14),
-                        isDense: true,
-                        border: OutlineInputBorder(
-                            borderRadius:
-                                BorderRadius.circular(OpenVtsRadius.md))))),
+              height: 40,
+              child: TextField(
+                controller: _ctrl,
+                onChanged: (q) => setState(() => _q = q),
+                decoration: InputDecoration(
+                  hintText: context.mobileText('Search by name or plate…'),
+                  prefixIcon: const Icon(Icons.search_rounded, size: 14),
+                  isDense: true,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(OpenVtsRadius.md),
+                  ),
+                ),
+              ),
+            ),
           ),
           const SizedBox(height: OpenVtsSpacing.xs),
           Divider(
-              height: 1, color: Theme.of(context).colorScheme.outlineVariant),
+            height: 1,
+            color: Theme.of(context).colorScheme.outlineVariant,
+          ),
           Expanded(
             child: filtered.isEmpty
-                ? const Center(
-                    child: Text('No vehicles found',
-                        style: OpenVtsTypography.body))
+                ? Center(
+                    child: Text(
+                      context.mobileText('No vehicles found'),
+                      style: OpenVtsTypography.body,
+                    ),
+                  )
                 : ListView.builder(
                     controller: ctrl,
                     itemCount: filtered.length,
@@ -519,19 +613,22 @@ class _VehicleSearchSheetState extends State<_VehicleSearchSheet> {
                       final sel = widget.selectedId == v.id;
                       return ListTile(
                         leading: Icon(
-                            sel
-                                ? Icons.check_circle_rounded
-                                : Icons.radio_button_off_rounded,
-                            size: 20,
-                            color: sel
-                                ? (isDark
+                          sel
+                              ? Icons.check_circle_rounded
+                              : Icons.radio_button_off_rounded,
+                          size: 20,
+                          color: sel
+                              ? (isDark
                                     ? OpenVtsColors.darkTextPrimary
                                     : OpenVtsColors.brandInk)
-                                : Theme.of(context).colorScheme.outline),
-                        title: Text(v.displayName,
-                            style: OpenVtsTypography.body.copyWith(
-                                fontWeight:
-                                    sel ? FontWeight.w700 : FontWeight.w400)),
+                              : Theme.of(context).colorScheme.outline,
+                        ),
+                        title: Text(
+                          v.displayName,
+                          style: OpenVtsTypography.body.copyWith(
+                            fontWeight: sel ? FontWeight.w700 : FontWeight.w400,
+                          ),
+                        ),
                         onTap: () => Navigator.of(context).pop(v.id),
                       );
                     },
@@ -544,12 +641,13 @@ class _VehicleSearchSheetState extends State<_VehicleSearchSheet> {
 }
 
 class _SensorSelect extends StatelessWidget {
-  const _SensorSelect(
-      {required this.sensors,
-      required this.selected,
-      required this.onChanged,
-      required this.disabled,
-      required this.isDark});
+  const _SensorSelect({
+    required this.sensors,
+    required this.selected,
+    required this.onChanged,
+    required this.disabled,
+    required this.isDark,
+  });
   final List<UserVehicleSensor> sensors;
   final UserVehicleSensor? selected;
   final ValueChanged<UserVehicleSensor?> onChanged;
@@ -562,29 +660,37 @@ class _SensorSelect extends StatelessWidget {
       onTap: disabled ? null : () => _pick(context),
       child: Container(
         padding: const EdgeInsets.symmetric(
-            horizontal: OpenVtsSpacing.sm, vertical: 10),
+          horizontal: OpenVtsSpacing.sm,
+          vertical: 10,
+        ),
         decoration: BoxDecoration(
           color: isDark ? OpenVtsColors.darkSurface : OpenVtsColors.white,
           borderRadius: BorderRadius.circular(OpenVtsRadius.md),
           border: Border.all(
-              color: isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border),
+            color: isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border,
+          ),
         ),
-        child: Row(children: [
-          const Icon(Icons.sensors_rounded, size: 16),
-          const SizedBox(width: 6),
-          Expanded(
+        child: Row(
+          children: [
+            const Icon(Icons.sensors_rounded, size: 16),
+            const SizedBox(width: 6),
+            Expanded(
               child: Text(
-                  selected != null
-                      ? '${selected!.name}${selected!.unit?.isNotEmpty == true ? ' (${selected!.unit})' : ''}'
-                      : 'Select a sensor',
-                  style: OpenVtsTypography.body.copyWith(
-                      color: selected == null
-                          ? (isDark
-                              ? OpenVtsColors.darkTextSecondary
-                              : OpenVtsColors.textSecondary)
-                          : null))),
-          const Icon(Icons.unfold_more_rounded, size: 18),
-        ]),
+                selected != null
+                    ? '${selected!.name}${selected!.unit?.isNotEmpty == true ? ' (${selected!.unit})' : ''}'
+                    : context.mobileText('Select a sensor'),
+                style: OpenVtsTypography.body.copyWith(
+                  color: selected == null
+                      ? (isDark
+                            ? OpenVtsColors.darkTextSecondary
+                            : OpenVtsColors.textSecondary)
+                      : null,
+                ),
+              ),
+            ),
+            const Icon(Icons.unfold_more_rounded, size: 18),
+          ],
+        ),
       ),
     );
   }
@@ -596,10 +702,14 @@ class _SensorSelect extends StatelessWidget {
       useSafeArea: true,
       backgroundColor: Theme.of(context).colorScheme.surface,
       shape: const RoundedRectangleBorder(
-          borderRadius:
-              BorderRadius.vertical(top: Radius.circular(OpenVtsRadius.xl))),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(OpenVtsRadius.xl),
+        ),
+      ),
       builder: (_) => _SensorPickerSheet(
-          sensors: sensors, selectedId: selected?.id.toString()),
+        sensors: sensors,
+        selectedId: selected?.id.toString(),
+      ),
     );
     if (result != null) onChanged(result);
   }
@@ -619,28 +729,40 @@ class _SensorPickerSheet extends StatelessWidget {
         children: [
           const SizedBox(height: OpenVtsSpacing.sm),
           Center(
-              child: Container(
-                  height: 4,
-                  width: 40,
-                  decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.outlineVariant,
-                      borderRadius: BorderRadius.circular(2)))),
+            child: Container(
+              height: 4,
+              width: 40,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.outlineVariant,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.all(OpenVtsSpacing.md),
-            child: Row(children: [
-              const Expanded(
-                  child: Text('Select Sensor',
-                      style: OpenVtsTypography.titleSmall)),
-              IconButton(
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    context.mobileText('Select Sensor'),
+                    style: OpenVtsTypography.titleSmall,
+                  ),
+                ),
+                IconButton(
                   icon: const Icon(Icons.close_rounded, size: 20),
-                  onPressed: () => Navigator.of(context).maybePop()),
-            ]),
+                  onPressed: () => Navigator.of(context).maybePop(),
+                ),
+              ],
+            ),
           ),
           Divider(
-              height: 1, color: Theme.of(context).colorScheme.outlineVariant),
+            height: 1,
+            color: Theme.of(context).colorScheme.outlineVariant,
+          ),
           ConstrainedBox(
             constraints: BoxConstraints(
-                maxHeight: MediaQuery.sizeOf(context).height * 0.5),
+              maxHeight: MediaQuery.sizeOf(context).height * 0.5,
+            ),
             child: ListView.builder(
               shrinkWrap: true,
               itemCount: sensors.length,
@@ -649,22 +771,29 @@ class _SensorPickerSheet extends StatelessWidget {
                 final sel = s.id.toString() == selectedId;
                 return ListTile(
                   leading: Icon(
-                      sel
-                          ? Icons.check_circle_rounded
-                          : Icons.radio_button_off_rounded,
-                      size: 20,
-                      color: sel
-                          ? (isDark
+                    sel
+                        ? Icons.check_circle_rounded
+                        : Icons.radio_button_off_rounded,
+                    size: 20,
+                    color: sel
+                        ? (isDark
                               ? OpenVtsColors.darkTextPrimary
                               : OpenVtsColors.brandInk)
-                          : Theme.of(context).colorScheme.outline),
-                  title: Text(s.name,
-                      style: OpenVtsTypography.body.copyWith(
-                          fontWeight: sel ? FontWeight.w700 : FontWeight.w400)),
+                        : Theme.of(context).colorScheme.outline,
+                  ),
+                  title: Text(
+                    s.name,
+                    style: OpenVtsTypography.body.copyWith(
+                      fontWeight: sel ? FontWeight.w700 : FontWeight.w400,
+                    ),
+                  ),
                   subtitle: s.unit?.isNotEmpty == true
-                      ? Text(s.unit!,
-                          style: OpenVtsTypography.meta
-                              .copyWith(color: OpenVtsColors.textSecondary))
+                      ? Text(
+                          s.unit!,
+                          style: OpenVtsTypography.meta.copyWith(
+                            color: OpenVtsColors.textSecondary,
+                          ),
+                        )
                       : null,
                   onTap: () => Navigator.of(context).pop(s),
                 );
@@ -717,18 +846,15 @@ const _kAlertTypeLabels = {
 };
 // Web/backend severities: critical, high, low (no medium).
 const _kSeverities = ['critical', 'high', 'low'];
-const _kSeverityLabels = {
-  'critical': 'Critical',
-  'high': 'High',
-  'low': 'Low',
-};
+const _kSeverityLabels = {'critical': 'Critical', 'high': 'High', 'low': 'Low'};
 
 class UserAlertsReportFilter extends StatelessWidget {
-  const UserAlertsReportFilter(
-      {required this.filters,
-      required this.onChanged,
-      this.disabled = false,
-      super.key});
+  const UserAlertsReportFilter({
+    required this.filters,
+    required this.onChanged,
+    this.disabled = false,
+    super.key,
+  });
   final AlertsFilters filters;
   final ValueChanged<AlertsFilters> onChanged;
   final bool disabled;
@@ -739,35 +865,46 @@ class UserAlertsReportFilter extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _FilterSection(
-          label: 'Alert Type',
-          chips:
-              _kAlertTypes.map((t) => (t, _kAlertTypeLabels[t] ?? t)).toList(),
+          label: context.mobileText('Alert Type'),
+          chips: _kAlertTypes
+              .map((t) => (t, _kAlertTypeLabels[t] ?? t))
+              .toList(),
           selected: filters.alertTypes,
-          onChanged: (types) => onChanged(AlertsFilters(
+          onChanged: (types) => onChanged(
+            AlertsFilters(
               alertTypes: types,
               severities: filters.severities,
-              acknowledged: filters.acknowledged)),
+              acknowledged: filters.acknowledged,
+            ),
+          ),
           disabled: disabled,
           emptyMeansAll: true,
         ),
         const SizedBox(height: OpenVtsSpacing.sm),
         _FilterSection(
-          label: 'Severity',
-          chips:
-              _kSeverities.map((s) => (s, _kSeverityLabels[s] ?? s)).toList(),
+          label: context.mobileText('Severity'),
+          chips: _kSeverities
+              .map((s) => (s, _kSeverityLabels[s] ?? s))
+              .toList(),
           selected: filters.severities,
-          onChanged: (sevs) => onChanged(AlertsFilters(
+          onChanged: (sevs) => onChanged(
+            AlertsFilters(
               alertTypes: filters.alertTypes,
               severities: sevs,
-              acknowledged: filters.acknowledged)),
+              acknowledged: filters.acknowledged,
+            ),
+          ),
           disabled: disabled,
           emptyMeansAll: true,
         ),
         const SizedBox(height: OpenVtsSpacing.sm),
-        Text('Acknowledgement',
-            style: OpenVtsTypography.meta.copyWith(
-                fontWeight: FontWeight.w600,
-                color: OpenVtsColors.textSecondary)),
+        Text(
+          context.mobileText('Acknowledgement'),
+          style: OpenVtsTypography.meta.copyWith(
+            fontWeight: FontWeight.w600,
+            color: OpenVtsColors.textSecondary,
+          ),
+        ),
         const SizedBox(height: 4),
         Wrap(
           spacing: OpenVtsSpacing.xs,
@@ -776,17 +913,20 @@ class UserAlertsReportFilter extends StatelessWidget {
             for (final (v, label) in [
               ('all', 'All'),
               ('yes', 'Acknowledged'),
-              ('no', 'Unacknowledged')
+              ('no', 'Unacknowledged'),
             ])
               _FilterChip(
                 label: label,
                 selected: filters.acknowledged == v,
                 onTap: disabled
                     ? null
-                    : () => onChanged(AlertsFilters(
-                        alertTypes: filters.alertTypes,
-                        severities: filters.severities,
-                        acknowledged: v)),
+                    : () => onChanged(
+                        AlertsFilters(
+                          alertTypes: filters.alertTypes,
+                          severities: filters.severities,
+                          acknowledged: v,
+                        ),
+                      ),
               ),
           ],
         ),
@@ -804,27 +944,23 @@ const _kLogCategories = [
   'device_event',
   'command',
   'connection',
-  'system'
+  'system',
 ];
 const _kLogCategoryLabels = {
   'telemetry': 'Telemetry',
   'device_event': 'Device Event',
   'command': 'Command',
   'connection': 'Connection',
-  'system': 'System'
+  'system': 'System',
 };
 const _kLogLevels = ['info', 'warning', 'error', 'debug'];
 const _kLogLevelLabels = {
   'info': 'Info',
   'warning': 'Warning',
   'error': 'Error',
-  'debug': 'Debug'
+  'debug': 'Debug',
 };
-const _kLogDirections = [
-  'device_to_server',
-  'server_to_device',
-  'internal',
-];
+const _kLogDirections = ['device_to_server', 'server_to_device', 'internal'];
 const _kLogDirectionLabels = {
   'device_to_server': 'Device → Server',
   'server_to_device': 'Server → Device',
@@ -881,12 +1017,14 @@ class _UserLogsReportFilterState extends State<UserLogsReportFilter> {
     List<String>? directions,
     String? search,
   }) {
-    widget.onFiltersChanged(LogsFilters(
-      categories: categories ?? widget.filters.categories,
-      levels: levels ?? widget.filters.levels,
-      directions: directions ?? widget.filters.directions,
-      search: search ?? widget.filters.search,
-    ));
+    widget.onFiltersChanged(
+      LogsFilters(
+        categories: categories ?? widget.filters.categories,
+        levels: levels ?? widget.filters.levels,
+        directions: directions ?? widget.filters.directions,
+        search: search ?? widget.filters.search,
+      ),
+    );
   }
 
   @override
@@ -894,20 +1032,24 @@ class _UserLogsReportFilterState extends State<UserLogsReportFilter> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Vehicle',
-            style: OpenVtsTypography.meta.copyWith(
-                fontWeight: FontWeight.w600,
-                color: OpenVtsColors.textSecondary)),
+        Text(
+          context.mobileText('Vehicle'),
+          style: OpenVtsTypography.meta.copyWith(
+            fontWeight: FontWeight.w600,
+            color: OpenVtsColors.textSecondary,
+          ),
+        ),
         const SizedBox(height: 4),
         _SensorVehiclePicker(
-            selected: _selected,
-            vehicles: widget.vehicles,
-            onChanged: widget.onVehicleChanged,
-            disabled: widget.disabled,
-            error: widget.vehicleError),
+          selected: _selected,
+          vehicles: widget.vehicles,
+          onChanged: widget.onVehicleChanged,
+          disabled: widget.disabled,
+          error: widget.vehicleError,
+        ),
         const SizedBox(height: OpenVtsSpacing.sm),
         _FilterSection(
-          label: 'Category',
+          label: context.mobileText('Category'),
           chips: _kLogCategories
               .map((c) => (c, _kLogCategoryLabels[c] ?? c))
               .toList(),
@@ -918,7 +1060,7 @@ class _UserLogsReportFilterState extends State<UserLogsReportFilter> {
         ),
         const SizedBox(height: OpenVtsSpacing.sm),
         _FilterSection(
-          label: 'Level',
+          label: context.mobileText('Level'),
           chips: _kLogLevels.map((l) => (l, _kLogLevelLabels[l] ?? l)).toList(),
           selected: widget.filters.levels,
           onChanged: (lvls) => _updateFilters(levels: lvls),
@@ -927,7 +1069,7 @@ class _UserLogsReportFilterState extends State<UserLogsReportFilter> {
         ),
         const SizedBox(height: OpenVtsSpacing.sm),
         _FilterSection(
-          label: 'Direction',
+          label: context.mobileText('Direction'),
           chips: _kLogDirections
               .map((d) => (d, _kLogDirectionLabels[d] ?? d))
               .toList(),
@@ -937,20 +1079,24 @@ class _UserLogsReportFilterState extends State<UserLogsReportFilter> {
           emptyMeansAll: true,
         ),
         const SizedBox(height: OpenVtsSpacing.sm),
-        Text('Search',
-            style: OpenVtsTypography.meta.copyWith(
-                fontWeight: FontWeight.w600,
-                color: OpenVtsColors.textSecondary)),
+        Text(
+          context.mobileText('Search'),
+          style: OpenVtsTypography.meta.copyWith(
+            fontWeight: FontWeight.w600,
+            color: OpenVtsColors.textSecondary,
+          ),
+        ),
         const SizedBox(height: 4),
         TextField(
           controller: _searchCtrl,
           enabled: !widget.disabled,
           decoration: InputDecoration(
-            hintText: 'Min 3 characters…',
+            hintText: context.mobileText('Min 3 characters…'),
             isDense: true,
             errorText: _searchError,
             border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(OpenVtsRadius.md)),
+              borderRadius: BorderRadius.circular(OpenVtsRadius.md),
+            ),
             suffixIcon: _searchCtrl.text.isNotEmpty
                 ? IconButton(
                     icon: const Icon(Icons.close_rounded, size: 16),
@@ -958,7 +1104,8 @@ class _UserLogsReportFilterState extends State<UserLogsReportFilter> {
                       _searchCtrl.clear();
                       setState(() => _searchError = null);
                       _updateFilters(search: '');
-                    })
+                    },
+                  )
                 : null,
           ),
           onChanged: (v) {
@@ -981,12 +1128,13 @@ class _UserLogsReportFilterState extends State<UserLogsReportFilter> {
 // ---------------------------------------------------------------------------
 
 class UserTimelineReportFilter extends StatelessWidget {
-  const UserTimelineReportFilter(
-      {required this.filters,
-      required this.onChanged,
-      this.disabled = false,
-      this.error,
-      super.key});
+  const UserTimelineReportFilter({
+    required this.filters,
+    required this.onChanged,
+    this.disabled = false,
+    this.error,
+    super.key,
+  });
   final TimelineFilters filters;
   final ValueChanged<TimelineFilters> onChanged;
   final bool disabled;
@@ -997,23 +1145,26 @@ class UserTimelineReportFilter extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('State Filter',
-            style: OpenVtsTypography.meta.copyWith(
-                fontWeight: FontWeight.w600,
-                color: OpenVtsColors.textSecondary)),
+        Text(
+          context.mobileText('State Filter'),
+          style: OpenVtsTypography.meta.copyWith(
+            fontWeight: FontWeight.w600,
+            color: OpenVtsColors.textSecondary,
+          ),
+        ),
         const SizedBox(height: 4),
         Wrap(
           spacing: OpenVtsSpacing.xs,
           runSpacing: OpenVtsSpacing.xs,
           children: [
             _FilterChip(
-              label: 'Running',
+              label: context.mobileText('Running'),
               selected: filters.states.contains('running'),
               icon: Icons.play_arrow_rounded,
               onTap: disabled ? null : () => _toggle('running'),
             ),
             _FilterChip(
-              label: 'Stopped',
+              label: context.mobileText('Stopped'),
               selected: filters.states.contains('stopped'),
               icon: Icons.stop_rounded,
               onTap: disabled ? null : () => _toggle('stopped'),
@@ -1022,26 +1173,32 @@ class UserTimelineReportFilter extends StatelessWidget {
         ),
         if (error != null) ...[
           const SizedBox(height: 4),
-          Text(error!,
-              style:
-                  OpenVtsTypography.meta.copyWith(color: OpenVtsColors.error)),
+          Text(
+            error!,
+            style: OpenVtsTypography.meta.copyWith(color: OpenVtsColors.error),
+          ),
         ],
         if (filters.states.isEmpty)
           Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Text('Select at least one state',
-                  style: OpenVtsTypography.meta
-                      .copyWith(color: OpenVtsColors.error))),
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              context.mobileText('Select at least one state'),
+              style: OpenVtsTypography.meta.copyWith(
+                color: OpenVtsColors.error,
+              ),
+            ),
+          ),
       ],
     );
   }
 
   void _toggle(String state) {
     final states = List<String>.from(filters.states);
-    if (states.contains(state))
+    if (states.contains(state)) {
       states.remove(state);
-    else
+    } else {
       states.add(state);
+    }
     onChanged(TimelineFilters(states: states));
   }
 }
@@ -1051,13 +1208,14 @@ class UserTimelineReportFilter extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _FilterSection extends StatelessWidget {
-  const _FilterSection(
-      {required this.label,
-      required this.chips,
-      required this.selected,
-      required this.onChanged,
-      this.disabled = false,
-      this.emptyMeansAll = false});
+  const _FilterSection({
+    required this.label,
+    required this.chips,
+    required this.selected,
+    required this.onChanged,
+    this.disabled = false,
+    this.emptyMeansAll = false,
+  });
   final String label;
   final List<(String, String)> chips;
   final List<String> selected;
@@ -1070,19 +1228,29 @@ class _FilterSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(children: [
-          Expanded(
-              child: Text(label,
-                  style: OpenVtsTypography.meta.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: OpenVtsColors.textSecondary))),
-          if (selected.isNotEmpty)
-            GestureDetector(
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                label,
+                style: OpenVtsTypography.meta.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: OpenVtsColors.textSecondary,
+                ),
+              ),
+            ),
+            if (selected.isNotEmpty)
+              GestureDetector(
                 onTap: () => onChanged([]),
-                child: Text('Clear',
-                    style: OpenVtsTypography.meta
-                        .copyWith(color: OpenVtsColors.textSecondary))),
-        ]),
+                child: Text(
+                  context.mobileText('Clear'),
+                  style: OpenVtsTypography.meta.copyWith(
+                    color: OpenVtsColors.textSecondary,
+                  ),
+                ),
+              ),
+          ],
+        ),
         const SizedBox(height: 4),
         Wrap(
           spacing: OpenVtsSpacing.xs,
@@ -1096,10 +1264,11 @@ class _FilterSection extends StatelessWidget {
                   ? null
                   : () {
                       final list = List<String>.from(selected);
-                      if (isSelected)
+                      if (isSelected) {
                         list.remove(c.$1);
-                      else
+                      } else {
                         list.add(c.$1);
+                      }
                       onChanged(list);
                     },
             );
@@ -1107,18 +1276,26 @@ class _FilterSection extends StatelessWidget {
         ),
         if (emptyMeansAll && selected.isEmpty)
           Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Text('No selection = all',
-                  style: OpenVtsTypography.meta
-                      .copyWith(color: OpenVtsColors.textSecondary))),
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              context.mobileText('No selection = all'),
+              style: OpenVtsTypography.meta.copyWith(
+                color: OpenVtsColors.textSecondary,
+              ),
+            ),
+          ),
       ],
     );
   }
 }
 
 class _FilterChip extends StatelessWidget {
-  const _FilterChip(
-      {required this.label, required this.selected, this.onTap, this.icon});
+  const _FilterChip({
+    required this.label,
+    required this.selected,
+    this.onTap,
+    this.icon,
+  });
   final String label;
   final bool selected;
   final VoidCallback? onTap;
@@ -1130,8 +1307,8 @@ class _FilterChip extends StatelessWidget {
     final fg = selected
         ? (isDark ? OpenVtsColors.brandInk : OpenVtsColors.white)
         : (isDark
-            ? OpenVtsColors.darkTextSecondary
-            : OpenVtsColors.textSecondary);
+              ? OpenVtsColors.darkTextSecondary
+              : OpenVtsColors.textSecondary);
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -1139,28 +1316,32 @@ class _FilterChip extends StatelessWidget {
         decoration: BoxDecoration(
           color: selected
               ? (isDark
-                  ? OpenVtsColors.darkTextPrimary
-                  : OpenVtsColors.brandInk)
+                    ? OpenVtsColors.darkTextPrimary
+                    : OpenVtsColors.brandInk)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
           border: Border.all(
-              color: selected
-                  ? (isDark
+            color: selected
+                ? (isDark
                       ? OpenVtsColors.darkTextPrimary
                       : OpenVtsColors.brandInk)
-                  : (isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border)),
+                : (isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border),
+          ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             if (icon != null) ...[
               Icon(icon, size: 12, color: fg),
-              const SizedBox(width: 4)
+              const SizedBox(width: 4),
             ],
-            Text(label,
-                style: OpenVtsTypography.meta.copyWith(
-                    color: fg,
-                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500)),
+            Text(
+              label,
+              style: OpenVtsTypography.meta.copyWith(
+                color: fg,
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+              ),
+            ),
           ],
         ),
       ),

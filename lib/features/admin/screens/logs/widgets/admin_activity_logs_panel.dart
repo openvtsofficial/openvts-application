@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/theme/open_vts_spacing.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/widgets/open_vts_bottom_sheet.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../shared/widgets/open_vts_date_time_range_selector.dart';
@@ -55,7 +56,7 @@ class _AdminActivityLogsPanelState
       physics: const AlwaysScrollableScrollPhysics(),
       children: [
         OpenVtsSearchField(
-          hintText: 'Search activity logs...',
+          hintText: context.mobileText('Search activity logs...'),
           onChanged: (v) {
             controller.setActivityFilters(search: v);
             _debounce?.cancel();
@@ -69,10 +70,7 @@ class _AdminActivityLogsPanelState
           value: state.activityUserId,
           users: state.options.users,
           onChanged: (v) {
-            controller.setActivityFilters(
-              userId: v,
-              clearUserId: v == null,
-            );
+            controller.setActivityFilters(userId: v, clearUserId: v == null);
             unawaited(controller.loadActivityLogs());
           },
         ),
@@ -91,11 +89,13 @@ class _AdminActivityLogsPanelState
         ),
         const SizedBox(height: OpenVtsSpacing.sm),
         OpenVtsDateTimeRangeField(
-          label: 'Date range',
-          title: 'Activity date range',
+          label: context.mobileText('Date range'),
+          title: context.mobileText('Activity date range'),
           dateTimeEnabled: true,
           value: OpenVtsDateTimeRange(
-              start: state.activityFrom, end: state.activityTo),
+            start: state.activityFrom,
+            end: state.activityTo,
+          ),
           onChanged: (range) {
             controller.setActivityFilters(
               from: range.start,
@@ -108,9 +108,9 @@ class _AdminActivityLogsPanelState
         ),
         const SizedBox(height: OpenVtsSpacing.sm),
         if (state.activityLogs.isEmpty)
-          const OpenVtsEmptyState(
-            title: 'No activity logs found',
-            message: 'Try changing search or filters.',
+          OpenVtsEmptyState(
+            title: context.mobileText('No activity logs found'),
+            message: context.mobileText('Try changing search or filters.'),
           )
         else ...[
           for (final item in state.activityLogs) ...[
@@ -118,7 +118,7 @@ class _AdminActivityLogsPanelState
               item: item,
               onTap: () => OpenVtsBottomSheet.show<void>(
                 context: context,
-                title: 'Activity Detail',
+                title: context.mobileText('Activity Detail'),
                 initialChildSize: 0.75,
                 minChildSize: 0.45,
                 maxChildSize: 0.95,
@@ -131,7 +131,7 @@ class _AdminActivityLogsPanelState
           if (state.activityHasMore) ...[
             const SizedBox(height: OpenVtsSpacing.sm),
             OpenVtsButton(
-              label: 'Load More',
+              label: context.mobileText('Load More'),
               height: 38,
               variant: OpenVtsButtonVariant.secondary,
               isLoading: state.isLoadingMoreActivity,
@@ -163,9 +163,9 @@ class AdminActivityActorUserDropdown extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return OpenVtsSearchableDropdown<String>(
-      label: 'Actor User',
+      label: context.mobileText('Actor User'),
       value: value,
-      hintText: 'All users',
+      hintText: context.mobileText('All users'),
       searchHintText: 'Search users...',
       options: users
           .map(

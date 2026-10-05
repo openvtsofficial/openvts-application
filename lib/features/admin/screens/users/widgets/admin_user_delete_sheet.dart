@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../models/admin_users_model.dart';
@@ -36,7 +37,7 @@ class AdminUserDeleteSheet extends StatelessWidget {
           ),
           const SizedBox(height: OpenVtsSpacing.xs),
           Text(
-            'This action cannot be undone.',
+            context.mobileText('This action cannot be undone.'),
             style: OpenVtsTypography.body.copyWith(
               color: OpenVtsColors.textSecondary,
             ),
@@ -46,17 +47,18 @@ class AdminUserDeleteSheet extends StatelessWidget {
             children: [
               Expanded(
                 child: OpenVtsButton(
-                  label: 'Cancel',
+                  label: context.mobileText('Cancel'),
                   height: 40,
                   variant: OpenVtsButtonVariant.secondary,
-                  onPressed:
-                      isDeleting ? null : () => Navigator.of(context).pop(),
+                  onPressed: isDeleting
+                      ? null
+                      : () => Navigator.of(context).pop(),
                 ),
               ),
               const SizedBox(width: OpenVtsSpacing.xs),
               Expanded(
                 child: OpenVtsButton(
-                  label: 'Delete',
+                  label: context.mobileText('Delete'),
                   height: 40,
                   isLoading: isDeleting,
                   onPressed: isDeleting ? null : () => _confirm(context),

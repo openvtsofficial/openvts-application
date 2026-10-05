@@ -1,230 +1,268 @@
+import 'dart:async';
 import 'dart:convert';
 
-import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/access/mobile_access.dart';
+import '../../../core/access/mobile_access_service.dart';
 import '../../../core/api/api_exception.dart';
+import '../../../core/api/auth_api_error.dart';
+import '../../../core/demo/demo_mode_store.dart';
+import '../../../core/demo/demo_session.dart';
+import '../../../core/demo/demo_session_service.dart';
 import '../../../core/notifications/mobile_push_controller.dart';
-import '../../../core/notifications/mobile_push_perf.dart';
-import '../../../core/performance/open_vts_perf.dart';
 import '../../../core/providers/app_preferences_provider.dart';
 import '../../../core/providers/core_providers.dart';
-import '../../../core/demo/demo_mode_store.dart';
 import '../../../core/storage/token_storage.dart';
 import '../../../shared/models/user_role.dart';
 import '../models/current_user.dart';
 import '../models/login_request.dart';
 import '../models/login_response.dart';
-import '../models/mfa_login_challenge.dart';
+import '../models/mfa_challenge.dart';
 import '../services/auth_service.dart';
 import 'auth_state.dart';
 
-final authServiceProvider = Provider<AuthService>((ref) {
-  return AuthService(ref.watch(apiClientProvider));
-});
+final Provider<AuthService> authServiceProvider = Provider<AuthService>(
+  (ref) => AuthService(ref.watch(apiClientProvider)),
+);
+final StateNotifierProvider<AuthController, AuthState> authControllerProvider =
+    StateNotifierProvider<AuthController, AuthState>(
+      (ref) => AuthController(
+        authService: ref.watch(authServiceProvider),
+        accessService: MobileAccessService(ref.watch(apiClientProvider)),
+        mobilePushController: ref.watch(mobilePushControllerProvider.notifier),
+        tokenStorage: ref.watch(tokenStorageProvider),
+        demoModeStore: ref.watch(demoModeStoreProvider),
+        demoSessionService: ref.watch(demoSessionServiceProvider),
+        appPreferencesCtrl: ref.watch(
+          appLocalizationPreferencesProvider.notifier,
+        ),
+      ),
+    );
 
-final authControllerProvider =
-    StateNotifierProvider<AuthController, AuthState>((ref) {
-  return AuthController(
-    authService: ref.watch(authServiceProvider),
-    mobilePushController: ref.watch(mobilePushControllerProvider.notifier),
-    tokenStorage: ref.watch(tokenStorageProvider),
-    demoModeStore: ref.watch(demoModeStoreProvider),
-    appPreferencesCtrl: ref.watch(appLocalizationPreferencesProvider.notifier),
-  );
-});
-
-class AuthController extends StateNotifier<AuthState> {
+class AuthController extends StateNotifier<AuthState>
+    with WidgetsBindingObserver {
   AuthController({
     required AuthService authService,
+    MobileAccessService? accessService,
     required MobilePushController mobilePushController,
     required TokenStorage tokenStorage,
     required DemoModeStore demoModeStore,
+    required DemoSessionService demoSessionService,
     required AppLocalizationPreferencesController appPreferencesCtrl,
-  })  : _authService = authService,
-        _mobilePushController = mobilePushController,
-        _tokenStorage = tokenStorage,
-        _demoModeStore = demoModeStore,
-        _appPreferencesCtrl = appPreferencesCtrl,
-        super(const AuthState.initial());
-
+  }) : _authService = authService,
+       _accessService = accessService,
+       _mobilePushController = mobilePushController,
+       _tokenStorage = tokenStorage,
+       _demoModeStore = demoModeStore,
+       _demoSessionService = demoSessionService,
+       _appPreferencesCtrl = appPreferencesCtrl,
+       super(const AuthState.initial()) {
+    WidgetsBinding.instance.addObserver(this);
+    _accessTimer = Timer.periodic(
+      const Duration(seconds: 60),
+      (_) => refreshAccess(),
+    );
+  }
   final AuthService _authService;
+  final MobileAccessService? _accessService;
   final MobilePushController _mobilePushController;
   final TokenStorage _tokenStorage;
   final DemoModeStore _demoModeStore;
+  final DemoSessionService _demoSessionService;
   final AppLocalizationPreferencesController _appPreferencesCtrl;
-
+  Timer? _accessTimer;
+  bool _refreshingAccess = false;
+  int _generation = 0;
+  bool _valid(int generation) => mounted && generation == _generation;
   CurrentUser? get currentUser => state.user;
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) refreshAccess();
+  }
 
-  Future<void> restoreSession() {
-    return OpenVtsPerf.traceAsync('auth.restore', () async {
-      state = const AuthState.loading();
-      final stopwatch =
-          (kDebugMode || kProfileMode) ? (Stopwatch()..start()) : null;
-      mobilePushPerfLog('auth_restore start');
-      await _setStateFromActiveSession();
-      if (stopwatch != null) {
-        mobilePushPerfLog(
-          'auth_restore end (${stopwatch.elapsedMilliseconds}ms)',
+  @override
+  void dispose() {
+    _generation++;
+    _accessTimer?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  Future<void> refreshAccess() async {
+    final user = state.user;
+    if (!state.isRealSession ||
+        user == null ||
+        _accessService == null ||
+        _refreshingAccess) {
+      return;
+    }
+    final generation = _generation;
+    _refreshingAccess = true;
+    try {
+      final verified =
+          user.role == UserRole.admin ||
+              user.role == UserRole.superadmin ||
+              user.role == UserRole.driver
+          ? await _authService.getProfile(user)
+          : user;
+      if (!_valid(generation)) return;
+      final updated = await _accessService.loadAccess(verified);
+      if (_valid(generation)) state = AuthState.authenticated(updated);
+    } catch (error) {
+      if (!_valid(generation)) return;
+      if (_isUnauthorized(error)) {
+        await _tokenStorage.clearSessionForRole(user.role);
+        if (_valid(generation)) {
+          _setUnauthenticated(
+            errorMessage: 'Your session expired. Sign in again.',
+          );
+        }
+      } else {
+        state = AuthState.authenticated(
+          user.copyWith(access: const MobileAccess.unavailable()),
         );
       }
-    });
+    } finally {
+      _refreshingAccess = false;
+    }
+  }
+
+  Future<void> restoreSession() async {
+    final generation = ++_generation;
+    state = const AuthState.loading();
+    await _restore(generation);
   }
 
   Future<void> login({
     required String identifier,
     required String password,
-  }) {
-    return OpenVtsPerf.traceAsync('auth.login', () async {
-      state = const AuthState.loading();
-
-      try {
-        final response = await _authService.login(
-          LoginRequest(identifier: identifier, password: password),
-        );
-        if (!mounted) return;
-        await setSession(response);
-      } on MfaLoginChallenge catch (challenge) {
-        if (!mounted) return;
-        state = AuthState(status: AuthStatus.unauthenticated, mfaChallenge: challenge);
-      } catch (error) {
-        if (!mounted) return;
+  }) async {
+    final generation = ++_generation;
+    state = const AuthState.loading();
+    try {
+      final response = await _authService.login(
+        LoginRequest(identifier: identifier, password: password),
+      );
+      if (_valid(generation)) await setSession(response);
+    } on MfaRequiredException catch (required) {
+      if (_valid(generation)) state = AuthState.mfaRequired(required.challenge);
+    } catch (error) {
+      if (_valid(generation)) {
         _setUnauthenticated(errorMessage: _friendlyLoginError(error));
       }
-    });
-  }
-
-  static String _friendlyLoginError(Object error) {
-    if (error is ApiException) return error.message;
-    if (error is DioException) {
-      final responseData = error.response?.data;
-      if (responseData is Map) {
-        final message = responseData['message'];
-        if (message is String && message.trim().isNotEmpty &&
-            (error.response?.statusCode ?? 500) < 500) return message;
-      }
-      if (error.type == DioExceptionType.connectionError ||
-          error.type == DioExceptionType.unknown) {
-        final msg = error.message ?? '';
-        if (msg.contains('XMLHttpRequest') ||
-            msg.contains('connection error') ||
-            msg.toLowerCase().contains('cors') ||
-            msg.contains('Failed to fetch')) {
-          return 'Cannot reach the server. '
-              'If you are using the web app, the server must allow cross-origin '
-              'requests (CORS). Check the Server URL in settings and ensure '
-              'the server is reachable from this device.';
-        }
-        return 'Could not connect to the server. '
-            'Check the Server URL in settings and your network connection.';
-      }
-      if (error.type == DioExceptionType.connectionTimeout ||
-          error.type == DioExceptionType.receiveTimeout ||
-          error.type == DioExceptionType.sendTimeout) {
-        return 'Connection timed out. '
-            'Check the Server URL in settings and your network connection.';
-      }
-      if (error.type == DioExceptionType.badResponse) {
-        final status = error.response?.statusCode;
-        if (status == 401 || status == 403) {
-          return 'Incorrect username or password.';
-        }
-        if (status != null && status >= 500) {
-          return 'The server returned an error ($status). '
-              'Try again or contact your administrator.';
-        }
-      }
     }
-    final raw = error.toString();
-    final cleaned = raw.replaceFirst(
-        RegExp(r'^(ApiException\(\d+\)|DioException[^:]*): '), '');
-    return cleaned.isNotEmpty ? cleaned : raw;
   }
 
-  Future<void> verifyMfaLogin(String code) async {
+  Future<void> verifyMfa(String code) async {
     final challenge = state.mfaChallenge;
     if (challenge == null || state.isVerifyingMfa) return;
     if (challenge.isExpired) {
-      _setUnauthenticated(errorMessage: 'Verification expired. Please sign in again.');
+      _setUnauthenticated(
+        errorMessage: 'Sign-in expired. Enter your password again.',
+      );
       return;
     }
-    state = AuthState(status: AuthStatus.unauthenticated,
-        mfaChallenge: challenge, isVerifyingMfa: true);
+    final generation = ++_generation;
+    state = AuthState.mfaRequired(challenge, isVerifying: true);
     try {
-      final response = await _authService.verifyMfaLogin(
-        challengeToken: challenge.token, code: code,
-      );
-      if (!mounted) return;
-      await setSession(response);
+      final response = await _authService.verifyMfaLogin(challenge, code);
+      if (_valid(generation)) await setSession(response);
     } catch (error) {
-      if (!mounted) return;
-      state = AuthState(status: AuthStatus.unauthenticated,
-          mfaChallenge: challenge, errorMessage: _friendlyLoginError(error));
+      if (_valid(generation)) {
+        state = AuthState.mfaRequired(
+          challenge,
+          errorMessage: _friendlyLoginError(error),
+        );
+      }
     }
   }
 
-  void cancelMfaLogin() {
-    if (!state.isVerifyingMfa) _setUnauthenticated();
-  }
-
-  Future<void> closeAccount({required String currentPassword, String? code}) async {
-    if (state.isDemo || state.user?.canCloseAccount != true) {
-      throw const ApiException(message: 'Account closure is unavailable for this account.');
-    }
-    final closingUser = state.user!;
-    final closingRevision = _tokenStorage.sessionRevision;
-    await _authService.closeAccount(currentPassword: currentPassword, code: code);
-    if (!mounted || _tokenStorage.sessionRevision != closingRevision ||
-        state.user?.id != closingUser.id ||
-        state.user?.effectiveBackendRole != closingUser.effectiveBackendRole) return;
-    // Also clear this device's push token and notifications. The service cleans
-    // up locally even though account closure already revoked the server token.
-    await _deregisterPushForCurrentSession();
-    if (!mounted || _tokenStorage.sessionRevision != closingRevision ||
-        state.user?.id != closingUser.id ||
-        state.user?.effectiveBackendRole != closingUser.effectiveBackendRole) return;
-    // Server revokes every session. Remove saved roles too, so the app cannot
-    // silently return to an earlier account after this deliberate exit.
-    await _demoModeStore.clear();
-    if (!mounted || _tokenStorage.sessionRevision != closingRevision) return;
-    final expectedClearedRevision = closingRevision + 1;
-    await _tokenStorage.clearAllSessions();
-    if (mounted && _tokenStorage.sessionRevision == expectedClearedRevision) {
+  void cancelMfa() {
+    if (!state.isVerifyingMfa) {
+      _generation++;
       _setUnauthenticated();
     }
   }
 
-  Future<String> requestPasswordReset(String identifier) {
-    return _authService.requestPasswordReset(identifier);
-  }
-
-  Future<String> resetPassword({
-    required String token,
-    required String newPassword,
-  }) {
-    return _authService.resetPassword(
-      token: token,
-      newPassword: newPassword,
-    );
-  }
-
-  Future<void> setSession(LoginResponse response) {
-    return OpenVtsPerf.traceAsync('auth.setSession', () async {
-      if (!mounted) return;
+  Future<void> setSession(LoginResponse response) async {
+    final generation = ++_generation;
+    try {
       await _demoModeStore.clear();
-      if (!mounted) return;
+      if (!_valid(generation)) return;
       await _tokenStorage.saveSessionForRole(
         role: response.user.role,
         accessToken: response.accessToken,
         refreshToken: response.refreshToken,
         currentUserJson: jsonEncode(response.user.toJson()),
       );
-      await _setStateFromActiveSession();
-    });
+      if (!_valid(generation)) {
+        final current = await _tokenStorage.getActiveSession();
+        if (current?.accessToken == response.accessToken) {
+          await _tokenStorage.clearSessionForRole(response.user.role);
+        }
+        return;
+      }
+      if (response.settings.isNotEmpty) {
+        final settings = response.settings;
+        await _appPreferencesCtrl.applyFromUserSettings(
+          preserveAppLanguage: true,
+          languageCode: settings['languageCode']?.toString() ?? 'en',
+          dateFormat: settings['dateFormat']?.toString() ?? 'DD MMM YYYY',
+          timeFormat: settings['timeFormat']?.toString() ?? '12H',
+          theme: settings['theme']?.toString() ?? 'SYSTEM',
+          timezone: settings['timezone']?.toString() ?? '+00:00',
+          layoutDirection: settings['direction']?.toString() ?? 'LTR',
+          units: settings['distanceUnit']?.toString() ?? 'KM',
+        );
+      }
+      await _restore(generation);
+    } catch (error) {
+      if (_valid(generation)) {
+        _setUnauthenticated(errorMessage: _friendlyLoginError(error));
+      }
+    }
+  }
+
+  Future<void> _restore(int generation) async {
+    if (!_valid(generation)) return;
+    final demo = _demoModeStore.cachedSession;
+    if (_demoModeStore.isEnabled && demo != null) {
+      _setDemoSession(demo);
+      return;
+    }
+    if (_demoModeStore.isEnabled || demo != null) await _demoModeStore.clear();
+    final session = await _tokenStorage.getActiveSession();
+    if (!_valid(generation)) return;
+    if (session == null) {
+      _setUnauthenticated();
+      return;
+    }
+    try {
+      final profile = await _authService.getProfile(session.user);
+      if (!_valid(generation)) return;
+      final user = await _accessService?.loadAccess(profile) ?? profile;
+      if (!_valid(generation)) return;
+      state = AuthState.authenticated(user);
+      // The current backend push-token table references User IDs, not Driver IDs.
+      _mobilePushController.updateAuthenticationState(
+        isAuthenticated: user.role != UserRole.driver,
+      );
+      _appPreferencesCtrl.rehydrate();
+    } catch (error) {
+      if (!_valid(generation)) return;
+      if (_isUnauthorized(error)) {
+        await _tokenStorage.clearSessionForRole(session.role);
+      }
+      if (_valid(generation)) {
+        _setUnauthenticated(errorMessage: _friendlyLoginError(error));
+      }
+    }
   }
 
   Future<void> replaceCurrentUser(CurrentUser user) async {
+    final generation = _generation;
     if (state.isDemo) {
       state = AuthState.authenticated(
         user.copyWith(role: UserRole.user),
@@ -232,118 +270,150 @@ class AuthController extends StateNotifier<AuthState> {
       );
       return;
     }
-
-    final activeSession = await _tokenStorage.getActiveSession();
-    if (activeSession == null) {
-      _setUnauthenticated();
+    final session = await _tokenStorage.getActiveSession();
+    if (!_valid(generation) ||
+        session == null ||
+        session.user.id != user.id ||
+        session.role != user.role) {
       return;
     }
-
-    // A late profile response must never overwrite a different signed-in user.
-    if (activeSession.user.id != user.id) return;
-    final role = activeSession.role;
-    final saved = await _tokenStorage.saveRefreshedSession(
-      expectedSession: activeSession,
-      accessToken: activeSession.accessToken,
-      refreshToken: activeSession.refreshToken,
-      currentUserJson: jsonEncode(user.copyWith(role: role).toJson()),
+    await _tokenStorage.saveSessionForRole(
+      role: session.role,
+      accessToken: session.accessToken,
+      refreshToken: session.refreshToken,
+      currentUserJson: jsonEncode(user.toJson()),
     );
-    if (saved && mounted) await _setStateFromActiveSession();
+    if (_valid(generation)) state = AuthState.authenticated(user);
   }
 
-  Future<UserRole?> logout() async {
-    return logoutActiveRole();
+  /// The backend invalidates the old auth version on every MFA security change.
+  Future<void> applySecuritySession(Map<String, dynamic> replacement) async {
+    final generation = ++_generation;
+    final user = state.user;
+    final session = await _tokenStorage.getActiveSession();
+    final token = replacement['token']?.toString() ?? '',
+        refresh = replacement['refresh_token']?.toString() ?? '';
+    if (!_valid(generation)) return;
+    if (session == null ||
+        user == null ||
+        session.user.id != user.id ||
+        session.role != user.role ||
+        token.isEmpty ||
+        refresh.isEmpty) {
+      throw const ApiException(
+        message:
+            'The server did not return the replacement session. Sign in again.',
+      );
+    }
+    await _tokenStorage.saveSessionForRole(
+      role: session.role,
+      accessToken: token,
+      refreshToken: refresh,
+      currentUserJson: jsonEncode(user.toJson()),
+    );
+    if (_valid(generation)) state = AuthState.authenticated(user);
   }
 
+  Future<UserRole?> logout() => logoutActiveRole();
   Future<UserRole?> logoutActiveRole() async {
+    final generation = ++_generation;
     if (state.isDemo) {
       state = const AuthState.loading();
       await _demoModeStore.clear();
-      await _setStateFromActiveSession();
+      await _restore(generation);
       return UserRole.user;
     }
-
-    final activeRole =
-        state.user?.role ?? await _tokenStorage.getActiveRoleByPriority();
-    if (activeRole == null) {
+    final role = state.role ?? await _tokenStorage.getActiveRoleByPriority();
+    if (!_valid(generation)) return role;
+    if (role == null) {
       _setUnauthenticated();
       return null;
     }
-
     await _deregisterPushForCurrentSession();
-
+    if (!_valid(generation)) return role;
     state = const AuthState.loading();
-
-    try {
-      await _authService.logout();
-    } finally {
-      await _tokenStorage.clearSessionForRole(activeRole);
-    }
-
-    await _setStateFromActiveSession();
-    return activeRole;
+    await _tokenStorage.clearSessionForRole(role);
+    await _restore(generation);
+    return role;
   }
 
-  Future<void> logoutAllRoles() async {
-    await _deregisterPushForCurrentSession();
-
-    state = const AuthState.loading();
+  Future<void> logoutAllRoles({
+    bool deregisterPush = true,
+    bool showLoading = true,
+  }) async {
+    final generation = ++_generation;
+    if (deregisterPush) await _deregisterPushForCurrentSession();
+    if (!_valid(generation)) return;
+    if (showLoading) state = const AuthState.loading();
     await _demoModeStore.clear();
     await _tokenStorage.clearAllSessions();
-    _setUnauthenticated();
+    if (_valid(generation)) _setUnauthenticated();
   }
 
-  Future<void> _setStateFromActiveSession() async {
-    // Demo access is disabled, including persisted sessions from older builds.
-    if (_demoModeStore.isEnabled || _demoModeStore.cachedSession != null) {
-      await _demoModeStore.clear();
+  Future<String> requestPasswordReset(String identifier) =>
+      _authService.requestPasswordReset(identifier);
+  Future<String> resetPassword({
+    required String token,
+    required String newPassword,
+  }) => _authService.resetPassword(token: token, newPassword: newPassword);
+  Future<void> enterDemo() async {
+    final generation = ++_generation;
+    state = const AuthState.loading();
+    try {
+      final session = await _demoSessionService.openSession();
+      if (!session.permissions.readOnly) {
+        throw const FormatException(
+          'The server did not return a read-only demo session.',
+        );
+      }
+      if (!_valid(generation)) return;
+      await _demoModeStore.enable(session);
+      if (_valid(generation)) _setDemoSession(session);
+    } catch (error) {
+      if (_valid(generation)) {
+        _setUnauthenticated(errorMessage: _friendlyLoginError(error));
+      }
     }
+  }
 
-    final session = await _tokenStorage.getActiveSession();
-    if (session == null) {
-      _setUnauthenticated();
-      return;
-    }
-
-    state = AuthState.authenticated(session.user);
-    _mobilePushController.updateAuthenticationState(isAuthenticated: true);
-
-    // Rehydrate localization preferences from LocalCache on session restore
+  void _setDemoSession(DemoSession session) {
+    state = AuthState.authenticated(
+      CurrentUser(
+        id: session.user.id,
+        name: session.user.name,
+        email: session.user.email,
+        role: UserRole.user,
+        username: 'demo.fleet',
+        accountStatus: 'active',
+        isVerified: true,
+      ),
+      isDemo: true,
+    );
+    _mobilePushController.updateAuthenticationState(isAuthenticated: false);
     _appPreferencesCtrl.rehydrate();
   }
 
   void _setUnauthenticated({String? errorMessage}) {
+    if (!mounted) return;
     state = AuthState.unauthenticated(errorMessage: errorMessage);
     _mobilePushController.updateAuthenticationState(isAuthenticated: false);
   }
 
   Future<void> _deregisterPushForCurrentSession() async {
-    if (state.isDemo) {
-      _mobilePushController.updateAuthenticationState(isAuthenticated: false);
-      return;
-    }
-
     try {
       final session = await _tokenStorage.getActiveSession();
-      if (session == null) {
-        _mobilePushController.updateAuthenticationState(
-          isAuthenticated: false,
-        );
+      if (state.isDemo || session == null || session.role == UserRole.driver) {
+        _mobilePushController.updateAuthenticationState(isAuthenticated: false);
         return;
       }
-
-      _mobilePushController.updateAuthenticationState(isAuthenticated: true);
-      await _ignorePushFailure(_mobilePushController.deregisterCurrentToken);
+      await _mobilePushController.deregisterCurrentToken();
     } catch (_) {
-      // Push deregistration must never block logout.
+      /* Push cleanup must not prevent signing out. */
     }
   }
 
-  Future<void> _ignorePushFailure(Future<dynamic> Function() operation) async {
-    try {
-      await operation();
-    } catch (_) {
-      // Push token sync must not change auth outcomes.
-    }
-  }
+  static bool _isUnauthorized(Object error) =>
+      AuthApiError.isUnauthorized(error);
+  static String _friendlyLoginError(Object error) =>
+      AuthApiError.message(error);
 }

@@ -7,7 +7,9 @@ import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../core/utils/date_time_formatter.dart';
 import '../../../../../core/utils/validators.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
+import '../../../../../shared/helpers/validation_localizations.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../shared/widgets/open_vts_text_field.dart';
 import '../../../models/admin_vehicle_model.dart';
@@ -79,8 +81,9 @@ class _AdminVehicleDocumentSheetState extends State<AdminVehicleDocumentSheet> {
     final existing = widget.initial;
     _titleController = TextEditingController(text: existing?.title ?? '');
     _tagsController = TextEditingController(text: existing?.tags ?? '');
-    _descriptionController =
-        TextEditingController(text: existing?.description ?? '');
+    _descriptionController = TextEditingController(
+      text: existing?.description ?? '',
+    );
     _docTypeId = existing?.docTypeId;
     _isVisible = existing?.isVisible ?? true;
     _expiryAt = existing?.expiryAt;
@@ -114,9 +117,9 @@ class _AdminVehicleDocumentSheetState extends State<AdminVehicleDocumentSheet> {
                   ),
                   const SizedBox(height: OpenVtsSpacing.sm),
                   OpenVtsTextField(
-                    label: 'Title',
+                    label: context.mobileText('Title'),
                     controller: _titleController,
-                    hintText: 'Document title',
+                    hintText: context.mobileText('Document title'),
                     prefixIcon: Icons.title_rounded,
                     textInputAction: TextInputAction.next,
                     validator: Validators.documentTitle,
@@ -137,17 +140,17 @@ class _AdminVehicleDocumentSheetState extends State<AdminVehicleDocumentSheet> {
                   ),
                   const SizedBox(height: OpenVtsSpacing.sm),
                   OpenVtsTextField(
-                    label: 'Tags',
+                    label: context.mobileText('Tags'),
                     controller: _tagsController,
-                    hintText: 'license, insurance',
+                    hintText: context.mobileText('license, insurance'),
                     prefixIcon: Icons.label_outline_rounded,
                     textInputAction: TextInputAction.next,
                   ),
                   const SizedBox(height: OpenVtsSpacing.sm),
                   OpenVtsTextField(
-                    label: 'Description',
+                    label: context.mobileText('Description'),
                     controller: _descriptionController,
-                    hintText: 'Optional notes',
+                    hintText: context.mobileText('Optional notes'),
                     prefixIcon: Icons.notes_rounded,
                     maxLines: 3,
                   ),
@@ -170,7 +173,7 @@ class _AdminVehicleDocumentSheetState extends State<AdminVehicleDocumentSheet> {
               children: [
                 Expanded(
                   child: OpenVtsButton(
-                    label: 'Cancel',
+                    label: context.mobileText('Cancel'),
                     height: 40,
                     variant: OpenVtsButtonVariant.secondary,
                     onPressed: widget.isSubmitting
@@ -181,7 +184,9 @@ class _AdminVehicleDocumentSheetState extends State<AdminVehicleDocumentSheet> {
                 const SizedBox(width: OpenVtsSpacing.sm),
                 Expanded(
                   child: OpenVtsButton(
-                    label: _isEdit ? 'Save' : 'Upload',
+                    label: _isEdit
+                        ? context.mobileText('Save')
+                        : context.mobileText('Upload'),
                     height: 40,
                     isLoading: widget.isSubmitting,
                     trailingIcon: _isEdit
@@ -216,23 +221,30 @@ class _AdminVehicleDocumentSheetState extends State<AdminVehicleDocumentSheet> {
       final extension = _extensionFromName(file.name).toLowerCase();
       if (_blockedDocumentExtensions.contains(extension)) {
         if (mounted) {
-          ToastHelper.showError('This file type is not allowed.',
-              context: context);
+          ToastHelper.showError(
+            context.mobileText('This file type is not allowed.'),
+            context: context,
+          );
         }
         setState(() => _isPicking = false);
         return;
       }
       if (!_allowedDocumentExtensions.contains(extension)) {
         if (mounted) {
-          ToastHelper.showError('Unsupported file type.', context: context);
+          ToastHelper.showError(
+            context.mobileText('Unsupported file type.'),
+            context: context,
+          );
         }
         setState(() => _isPicking = false);
         return;
       }
       if (file.size > _maxDocumentBytes) {
         if (mounted) {
-          ToastHelper.showError('File must be 10MB or smaller.',
-              context: context);
+          ToastHelper.showError(
+            context.mobileText('File must be 10MB or smaller.'),
+            context: context,
+          );
         }
         setState(() => _isPicking = false);
         return;
@@ -266,7 +278,10 @@ class _AdminVehicleDocumentSheetState extends State<AdminVehicleDocumentSheet> {
     if (!_formKey.currentState!.validate()) return;
     if (!_isEdit && _file == null) {
       setState(() => _fileError = true);
-      ToastHelper.showError('File is required.', context: context);
+      ToastHelper.showError(
+        context.mobileText('File is required.'),
+        context: context,
+      );
       return;
     }
 
@@ -306,24 +321,26 @@ class _DocumentTypeField extends StatelessWidget {
     return DropdownButtonFormField<String>(
       initialValue: value,
       decoration: InputDecoration(
-        labelText: 'Document Type',
+        labelText: context.mobileText('Document Type'),
         prefixIcon: const Icon(Icons.category_rounded),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(OpenVtsRadius.md),
         ),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: OpenVtsSpacing.sm),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: OpenVtsSpacing.sm,
+        ),
       ),
-      hint: const Text('Select document type'),
+      hint: Text(context.mobileText('Select document type')),
       items: types
-          .map((type) => DropdownMenuItem<String>(
-                value: type.id,
-                child: Text(type.name),
-              ))
+          .map(
+            (type) => DropdownMenuItem<String>(
+              value: type.id,
+              child: Text(type.name),
+            ),
+          )
           .toList(growable: false),
       onChanged: onChanged,
-      validator: (v) =>
-          (v ?? '').trim().isEmpty ? 'Document type is required.' : null,
+      validator: context.localizedValidator((v) => (v ?? '').trim().isEmpty ? 'Document type is required.' : null),
     );
   }
 }
@@ -374,7 +391,7 @@ class _FilePickerField extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'File',
+                    context.mobileText('File'),
                     style: OpenVtsTypography.meta.copyWith(
                       color: cs.onSurfaceVariant,
                     ),
@@ -385,11 +402,11 @@ class _FilePickerField extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: fileName != null
-                              ? cs.onSurface
-                              : cs.onSurfaceVariant,
-                        ),
+                      fontWeight: FontWeight.w600,
+                      color: fileName != null
+                          ? cs.onSurface
+                          : cs.onSurfaceVariant,
+                    ),
                   ),
                 ],
               ),
@@ -400,11 +417,7 @@ class _FilePickerField extends StatelessWidget {
                 child: CircularProgressIndicator(strokeWidth: 2),
               )
             else
-              Icon(
-                Icons.folder_open_rounded,
-                size: 18,
-                color: cs.primary,
-              ),
+              Icon(Icons.folder_open_rounded, size: 18, color: cs.primary),
           ],
         ),
       ),
@@ -447,7 +460,7 @@ class _ExpiryField extends ConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Expiry Date',
+                  context.mobileText('Expiry Date'),
                   style: OpenVtsTypography.meta.copyWith(
                     color: cs.onSurfaceVariant,
                     fontSize: 12,
@@ -455,12 +468,13 @@ class _ExpiryField extends ConsumerWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  value == null ? 'Optional' : formatter.formatDateTime(value!),
+                  value == null
+                      ? context.mobileText('Optional')
+                      : formatter.formatDateTime(value!),
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color:
-                            value == null ? cs.onSurfaceVariant : cs.onSurface,
-                      ),
+                    fontWeight: FontWeight.w600,
+                    color: value == null ? cs.onSurfaceVariant : cs.onSurface,
+                  ),
                 ),
               ],
             ),
@@ -468,10 +482,10 @@ class _ExpiryField extends ConsumerWidget {
           TextButton(
             onPressed: value == null ? onPick : onClear,
             child: Text(
-              value == null ? 'Select' : 'Clear',
-              style: OpenVtsTypography.label.copyWith(
-                color: cs.primary,
-              ),
+              value == null
+                  ? context.mobileText('Select')
+                  : context.mobileText('Clear'),
+              style: OpenVtsTypography.label.copyWith(color: cs.primary),
             ),
           ),
         ],
@@ -481,10 +495,7 @@ class _ExpiryField extends ConsumerWidget {
 }
 
 class _VisibilityToggle extends StatelessWidget {
-  const _VisibilityToggle({
-    required this.value,
-    required this.onChanged,
-  });
+  const _VisibilityToggle({required this.value, required this.onChanged});
 
   final bool value;
   final ValueChanged<bool> onChanged;
@@ -518,7 +529,7 @@ class _VisibilityToggle extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    'Visibility',
+                    context.mobileText('Visibility'),
                     style: OpenVtsTypography.meta.copyWith(
                       color: cs.onSurfaceVariant,
                       fontSize: 12,
@@ -526,20 +537,19 @@ class _VisibilityToggle extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    value ? 'Visible' : 'Hidden',
+                    value
+                        ? context.mobileText('Visible')
+                        : context.mobileText('Hidden'),
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: cs.onSurface,
-                        ),
+                      fontWeight: FontWeight.w600,
+                      color: cs.onSurface,
+                    ),
                   ),
                 ],
               ),
             ],
           ),
-          Switch(
-            value: value,
-            onChanged: onChanged,
-          ),
+          Switch(value: value, onChanged: onChanged),
         ],
       ),
     );

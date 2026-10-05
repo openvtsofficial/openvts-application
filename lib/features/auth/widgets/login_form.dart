@@ -5,7 +5,7 @@ import '../../../core/router/route_paths.dart';
 import '../../../core/theme/open_vts_colors.dart';
 import '../../../core/theme/open_vts_spacing.dart';
 import '../../../core/theme/open_vts_typography.dart';
-import '../../../core/utils/validators.dart';
+import '../../../shared/helpers/mobile_text.dart';
 import '../../../shared/widgets/open_vts_button.dart';
 import '../../../shared/widgets/open_vts_text_field.dart';
 
@@ -13,11 +13,13 @@ class LoginForm extends StatefulWidget {
   const LoginForm({
     required this.isLoading,
     required this.onSubmit,
+    required this.onDemo,
     super.key,
   });
 
   final bool isLoading;
   final void Function(String email, String password) onSubmit;
+  final VoidCallback onDemo;
 
   @override
   State<LoginForm> createState() => _LoginFormState();
@@ -36,7 +38,16 @@ class _LoginFormState extends State<LoginForm> {
     super.dispose();
   }
 
+  String? _asciiRequired(String? value, String field) {
+    if (value == null || value.isEmpty) return '$field is required.';
+    if (value.runes.any((rune) => rune > 127)) {
+      return '$field must use English characters.';
+    }
+    return null;
+  }
+
   void _submit() {
+    if (widget.isLoading) return;
     if (_formKey.currentState?.validate() != true) {
       return;
     }
@@ -57,20 +68,19 @@ class _LoginFormState extends State<LoginForm> {
         child: Column(
           children: [
             OpenVtsTextField(
-              label: 'Username',
-              hintText: 'Enter your username',
+              label: context.mobileText('Username or email'),
+              hintText: context.mobileText('Enter your username or email'),
               controller: _identifierController,
               keyboardType: TextInputType.text,
               textInputAction: TextInputAction.next,
               autofillHints: const [AutofillHints.username],
               prefixIcon: Icons.person_outline_rounded,
-              validator: (value) =>
-                  Validators.required(value, fieldName: 'Username'),
+              validator: (value) => _asciiRequired(value, 'Username or email'),
             ),
             const SizedBox(height: OpenVtsSpacing.md),
             OpenVtsTextField(
-              label: 'Password',
-              hintText: 'Enter your password',
+              label: context.mobileText('Password'),
+              hintText: context.mobileText('Enter your password'),
               controller: _passwordController,
               obscureText: _obscurePassword,
               textInputAction: TextInputAction.done,
@@ -82,7 +92,9 @@ class _LoginFormState extends State<LoginForm> {
                     _obscurePassword = !_obscurePassword;
                   });
                 },
-                tooltip: _obscurePassword ? 'Show password' : 'Hide password',
+                tooltip: _obscurePassword
+                    ? context.mobileText('Show password')
+                    : context.mobileText('Hide password'),
                 icon: Icon(
                   _obscurePassword
                       ? Icons.visibility_outlined
@@ -92,8 +104,7 @@ class _LoginFormState extends State<LoginForm> {
                       : OpenVtsColors.textSecondary,
                 ),
               ),
-              validator: (value) =>
-                  Validators.required(value, fieldName: 'Password'),
+              validator: (value) => _asciiRequired(value, 'Password'),
               onFieldSubmitted: (_) => _submit(),
             ),
             const SizedBox(height: OpenVtsSpacing.sm),
@@ -114,14 +125,14 @@ class _LoginFormState extends State<LoginForm> {
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                child: const Text('Forgot Password?'),
+                child: Text(context.mobileText('Forgot Password?')),
               ),
             ),
             const SizedBox(height: OpenVtsSpacing.md),
             SizedBox(
               width: double.infinity,
               child: OpenVtsButton(
-                label: 'Login',
+                label: context.mobileText('Login'),
                 isLoading: widget.isLoading,
                 trailingIcon: Icons.arrow_forward_rounded,
                 onPressed: _submit,

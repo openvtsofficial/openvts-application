@@ -5,7 +5,9 @@ import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
+import '../../../../../shared/helpers/validation_localizations.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../controllers/user_vehicle_details_controller.dart';
@@ -15,8 +17,11 @@ import '../../../models/user_vehicle_state.dart';
 class UserVehicleConfigTabView extends ConsumerStatefulWidget {
   const UserVehicleConfigTabView({required this.provider, super.key});
 
-  final AutoDisposeStateNotifierProvider<UserVehicleDetailsController,
-      UserVehicleDetailsState> provider;
+  final AutoDisposeStateNotifierProvider<
+    UserVehicleDetailsController,
+    UserVehicleDetailsState
+  >
+  provider;
 
   @override
   ConsumerState<UserVehicleConfigTabView> createState() =>
@@ -57,11 +62,11 @@ class _UserVehicleConfigTabViewState
   }
 
   List<TextEditingController> get _controllers => [
-        _speedController,
-        _distanceController,
-        _odometerController,
-        _engineHoursController,
-      ];
+    _speedController,
+    _distanceController,
+    _odometerController,
+    _engineHoursController,
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -73,7 +78,7 @@ class _UserVehicleConfigTabViewState
       return _StatusCard(
         isLoading: state.isLoadingVehicle,
         message: state.isLoadingVehicle
-            ? 'Loading config'
+            ? context.mobileText('Loading config')
             : state.sectionErrorMessage ?? 'Config could not be loaded.',
         onRetry: controller.loadVehicle,
       );
@@ -96,7 +101,7 @@ class _UserVehicleConfigTabViewState
           _DeviceSummaryCard(device: device),
           const SizedBox(height: OpenVtsSpacing.sm),
           _NumberConfigCard(
-            title: 'Speed Multiplier',
+            title: context.mobileText('Speed Multiplier'),
             helper: 'Default 1. Applied to speed calibration.',
             icon: Icons.speed_rounded,
             controller: _speedController,
@@ -104,7 +109,7 @@ class _UserVehicleConfigTabViewState
           ),
           const SizedBox(height: OpenVtsSpacing.sm),
           _NumberConfigCard(
-            title: 'Distance Multiplier',
+            title: context.mobileText('Distance Multiplier'),
             helper: 'Default 1. Applied to distance calibration.',
             icon: Icons.route_outlined,
             controller: _distanceController,
@@ -112,7 +117,7 @@ class _UserVehicleConfigTabViewState
           ),
           const SizedBox(height: OpenVtsSpacing.sm),
           _NumberConfigCard(
-            title: 'Set Odometer',
+            title: context.mobileText('Set Odometer'),
             helper: 'Seeded from live odometer when available.',
             icon: Icons.countertops_outlined,
             controller: _odometerController,
@@ -120,7 +125,7 @@ class _UserVehicleConfigTabViewState
           ),
           const SizedBox(height: OpenVtsSpacing.sm),
           _NumberConfigCard(
-            title: 'Set Engine Hours',
+            title: context.mobileText('Set Engine Hours'),
             helper: 'Seeded from live engine hours when available.',
             icon: Icons.timer_outlined,
             controller: _engineHoursController,
@@ -219,7 +224,9 @@ class _UserVehicleConfigTabViewState
     final values = _currentValues();
     if (values == null) return;
 
-    final ok = await ref.read(widget.provider.notifier).updateConfig(
+    final ok = await ref
+        .read(widget.provider.notifier)
+        .updateConfig(
           UserVehicleConfigUpdateRequest(
             speedVariation: values.speedVariation,
             distanceVariation: values.distanceVariation,
@@ -236,7 +243,10 @@ class _UserVehicleConfigTabViewState
           ? values
           : _ConfigValues.fromDevice(refreshedDevice);
       setState(() => _applyValues(refreshedValues, updateInitial: true));
-      ToastHelper.showSuccess('Config updated.', context: context);
+      ToastHelper.showSuccess(
+        context.mobileText('Config updated.'),
+        context: context,
+      );
       return;
     }
 
@@ -280,7 +290,7 @@ class _DeviceSummaryCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Device Config',
+                  context.mobileText('Device Config'),
                   style: OpenVtsTypography.label.copyWith(
                     color: cs.onSurface,
                     fontWeight: FontWeight.w800,
@@ -359,7 +369,7 @@ class _NumberConfigCard extends StatelessWidget {
                     decimal: true,
                   ),
                   textInputAction: TextInputAction.next,
-                  validator: validator,
+                  validator: context.localizedValidator(validator),
                   decoration: const InputDecoration(isDense: true),
                 ),
               ],
@@ -387,14 +397,10 @@ class _IgnitionSourceCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(
-                Icons.key_rounded,
-                size: 18,
-                color: cs.onSurfaceVariant,
-              ),
+              Icon(Icons.key_rounded, size: 18, color: cs.onSurfaceVariant),
               const SizedBox(width: OpenVtsSpacing.sm),
               Text(
-                'Ignition Source',
+                context.mobileText('Ignition Source'),
                 style: OpenVtsTypography.label.copyWith(
                   color: cs.onSurface,
                   fontWeight: FontWeight.w800,
@@ -404,7 +410,9 @@ class _IgnitionSourceCard extends StatelessWidget {
           ),
           const SizedBox(height: 3),
           Text(
-            'ACC means wire/ACC. MOTION means motion fallback.',
+            context.mobileText(
+              'ACC means wire/ACC. MOTION means motion fallback.',
+            ),
             style: OpenVtsTypography.meta.copyWith(
               color: cs.onSurfaceVariant,
               fontWeight: FontWeight.w600,
@@ -437,9 +445,7 @@ class _IgnitionSourceCard extends StatelessWidget {
                   }
                   return Colors.transparent;
                 }),
-                side: WidgetStatePropertyAll(
-                  BorderSide(color: cs.outline),
-                ),
+                side: WidgetStatePropertyAll(BorderSide(color: cs.outline)),
               ),
               onSelectionChanged: onChanged,
             ),
@@ -473,7 +479,7 @@ class _SaveBar extends StatelessWidget {
           children: [
             Expanded(
               child: OpenVtsButton(
-                label: 'Reset',
+                label: context.mobileText('Reset'),
                 height: 40,
                 variant: OpenVtsButtonVariant.secondary,
                 onPressed: onReset,
@@ -482,7 +488,9 @@ class _SaveBar extends StatelessWidget {
             const SizedBox(width: OpenVtsSpacing.sm),
             Expanded(
               child: OpenVtsButton(
-                label: isDirty ? 'Save' : 'Saved',
+                label: isDirty
+                    ? context.mobileText('Save')
+                    : context.mobileText('Saved'),
                 height: 40,
                 isLoading: isSaving,
                 trailingIcon: Icons.check_rounded,
@@ -506,15 +514,11 @@ class _NoDeviceCard extends StatelessWidget {
       padding: const EdgeInsets.all(OpenVtsSpacing.md),
       child: Row(
         children: [
-          Icon(
-            Icons.memory_outlined,
-            size: 18,
-            color: cs.onSurfaceVariant,
-          ),
+          Icon(Icons.memory_outlined, size: 18, color: cs.onSurfaceVariant),
           const SizedBox(width: OpenVtsSpacing.sm),
           Expanded(
             child: Text(
-              'No device assigned to this vehicle.',
+              context.mobileText('No device assigned to this vehicle.'),
               style: OpenVtsTypography.meta.copyWith(
                 color: cs.onSurfaceVariant,
                 fontWeight: FontWeight.w700,
@@ -572,7 +576,7 @@ class _StatusCard extends StatelessWidget {
                 ),
                 const SizedBox(height: OpenVtsSpacing.sm),
                 OpenVtsButton(
-                  label: 'Retry',
+                  label: context.mobileText('Retry'),
                   height: 36,
                   variant: OpenVtsButtonVariant.secondary,
                   onPressed: onRetry,

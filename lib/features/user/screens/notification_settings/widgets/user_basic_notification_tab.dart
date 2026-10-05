@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../core/theme/open_vts_spacing.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/widgets/open_vts_empty_state.dart';
 import '../../../models/user_notification_settings_model.dart';
 import 'user_notification_channel_card.dart';
@@ -19,12 +20,13 @@ class UserBasicNotificationTab extends StatelessWidget {
   final UserNotificationPreferences preferences;
   final UserNotificationChannelFlags channelFlags;
   final void Function(UserNotificationChannel channel, bool value)
-      onChannelChanged;
+  onChannelChanged;
   final void Function(
     int vehicleId, {
     bool? ignitionEnabled,
     bool? alarmEnabled,
-  }) onVehicleToggle;
+  })
+  onVehicleToggle;
 
   @override
   Widget build(BuildContext context) {
@@ -37,9 +39,11 @@ class UserBasicNotificationTab extends StatelessWidget {
             onChanged: onChannelChanged,
           ),
           const SizedBox(height: OpenVtsSpacing.sm),
-          const OpenVtsEmptyState(
-            title: 'No vehicles assigned yet.',
-            message: 'Assign vehicles to configure basic notifications.',
+          OpenVtsEmptyState(
+            title: context.mobileText('No vehicles assigned yet.'),
+            message: context.mobileText(
+              'Assign vehicles to configure basic notifications.',
+            ),
           ),
         ],
       );
@@ -58,10 +62,13 @@ class UserBasicNotificationTab extends StatelessWidget {
         ),
         const SizedBox(height: OpenVtsSpacing.sm),
         ...preferences.vehicles.map((vehicle) {
-          final row = rowsByVehicle[vehicle.id] ??
+          final row =
+              rowsByVehicle[vehicle.id] ??
               UserBasicNotificationRow(vehicleId: vehicle.id);
-          final vehicleLabel =
-              userNotificationVehicleName(vehicle.name, vehicle.id);
+          final vehicleLabel = userNotificationVehicleName(
+            vehicle.name,
+            vehicle.id,
+          );
 
           return Padding(
             padding: const EdgeInsets.only(bottom: OpenVtsSpacing.sm),
@@ -71,7 +78,7 @@ class UserBasicNotificationTab extends StatelessWidget {
               child: Column(
                 children: [
                   UserNotificationCompactToggle(
-                    label: 'Ignition',
+                    label: context.mobileText('Ignition'),
                     icon: Icons.power_settings_new_rounded,
                     semanticsLabel: 'Ignition alerts for $vehicleLabel',
                     value: row.ignitionEnabled,
@@ -81,7 +88,7 @@ class UserBasicNotificationTab extends StatelessWidget {
                   ),
                   const SizedBox(height: OpenVtsSpacing.xs),
                   UserNotificationCompactToggle(
-                    label: 'Alarm',
+                    label: context.mobileText('Alarm'),
                     icon: Icons.notifications_active_outlined,
                     semanticsLabel: 'Alarm alerts for $vehicleLabel',
                     value: row.alarmEnabled,

@@ -8,6 +8,7 @@ import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../core/utils/date_time_formatter.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../../../shared/widgets/open_vts_status_chip.dart';
 import '../../../models/user_settings_model.dart';
@@ -111,23 +112,25 @@ class UserProfileHeaderCard extends ConsumerWidget {
             children: [
               OpenVtsStatusChip(
                 label: profile.isEmailVerified
-                    ? 'Email verified'
-                    : 'Email pending',
+                    ? context.mobileText('Email verified')
+                    : context.mobileText('Email pending'),
                 type: profile.isEmailVerified
                     ? OpenVtsStatusType.success
                     : OpenVtsStatusType.warning,
               ),
               OpenVtsStatusChip(
                 label: profile.isMobileVerified
-                    ? 'WhatsApp verified'
-                    : 'WhatsApp pending',
+                    ? context.mobileText('WhatsApp verified')
+                    : context.mobileText('WhatsApp pending'),
                 type: profile.isMobileVerified
                     ? OpenVtsStatusType.success
                     : OpenVtsStatusType.warning,
               ),
               if (profile.credits != null)
                 OpenVtsStatusChip(
-                  label: '${profile.credits!.toStringAsFixed(0)} credits',
+                  label: context.mobileText("{value1} credits", {
+                    'value1': (profile.credits!.toStringAsFixed(0)).toString(),
+                  }),
                   type: OpenVtsStatusType.info,
                 ),
             ],
@@ -139,14 +142,22 @@ class UserProfileHeaderCard extends ConsumerWidget {
             children: [
               if (profile.createdAt != null)
                 Text(
-                  'Joined ${profileHeaderDateFormatter.formatDate(profile.createdAt!.toLocal())}',
+                  context.mobileText("Joined {value1}", {
+                    'value1': (profileHeaderDateFormatter.formatDate(
+                      profile.createdAt!.toLocal(),
+                    )).toString(),
+                  }),
                   style: OpenVtsTypography.meta.copyWith(
                     color: Theme.of(context).colorScheme.outline,
                   ),
                 ),
               if (profile.updatedAt != null)
                 Text(
-                  'Updated ${profileHeaderDateFormatter.formatDateTime(profile.updatedAt!.toLocal())}',
+                  context.mobileText("Updated {value1}", {
+                    'value1': (profileHeaderDateFormatter.formatDateTime(
+                      profile.updatedAt!.toLocal(),
+                    )).toString(),
+                  }),
                   style: OpenVtsTypography.meta.copyWith(
                     color: Theme.of(context).colorScheme.outline,
                   ),
@@ -158,13 +169,15 @@ class UserProfileHeaderCard extends ConsumerWidget {
             children: [
               _CompactSecondaryButton(
                 icon: Icons.photo_camera_outlined,
-                label: isUploadingAvatar ? 'Uploading...' : 'Change Avatar',
+                label: isUploadingAvatar
+                    ? context.mobileText('Uploading...')
+                    : context.mobileText('Change Avatar'),
                 onPressed: isUploadingAvatar ? null : onChangeAvatar,
               ),
               const SizedBox(width: OpenVtsSpacing.xs),
               _CompactSecondaryButton(
                 icon: Icons.edit_outlined,
-                label: 'Edit Profile',
+                label: context.mobileText('Edit profile'),
                 onPressed: onEditProfile,
               ),
             ],

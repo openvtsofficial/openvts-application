@@ -1,8 +1,8 @@
 import 'package:dio/dio.dart';
 
 import '../../../core/api/api_client.dart';
-import '../../../core/config/app_config.dart';
 import '../../../core/api/api_options.dart';
+import '../../../core/config/app_config.dart';
 import '../../../shared/models/vehicle_summary.dart';
 import '../../notifications/models/app_notification.dart';
 import '../../superadmin/models/superadmin_map_overlay_model.dart';
@@ -46,10 +46,10 @@ class LiveMapVehicleService {
   LiveMapVehicleService({
     required ApiClient apiClient,
     required LiveMapRoleConfig config,
-  })  : _apiClient = apiClient,
-        _config = config,
-        _parsers = SuperadminVehicleService(apiClient),
-        _overlayParsers = SuperadminMapOverlayService(apiClient);
+  }) : _apiClient = apiClient,
+       _config = config,
+       _parsers = SuperadminVehicleService(apiClient),
+       _overlayParsers = SuperadminMapOverlayService(apiClient);
 
   final ApiClient _apiClient;
   final LiveMapRoleConfig _config;
@@ -81,9 +81,7 @@ class LiveMapVehicleService {
     );
   }
 
-  LiveMapTelemetry buildTelemetryFromVehicles(
-    List<VehicleSummary> vehicles,
-  ) {
+  LiveMapTelemetry buildTelemetryFromVehicles(List<VehicleSummary> vehicles) {
     return _parsers.buildTelemetryFromVehicles(vehicles);
   }
 
@@ -124,10 +122,15 @@ class LiveMapVehicleService {
       return _parsers.getMapTelemetry(refreshKey: refreshKey);
     }
 
-    return _parsers.loadMapTelemetryEndpoint(
+    final response = await _apiClient.get<LiveMapTelemetry>(
       _config.mapTelemetryEndpoint,
-      refreshKey: refreshKey,
+      queryParameters: <String, dynamic>{
+        'rk': refreshKey ?? DateTime.now().millisecondsSinceEpoch.toString(),
+      },
+      options: _readOptions,
+      parser: _parsers.parseMapTelemetryPayload,
     );
+    return response.data;
   }
 
   // -------------------------------------------------------------------------
@@ -165,8 +168,8 @@ class LiveMapVehicleService {
     final normalizedLimit = limit < 1
         ? 100
         : limit > 500
-            ? 500
-            : limit;
+        ? 500
+        : limit;
     final normalizedCursor = beforeId?.trim() ?? '';
 
     if (AppConfig.useMockData) {
@@ -202,8 +205,8 @@ class LiveMapVehicleService {
     final normalizedLimit = limit < 1
         ? 50
         : limit > 300
-            ? 300
-            : limit;
+        ? 300
+        : limit;
     final normalizedCursor = beforeId?.trim() ?? '';
 
     if (AppConfig.useMockData) {
@@ -245,9 +248,7 @@ class LiveMapVehicleService {
 
     final response = await _apiClient.get<LiveMapVehicleSensorPage>(
       _config.vehicleSensorsByImei(normalizedImei),
-      queryParameters: const <String, dynamic>{
-        'includeTelemetryMeta': 'true',
-      },
+      queryParameters: const <String, dynamic>{'includeTelemetryMeta': 'true'},
       options: _readOptions,
       parser: _parsers.parseVehicleSensorsPayload,
     );
@@ -369,9 +370,7 @@ class LiveMapVehicleService {
   Future<List<SuperadminMapPoi>> getPois({String? refreshKey}) async {
     final endpoint = _config.poisEndpoint;
     if (!_config.supportsPoi || endpoint == null) {
-      throw StateError(
-        'POIs are not enabled for role ${_config.role.name}.',
-      );
+      throw StateError('POIs are not enabled for role ${_config.role.name}.');
     }
 
     final response = await _apiClient.get<List<SuperadminMapPoi>>(
@@ -388,9 +387,7 @@ class LiveMapVehicleService {
   Future<List<SuperadminMapRoute>> getRoutes({String? refreshKey}) async {
     final endpoint = _config.routesEndpoint;
     if (!_config.supportsRoute || endpoint == null) {
-      throw StateError(
-        'Routes are not enabled for role ${_config.role.name}.',
-      );
+      throw StateError('Routes are not enabled for role ${_config.role.name}.');
     }
 
     final response = await _apiClient.get<List<SuperadminMapRoute>>(
@@ -540,42 +537,16 @@ class LiveMapVehicleService {
       throw ArgumentError('Command text must be 500 characters or less.');
     }
 
-    final response = await _apiClient.post<dynamic>(
+    final response = await _apiClient.post<LiveMapSendCommandResult>(
       endpoint,
       data: <String, dynamic>{
-        'mode': 'SELECTED',
-        'vehicleIds': normalizedIds.map((id) {
-          final value = int.tryParse(id);
-          if (value == null || value <= 0) {
-            throw ArgumentError('Vehicle IDs must be positive integers.');
-          }
-          return value;
-        }).toSet().toList(growable: false),
+        'vehicleIds': normalizedIds,
         'command': normalizedCommand,
       },
       options: _readOptions,
-      parser: (json) => json,
+      parser: _parsers.parseSendCommandResponsePayload,
     );
-    final payload = response.data;
-    final results = payload is Map ? payload['results'] : null;
-    if (results is! List || results.isEmpty) {
-      throw StateError('The server did not dispatch a command to this vehicle.');
-    }
-    for (final result in results) {
-      if (result is Map && result['error'] != null) {
-        throw StateError(result['error'].toString());
-      }
-    }
-    // The map sends to its selected vehicle; bulk results wrap its command ID.
-    // Unwrap the matching item so status polling follows the actual dispatch.
-    final selected = results.whereType<Map>().where(
-      (result) => result['vehicleId']?.toString() ==
-          int.parse(normalizedIds.first).toString(),
-    );
-    if (selected.isEmpty) {
-      throw StateError('The server did not return this vehicle command.');
-    }
-    return _parsers.parseSendCommandResponsePayload(selected.first);
+    return response.data;
   }
 
   /// Per-IMEI command history (superadmin/admin).
@@ -601,8 +572,8 @@ class LiveMapVehicleService {
     final normalizedLimit = limit < 1
         ? 50
         : limit > 100
-            ? 100
-            : limit;
+        ? 100
+        : limit;
     final normalizedCursor = cursorId?.trim() ?? '';
 
     if (AppConfig.useMockData) {
@@ -648,8 +619,8 @@ class LiveMapVehicleService {
     final normalizedLimit = limit < 1
         ? 50
         : limit > 100
-            ? 100
-            : limit;
+        ? 100
+        : limit;
     final normalizedCursor = cursorId?.trim() ?? '';
 
     final response = await _apiClient.get<LiveMapCommandHistoryPage>(

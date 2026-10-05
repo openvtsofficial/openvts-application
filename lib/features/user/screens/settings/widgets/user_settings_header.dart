@@ -6,6 +6,7 @@ import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../core/utils/date_time_formatter.dart';
 import '../../../../../l10n/app_localizations.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../../../shared/widgets/open_vts_status_chip.dart';
 import '../../../models/user_settings_model.dart';
@@ -28,15 +29,14 @@ class UserSettingsHeader extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final settingsDateFormatter = ref.watch(appDateFormatterProvider);
-    final tabLabel = selectedTab == UserSettingsTab.profile
+    final tabLabel = selectedTab == UserSettingsTab.security
+        ? l10n.security
+        : selectedTab == UserSettingsTab.profile
         ? l10n.profile
         : l10n.localization;
 
     final statusChip = isCurrentTabSaving
-        ? OpenVtsStatusChip(
-            label: l10n.loading,
-            type: OpenVtsStatusType.info,
-          )
+        ? OpenVtsStatusChip(label: l10n.loading, type: OpenVtsStatusType.info)
         : OpenVtsStatusChip(
             label: isCurrentTabDirty ? l10n.unsavedChanges : l10n.success,
             type: isCurrentTabDirty
@@ -59,7 +59,8 @@ class UserSettingsHeader extends ConsumerWidget {
                   color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
                   border: Border.all(
-                      color: Theme.of(context).colorScheme.outlineVariant),
+                    color: Theme.of(context).colorScheme.outlineVariant,
+                  ),
                 ),
                 child: Icon(
                   Icons.settings_outlined,
@@ -114,7 +115,11 @@ class UserSettingsHeader extends ConsumerWidget {
           if (lastUpdatedAt != null) ...[
             const SizedBox(height: OpenVtsSpacing.xs),
             Text(
-              'Profile updated ${settingsDateFormatter.formatDateTime(lastUpdatedAt!.toLocal())}',
+              context.mobileText("Profile updated {value1}", {
+                'value1': (settingsDateFormatter.formatDateTime(
+                  lastUpdatedAt!.toLocal(),
+                )).toString(),
+              }),
               style: OpenVtsTypography.meta.copyWith(
                 color: Theme.of(context).colorScheme.outline,
               ),

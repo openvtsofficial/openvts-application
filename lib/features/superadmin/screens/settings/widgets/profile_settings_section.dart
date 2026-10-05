@@ -11,6 +11,8 @@ import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../core/utils/validators.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
@@ -47,8 +49,9 @@ class _ProfileSettingsSectionState
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance
-        .addPostFrameCallback((_) => _maybeLoadSubscription());
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _maybeLoadSubscription(),
+    );
   }
 
   @override
@@ -102,7 +105,7 @@ class _ProfileSettingsSectionState
             ),
             const SizedBox(height: OpenVtsSpacing.sm),
             OpenVtsButton(
-              label: 'Retry',
+              label: context.mobileText('Retry'),
               variant: OpenVtsButtonVariant.secondary,
               height: 38,
               onPressed: _controller.loadProfile,
@@ -167,7 +170,7 @@ class _ProfileSettingsSectionState
     final address = profile.address;
     final updated = current.copyWith(
       name: profile.name ?? current.name,
-      email: profile.email ?? current.email,
+      email: profile.email ?? '',
       username: profile.username ?? current.username,
       profileUrl: profile.profileUrl ?? current.profileUrl,
       mobilePrefix: profile.mobilePrefix ?? current.mobilePrefix,
@@ -189,7 +192,7 @@ class _ProfileSettingsSectionState
     final profile = widget.state.profile;
     final userId = profile?.uid?.toString();
     if (userId == null || userId.isEmpty) {
-      ToastHelper.showError('Profile not loaded yet.');
+      ToastHelper.showError(context.mobileText('Profile not loaded yet.'));
       return;
     }
 
@@ -201,15 +204,16 @@ class _ProfileSettingsSectionState
         imageQuality: 90,
       );
     } catch (_) {
-      ToastHelper.showError('Unable to open image picker.');
+      if (!mounted) return;
+      ToastHelper.showError(context.mobileText('Unable to open image picker.'));
       return;
     }
-    if (picked == null) return;
+    if (!mounted || picked == null) return;
 
     final ext = picked.name.split('.').last.toLowerCase();
     if (!_allowedImageExts.contains(ext)) {
       ToastHelper.showError(
-        'Unsupported format. Use PNG, JPG, JPEG or WEBP.',
+        context.mobileText('Unsupported format. Use PNG, JPG, JPEG or WEBP.'),
       );
       return;
     }
@@ -218,15 +222,19 @@ class _ProfileSettingsSectionState
     try {
       bytes = await picked.readAsBytes();
     } catch (_) {
-      ToastHelper.showError('Unable to read the selected image.');
+      if (!mounted) return;
+      ToastHelper.showError(
+        context.mobileText('Unable to read the selected image.'),
+      );
       return;
     }
+    if (!mounted) return;
     if (bytes.isEmpty) {
-      ToastHelper.showError('Selected file is empty.');
+      ToastHelper.showError(context.mobileText('Selected file is empty.'));
       return;
     }
     if (bytes.length > _maxImageBytes) {
-      ToastHelper.showError('Image too large. Max 5 MB.');
+      ToastHelper.showError(context.mobileText('Image too large. Max 5 MB.'));
       return;
     }
 
@@ -242,11 +250,11 @@ class _ProfileSettingsSectionState
       });
       await _syncCurrentUser();
       if (!mounted) return;
-      ToastHelper.showSuccess('Profile photo updated');
+      ToastHelper.showSuccess(context.mobileText('Profile photo updated'));
     } else {
       final msg =
           ref.read(superadminSettingsControllerProvider).sectionErrorMessage ??
-              'Unable to upload photo.';
+          'Unable to upload photo.';
       ToastHelper.showError(msg);
     }
   }
@@ -262,15 +270,14 @@ class _ProfileSettingsSectionState
     if (saved == true && mounted) {
       await _syncCurrentUser();
       if (!mounted) return;
-      ToastHelper.showSuccess('Profile updated');
+      ToastHelper.showSuccess(context.mobileText('Profile updated'));
     }
   }
 
   Future<void> _openChangePasswordSheet() async {
     final ok = await _showSheet<bool>(child: const _ChangePasswordSheet());
     if (ok == true && mounted) {
-      ToastHelper.showSuccess('Password changed. Please sign in again.');
-      await ref.read(authControllerProvider.notifier).logoutAllRoles();
+      ToastHelper.showSuccess(context.mobileText('Password changed'));
     }
   }
 
@@ -284,7 +291,7 @@ class _ProfileSettingsSectionState
     if (saved == true && mounted) {
       await _syncCurrentUser();
       if (!mounted) return;
-      ToastHelper.showSuccess('Company updated');
+      ToastHelper.showSuccess(context.mobileText('Company updated'));
     }
   }
 
@@ -294,7 +301,9 @@ class _ProfileSettingsSectionState
     );
     if (ok == true && mounted) {
       ToastHelper.showSuccess(
-        channel == _OtpChannel.email ? 'Email verified' : 'WhatsApp verified',
+        channel == _OtpChannel.email
+            ? context.mobileText('Email verified')
+            : context.mobileText('WhatsApp verified'),
       );
     }
   }
@@ -312,11 +321,13 @@ class _ProfileSettingsSectionState
     final ok = await _controller.subscribeEmail();
     if (!mounted) return;
     if (ok) {
-      ToastHelper.showSuccess('Subscribed to email updates');
+      ToastHelper.showSuccess(
+        context.mobileText('Subscribed to email updates'),
+      );
     } else {
       final msg =
           ref.read(superadminSettingsControllerProvider).sectionErrorMessage ??
-              'Unable to subscribe.';
+          'Unable to subscribe.';
       ToastHelper.showError(msg);
     }
   }
@@ -327,7 +338,11 @@ class _ProfileSettingsSectionState
     if (!mounted) return;
     final label = (loggedOut ?? activeRole)?.displayLabel;
     if (label != null) {
-      ToastHelper.showInfo('Logged out from $label');
+      ToastHelper.showInfo(
+        context.mobileText("Logged out from {value1}", {
+          'value1': (label).toString(),
+        }),
+      );
     }
   }
 }
@@ -385,7 +400,7 @@ class _ProfileHeaderCard extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      name.isNotEmpty ? name : 'Superadmin',
+                      name.isNotEmpty ? name : context.mobileText('Superadmin'),
                       style: TextStyle(
                         fontFamily: OpenVtsTypography.primaryFontFamily,
                         fontSize: 15,
@@ -420,9 +435,11 @@ class _ProfileHeaderCard extends ConsumerWidget {
             if (email.isNotEmpty)
               Row(
                 children: [
-                  Icon(Icons.mail_outline_rounded,
-                      size: 14,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant),
+                  Icon(
+                    Icons.mail_outline_rounded,
+                    size: 14,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
@@ -444,9 +461,11 @@ class _ProfileHeaderCard extends ConsumerWidget {
             if (mobile.isNotEmpty)
               Row(
                 children: [
-                  Icon(Icons.phone_outlined,
-                      size: 14,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant),
+                  Icon(
+                    Icons.phone_outlined,
+                    size: 14,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
@@ -467,7 +486,9 @@ class _ProfileHeaderCard extends ConsumerWidget {
           if (profile.credits != null) ...[
             const SizedBox(height: OpenVtsSpacing.md),
             Divider(
-                height: 1, color: Theme.of(context).colorScheme.outlineVariant),
+              height: 1,
+              color: Theme.of(context).colorScheme.outlineVariant,
+            ),
             const SizedBox(height: OpenVtsSpacing.md),
             Container(
               padding: const EdgeInsets.symmetric(
@@ -478,13 +499,16 @@ class _ProfileHeaderCard extends ConsumerWidget {
                 color: Theme.of(context).colorScheme.surface,
                 borderRadius: BorderRadius.circular(OpenVtsRadius.md),
                 border: Border.all(
-                    color: Theme.of(context).colorScheme.outlineVariant),
+                  color: Theme.of(context).colorScheme.outlineVariant,
+                ),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.credit_card_outlined,
-                      size: 16,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant),
+                  Icon(
+                    Icons.credit_card_outlined,
+                    size: 16,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Column(
@@ -492,12 +516,13 @@ class _ProfileHeaderCard extends ConsumerWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          'Credits',
+                          context.mobileText('Credits'),
                           style: TextStyle(
                             fontFamily: OpenVtsTypography.primaryFontFamily,
                             fontSize: 11,
-                            color:
-                                Theme.of(context).colorScheme.onSurfaceVariant,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
                             height: 1.1,
                           ),
                         ),
@@ -591,9 +616,7 @@ class _AvatarWithEdit extends StatelessWidget {
                     height: 18,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation(
-                        OpenVtsColors.white,
-                      ),
+                      valueColor: AlwaysStoppedAnimation(OpenVtsColors.white),
                     ),
                   ),
                 ),
@@ -659,7 +682,7 @@ class _VerificationCard extends StatelessWidget {
         children: [
           _VerificationRow(
             icon: Icons.mail_outline_rounded,
-            label: 'Email',
+            label: context.mobileText('Email'),
             value: profile.email ?? '',
             verified: profile.isEmailVerified,
             busy: isRequestingEmailOtp,
@@ -671,7 +694,7 @@ class _VerificationCard extends StatelessWidget {
           ),
           _VerificationRow(
             icon: Icons.chat_outlined,
-            label: 'WhatsApp',
+            label: context.mobileText('WhatsApp'),
             value: [
               profile.mobilePrefix?.trim() ?? '',
               profile.mobileNumber?.trim() ?? '',
@@ -707,8 +730,11 @@ class _VerificationRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon,
-            size: 18, color: Theme.of(context).colorScheme.onSurfaceVariant),
+        Icon(
+          icon,
+          size: 18,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
         const SizedBox(width: OpenVtsSpacing.xs),
         Expanded(
           child: Column(
@@ -745,23 +771,20 @@ class _VerificationRow extends StatelessWidget {
             decoration: BoxDecoration(
               color: OpenVtsColors.success.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
-              border: Border.all(
-                color: OpenVtsColors.success,
-                width: 1,
-              ),
+              border: Border.all(color: OpenVtsColors.success, width: 1),
             ),
-            child: const Row(
+            child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
+                const Icon(
                   Icons.check_circle,
                   size: 11,
                   color: OpenVtsColors.success,
                 ),
-                SizedBox(width: 4),
+                const SizedBox(width: 4),
                 Text(
-                  'Verified',
-                  style: TextStyle(
+                  context.mobileText('Verified'),
+                  style: const TextStyle(
                     fontFamily: OpenVtsTypography.primaryFontFamily,
                     fontSize: 10.5,
                     fontWeight: FontWeight.w600,
@@ -817,7 +840,7 @@ class _VerificationRow extends StatelessWidget {
                             valueColor: AlwaysStoppedAnimation(Colors.black),
                           ),
                         )
-                      : const Text('Verify'),
+                      : Text(context.mobileText('Verify')),
                 );
               },
             ),
@@ -866,8 +889,9 @@ class _AddressCardState extends ConsumerState<_AddressCard> {
     final address = widget.profile.address;
     final countryCode = address?.countryCode?.trim() ?? '';
     final stateCode = address?.stateCode?.trim() ?? '';
-    final controller =
-        ref.read(superadminAdministratorsControllerProvider.notifier);
+    final controller = ref.read(
+      superadminAdministratorsControllerProvider.notifier,
+    );
 
     try {
       final countries = await controller.getCountries();
@@ -935,7 +959,8 @@ class _AddressCardState extends ConsumerState<_AddressCard> {
     final city = _cityLabel(address?.cityDisplayName ?? profile.cityName ?? '');
     final pincode = address?.pincode ?? '';
 
-    final hasAddress = addressLine.trim().isNotEmpty ||
+    final hasAddress =
+        addressLine.trim().isNotEmpty ||
         countryCode.trim().isNotEmpty ||
         stateCode.trim().isNotEmpty ||
         city.trim().isNotEmpty ||
@@ -944,35 +969,35 @@ class _AddressCardState extends ConsumerState<_AddressCard> {
     if (!hasAddress) return const SizedBox.shrink();
 
     return _SectionCard(
-      title: 'ADDRESS',
+      title: context.mobileText('Address'),
       children: [
         if (addressLine.trim().isNotEmpty)
           _InfoRow(
-            label: 'Address',
+            label: context.mobileText('Address'),
             value: addressLine,
             icon: Icons.home_outlined,
           ),
         if (countryCode.trim().isNotEmpty)
           _InfoRow(
-            label: 'Country',
+            label: context.mobileText('Country'),
             value: country,
             icon: Icons.public_outlined,
           ),
         if (stateCode.trim().isNotEmpty)
           _InfoRow(
-            label: 'State',
+            label: context.mobileText('State'),
             value: state,
             icon: Icons.map_outlined,
           ),
         if (city.trim().isNotEmpty)
           _InfoRow(
-            label: 'City',
+            label: context.mobileText('City'),
             value: city,
             icon: Icons.location_city_outlined,
           ),
         if (pincode.trim().isNotEmpty)
           _InfoRow(
-            label: 'Pincode',
+            label: context.mobileText('Pincode'),
             value: pincode,
             icon: Icons.local_post_office_outlined,
           ),
@@ -1037,7 +1062,9 @@ class _SectionCard extends StatelessWidget {
             ),
           const SizedBox(height: OpenVtsSpacing.xs),
           Divider(
-              height: 1, color: Theme.of(context).colorScheme.outlineVariant),
+            height: 1,
+            color: Theme.of(context).colorScheme.outlineVariant,
+          ),
           const SizedBox(height: OpenVtsSpacing.xs),
           ...children,
         ],
@@ -1068,8 +1095,11 @@ class _InfoRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon,
-              size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
+          Icon(
+            icon,
+            size: 14,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
           const SizedBox(width: 8),
           SizedBox(
             width: 100,
@@ -1106,10 +1136,7 @@ class _InfoRow extends StatelessWidget {
 // =====================================================================
 
 class _CompanyCard extends StatelessWidget {
-  const _CompanyCard({
-    required this.company,
-    required this.onEditCompany,
-  });
+  const _CompanyCard({required this.company, required this.onEditCompany});
 
   final SuperadminCompanySettings? company;
   final VoidCallback onEditCompany;
@@ -1121,7 +1148,7 @@ class _CompanyCard extends StatelessWidget {
     final domain = company?.customDomain ?? '';
 
     return _SectionCard(
-      title: 'COMPANY',
+      title: context.mobileText('Company'),
       trailing: SizedBox(
         width: 32,
         height: 32,
@@ -1133,26 +1160,26 @@ class _CompanyCard extends StatelessWidget {
             size: 16,
             color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
-          tooltip: 'Edit company',
+          tooltip: context.mobileText('Edit company'),
           onPressed: onEditCompany,
         ),
       ),
       children: [
         if (companyName.isNotEmpty)
           _InfoRow(
-            label: 'Company',
+            label: context.mobileText('Company'),
             value: companyName,
             icon: Icons.business_outlined,
           ),
         if (website.isNotEmpty)
           _InfoRow(
-            label: 'Website',
+            label: context.mobileText('Website'),
             value: website,
             icon: Icons.language_outlined,
           ),
         if (domain.isNotEmpty)
           _InfoRow(
-            label: 'Domain',
+            label: context.mobileText('Domain'),
             value: domain,
             icon: Icons.dns_outlined,
           ),
@@ -1180,7 +1207,7 @@ class _ActionsCard extends StatelessWidget {
       children: [
         Expanded(
           child: OpenVtsButton(
-            label: 'Edit Profile',
+            label: context.mobileText('Edit profile'),
             variant: OpenVtsButtonVariant.secondary,
             onPressed: onEditProfile,
           ),
@@ -1188,7 +1215,7 @@ class _ActionsCard extends StatelessWidget {
         const SizedBox(width: OpenVtsSpacing.sm),
         Expanded(
           child: OpenVtsButton(
-            label: 'Change Password',
+            label: context.mobileText('Change Password'),
             variant: OpenVtsButtonVariant.secondary,
             onPressed: onChangePassword,
           ),
@@ -1233,7 +1260,8 @@ class _EmailSubscriptionCard extends StatelessWidget {
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.surface,
               border: Border.all(
-                  color: Theme.of(context).colorScheme.outlineVariant),
+                color: Theme.of(context).colorScheme.outlineVariant,
+              ),
               borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
             ),
             child: Icon(
@@ -1248,7 +1276,7 @@ class _EmailSubscriptionCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Email Subscription',
+                  context.mobileText('Email Subscription'),
                   style: TextStyle(
                     fontFamily: OpenVtsTypography.primaryFontFamily,
                     fontSize: 13.5,
@@ -1259,12 +1287,12 @@ class _EmailSubscriptionCard extends StatelessWidget {
                 const SizedBox(height: 1),
                 Text(
                   isLoading
-                      ? 'Checking status…'
+                      ? context.mobileText('Checking status…')
                       : subscribed == null
-                          ? 'Status unknown'
-                          : isSubscribed
-                              ? 'Subscribed'
-                              : 'Not subscribed',
+                      ? context.mobileText('Status unknown')
+                      : isSubscribed
+                      ? context.mobileText('Subscribed')
+                      : context.mobileText('Not subscribed'),
                   style: TextStyle(
                     fontFamily: OpenVtsTypography.primaryFontFamily,
                     fontSize: 11.5,
@@ -1277,7 +1305,7 @@ class _EmailSubscriptionCard extends StatelessWidget {
           const SizedBox(width: OpenVtsSpacing.xs),
           if (isSubscribed)
             IconButton(
-              tooltip: 'Refresh',
+              tooltip: context.mobileText('Refresh'),
               onPressed: isLoading ? null : onRefresh,
               icon: const Icon(Icons.refresh_rounded, size: 18),
               visualDensity: VisualDensity.compact,
@@ -1286,7 +1314,7 @@ class _EmailSubscriptionCard extends StatelessWidget {
             SizedBox(
               height: 32,
               child: OpenVtsButton(
-                label: 'Subscribe',
+                label: context.mobileText('Subscribe'),
                 variant: OpenVtsButtonVariant.secondary,
                 height: 32,
                 isLoading: isSubscribing,
@@ -1321,7 +1349,8 @@ class _LogoutCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.surface,
                   border: Border.all(
-                      color: Theme.of(context).colorScheme.outlineVariant),
+                    color: Theme.of(context).colorScheme.outlineVariant,
+                  ),
                   borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
                 ),
                 child: Icon(
@@ -1336,7 +1365,7 @@ class _LogoutCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Sign out',
+                      context.mobileText('Sign out'),
                       style: TextStyle(
                         fontFamily: OpenVtsTypography.primaryFontFamily,
                         fontSize: 13.5,
@@ -1346,7 +1375,7 @@ class _LogoutCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 1),
                     Text(
-                      'End this session on this device.',
+                      context.mobileText('End this session on this device.'),
                       style: TextStyle(
                         fontFamily: OpenVtsTypography.primaryFontFamily,
                         fontSize: 11,
@@ -1360,7 +1389,7 @@ class _LogoutCard extends StatelessWidget {
           ),
           const SizedBox(height: OpenVtsSpacing.sm),
           OpenVtsButton(
-            label: 'Logout',
+            label: context.mobileText('Logout'),
             variant: OpenVtsButtonVariant.secondary,
             height: 38,
             onPressed: () => onLogout(),
@@ -1391,8 +1420,9 @@ class _BottomSheetShell extends StatelessWidget {
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surfaceContainer,
             borderRadius: BorderRadius.circular(OpenVtsRadius.lg),
-            border:
-                Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+            border: Border.all(
+              color: Theme.of(context).colorScheme.outlineVariant,
+            ),
           ),
           child: ConstrainedBox(
             constraints: BoxConstraints(
@@ -1537,10 +1567,12 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
     _mobile = TextEditingController(text: p.mobileNumber ?? '');
     _addressLine = TextEditingController(text: a?.addressLine ?? '');
     _pincode = TextEditingController(text: a?.pincode ?? '');
-    _mobilePrefix =
-        p.mobilePrefix?.trim().isNotEmpty == true ? p.mobilePrefix : null;
-    _countryCode =
-        a?.countryCode?.trim().isNotEmpty == true ? a!.countryCode : null;
+    _mobilePrefix = p.mobilePrefix?.trim().isNotEmpty == true
+        ? p.mobilePrefix
+        : null;
+    _countryCode = a?.countryCode?.trim().isNotEmpty == true
+        ? a!.countryCode
+        : null;
     _stateCode = a?.stateCode?.trim().isNotEmpty == true ? a!.stateCode : null;
 
     _initialCityName = a?.cityDisplayName?.trim().isNotEmpty == true
@@ -1562,8 +1594,9 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
   }
 
   Future<void> _loadCatalogs() async {
-    final controller =
-        ref.read(superadminAdministratorsControllerProvider.notifier);
+    final controller = ref.read(
+      superadminAdministratorsControllerProvider.notifier,
+    );
     try {
       final results = await Future.wait([
         controller.getCountries(),
@@ -1697,44 +1730,52 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
   }
 
   List<OpenVtsDropdownOption<String>> _buildCountryOptions() {
-    return _countries.map((c) {
-      return OpenVtsDropdownOption<String>(
-        value: c.code,
-        label: c.name,
-        searchText: '${c.name} ${c.code}',
-      );
-    }).toList(growable: false);
+    return _countries
+        .map((c) {
+          return OpenVtsDropdownOption<String>(
+            value: c.code,
+            label: c.name,
+            searchText: '${c.name} ${c.code}',
+          );
+        })
+        .toList(growable: false);
   }
 
   List<OpenVtsDropdownOption<String>> _buildStateOptions() {
-    return _states.map((s) {
-      return OpenVtsDropdownOption<String>(
-        value: s.code,
-        label: s.name,
-        searchText: '${s.name} ${s.code}',
-      );
-    }).toList(growable: false);
+    return _states
+        .map((s) {
+          return OpenVtsDropdownOption<String>(
+            value: s.code,
+            label: s.name,
+            searchText: '${s.name} ${s.code}',
+          );
+        })
+        .toList(growable: false);
   }
 
   List<OpenVtsDropdownOption<String>> _buildCityOptions() {
-    return _cities.map((c) {
-      return OpenVtsDropdownOption<String>(
-        value: c.name,
-        label: c.name,
-        searchText: c.name,
-      );
-    }).toList(growable: false);
+    return _cities
+        .map((c) {
+          return OpenVtsDropdownOption<String>(
+            value: c.name,
+            label: c.name,
+            searchText: c.name,
+          );
+        })
+        .toList(growable: false);
   }
 
   List<OpenVtsDropdownOption<String>> _buildPrefixOptions() {
-    return _prefixes.map((p) {
-      return OpenVtsDropdownOption<String>(
-        value: p.dialCode,
-        label: p.dialCode,
-        subtitle: p.countryCode,
-        searchText: '${p.dialCode} ${p.countryCode}',
-      );
-    }).toList(growable: false);
+    return _prefixes
+        .map((p) {
+          return OpenVtsDropdownOption<String>(
+            value: p.dialCode,
+            label: p.dialCode,
+            subtitle: p.countryCode,
+            searchText: '${p.dialCode} ${p.countryCode}',
+          );
+        })
+        .toList(growable: false);
   }
 
   Future<void> _submit() async {
@@ -1795,7 +1836,7 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
       setState(() => _submitting = false);
       final msg =
           ref.read(superadminSettingsControllerProvider).sectionErrorMessage ??
-              'Unable to update profile.';
+          'Unable to update profile.';
       ToastHelper.showError(msg);
     }
   }
@@ -1803,18 +1844,15 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
   @override
   Widget build(BuildContext context) {
     if (_loadingCatalogs) {
-      return const SizedBox(
-        height: 220,
-        child: Center(child: OpenVtsLoader()),
-      );
+      return const SizedBox(height: 220, child: Center(child: OpenVtsLoader()));
     }
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const _SheetHeader(
-          title: 'Edit Profile',
-          subtitle: 'Personal details and address',
+        _SheetHeader(
+          title: context.mobileText('Edit profile'),
+          subtitle: context.mobileText('Personal details and address'),
         ),
         Flexible(
           child: SingleChildScrollView(
@@ -1830,24 +1868,17 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   OpenVtsTextField(
-                    label: 'Name',
+                    label: context.mobileText('Name'),
                     controller: _name,
                     validator: (v) =>
                         (v ?? '').trim().isEmpty ? 'Name is required' : null,
                   ),
                   const SizedBox(height: OpenVtsSpacing.sm),
                   OpenVtsTextField(
-                    label: 'Email',
+                    label: context.mobileText('Email'),
                     controller: _email,
                     keyboardType: TextInputType.emailAddress,
-                    validator: (v) {
-                      final t = (v ?? '').trim();
-                      if (t.isEmpty) return null;
-                      if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(t)) {
-                        return 'Enter a valid email';
-                      }
-                      return null;
-                    },
+                    validator: Validators.adminEmailOptional,
                   ),
                   const SizedBox(height: OpenVtsSpacing.sm),
                   Row(
@@ -1855,8 +1886,8 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
                       Expanded(
                         flex: 4,
                         child: OpenVtsSearchableDropdown<String>(
-                          label: 'Prefix',
-                          hintText: 'Select',
+                          label: context.mobileText('Prefix'),
+                          hintText: context.mobileText('Select'),
                           searchHintText: 'Dial code or country',
                           sheetTitle: 'Select Mobile Prefix',
                           options: _buildPrefixOptions(),
@@ -1869,7 +1900,7 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
                       Expanded(
                         flex: 7,
                         child: OpenVtsTextField(
-                          label: 'Mobile',
+                          label: context.mobileText('Mobile'),
                           controller: _mobile,
                           keyboardType: TextInputType.phone,
                           validator: (v) => (v ?? '').trim().isEmpty
@@ -1881,15 +1912,15 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
                   ),
                   const SizedBox(height: OpenVtsSpacing.sm),
                   OpenVtsTextField(
-                    label: 'Address',
+                    label: context.mobileText('Address'),
                     controller: _addressLine,
                     validator: (v) =>
                         (v ?? '').trim().isEmpty ? 'Address is required' : null,
                   ),
                   const SizedBox(height: OpenVtsSpacing.sm),
                   OpenVtsSearchableDropdown<String>(
-                    label: 'Country',
-                    hintText: 'Select country',
+                    label: context.mobileText('Country'),
+                    hintText: context.mobileText('Select country'),
                     searchHintText: 'Search country name or code',
                     sheetTitle: 'Select Country',
                     options: _buildCountryOptions(),
@@ -1914,14 +1945,14 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
                   ),
                   const SizedBox(height: OpenVtsSpacing.sm),
                   OpenVtsSearchableDropdown<String>(
-                    label: 'State',
+                    label: context.mobileText('State'),
                     hintText: _loadingStates
-                        ? 'Loading…'
+                        ? context.mobileText('Loading…')
                         : _statesLoadFailed
-                            ? 'Failed to load — retry'
-                            : _statesNotApplicable
-                                ? 'Not applicable'
-                                : 'Select state',
+                        ? context.mobileText('Failed to load — retry')
+                        : _statesNotApplicable
+                        ? context.mobileText('Not applicable')
+                        : context.mobileText('Select state'),
                     searchHintText: 'Search state name or code',
                     sheetTitle: 'Select State',
                     options: _buildStateOptions(),
@@ -1945,16 +1976,16 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
                   ),
                   const SizedBox(height: OpenVtsSpacing.sm),
                   OpenVtsSearchableDropdown<String>(
-                    label: 'City',
+                    label: context.mobileText('City'),
                     hintText: _loadingCities
-                        ? 'Loading…'
+                        ? context.mobileText('Loading…')
                         : _citiesLoadFailed
-                            ? 'Failed to load — retry'
-                            : _citiesNotApplicable
-                                ? 'Not applicable'
-                                : (_hasStates && _stateCode != null)
-                                    ? 'Select city'
-                                    : 'Not applicable',
+                        ? context.mobileText('Failed to load — retry')
+                        : _citiesNotApplicable
+                        ? context.mobileText('Not applicable')
+                        : (_hasStates && _stateCode != null)
+                        ? context.mobileText('Select city')
+                        : context.mobileText('Not applicable'),
                     searchHintText: 'Search city',
                     sheetTitle: 'Select City',
                     options: _buildCityOptions(),
@@ -1970,12 +2001,12 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
                   ),
                   const SizedBox(height: OpenVtsSpacing.sm),
                   OpenVtsTextField(
-                    label: 'Pincode',
+                    label: context.mobileText('Pincode'),
                     controller: _pincode,
                   ),
                   const SizedBox(height: OpenVtsSpacing.md),
                   OpenVtsButton(
-                    label: 'Save Changes',
+                    label: context.mobileText('Save Changes'),
                     isLoading: _submitting,
                     onPressed: _submit,
                   ),
@@ -2037,7 +2068,7 @@ class _ChangePasswordSheetState extends ConsumerState<_ChangePasswordSheet> {
       setState(() => _submitting = false);
       final msg =
           ref.read(superadminSettingsControllerProvider).sectionErrorMessage ??
-              'Unable to change password.';
+          'Unable to change password.';
       ToastHelper.showError(msg);
     }
   }
@@ -2047,9 +2078,9 @@ class _ChangePasswordSheetState extends ConsumerState<_ChangePasswordSheet> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const _SheetHeader(
-          title: 'Change Password',
-          subtitle: 'Use a strong, unique password',
+        _SheetHeader(
+          title: context.mobileText('Change Password'),
+          subtitle: context.mobileText('Use a strong, unique password'),
         ),
         Flexible(
           child: SingleChildScrollView(
@@ -2065,7 +2096,7 @@ class _ChangePasswordSheetState extends ConsumerState<_ChangePasswordSheet> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   OpenVtsTextField(
-                    label: 'Current password',
+                    label: context.mobileText('Current password'),
                     controller: _current,
                     obscureText: _obscureCurrent,
                     suffixIcon: IconButton(
@@ -2075,16 +2106,15 @@ class _ChangePasswordSheetState extends ConsumerState<_ChangePasswordSheet> {
                             : Icons.visibility_outlined,
                         size: 18,
                       ),
-                      onPressed: () => setState(
-                        () => _obscureCurrent = !_obscureCurrent,
-                      ),
+                      onPressed: () =>
+                          setState(() => _obscureCurrent = !_obscureCurrent),
                     ),
                     validator: (v) =>
                         (v ?? '').isEmpty ? 'Current password required' : null,
                   ),
                   const SizedBox(height: OpenVtsSpacing.sm),
                   OpenVtsTextField(
-                    label: 'New password',
+                    label: context.mobileText('New Password'),
                     controller: _next,
                     obscureText: _obscureNext,
                     suffixIcon: IconButton(
@@ -2099,21 +2129,25 @@ class _ChangePasswordSheetState extends ConsumerState<_ChangePasswordSheet> {
                     ),
                     validator: (v) {
                       final t = v ?? '';
-                      if (t.length < 8) {
-                        return 'Use at least 8 characters';
+                      if (t.length < 6 ||
+                          t.length > 72 ||
+                          t.runes.any((r) => r < 32 || r > 126)) {
+                        return context.mobileText(
+                          'Use 6–72 English characters.',
+                        );
                       }
                       return null;
                     },
                   ),
                   const SizedBox(height: OpenVtsSpacing.sm),
                   OpenVtsTextField(
-                    label: 'Confirm new password',
+                    label: context.mobileText('Confirm new password'),
                     controller: _confirm,
                     obscureText: _obscureConfirm,
                     suffixIcon: IconButton(
                       tooltip: _obscureConfirm
-                          ? 'Show confirm password'
-                          : 'Hide confirm password',
+                          ? context.mobileText('Show confirm password')
+                          : context.mobileText('Hide confirm password'),
                       icon: Icon(
                         _obscureConfirm
                             ? Icons.visibility_off_outlined
@@ -2132,7 +2166,7 @@ class _ChangePasswordSheetState extends ConsumerState<_ChangePasswordSheet> {
                   ),
                   const SizedBox(height: OpenVtsSpacing.md),
                   OpenVtsButton(
-                    label: 'Update Password',
+                    label: context.mobileText('Update Password'),
                     isLoading: _submitting,
                     onPressed: _submit,
                   ),
@@ -2232,7 +2266,7 @@ class _EditCompanySheetState extends ConsumerState<_EditCompanySheet> {
       setState(() => _submitting = false);
       final msg =
           ref.read(superadminSettingsControllerProvider).sectionErrorMessage ??
-              'Unable to update company.';
+          'Unable to update company.';
       ToastHelper.showError(msg);
     }
   }
@@ -2242,9 +2276,9 @@ class _EditCompanySheetState extends ConsumerState<_EditCompanySheet> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const _SheetHeader(
-          title: 'Edit Company',
-          subtitle: 'Brand and contact details',
+        _SheetHeader(
+          title: context.mobileText('Edit company'),
+          subtitle: context.mobileText('Brand and contact details'),
         ),
         Flexible(
           child: SingleChildScrollView(
@@ -2260,14 +2294,14 @@ class _EditCompanySheetState extends ConsumerState<_EditCompanySheet> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   OpenVtsTextField(
-                    label: 'Company name',
+                    label: context.mobileText('Company name'),
                     controller: _name,
                     validator: (v) =>
                         (v ?? '').trim().isEmpty ? 'Name is required' : null,
                   ),
                   const SizedBox(height: OpenVtsSpacing.sm),
                   OpenVtsTextField(
-                    label: 'Website',
+                    label: context.mobileText('Website'),
                     controller: _website,
                     keyboardType: TextInputType.url,
                     validator: (v) {
@@ -2275,8 +2309,8 @@ class _EditCompanySheetState extends ConsumerState<_EditCompanySheet> {
                       if (t.isEmpty) return null;
                       final candidate =
                           t.startsWith('http://') || t.startsWith('https://')
-                              ? t
-                              : 'https://$t';
+                          ? t
+                          : 'https://$t';
                       final uri = Uri.tryParse(candidate);
                       if (uri == null || (uri.host).isEmpty) {
                         return 'Enter a valid URL';
@@ -2286,13 +2320,13 @@ class _EditCompanySheetState extends ConsumerState<_EditCompanySheet> {
                   ),
                   const SizedBox(height: OpenVtsSpacing.sm),
                   OpenVtsTextField(
-                    label: 'Custom domain',
+                    label: context.mobileText('Custom domain'),
                     controller: _domain,
                     keyboardType: TextInputType.url,
                   ),
                   const SizedBox(height: OpenVtsSpacing.sm),
                   OpenVtsTextField(
-                    label: 'Primary color (hex)',
+                    label: context.mobileText('Primary color (hex)'),
                     controller: _primaryColor,
                     validator: (v) {
                       final t = (v ?? '').trim();
@@ -2307,43 +2341,43 @@ class _EditCompanySheetState extends ConsumerState<_EditCompanySheet> {
                   const _SubSectionLabel('Social Links'),
                   const SizedBox(height: OpenVtsSpacing.xs),
                   OpenVtsTextField(
-                    label: 'Facebook',
+                    label: context.mobileText('Facebook'),
                     controller: _facebook,
                     keyboardType: TextInputType.url,
                   ),
                   const SizedBox(height: OpenVtsSpacing.xs),
                   OpenVtsTextField(
-                    label: 'Twitter / X',
+                    label: context.mobileText('Twitter / X'),
                     controller: _twitter,
                     keyboardType: TextInputType.url,
                   ),
                   const SizedBox(height: OpenVtsSpacing.xs),
                   OpenVtsTextField(
-                    label: 'LinkedIn',
+                    label: context.mobileText('LinkedIn'),
                     controller: _linkedin,
                     keyboardType: TextInputType.url,
                   ),
                   const SizedBox(height: OpenVtsSpacing.xs),
                   OpenVtsTextField(
-                    label: 'Instagram',
+                    label: context.mobileText('Instagram'),
                     controller: _instagram,
                     keyboardType: TextInputType.url,
                   ),
                   const SizedBox(height: OpenVtsSpacing.xs),
                   OpenVtsTextField(
-                    label: 'YouTube',
+                    label: context.mobileText('YouTube'),
                     controller: _youtube,
                     keyboardType: TextInputType.url,
                   ),
                   const SizedBox(height: OpenVtsSpacing.xs),
                   OpenVtsTextField(
-                    label: 'GitHub',
+                    label: context.mobileText('GitHub'),
                     controller: _github,
                     keyboardType: TextInputType.url,
                   ),
                   const SizedBox(height: OpenVtsSpacing.md),
                   OpenVtsButton(
-                    label: 'Save Changes',
+                    label: context.mobileText('Save Changes'),
                     isLoading: _submitting,
                     onPressed: _submit,
                   ),
@@ -2430,13 +2464,13 @@ class _OtpVerificationSheetState extends ConsumerState<_OtpVerificationSheet> {
     if (ok) {
       ToastHelper.showInfo(
         widget.channel == _OtpChannel.email
-            ? 'OTP sent to your email'
-            : 'OTP sent via WhatsApp',
+            ? context.mobileText('OTP sent to your email')
+            : context.mobileText('OTP sent via WhatsApp'),
       );
     } else {
       final msg =
           ref.read(superadminSettingsControllerProvider).sectionErrorMessage ??
-              'Unable to send OTP.';
+          'Unable to send OTP.';
       ToastHelper.showError(msg);
     }
   }
@@ -2444,7 +2478,7 @@ class _OtpVerificationSheetState extends ConsumerState<_OtpVerificationSheet> {
   Future<void> _confirm() async {
     final code = _otp.text.trim();
     if (code.length != 6) {
-      ToastHelper.showError('Enter the 6-digit code');
+      ToastHelper.showError(context.mobileText('Enter the 6-digit code'));
       return;
     }
     setState(() => _submitting = true);
@@ -2459,7 +2493,7 @@ class _OtpVerificationSheetState extends ConsumerState<_OtpVerificationSheet> {
       setState(() => _submitting = false);
       final msg =
           ref.read(superadminSettingsControllerProvider).sectionErrorMessage ??
-              'Invalid or expired code.';
+          'Invalid or expired code.';
       ToastHelper.showError(msg);
     }
   }
@@ -2471,8 +2505,10 @@ class _OtpVerificationSheetState extends ConsumerState<_OtpVerificationSheet> {
       mainAxisSize: MainAxisSize.min,
       children: [
         _SheetHeader(
-          title: isEmail ? 'Verify Email' : 'Verify WhatsApp',
-          subtitle: 'Enter the 6-digit code we sent you',
+          title: isEmail
+              ? context.mobileText('Verify Email')
+              : context.mobileText('Verify WhatsApp'),
+          subtitle: context.mobileText('Enter the 6-digit code we sent you'),
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(
@@ -2489,9 +2525,7 @@ class _OtpVerificationSheetState extends ConsumerState<_OtpVerificationSheet> {
                 keyboardType: TextInputType.number,
                 maxLength: 6,
                 textAlign: TextAlign.center,
-                inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly,
-                ],
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 style: TextStyle(
                   fontFamily: OpenVtsTypography.primaryFontFamily,
                   fontSize: 22,
@@ -2510,12 +2544,14 @@ class _OtpVerificationSheetState extends ConsumerState<_OtpVerificationSheet> {
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
                     borderSide: BorderSide(
-                        color: Theme.of(context).colorScheme.outlineVariant),
+                      color: Theme.of(context).colorScheme.outlineVariant,
+                    ),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
                     borderSide: BorderSide(
-                        color: Theme.of(context).colorScheme.outlineVariant),
+                      color: Theme.of(context).colorScheme.outlineVariant,
+                    ),
                   ),
                 ),
               ),
@@ -2523,17 +2559,18 @@ class _OtpVerificationSheetState extends ConsumerState<_OtpVerificationSheet> {
               Align(
                 alignment: Alignment.center,
                 child: TextButton(
-                  onPressed:
-                      _resending ? null : () => _requestOtp(isResend: true),
+                  onPressed: _resending
+                      ? null
+                      : () => _requestOtp(isResend: true),
                   child: _resending
                       ? const SizedBox(
                           width: 14,
                           height: 14,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Text(
-                          'Resend code',
-                          style: TextStyle(
+                      : Text(
+                          context.mobileText('Resend code'),
+                          style: const TextStyle(
                             fontFamily: OpenVtsTypography.primaryFontFamily,
                             fontSize: 12.5,
                             fontWeight: FontWeight.w600,
@@ -2543,7 +2580,7 @@ class _OtpVerificationSheetState extends ConsumerState<_OtpVerificationSheet> {
               ),
               const SizedBox(height: OpenVtsSpacing.sm),
               OpenVtsButton(
-                label: 'Verify',
+                label: context.mobileText('Verify'),
                 isLoading: _submitting,
                 onPressed: _submitting || !_otpRequestSuccess ? null : _confirm,
               ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/route_paths.dart';
@@ -6,18 +7,21 @@ import '../../../../core/theme/open_vts_colors.dart';
 import '../../../../core/theme/open_vts_radius.dart';
 import '../../../../core/theme/open_vts_spacing.dart';
 import '../../../../core/theme/open_vts_typography.dart';
+import '../../../../shared/helpers/mobile_text.dart';
 import '../../../../shared/widgets/open_vts_page_scaffold.dart';
+import '../../../auth/controllers/auth_controller.dart';
 import '../../models/user_report_model.dart';
 
-class UserReportsCatalogScreen extends StatefulWidget {
+class UserReportsCatalogScreen extends ConsumerStatefulWidget {
   const UserReportsCatalogScreen({super.key});
 
   @override
-  State<UserReportsCatalogScreen> createState() =>
+  ConsumerState<UserReportsCatalogScreen> createState() =>
       _UserReportsCatalogScreenState();
 }
 
-class _UserReportsCatalogScreenState extends State<UserReportsCatalogScreen> {
+class _UserReportsCatalogScreenState
+    extends ConsumerState<UserReportsCatalogScreen> {
   final _searchCtrl = TextEditingController();
   String _query = '';
 
@@ -95,24 +99,36 @@ class _UserReportsCatalogScreenState extends State<UserReportsCatalogScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final user = ref.watch(authControllerProvider).user;
+    final allowed = _catalog
+        .where(
+          (entry) =>
+              user?.access.canReport(user.role, entry.key.apiValue) == true,
+        )
+        .toList();
     final filtered = _query.isEmpty
-        ? _catalog
-        : _catalog.where((e) {
+        ? allowed
+        : allowed.where((e) {
             final q = _query.toLowerCase();
-            return e.title.toLowerCase().contains(q) ||
-                e.description.toLowerCase().contains(q);
+            return context.mobileText(e.title).toLowerCase().contains(q) ||
+                context.mobileText(e.description).toLowerCase().contains(q);
           }).toList();
 
     return OpenVtsPageScaffold(
-      title: 'Reports',
+      title: context.mobileText('Reports'),
       body: Column(
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(
-                OpenVtsSpacing.md, OpenVtsSpacing.sm, OpenVtsSpacing.md, 0),
+              OpenVtsSpacing.md,
+              OpenVtsSpacing.sm,
+              OpenVtsSpacing.md,
+              0,
+            ),
             child: _SearchBar(
-                controller: _searchCtrl,
-                onChanged: (v) => setState(() => _query = v)),
+              controller: _searchCtrl,
+              onChanged: (v) => setState(() => _query = v),
+            ),
           ),
           Expanded(
             child: filtered.isEmpty
@@ -121,8 +137,9 @@ class _UserReportsCatalogScreenState extends State<UserReportsCatalogScreen> {
                     padding: const EdgeInsets.all(OpenVtsSpacing.md),
                     itemCount: filtered.length,
                     itemBuilder: (context, i) => _CatalogCard(
-                        entry: filtered[i],
-                        onTap: () => _openReport(context, filtered[i].key)),
+                      entry: filtered[i],
+                      onTap: () => _openReport(context, filtered[i].key),
+                    ),
                   ),
           ),
         ],
@@ -147,9 +164,10 @@ class _SearchBar extends StatelessWidget {
       controller: controller,
       onChanged: onChanged,
       decoration: InputDecoration(
-        hintText: 'Search reports…',
-        hintStyle:
-            OpenVtsTypography.body.copyWith(color: OpenVtsColors.textSecondary),
+        hintText: context.mobileText('Search reports…'),
+        hintStyle: OpenVtsTypography.body.copyWith(
+          color: OpenVtsColors.textSecondary,
+        ),
         prefixIcon: const Icon(Icons.search_rounded, size: 20),
         suffixIcon: controller.text.isNotEmpty
             ? IconButton(
@@ -157,25 +175,31 @@ class _SearchBar extends StatelessWidget {
                 onPressed: () {
                   controller.clear();
                   onChanged('');
-                })
+                },
+              )
             : null,
         filled: true,
         fillColor: isDark ? OpenVtsColors.darkSurface : OpenVtsColors.white,
         border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(OpenVtsRadius.md),
-            borderSide: BorderSide(
-                color:
-                    isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border)),
+          borderRadius: BorderRadius.circular(OpenVtsRadius.md),
+          borderSide: BorderSide(
+            color: isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border,
+          ),
+        ),
         enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(OpenVtsRadius.md),
-            borderSide: BorderSide(
-                color:
-                    isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border)),
+          borderRadius: BorderRadius.circular(OpenVtsRadius.md),
+          borderSide: BorderSide(
+            color: isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border,
+          ),
+        ),
         focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(OpenVtsRadius.md),
-            borderSide: BorderSide(color: OpenVtsColors.brandInk)),
+          borderRadius: BorderRadius.circular(OpenVtsRadius.md),
+          borderSide: const BorderSide(color: OpenVtsColors.brandInk),
+        ),
         contentPadding: const EdgeInsets.symmetric(
-            horizontal: OpenVtsSpacing.sm, vertical: 10),
+          horizontal: OpenVtsSpacing.sm,
+          vertical: 10,
+        ),
       ),
     );
   }
@@ -218,8 +242,8 @@ class _CatalogCard extends StatelessWidget {
             color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(OpenVtsRadius.lg),
             border: Border.all(
-                color:
-                    isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border),
+              color: isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border,
+            ),
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -233,36 +257,52 @@ class _CatalogCard extends StatelessWidget {
                       : OpenVtsColors.brandInk.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(OpenVtsRadius.md),
                 ),
-                child: Icon(entry.icon,
-                    size: 22,
-                    color:
-                        isDark ? OpenVtsColors.white : OpenVtsColors.brandInk),
+                child: Icon(
+                  entry.icon,
+                  size: 22,
+                  color: isDark ? OpenVtsColors.white : OpenVtsColors.brandInk,
+                ),
               ),
               const SizedBox(width: OpenVtsSpacing.sm),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(children: [
-                      Text(entry.title,
-                          style: OpenVtsTypography.label
-                              .copyWith(fontWeight: FontWeight.w700)),
-                      const Spacer(),
-                      const Icon(Icons.chevron_right_rounded,
-                          size: 18, color: OpenVtsColors.textSecondary),
-                    ]),
+                    Row(
+                      children: [
+                        Text(
+                          context.mobileText(entry.title),
+                          style: OpenVtsTypography.label.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const Spacer(),
+                        const Icon(
+                          Icons.chevron_right_rounded,
+                          size: 18,
+                          color: OpenVtsColors.textSecondary,
+                        ),
+                      ],
+                    ),
                     const SizedBox(height: 3),
-                    Text(entry.description,
-                        style: OpenVtsTypography.meta
-                            .copyWith(color: OpenVtsColors.textSecondary),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis),
+                    Text(
+                      context.mobileText(entry.description),
+                      style: OpenVtsTypography.meta.copyWith(
+                        color: OpenVtsColors.textSecondary,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                     const SizedBox(height: 6),
-                    Wrap(spacing: 4, runSpacing: 4, children: [
-                      _Chip(label: dateLabel),
-                      if (scopeLabel != null)
-                        _Chip(label: scopeLabel, color: OpenVtsColors.info),
-                    ]),
+                    Wrap(
+                      spacing: 4,
+                      runSpacing: 4,
+                      children: [
+                        _Chip(label: dateLabel),
+                        if (scopeLabel != null)
+                          _Chip(label: scopeLabel, color: OpenVtsColors.info),
+                      ],
+                    ),
                   ],
                 ),
               ),
@@ -289,8 +329,10 @@ class _Chip extends StatelessWidget {
         borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
         border: Border.all(color: c.withValues(alpha: 0.25)),
       ),
-      child: Text(label,
-          style: OpenVtsTypography.meta.copyWith(color: c, fontSize: 11)),
+      child: Text(
+        label,
+        style: OpenVtsTypography.meta.copyWith(color: c, fontSize: 11),
+      ),
     );
   }
 }
@@ -307,13 +349,21 @@ class _EmptySearch extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.search_off_rounded,
-                size: 48, color: OpenVtsColors.textSecondary),
+            const Icon(
+              Icons.search_off_rounded,
+              size: 48,
+              color: OpenVtsColors.textSecondary,
+            ),
             const SizedBox(height: OpenVtsSpacing.sm),
-            Text('No reports found for "$query"',
-                style: OpenVtsTypography.body
-                    .copyWith(color: OpenVtsColors.textSecondary),
-                textAlign: TextAlign.center),
+            Text(
+              context.mobileText("No reports found for \"{value1}\"", {
+                'value1': (query).toString(),
+              }),
+              style: OpenVtsTypography.body.copyWith(
+                color: OpenVtsColors.textSecondary,
+              ),
+              textAlign: TextAlign.center,
+            ),
           ],
         ),
       ),
@@ -322,11 +372,12 @@ class _EmptySearch extends StatelessWidget {
 }
 
 class _CatalogEntry {
-  const _CatalogEntry(
-      {required this.key,
-      required this.icon,
-      required this.title,
-      required this.description});
+  const _CatalogEntry({
+    required this.key,
+    required this.icon,
+    required this.title,
+    required this.description,
+  });
   final UserReportKey key;
   final IconData icon;
   final String title;

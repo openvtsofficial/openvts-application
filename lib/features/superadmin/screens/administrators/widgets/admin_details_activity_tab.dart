@@ -4,10 +4,12 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/utils/date_time_formatter.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
@@ -49,12 +51,14 @@ class _AdminDetailsActivityTabState
         .activitySearch;
     _search = TextEditingController(text: initial);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final state =
-          ref.read(superadminAdminDetailsControllerProvider(widget.adminId));
+      final state = ref.read(
+        superadminAdminDetailsControllerProvider(widget.adminId),
+      );
       if (state.activityLogs.isEmpty && !state.isLoadingActivity) {
         ref
-            .read(superadminAdminDetailsControllerProvider(widget.adminId)
-                .notifier)
+            .read(
+              superadminAdminDetailsControllerProvider(widget.adminId).notifier,
+            )
             .loadActivity();
       }
     });
@@ -88,17 +92,18 @@ class _AdminDetailsActivityTabState
   }
 
   Future<void> _onPickDateRange() async {
-    final state =
-        ref.read(superadminAdminDetailsControllerProvider(widget.adminId));
+    final state = ref.read(
+      superadminAdminDetailsControllerProvider(widget.adminId),
+    );
     final result = await OpenVtsDateTimeRangeSelector.show(
       context: context,
       initialValue: OpenVtsDateTimeRange(
         start: state.activityFrom,
         end: state.activityTo,
       ),
-      title: 'Activity date range',
+      title: context.mobileText('Activity date range'),
     );
-    if (result == null) return;
+    if (!mounted || result == null) return;
     _searchDebounce?.cancel();
     final controller = ref.read(
       superadminAdminDetailsControllerProvider(widget.adminId).notifier,
@@ -108,7 +113,9 @@ class _AdminDetailsActivityTabState
       to: result.end,
     );
     if (!valid) {
-      ToastHelper.showError('Start time must be before end time.');
+      ToastHelper.showError(
+        context.mobileText('Start time must be before end time.'),
+      );
       return;
     }
     controller.loadActivity();
@@ -140,8 +147,9 @@ class _AdminDetailsActivityTabState
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor:
-          isDark ? OpenVtsColors.darkSurface : OpenVtsColors.surfaceElevated,
+      backgroundColor: isDark
+          ? OpenVtsColors.darkSurface
+          : OpenVtsColors.surfaceElevated,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -151,11 +159,13 @@ class _AdminDetailsActivityTabState
 
   @override
   Widget build(BuildContext context) {
-    final state =
-        ref.watch(superadminAdminDetailsControllerProvider(widget.adminId));
+    final state = ref.watch(
+      superadminAdminDetailsControllerProvider(widget.adminId),
+    );
 
     final hasDateRange = state.activityFrom != null || state.activityTo != null;
-    final hasAnyFilter = _search.text.isNotEmpty ||
+    final hasAnyFilter =
+        _search.text.isNotEmpty ||
         state.activityActionPrefix.isNotEmpty ||
         hasDateRange;
 
@@ -183,7 +193,7 @@ class _AdminDetailsActivityTabState
             child: TextButton.icon(
               onPressed: _onResetFilters,
               icon: const Icon(Icons.refresh, size: 14),
-              label: const Text('Reset filters'),
+              label: Text(context.mobileText('Reset filters')),
               style: TextButton.styleFrom(
                 foregroundColor: OpenVtsColors.textSecondary,
                 padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -218,8 +228,10 @@ class _AdminDetailsActivityTabState
                 message: state.sectionErrorMessage!,
                 onRetry: () => ref
                     .read(
-                        superadminAdminDetailsControllerProvider(widget.adminId)
-                            .notifier)
+                      superadminAdminDetailsControllerProvider(
+                        widget.adminId,
+                      ).notifier,
+                    )
                     .loadActivity(),
               ),
             ),
@@ -236,13 +248,15 @@ class _AdminDetailsActivityTabState
               if (state.activityHasMore) ...[
                 const SizedBox(height: OpenVtsSpacing.xs),
                 OpenVtsButton(
-                  label: 'Load more',
+                  label: context.mobileText('Load more'),
                   variant: OpenVtsButtonVariant.secondary,
                   isLoading: state.isLoadingMoreActivity,
                   onPressed: () => ref
-                      .read(superadminAdminDetailsControllerProvider(
-                              widget.adminId)
-                          .notifier)
+                      .read(
+                        superadminAdminDetailsControllerProvider(
+                          widget.adminId,
+                        ).notifier,
+                      )
                       .loadMoreActivity(),
                 ),
               ],
@@ -284,21 +298,14 @@ class _SearchField extends StatelessWidget {
       onChanged: onChanged,
       style: TextStyle(fontSize: 13, color: onSurface),
       decoration: InputDecoration(
-        hintText: 'Search activity…',
-        prefixIcon: Icon(
-          Icons.search,
-          size: 18,
-          color: onSurfaceVariant,
-        ),
+        hintText: context.mobileText('Search activity…'),
+        prefixIcon: Icon(Icons.search, size: 18, color: onSurfaceVariant),
         suffixIcon: controller.text.isEmpty
             ? null
             : IconButton(
                 splashRadius: 16,
                 iconSize: 16,
-                icon: Icon(
-                  Icons.close,
-                  color: onSurfaceVariant,
-                ),
+                icon: Icon(Icons.close, color: onSurfaceVariant),
                 onPressed: () {
                   controller.clear();
                   onChanged('');
@@ -311,10 +318,7 @@ class _SearchField extends StatelessWidget {
         ),
         filled: true,
         fillColor: surface,
-        hintStyle: TextStyle(
-          fontSize: 13,
-          color: onSurfaceVariant,
-        ),
+        hintStyle: TextStyle(fontSize: 13, color: onSurfaceVariant),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(OpenVtsRadius.md),
           borderSide: BorderSide(color: outlineVariant),
@@ -367,16 +371,11 @@ class _GroupChips extends StatelessWidget {
             child: Container(
               constraints: const BoxConstraints(minHeight: 36),
               alignment: Alignment.center,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 14,
-                vertical: 8,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
                 color: isActive ? primary : surface,
                 borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
-                border: Border.all(
-                  color: isActive ? primary : outlineVariant,
-                ),
+                border: Border.all(color: isActive ? primary : outlineVariant),
               ),
               child: Text(
                 g.label,
@@ -478,12 +477,9 @@ class _DateRangeRow extends StatelessWidget {
           IconButton(
             splashRadius: 16,
             iconSize: 16,
-            icon: const Icon(
-              Icons.close,
-              color: OpenVtsColors.textTertiary,
-            ),
+            icon: const Icon(Icons.close, color: OpenVtsColors.textTertiary),
             onPressed: onClear,
-            tooltip: 'Clear date range',
+            tooltip: context.mobileText('Clear date range'),
           ),
         ],
       ],
@@ -536,11 +532,7 @@ class _ActivityCard extends StatelessWidget {
               border: Border.all(color: outlineVariant),
             ),
             alignment: Alignment.center,
-            child: Icon(
-              icon,
-              size: 16,
-              color: onSurfaceVariant,
-            ),
+            child: Icon(icon, size: 16, color: onSurfaceVariant),
           ),
           const SizedBox(width: OpenVtsSpacing.sm),
           Expanded(
@@ -565,10 +557,7 @@ class _ActivityCard extends StatelessWidget {
                       const SizedBox(width: OpenVtsSpacing.xs),
                       Text(
                         timeLabel,
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: onSurfaceVariant,
-                        ),
+                        style: TextStyle(fontSize: 11, color: onSurfaceVariant),
                       ),
                     ],
                   ],
@@ -579,10 +568,7 @@ class _ActivityCard extends StatelessWidget {
                     entityLabel,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: onSurfaceVariant,
-                    ),
+                    style: TextStyle(fontSize: 12, color: onSurfaceVariant),
                   ),
                 ],
                 if (performedBy != null) ...[
@@ -615,10 +601,7 @@ class _ActivityCard extends StatelessWidget {
                     platformLine,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: onSurfaceVariant,
-                    ),
+                    style: TextStyle(fontSize: 11, color: onSurfaceVariant),
                   ),
                 ],
               ],
@@ -726,9 +709,9 @@ class _ActivityDetailSheet extends StatelessWidget {
                             timeLabel,
                             style: TextStyle(
                               fontSize: 12,
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurfaceVariant,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
                             ),
                           ),
                         ],
@@ -739,35 +722,55 @@ class _ActivityDetailSheet extends StatelessWidget {
               ),
               const SizedBox(height: OpenVtsSpacing.md),
               Divider(
-                  height: 1,
-                  color: Theme.of(context).colorScheme.outlineVariant),
+                height: 1,
+                color: Theme.of(context).colorScheme.outlineVariant,
+              ),
               Expanded(
                 child: ListView(
                   controller: scrollController,
-                  padding:
-                      const EdgeInsets.symmetric(vertical: OpenVtsSpacing.md),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: OpenVtsSpacing.md,
+                  ),
                   children: [
                     if (entityLabel != null)
-                      _DetailRow(label: 'Entity', value: entityLabel),
+                      _DetailRow(
+                        label: context.mobileText('Entity'),
+                        value: entityLabel,
+                      ),
                     if (log.entityId.isNotEmpty)
-                      _DetailRow(label: 'Entity ID', value: log.entityId),
+                      _DetailRow(
+                        label: context.mobileText('Entity ID'),
+                        value: log.entityId,
+                      ),
                     if (log.ip.isNotEmpty)
                       _DetailRow(label: 'IP', value: log.ip),
                     if (log.browser.isNotEmpty)
-                      _DetailRow(label: 'Browser', value: log.browser),
+                      _DetailRow(
+                        label: context.mobileText('Browser'),
+                        value: log.browser,
+                      ),
                     if (log.platform.isNotEmpty)
-                      _DetailRow(label: 'Platform', value: log.platform),
+                      _DetailRow(
+                        label: context.mobileText('Platform'),
+                        value: log.platform,
+                      ),
                     if (performedBy != null)
-                      _DetailRow(label: 'Performed by', value: performedBy),
+                      _DetailRow(
+                        label: context.mobileText('Performed by'),
+                        value: performedBy,
+                      ),
                     if (log.user?.email.isNotEmpty == true &&
                         log.user!.email != performedBy)
-                      _DetailRow(label: 'Email', value: log.user!.email),
+                      _DetailRow(
+                        label: context.mobileText('Email'),
+                        value: log.user!.email,
+                      ),
                     if (metaJson != null) ...[
                       const SizedBox(height: OpenVtsSpacing.md),
                       Row(
                         children: [
                           Text(
-                            'Metadata',
+                            context.mobileText('Metadata'),
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
@@ -784,18 +787,19 @@ class _ActivityDetailSheet extends StatelessWidget {
                               );
                               if (!context.mounted) return;
                               ToastHelper.showSuccess(
-                                'Metadata copied',
+                                context.mobileText('Metadata copied'),
                                 context: context,
                               );
                             },
                             icon: const Icon(Icons.copy, size: 14),
-                            label: const Text('Copy'),
+                            label: Text(context.mobileText('Copy')),
                             style: TextButton.styleFrom(
-                              foregroundColor: Theme.of(context)
-                                  .colorScheme
-                                  .onSurfaceVariant,
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 8),
+                              foregroundColor: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                              ),
                               minimumSize: const Size(0, 28),
                               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                               textStyle: const TextStyle(fontSize: 12),
@@ -811,8 +815,8 @@ class _ActivityDetailSheet extends StatelessWidget {
                           color: Theme.of(context).colorScheme.surface,
                           borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
                           border: Border.all(
-                              color:
-                                  Theme.of(context).colorScheme.outlineVariant),
+                            color: Theme.of(context).colorScheme.outlineVariant,
+                          ),
                         ),
                         child: SelectableText(
                           metaJson,
@@ -900,7 +904,7 @@ class _ActivityEmptyState extends StatelessWidget {
               Icon(icon, size: 28, color: OpenVtsColors.textTertiary),
               const SizedBox(height: OpenVtsSpacing.sm),
               Text(
-                title,
+                context.mobileText(title),
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   fontSize: 13,
@@ -911,7 +915,7 @@ class _ActivityEmptyState extends StatelessWidget {
               if (subtitle != null) ...[
                 const SizedBox(height: 4),
                 Text(
-                  subtitle,
+                  context.mobileText(subtitle),
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                     fontSize: 11,

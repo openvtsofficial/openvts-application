@@ -6,6 +6,7 @@ import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../core/utils/date_time_formatter.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
@@ -15,6 +16,7 @@ import '../../../models/admin_driver_details_model.dart';
 import '../../../models/admin_driver_details_state.dart';
 import '../../../models/admin_users_model.dart';
 import '../../../utils/location_label_resolver.dart';
+import '../../../widgets/admin_action_gate.dart';
 import 'admin_driver_edit_sheet.dart';
 import 'admin_driver_password_sheet.dart';
 
@@ -25,8 +27,11 @@ class AdminDriverProfileTab extends ConsumerStatefulWidget {
     super.key,
   });
 
-  final AutoDisposeStateNotifierProvider<AdminDriverDetailsController,
-      AdminDriverDetailsState> provider;
+  final AutoDisposeStateNotifierProvider<
+    AdminDriverDetailsController,
+    AdminDriverDetailsState
+  >
+  provider;
   final AdminDriverDetailsState state;
 
   @override
@@ -83,18 +88,20 @@ class _AdminDriverProfileTabState extends ConsumerState<AdminDriverProfileTab> {
     final driver = state.driver;
 
     if (driver == null) {
-      return const OpenVtsCard(
+      return OpenVtsCard(
         child: Padding(
-          padding: EdgeInsets.symmetric(vertical: OpenVtsSpacing.md),
-          child: Text('Driver details are unavailable.'),
+          padding: const EdgeInsets.symmetric(vertical: OpenVtsSpacing.md),
+          child: Text(context.mobileText('Driver details are unavailable.')),
         ),
       );
     }
 
-    final countryOptions =
-        ref.watch(adminUsersControllerProvider).countryOptions;
+    final countryOptions = ref
+        .watch(adminUsersControllerProvider)
+        .countryOptions;
 
-    final rawCountry = driver.address.countryCode.isNotEmpty &&
+    final rawCountry =
+        driver.address.countryCode.isNotEmpty &&
             driver.address.countryCode != '-'
         ? driver.address.countryCode
         : driver.countryCode;
@@ -126,7 +133,9 @@ class _AdminDriverProfileTabState extends ConsumerState<AdminDriverProfileTab> {
             if (!context.mounted) return;
             if (ok) {
               ToastHelper.showSuccess(
-                !driver.isActive ? 'Driver activated.' : 'Driver deactivated.',
+                !driver.isActive
+                    ? context.mobileText('Driver activated.')
+                    : context.mobileText('Driver deactivated.'),
                 context: context,
               );
             } else {
@@ -183,18 +192,24 @@ class _DriverProfileBottomActions extends StatelessWidget {
     return Row(
       children: [
         Expanded(
-          child: OpenVtsButton(
-            label: 'Edit Profile',
-            variant: OpenVtsButtonVariant.secondary,
-            onPressed: isBusy ? null : onEditProfile,
+          child: AdminActionGate(
+            capability: 'drivers.update',
+            child: OpenVtsButton(
+              label: context.mobileText('Edit Profile'),
+              variant: OpenVtsButtonVariant.secondary,
+              onPressed: isBusy ? null : onEditProfile,
+            ),
           ),
         ),
         const SizedBox(width: OpenVtsSpacing.sm),
         Expanded(
-          child: OpenVtsButton(
-            label: 'Change Password',
-            variant: OpenVtsButtonVariant.secondary,
-            onPressed: isBusy ? null : onChangePassword,
+          child: AdminActionGate(
+            capability: 'drivers.update',
+            child: OpenVtsButton(
+              label: context.mobileText('Change Password'),
+              variant: OpenVtsButtonVariant.secondary,
+              onPressed: isBusy ? null : onChangePassword,
+            ),
           ),
         ),
       ],
@@ -207,12 +222,10 @@ class _DriverProfileBottomActions extends StatelessWidget {
 // =============================================================================
 
 class _SectionCard extends StatelessWidget {
-  const _SectionCard(
-      {required this.title, required this.children, this.trailing});
+  const _SectionCard({required this.title, required this.children});
 
   final String title;
   final List<Widget> children;
-  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -239,7 +252,6 @@ class _SectionCard extends StatelessWidget {
                   ),
                 ),
               ),
-              if (trailing != null) trailing!,
             ],
           ),
           const SizedBox(height: OpenVtsSpacing.xs),
@@ -253,17 +265,11 @@ class _SectionCard extends StatelessWidget {
 }
 
 class _InfoRow extends StatelessWidget {
-  const _InfoRow({
-    required this.label,
-    required this.value,
-    this.icon,
-    this.valueColor,
-  });
+  const _InfoRow({required this.label, required this.value, this.icon});
 
   final String label;
   final String value;
   final IconData? icon;
-  final Color? valueColor;
 
   @override
   Widget build(BuildContext context) {
@@ -273,9 +279,11 @@ class _InfoRow extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (icon != null) ...[
-            Icon(icon,
-                size: 14,
-                color: Theme.of(context).colorScheme.onSurfaceVariant),
+            Icon(
+              icon,
+              size: 14,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
             const SizedBox(width: 8),
           ],
           SizedBox(
@@ -292,7 +300,7 @@ class _InfoRow extends StatelessWidget {
             child: Text(
               value.trim().isEmpty ? '—' : value,
               style: OpenVtsTypography.label.copyWith(
-                color: valueColor ?? Theme.of(context).colorScheme.onSurface,
+                color: Theme.of(context).colorScheme.onSurface,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -330,8 +338,11 @@ class _DriverAvatar extends StatelessWidget {
   }
 
   static String _initials(String value) {
-    final parts =
-        value.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
+    final parts = value
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((p) => p.isNotEmpty)
+        .toList();
     if (parts.isEmpty) return 'OV';
     if (parts.length == 1) {
       return parts.first
@@ -439,33 +450,33 @@ class _IdentityCard extends StatelessWidget {
           ),
         ),
         _InfoRow(
-          label: 'Address',
+          label: context.mobileText('Address'),
           value: address.addressLine,
           icon: Icons.home_outlined,
         ),
         _InfoRow(
-          label: 'Country',
+          label: context.mobileText('Country'),
           value: resolvedCountry,
           icon: Icons.public_outlined,
         ),
         _InfoRow(
-          label: 'State',
+          label: context.mobileText('State'),
           value: resolvedState,
           icon: Icons.map_outlined,
         ),
         _InfoRow(
-          label: 'City',
+          label: context.mobileText('City'),
           value: address.cityId,
           icon: Icons.location_city_outlined,
         ),
         _InfoRow(
-          label: 'Pincode',
+          label: context.mobileText('Pincode'),
           value: address.pincode,
           icon: Icons.local_post_office_outlined,
         ),
         if (fullAddress.isNotEmpty && fullAddress != composedLine)
           _InfoRow(
-            label: 'Full address',
+            label: context.mobileText('Full address'),
             value: fullAddress,
             icon: Icons.place_outlined,
           ),
@@ -483,7 +494,7 @@ class _IdentityCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      'Created: ',
+                      context.mobileText('Created: '),
                       style: OpenVtsTypography.meta.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                         fontSize: 10,
@@ -516,7 +527,7 @@ class _IdentityCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      'Updated: ',
+                      context.mobileText('Updated: '),
                       style: OpenVtsTypography.meta.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                         fontSize: 10,

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../models/user_notification_settings_model.dart';
 
@@ -26,25 +27,25 @@ class UserNotificationChannelCard extends StatelessWidget {
     final channels = <_ChannelRowItem>[
       _ChannelRowItem(
         channel: UserNotificationChannel.webPush,
-        label: 'Web Push',
+        label: context.mobileText('Web Push'),
         icon: Icons.language_rounded,
         value: flags.notifyWebPush,
       ),
       _ChannelRowItem(
         channel: UserNotificationChannel.mobilePush,
-        label: 'Mobile Push',
+        label: context.mobileText('Mobile Push'),
         icon: Icons.phone_android_rounded,
         value: flags.notifyMobilePush,
       ),
       _ChannelRowItem(
         channel: UserNotificationChannel.whatsapp,
-        label: 'WhatsApp',
+        label: context.mobileText('WhatsApp'),
         icon: Icons.forum_outlined,
         value: flags.notifyWhatsapp,
       ),
       _ChannelRowItem(
         channel: UserNotificationChannel.email,
-        label: 'Email',
+        label: context.mobileText('Email'),
         icon: Icons.mail_outline_rounded,
         value: flags.notifyEmail,
       ),
@@ -56,7 +57,9 @@ class UserNotificationChannelCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '$groupLabel Delivery Channels',
+            context.mobileText("{value1} Delivery Channels", {
+              'value1': (groupLabel).toString(),
+            }),
             style: OpenVtsTypography.meta.copyWith(
               color: isDark ? OpenVtsColors.white : OpenVtsColors.textSecondary,
               fontWeight: FontWeight.w700,
@@ -64,7 +67,9 @@ class UserNotificationChannelCard extends StatelessWidget {
           ),
           const SizedBox(height: OpenVtsSpacing.xxs),
           Text(
-            'Choose where alerts are delivered for this notification group.',
+            context.mobileText(
+              'Choose where alerts are delivered for this notification group.',
+            ),
             style: OpenVtsTypography.meta.copyWith(
               color: isDark
                   ? OpenVtsColors.white.withValues(alpha: 0.7)
@@ -150,12 +155,11 @@ class _ChannelToggleRow extends StatelessWidget {
             ),
           ),
           Semantics(
-            label: '$semanticLabel toggle',
+            label: context.mobileText("{value1} toggle", {
+              'value1': (semanticLabel).toString(),
+            }),
             toggled: item.value,
-            child: Switch.adaptive(
-              value: item.value,
-              onChanged: onChanged,
-            ),
+            child: Switch.adaptive(value: item.value, onChanged: onChanged),
           ),
         ],
       ),

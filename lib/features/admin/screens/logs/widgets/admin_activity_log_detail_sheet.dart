@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../core/utils/date_time_formatter.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../models/admin_logs_model.dart';
 
 const _fmt = DateTimeFormatter();
@@ -21,10 +22,11 @@ class AdminActivityLogDetailSheet extends StatelessWidget {
         _row('Action', item.humanAction),
         _row('Raw Action', item.action),
         _row(
-            'Time',
-            item.createdAt == null
-                ? '-'
-                : _fmt.formatDateTime(item.createdAt!.toLocal())),
+          'Time',
+          item.createdAt == null
+              ? '-'
+              : _fmt.formatDateTime(item.createdAt!.toLocal()),
+        ),
         _row('Entity', item.entity),
         _row('Entity ID', item.entityId.isEmpty ? '-' : item.entityId),
         _row('Performed By', item.actorDisplay),
@@ -32,7 +34,7 @@ class AdminActivityLogDetailSheet extends StatelessWidget {
         _row('Browser', item.browser.isEmpty ? '-' : item.browser),
         _row('Platform', item.platform.isEmpty ? '-' : item.platform),
         const SizedBox(height: OpenVtsSpacing.sm),
-        const Text('Metadata', style: OpenVtsTypography.label),
+        Text(context.mobileText('Metadata'), style: OpenVtsTypography.label),
         const SizedBox(height: OpenVtsSpacing.xs),
         SelectableText(
           prettyJson(item.meta),

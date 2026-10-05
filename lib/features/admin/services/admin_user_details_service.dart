@@ -1,17 +1,21 @@
 import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:http_parser/http_parser.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../../core/api/api_client.dart';
 import '../../../core/api/api_endpoints.dart';
 import '../../../core/api/api_options.dart';
-import '../models/admin_subscription_policy.dart';
+import '../../../core/utils/permission_helper.dart';
+import '../../../shared/models/user_role.dart';
 import '../models/admin_user_details_model.dart';
 
 class AdminUserDetailsService {
   AdminUserDetailsService(this._apiClient);
 
   final ApiClient _apiClient;
+  final _renewalKeys = Expando<String>('renewalIdempotency');
+  bool get _isTeam => _apiClient.activeRole == UserRole.team;
 
   static final Options _readOptions = normalReadOptions();
 
@@ -38,7 +42,10 @@ class AdminUserDetailsService {
     final id = _requireUserId(userId);
     await _apiClient.patch<dynamic>(
       ApiEndpoints.admin.userById(id),
-      data: request.toJson(),
+      data: {
+        ...request.toJson(),
+        if (_isTeam && request.isActive != null) 'isActive': request.isActive,
+      },
       options: _mutationOptions,
       parser: (json) => json,
     );
@@ -49,7 +56,9 @@ class AdminUserDetailsService {
     final id = _requireUserId(userId);
     await _apiClient.patch<void>(
       ApiEndpoints.admin.userById(id),
-      data: <String, dynamic>{'isActive': isActive.toString()},
+      data: <String, dynamic>{
+        'isActive': _isTeam ? isActive : isActive.toString(),
+      },
       options: _mutationOptions,
       parser: (_) {},
     );
@@ -57,7 +66,7 @@ class AdminUserDetailsService {
 
   Future<void> updateUserPassword(String userId, String newPassword) async {
     final id = _requireUserId(userId);
-    final normalizedPassword = newPassword.trim();
+    final normalizedPassword = newPassword;
     if (normalizedPassword.isEmpty) {
       throw ArgumentError('Password is required.');
     }
@@ -107,6 +116,10 @@ class AdminUserDetailsService {
   }
 
   Future<List<AdminUserVehicle>> getUnlinkedVehicles(String userId) async {
+    if (_isTeam &&
+        !PermissionHelper.canPerform(_apiClient.activeUser, 'users.update')) {
+      return [];
+    }
     final id = _requireUserId(userId);
     final response = await _apiClient.get<dynamic>(
       ApiEndpoints.admin.unlinkedVehiclesByUserId(id),
@@ -149,6 +162,10 @@ class AdminUserDetailsService {
   }
 
   Future<List<AdminUserDriver>> getUnlinkedDrivers(String userId) async {
+    if (_isTeam &&
+        !PermissionHelper.canPerform(_apiClient.activeUser, 'users.update')) {
+      return [];
+    }
     final id = _requireUserId(userId);
     final response = await _apiClient.get<dynamic>(
       ApiEndpoints.admin.unlinkedDriversByUserId(id),
@@ -203,7 +220,9 @@ class AdminUserDetailsService {
     _validateDocumentRequest(request, requireFile: true);
     final formData = await _buildDocumentFormData(request);
     await _apiClient.post<void>(
-      ApiEndpoints.admin.uploadDoc,
+      _isTeam
+          ? TeamContextEndpoints.userDocuments(request.associateId)
+          : ApiEndpoints.admin.uploadDoc,
       data: formData,
       options: _uploadOptions,
       parser: (_) {},
@@ -218,17 +237,27 @@ class AdminUserDetailsService {
     _validateDocumentRequest(request, requireFile: false);
     final formData = await _buildDocumentFormData(request);
     await _apiClient.patch<void>(
-      ApiEndpoints.admin.uploadDocById(id),
+      _isTeam
+          ? TeamContextEndpoints.userDocuments(
+              request.associateId,
+              documentId: id,
+            )
+          : ApiEndpoints.admin.uploadDocById(id),
       data: formData,
       options: _uploadOptions,
       parser: (_) {},
     );
   }
 
-  Future<void> deleteDocument(String docId) async {
+  Future<void> deleteDocument(String docId, {String? userId}) async {
     final id = _requireId(docId, 'docId');
     await _apiClient.delete<void>(
-      ApiEndpoints.admin.uploadDocById(id),
+      _isTeam
+          ? TeamContextEndpoints.userDocuments(
+              _requireUserId(userId ?? ''),
+              documentId: id,
+            )
+          : ApiEndpoints.admin.uploadDocById(id),
       options: _mutationOptions,
       parser: (_) {},
     );
@@ -237,7 +266,9 @@ class AdminUserDetailsService {
   Future<List<AdminUserTicket>> getTickets(String userId) async {
     final id = _requireUserId(userId);
     final response = await _apiClient.get<dynamic>(
-      ApiEndpoints.admin.tickets,
+      _isTeam
+          ? TeamContextEndpoints.userTickets(id)
+          : ApiEndpoints.admin.tickets,
       queryParameters: <String, dynamic>{'userId': id},
       options: _readOptions,
       parser: (json) => json,
@@ -279,7 +310,9 @@ class AdminUserDetailsService {
       attachments: attachments,
     );
     final response = await _apiClient.post<dynamic>(
-      ApiEndpoints.admin.tickets,
+      _isTeam
+          ? TeamContextEndpoints.userTickets(id)
+          : ApiEndpoints.admin.tickets,
       data: formData,
       options: _uploadOptions,
       parser: (json) => json,
@@ -341,7 +374,9 @@ class AdminUserDetailsService {
     _putQuery(query, 'q', q);
 
     final response = await _apiClient.get<dynamic>(
-      ApiEndpoints.admin.adminPayments,
+      _isTeam
+          ? TeamContextEndpoints.userPayments(id)
+          : ApiEndpoints.admin.adminPayments,
       queryParameters: query,
       options: _readOptions,
       parser: (json) => json,
@@ -356,13 +391,19 @@ class AdminUserDetailsService {
   Future<AdminRenewVehiclesPaymentResult> renewVehiclesPayment(
     AdminRenewVehiclesPaymentRequest request,
   ) async {
-    AdminSubscriptionPolicy.requireRenewalsAllowed();
     if (request.vehicleIds.isEmpty) {
       throw ArgumentError('Select at least one vehicle.');
     }
     final response = await _apiClient.post<dynamic>(
-      ApiEndpoints.admin.renewVehiclesPayment,
-      data: request.toJson(),
+      _isTeam
+          ? TeamContextEndpoints.userRenewal(request.userId)
+          : ApiEndpoints.admin.renewVehiclesPayment,
+      data: {
+        ...request.toJson(),
+        'idempotencyKey':
+            request.idempotencyKey ??
+            (_renewalKeys[request] ??= const Uuid().v4()),
+      },
       options: _mutationOptions,
       parser: (json) => json,
     );

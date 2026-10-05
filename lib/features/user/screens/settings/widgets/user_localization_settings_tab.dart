@@ -8,6 +8,7 @@ import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../l10n/app_localizations.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../controllers/user_settings_controller.dart';
 import '../../../models/user_settings_model.dart';
@@ -95,8 +96,9 @@ class _UserLocalizationSettingsTabState
     final dateFormatOptions = _buildDateFormatOptions(draft);
     final timezoneOptions = _buildTimezoneOptions(draft);
 
-    final hasUnsupportedSavedLanguage =
-        !isFlutterLanguageSupported(draft.language);
+    final hasUnsupportedSavedLanguage = !isFlutterLanguageSupported(
+      draft.language,
+    );
     final languageLabel = hasUnsupportedSavedLanguage
         ? l10n.en
         : _labelForValue(
@@ -105,7 +107,8 @@ class _UserLocalizationSettingsTabState
             fallback: draft.language.toUpperCase(),
           );
 
-    final showReferenceFallbackWarning = !widget.state.isLoadingReferences &&
+    final showReferenceFallbackWarning =
+        !widget.state.isLoadingReferences &&
         (hasUnsupportedSavedLanguage ||
             widget.state.languages.isEmpty ||
             widget.state.dateFormats.isEmpty ||
@@ -235,14 +238,14 @@ class _UserLocalizationSettingsTabState
                 child: UserLocalizationSegmentedControl<UserDistanceUnit>(
                   value: draft.units,
                   semanticsLabel: 'Distance unit selector',
-                  segments: const [
+                  segments: [
                     UserLocalizationSegmentOption<UserDistanceUnit>(
                       value: UserDistanceUnit.km,
-                      label: 'KM',
+                      label: context.mobileText('km'),
                     ),
                     UserLocalizationSegmentOption<UserDistanceUnit>(
                       value: UserDistanceUnit.miles,
-                      label: 'MILES',
+                      label: context.mobileText('Miles'),
                     ),
                   ],
                   onChanged: (value) {
@@ -723,10 +726,7 @@ class _UserLocalizationSettingsTabState
 // ── Private supporting widgets ─────────────────────────────────────────────
 
 class _SegmentedField<T> extends StatelessWidget {
-  const _SegmentedField({
-    required this.label,
-    required this.child,
-  });
+  const _SegmentedField({required this.label, required this.child});
 
   final String label;
   final Widget child;
@@ -797,7 +797,7 @@ class _ReferenceFallbackWarning extends StatelessWidget {
                   normalizedMessage == null || normalizedMessage.isEmpty
                       ? AppLocalizations.of(context).couldNotLoadLocalization
                       : '${AppLocalizations.of(context).couldNotLoadLocalization} '
-                          '$normalizedMessage',
+                            '$normalizedMessage',
                   style: OpenVtsTypography.meta.copyWith(
                     color: OpenVtsColors.warning,
                     fontWeight: FontWeight.w600,
@@ -806,9 +806,7 @@ class _ReferenceFallbackWarning extends StatelessWidget {
               ),
               TextButton(
                 onPressed: onRetry,
-                style: TextButton.styleFrom(
-                  minimumSize: const Size(0, 44),
-                ),
+                style: TextButton.styleFrom(minimumSize: const Size(0, 44)),
                 child: Text(AppLocalizations.of(context).retry),
               ),
             ],

@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../core/utils/date_time_formatter.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../models/admin_drivers_model.dart';
+import '../../../widgets/admin_action_gate.dart';
 
 const DateTimeFormatter _cardDateFormatter = DateTimeFormatter();
 
@@ -80,9 +83,9 @@ class _CardHeader extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: -0.2,
-                          ),
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -0.2,
+                      ),
                     ),
                   ),
                   const SizedBox(width: OpenVtsSpacing.xs),
@@ -146,7 +149,7 @@ class _AvatarCircle extends StatelessWidget {
   }
 }
 
-class _StatusToggle extends StatelessWidget {
+class _StatusToggle extends ConsumerWidget {
   const _StatusToggle({
     required this.isActive,
     required this.isBusy,
@@ -160,7 +163,8 @@ class _StatusToggle extends StatelessWidget {
   final ValueChanged<bool>? onChanged;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (!adminCanPerform(ref, 'drivers.update')) return const SizedBox.shrink();
     if (isToggling) {
       return const SizedBox(
         width: 40,
@@ -175,7 +179,9 @@ class _StatusToggle extends StatelessWidget {
     }
 
     return Tooltip(
-      message: isActive ? 'Deactivate driver' : 'Activate driver',
+      message: isActive
+          ? context.mobileText('Deactivate driver')
+          : context.mobileText('Activate driver'),
       child: Transform.scale(
         scale: 0.85,
         child: Switch(
@@ -221,7 +227,10 @@ class _CardInfoGrid extends StatelessWidget {
               _InfoRow(icon: Icons.call_outlined, value: phoneValue),
               const SizedBox(height: OpenVtsSpacing.xs),
               _InfoRow(
-                  icon: Icons.place_outlined, value: addressValue, maxLines: 2),
+                icon: Icons.place_outlined,
+                value: addressValue,
+                maxLines: 2,
+              ),
               if (primaryUserValue.isNotEmpty) ...[
                 const SizedBox(height: OpenVtsSpacing.xs),
                 _InfoRow(
@@ -247,10 +256,7 @@ class _CardInfoGrid extends StatelessWidget {
                 ),
                 const SizedBox(width: OpenVtsSpacing.sm),
                 Expanded(
-                  child: _InfoRow(
-                    icon: Icons.call_outlined,
-                    value: phoneValue,
-                  ),
+                  child: _InfoRow(icon: Icons.call_outlined, value: phoneValue),
                 ),
               ],
             ),
@@ -284,11 +290,7 @@ class _CardInfoGrid extends StatelessWidget {
 }
 
 class _InfoRow extends StatelessWidget {
-  const _InfoRow({
-    required this.icon,
-    required this.value,
-    this.maxLines = 1,
-  });
+  const _InfoRow({required this.icon, required this.value, this.maxLines = 1});
 
   final IconData icon;
   final String value;
@@ -342,15 +344,15 @@ class _CardMetricsRow extends StatelessWidget {
                   Expanded(
                     child: _MetricCell(
                       icon: Icons.calendar_today_rounded,
-                      label: 'Created',
+                      label: context.mobileText('Created'),
                       value: createdValue,
                     ),
                   ),
                   const SizedBox(width: OpenVtsSpacing.xs),
-                  const Expanded(
+                  Expanded(
                     child: _MetricCell(
                       icon: Icons.description_outlined,
-                      label: 'Role',
+                      label: context.mobileText('Role'),
                       value: 'Driver',
                     ),
                   ),
@@ -365,7 +367,7 @@ class _CardMetricsRow extends StatelessWidget {
             Expanded(
               child: _MetricCell(
                 icon: Icons.calendar_today_rounded,
-                label: 'Created',
+                label: context.mobileText('Created'),
                 value: createdValue,
               ),
             ),
@@ -374,7 +376,7 @@ class _CardMetricsRow extends StatelessWidget {
               flex: 2,
               child: _MetricCell(
                 icon: Icons.schedule_outlined,
-                label: 'Updated',
+                label: context.mobileText('Updated'),
                 value: _updatedLabel(driver.updatedAt),
               ),
             ),
@@ -414,9 +416,11 @@ class _MetricCell extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(icon,
-                  size: 14,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant),
+              Icon(
+                icon,
+                size: 14,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
               const SizedBox(width: OpenVtsSpacing.xxs + 2),
               Flexible(
                 child: Text(
@@ -483,11 +487,7 @@ class _RoundedSurface extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       borderRadius: radius,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: radius,
-        child: surface,
-      ),
+      child: InkWell(onTap: onTap, borderRadius: radius, child: surface),
     );
   }
 }

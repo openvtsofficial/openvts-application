@@ -9,6 +9,8 @@ import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../core/utils/validators.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
+import '../../../../../shared/helpers/validation_localizations.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../shared/widgets/open_vts_searchable_dropdown.dart';
 import '../../../controllers/user_providers.dart';
@@ -59,12 +61,15 @@ class _UserProfileEditSheetState extends ConsumerState<UserProfileEditSheet> {
 
     _nameController = TextEditingController(text: widget.profile.name ?? '');
     _emailController = TextEditingController(text: widget.profile.email ?? '');
-    _mobilePrefixController =
-        TextEditingController(text: widget.profile.mobilePrefix ?? '');
-    _mobileNumberController =
-        TextEditingController(text: widget.profile.mobileNumber ?? '');
-    _addressController =
-        TextEditingController(text: address?.addressLine ?? '');
+    _mobilePrefixController = TextEditingController(
+      text: widget.profile.mobilePrefix ?? '',
+    );
+    _mobileNumberController = TextEditingController(
+      text: widget.profile.mobileNumber ?? '',
+    );
+    _addressController = TextEditingController(
+      text: address?.addressLine ?? '',
+    );
     _pincodeController = TextEditingController(text: address?.pincode ?? '');
 
     _selectedCountry = (address?.countryCode ?? '').trim().toUpperCase();
@@ -74,8 +79,9 @@ class _UserProfileEditSheetState extends ConsumerState<UserProfileEditSheet> {
 
     // Initialise the free-text state controller with the saved state code so
     // any existing value is visible if the API returns no states list.
-    _stateController =
-        TextEditingController(text: address?.stateCode?.trim() ?? '');
+    _stateController = TextEditingController(
+      text: address?.stateCode?.trim() ?? '',
+    );
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadDependentOptions();
@@ -174,7 +180,7 @@ class _UserProfileEditSheetState extends ConsumerState<UserProfileEditSheet> {
       if (!ok) {
         _submitError =
             ref.read(userSettingsControllerProvider).profileErrorMessage ??
-                'Unable to save profile details.';
+            'Unable to save profile details.';
       }
     });
 
@@ -208,10 +214,7 @@ class _UserProfileEditSheetState extends ConsumerState<UserProfileEditSheet> {
     final statesAreForCurrentCountry =
         state.statesForCountryCode == _selectedCountry;
     final safeState = statesAreForCurrentCountry
-        ? _safeDropdownValue(
-            _selectedState,
-            stateOptions.map((o) => o.value),
-          )
+        ? _safeDropdownValue(_selectedState, stateOptions.map((o) => o.value))
         : null;
 
     // Only show a saved city selection when the loaded list belongs to the
@@ -220,10 +223,7 @@ class _UserProfileEditSheetState extends ConsumerState<UserProfileEditSheet> {
     final citiesAreForCurrentSelection =
         state.citiesForCountryAndStateCode == expectedCityKey;
     final safeCity = citiesAreForCurrentSelection
-        ? _safeDropdownValue(
-            _selectedCity,
-            cityOptions.map((o) => o.value),
-          )
+        ? _safeDropdownValue(_selectedCity, cityOptions.map((o) => o.value))
         : null;
 
     return DecoratedBox(
@@ -250,7 +250,7 @@ class _UserProfileEditSheetState extends ConsumerState<UserProfileEditSheet> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Edit Profile',
+                  context.mobileText('Edit profile'),
                   style: OpenVtsTypography.label.copyWith(
                     color: Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.w700,
@@ -258,8 +258,10 @@ class _UserProfileEditSheetState extends ConsumerState<UserProfileEditSheet> {
                 ),
                 const SizedBox(height: OpenVtsSpacing.xxs),
                 Text(
-                  'Update personal and address details. '
-                  'Changes are saved only when you confirm.',
+                  context.mobileText(
+                    'Update personal and address details. '
+                    'Changes are saved only when you confirm.',
+                  ),
                   style: OpenVtsTypography.meta.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
@@ -267,14 +269,14 @@ class _UserProfileEditSheetState extends ConsumerState<UserProfileEditSheet> {
                 const SizedBox(height: OpenVtsSpacing.sm),
                 _textField(
                   controller: _nameController,
-                  label: 'Name',
+                  label: context.mobileText('Name'),
                   textInputAction: TextInputAction.next,
                   validator: Validators.adminName,
                 ),
                 const SizedBox(height: OpenVtsSpacing.xs),
                 _textField(
                   controller: _emailController,
-                  label: 'Email (optional)',
+                  label: context.mobileText('Email (optional)'),
                   keyboardType: TextInputType.emailAddress,
                   textInputAction: TextInputAction.next,
                   validator: Validators.adminEmailOptional,
@@ -283,7 +285,7 @@ class _UserProfileEditSheetState extends ConsumerState<UserProfileEditSheet> {
                 if (mobilePrefixOptions.isEmpty)
                   _textField(
                     controller: _mobilePrefixController,
-                    label: 'Mobile Prefix',
+                    label: context.mobileText('Mobile prefix'),
                     hint: '+1',
                     keyboardType: TextInputType.phone,
                     textInputAction: TextInputAction.next,
@@ -292,7 +294,7 @@ class _UserProfileEditSheetState extends ConsumerState<UserProfileEditSheet> {
                 else
                   OpenVtsSearchableDropdown<String>(
                     key: ValueKey('prefix_${mobilePrefixOptions.length}'),
-                    label: 'Mobile Prefix',
+                    label: context.mobileText('Mobile prefix'),
                     value: safePrefix,
                     options: mobilePrefixOptions
                         .map(
@@ -319,7 +321,7 @@ class _UserProfileEditSheetState extends ConsumerState<UserProfileEditSheet> {
                 const SizedBox(height: OpenVtsSpacing.xs),
                 _textField(
                   controller: _mobileNumberController,
-                  label: 'Mobile Number',
+                  label: context.mobileText('Mobile Number'),
                   keyboardType: TextInputType.phone,
                   textInputAction: TextInputAction.next,
                   inputFormatters: [
@@ -333,18 +335,18 @@ class _UserProfileEditSheetState extends ConsumerState<UserProfileEditSheet> {
                 const SizedBox(height: OpenVtsSpacing.xs),
                 _textField(
                   controller: _addressController,
-                  label: 'Address Line',
+                  label: context.mobileText('Address Line'),
                   textInputAction: TextInputAction.next,
                   validator: Validators.address,
                 ),
                 const SizedBox(height: OpenVtsSpacing.xs),
                 if (state.isLoadingReferences && countryOptions.isEmpty)
-                  const _LoadingFieldPlaceholder(label: 'Country')
+                  _LoadingFieldPlaceholder(label: context.mobileText('Country'))
                 else if (countryOptions.isEmpty)
                   // Reference load failed. Show error + retry; a FormField
                   // validator blocks submission while no code is resolved.
                   _ReferenceRetryField(
-                    label: 'Country',
+                    label: context.mobileText('Country'),
                     selectedValue: _selectedCountry,
                     message: state.errorMessage,
                     onRetry: () =>
@@ -353,7 +355,7 @@ class _UserProfileEditSheetState extends ConsumerState<UserProfileEditSheet> {
                 else
                   _controlledDropdownField<String>(
                     key: ValueKey('country_${countryOptions.length}'),
-                    label: 'Country',
+                    label: context.mobileText('Country'),
                     value: safeCountry,
                     items: countryOptions
                         .map(
@@ -379,11 +381,11 @@ class _UserProfileEditSheetState extends ConsumerState<UserProfileEditSheet> {
                         _selectedCountry.isNotEmpty))
                   // Loading states OR country just changed and states are
                   // still in-flight / not yet matched.
-                  const _LoadingFieldPlaceholder(label: 'State')
+                  _LoadingFieldPlaceholder(label: context.mobileText('State'))
                 else if (_selectedCountry.isEmpty)
                   // No country selected yet – prompt user to choose first.
-                  const _DisabledFieldPlaceholder(
-                    label: 'State',
+                  _DisabledFieldPlaceholder(
+                    label: context.mobileText('State'),
                     hint: 'Select a country first',
                   )
                 else if (stateOptions.isNotEmpty)
@@ -395,7 +397,7 @@ class _UserProfileEditSheetState extends ConsumerState<UserProfileEditSheet> {
                       'state_${state.statesForCountryCode}_'
                       '${stateOptions.length}',
                     ),
-                    label: 'State',
+                    label: context.mobileText('State'),
                     value: safeState,
                     items: stateOptions
                         .map(
@@ -425,24 +427,20 @@ class _UserProfileEditSheetState extends ConsumerState<UserProfileEditSheet> {
                         _selectedState = '';
                       });
                     },
-                    decoration: const InputDecoration(
-                      labelText: 'State',
-                      hintText: 'Enter state or territory',
+                    decoration: InputDecoration(
+                      labelText: context.mobileText('State'),
+                      hintText: context.mobileText('Enter state or territory'),
                     ),
-                    validator: (value) {
-                      final s = (value ?? '').trim();
-                      if (s.isEmpty) return 'State is required.';
-                      return null;
-                    },
+                    validator: context.localizedValidator((value) {final s = (value ?? '').trim(); if (s.isEmpty) return 'State is required.'; return null;}),
                   ),
                 const SizedBox(height: OpenVtsSpacing.xs),
                 // City field — shows loading indicator or dropdown/text.
                 if (state.isLoadingCities)
-                  const _LoadingFieldPlaceholder(label: 'City')
+                  _LoadingFieldPlaceholder(label: context.mobileText('City'))
                 else if (cityOptions.isEmpty && citiesAreForCurrentSelection)
                   _textField(
                     controller: TextEditingController(text: _selectedCity),
-                    label: 'City',
+                    label: context.mobileText('City'),
                     textInputAction: TextInputAction.next,
                     validator: (value) {
                       final c = (value ?? '').trim();
@@ -456,7 +454,7 @@ class _UserProfileEditSheetState extends ConsumerState<UserProfileEditSheet> {
                       'city_${state.citiesForCountryAndStateCode}_'
                       '${cityOptions.length}',
                     ),
-                    label: 'City',
+                    label: context.mobileText('City'),
                     value: safeCity,
                     items: cityOptions
                         .map(
@@ -479,7 +477,7 @@ class _UserProfileEditSheetState extends ConsumerState<UserProfileEditSheet> {
                 else
                   _textField(
                     controller: TextEditingController(text: _selectedCity),
-                    label: 'City',
+                    label: context.mobileText('City'),
                     textInputAction: TextInputAction.next,
                     validator: (value) {
                       final c = (value ?? '').trim();
@@ -490,7 +488,7 @@ class _UserProfileEditSheetState extends ConsumerState<UserProfileEditSheet> {
                 const SizedBox(height: OpenVtsSpacing.xs),
                 _textField(
                   controller: _pincodeController,
-                  label: 'Pincode',
+                  label: context.mobileText('Pincode'),
                   hint: 'Optional',
                   keyboardType: TextInputType.number,
                   textInputAction: TextInputAction.done,
@@ -517,7 +515,7 @@ class _UserProfileEditSheetState extends ConsumerState<UserProfileEditSheet> {
                   children: [
                     Expanded(
                       child: OpenVtsButton(
-                        label: 'Cancel',
+                        label: context.mobileText('Cancel'),
                         variant: OpenVtsButtonVariant.secondary,
                         height: 44,
                         onPressed: _isSaving
@@ -528,7 +526,7 @@ class _UserProfileEditSheetState extends ConsumerState<UserProfileEditSheet> {
                     const SizedBox(width: OpenVtsSpacing.xs),
                     Expanded(
                       child: OpenVtsButton(
-                        label: 'Save Profile',
+                        label: context.mobileText('Save Profile'),
                         height: 44,
                         isLoading: _isSaving,
                         onPressed: _isSaving ? null : _handleSave,
@@ -560,11 +558,8 @@ class _UserProfileEditSheetState extends ConsumerState<UserProfileEditSheet> {
       keyboardType: keyboardType,
       textInputAction: textInputAction,
       inputFormatters: inputFormatters,
-      validator: validator,
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: hint,
-      ),
+      validator: context.localizedValidator(validator),
+      decoration: InputDecoration(labelText: label, hintText: hint),
     );
   }
 
@@ -585,12 +580,7 @@ class _UserProfileEditSheetState extends ConsumerState<UserProfileEditSheet> {
       decoration: InputDecoration(labelText: label),
       items: items,
       onChanged: onChanged,
-      validator: (v) {
-        if (v == null || (v is String && v.trim().isEmpty)) {
-          return '$label is required.';
-        }
-        return null;
-      },
+      validator: context.localizedValidator((v) {if (v == null || (v is String && v.trim().isEmpty)) {return '$label is required.';} return null;}),
     );
   }
 
@@ -654,10 +644,7 @@ class _LoadingFieldPlaceholder extends StatelessWidget {
 /// Shows a disabled hint when a field cannot be populated until a prior
 /// selection is made (e.g. State before a Country is chosen).
 class _DisabledFieldPlaceholder extends StatelessWidget {
-  const _DisabledFieldPlaceholder({
-    required this.label,
-    required this.hint,
-  });
+  const _DisabledFieldPlaceholder({required this.label, required this.hint});
 
   final String label;
   final String hint;
@@ -701,12 +688,7 @@ class _ReferenceRetryField extends StatelessWidget {
     return FormField<String>(
       initialValue: selectedValue,
       autovalidateMode: AutovalidateMode.onUserInteraction,
-      validator: (value) {
-        if ((value ?? '').trim().isEmpty) {
-          return '$label is required. Tap Retry to reload options.';
-        }
-        return null;
-      },
+      validator: context.localizedValidator((value) {if ((value ?? '').trim().isEmpty) {return '$label is required. Tap Retry to reload options.';} return null;}),
       builder: (field) => InputDecorator(
         decoration: InputDecoration(
           labelText: label,
@@ -724,7 +706,7 @@ class _ReferenceRetryField extends StatelessWidget {
               child: Text(
                 (message?.trim().isNotEmpty == true)
                     ? message!.trim()
-                    : 'Options unavailable.',
+                    : context.mobileText('Options unavailable.'),
                 style: OpenVtsTypography.meta.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
@@ -734,7 +716,7 @@ class _ReferenceRetryField extends StatelessWidget {
             ),
             TextButton(
               onPressed: onRetry,
-              child: const Text('Retry'),
+              child: Text(context.mobileText('Retry')),
             ),
           ],
         ),

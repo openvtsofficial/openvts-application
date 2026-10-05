@@ -7,6 +7,7 @@ import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../core/utils/unit_formatter.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/widgets/open_vts_empty_state.dart';
 import '../../../models/user_notification_settings_model.dart';
 import 'user_notification_channel_card.dart';
@@ -26,7 +27,7 @@ class UserOverspeedNotificationTab extends ConsumerWidget {
   final UserNotificationPreferences preferences;
   final UserNotificationChannelFlags channelFlags;
   final void Function(UserNotificationChannel channel, bool value)
-      onChannelChanged;
+  onChannelChanged;
   final void Function(int vehicleId, bool value) onOverspeedEnabledChanged;
   final void Function(int vehicleId, int? speedLimitKph) onSpeedLimitChanged;
 
@@ -42,9 +43,11 @@ class UserOverspeedNotificationTab extends ConsumerWidget {
             onChanged: onChannelChanged,
           ),
           const SizedBox(height: OpenVtsSpacing.sm),
-          const OpenVtsEmptyState(
-            title: 'No vehicles assigned yet.',
-            message: 'Assign vehicles to configure overspeed notifications.',
+          OpenVtsEmptyState(
+            title: context.mobileText('No vehicles assigned yet.'),
+            message: context.mobileText(
+              'Assign vehicles to configure overspeed notifications.',
+            ),
           ),
         ],
       );
@@ -63,11 +66,14 @@ class UserOverspeedNotificationTab extends ConsumerWidget {
         ),
         const SizedBox(height: OpenVtsSpacing.sm),
         ...preferences.vehicles.map((vehicle) {
-          final row = rowsByVehicle[vehicle.id] ??
+          final row =
+              rowsByVehicle[vehicle.id] ??
               UserOverspeedNotificationRow(vehicleId: vehicle.id);
           final isInvalid = row.enabled && ((row.speedLimitKph ?? 0) < 1);
-          final vehicleLabel =
-              userNotificationVehicleName(vehicle.name, vehicle.id);
+          final vehicleLabel = userNotificationVehicleName(
+            vehicle.name,
+            vehicle.id,
+          );
 
           return Padding(
             padding: const EdgeInsets.only(bottom: OpenVtsSpacing.sm),
@@ -78,7 +84,7 @@ class UserOverspeedNotificationTab extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   UserNotificationCompactToggle(
-                    label: 'Overspeed Enabled',
+                    label: context.mobileText('Overspeed Enabled'),
                     icon: Icons.speed_rounded,
                     semanticsLabel: 'Overspeed alerts for $vehicleLabel',
                     value: row.enabled,
@@ -105,7 +111,10 @@ class UserOverspeedNotificationTab extends ConsumerWidget {
                         left: OpenVtsSpacing.xxs,
                       ),
                       child: Text(
-                        'Speed limit must be at least 1 ${uf.speedLabel}.',
+                        context.mobileText(
+                          "Speed limit must be at least 1 {value1}.",
+                          {'value1': (uf.speedLabel).toString()},
+                        ),
                         style: OpenVtsTypography.meta.copyWith(
                           color: OpenVtsColors.error,
                           fontWeight: FontWeight.w600,
@@ -154,7 +163,10 @@ class _SpeedLimitField extends StatelessWidget {
       width: 140,
       child: Semantics(
         textField: true,
-        label: 'Overspeed limit ($speedLabel) for $vehicleLabel',
+        label: context.mobileText("Overspeed limit ({value1}) for {value2}", {
+          'value1': (speedLabel).toString(),
+          'value2': (vehicleLabel).toString(),
+        }),
         child: TextFormField(
           key: key,
           initialValue: value?.toString() ?? '',
@@ -169,13 +181,13 @@ class _SpeedLimitField extends StatelessWidget {
             color: enabled
                 ? (isDark ? OpenVtsColors.white : OpenVtsColors.textPrimary)
                 : (isDark
-                    ? OpenVtsColors.white.withValues(alpha: 0.5)
-                    : OpenVtsColors.textTertiary),
+                      ? OpenVtsColors.white.withValues(alpha: 0.5)
+                      : OpenVtsColors.textTertiary),
             fontWeight: FontWeight.w600,
           ),
           decoration: InputDecoration(
             isDense: true,
-            hintText: 'Limit',
+            hintText: context.mobileText('Limit'),
             hintStyle: OpenVtsTypography.meta.copyWith(
               color: isDark
                   ? OpenVtsColors.white.withValues(alpha: 0.5)
@@ -226,8 +238,8 @@ class _SpeedLimitField extends StatelessWidget {
                 color: hasError
                     ? OpenVtsColors.error
                     : (isDark
-                        ? OpenVtsColors.white
-                        : OpenVtsColors.textSecondary),
+                          ? OpenVtsColors.white
+                          : OpenVtsColors.textSecondary),
               ),
             ),
           ),

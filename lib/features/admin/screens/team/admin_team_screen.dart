@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/open_vts_colors.dart';
 import '../../../../core/theme/open_vts_radius.dart';
 import '../../../../core/theme/open_vts_spacing.dart';
+import '../../../../shared/helpers/mobile_text.dart';
 import '../../../../shared/widgets/open_vts_bottom_sheet.dart';
 import '../../../../shared/widgets/open_vts_empty_state.dart';
 import '../../../../shared/widgets/open_vts_error_view.dart';
@@ -25,11 +26,11 @@ class AdminTeamScreen extends ConsumerWidget {
     final controller = ref.read(adminTeamControllerProvider.notifier);
 
     return OpenVtsPageScaffold(
-      title: 'Team',
+      title: context.mobileText('Team'),
       headerMode: OpenVtsPageHeaderMode.closeable,
       actions: [
         IconButton(
-          tooltip: 'Refresh team',
+          tooltip: context.mobileText('Refresh team'),
           onPressed: controller.refresh,
           icon: state.isRefreshing
               ? const SizedBox.square(
@@ -48,24 +49,24 @@ class AdminTeamScreen extends ConsumerWidget {
       body: state.isLoading && !state.hasTeams
           ? const OpenVtsLoader()
           : state.errorMessage != null && !state.hasTeams
-              ? OpenVtsErrorView(
-                  message: state.errorMessage ?? 'Team could not be loaded.',
-                  onRetry: controller.refresh,
-                )
-              : _TeamBody(
-                  state: state,
-                  controller: controller,
-                  onCreate: () => _showCreateTeamSheet(context, ref),
-                  onOpenFilters: () => _showFilterSheet(context, ref),
-                  onOpenSort: () => _showSortSheet(context, ref),
-                ),
+          ? OpenVtsErrorView(
+              message: state.errorMessage ?? 'Team could not be loaded.',
+              onRetry: controller.refresh,
+            )
+          : _TeamBody(
+              state: state,
+              controller: controller,
+              onCreate: () => _showCreateTeamSheet(context, ref),
+              onOpenFilters: () => _showFilterSheet(context, ref),
+              onOpenSort: () => _showSortSheet(context, ref),
+            ),
     );
   }
 
   Future<void> _showCreateTeamSheet(BuildContext context, WidgetRef ref) {
     return OpenVtsBottomSheet.show<void>(
       context: context,
-      title: 'Add New Team',
+      title: context.mobileText('Add New Team'),
       initialChildSize: 0.9,
       minChildSize: 0.5,
       maxChildSize: 0.96,
@@ -98,10 +99,10 @@ class AdminTeamScreen extends ConsumerWidget {
         return StatefulBuilder(
           builder: (context, setSheetState) {
             return OpenVtsListPageOptionsSheet(
-              title: 'Filter team',
+              title: context.mobileText('Filter team'),
               sections: [
                 OpenVtsListPageOptionsSection(
-                  label: 'Status',
+                  label: context.mobileText('Status'),
                   child: Wrap(
                     spacing: OpenVtsSpacing.xs,
                     runSpacing: OpenVtsSpacing.xs,
@@ -156,10 +157,10 @@ class AdminTeamScreen extends ConsumerWidget {
       ),
       builder: (sheetContext) {
         return OpenVtsListPageOptionsSheet(
-          title: 'Sort team',
+          title: context.mobileText('Sort team'),
           sections: [
             OpenVtsListPageOptionsSection(
-              label: 'Order by',
+              label: context.mobileText('Order by'),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: AdminTeamSortOption.values
@@ -221,7 +222,7 @@ class _TeamBody extends StatelessWidget {
         const SizedBox(height: OpenVtsSpacing.sm),
         OpenVtsListPageToolbar(
           searchQuery: state.searchQuery,
-          hintText: 'Search by name, email\u2026',
+          hintText: context.mobileText('Search by name, email\u2026'),
           hasActiveFilters: state.hasActiveFilters,
           onSearchChanged: controller.setSearchQuery,
           onOpenFilters: onOpenFilters,
@@ -244,10 +245,14 @@ class _TeamBody extends StatelessWidget {
                     children: [
                       const SizedBox(height: OpenVtsSpacing.section),
                       OpenVtsEmptyState(
-                        title: 'No team members found',
+                        title: context.mobileText('No team members found'),
                         message: state.hasActiveFilters
-                            ? 'Try a different search or filter.'
-                            : 'Create a team member to get started.',
+                            ? context.mobileText(
+                                'Try a different search or filter.',
+                              )
+                            : context.mobileText(
+                                'Create a team member to get started.',
+                              ),
                       ),
                     ],
                   )
@@ -270,9 +275,7 @@ class _TeamBody extends StatelessWidget {
                         );
                       }
 
-                      return AdminTeamCard(
-                        team: visible[index],
-                      );
+                      return AdminTeamCard(team: visible[index]);
                     },
                   ),
           ),
@@ -299,19 +302,22 @@ class _InlineErrorBanner extends StatelessWidget {
         color: Theme.of(context).colorScheme.error.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(OpenVtsRadius.md),
         border: Border.all(
-            color: Theme.of(context).colorScheme.error.withValues(alpha: 0.2)),
+          color: Theme.of(context).colorScheme.error.withValues(alpha: 0.2),
+        ),
       ),
       child: Row(
         children: [
-          Icon(Icons.error_outline_rounded,
-              color: Theme.of(context).colorScheme.error),
+          Icon(
+            Icons.error_outline_rounded,
+            color: Theme.of(context).colorScheme.error,
+          ),
           const SizedBox(width: OpenVtsSpacing.sm),
           Expanded(
             child: Text(
               message,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: OpenVtsColors.error,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: OpenVtsColors.error),
             ),
           ),
         ],

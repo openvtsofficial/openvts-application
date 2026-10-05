@@ -9,6 +9,7 @@ import '../../../../core/theme/open_vts_colors.dart';
 import '../../../../core/theme/open_vts_radius.dart';
 import '../../../../core/theme/open_vts_spacing.dart';
 import '../../../../core/theme/open_vts_typography.dart';
+import '../../../../shared/helpers/mobile_text.dart';
 import '../../../../shared/helpers/toast_helper.dart';
 import '../../../../shared/widgets/open_vts_button.dart';
 import '../../../../shared/widgets/open_vts_card.dart';
@@ -84,12 +85,14 @@ class _UserNotificationSettingsScreenBody extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(userNotificationSettingsControllerProvider);
-    final controller =
-        ref.read(userNotificationSettingsControllerProvider.notifier);
+    final controller = ref.read(
+      userNotificationSettingsControllerProvider.notifier,
+    );
     final authState = ref.watch(authControllerProvider);
     final mobilePushState = ref.watch(mobilePushControllerProvider);
-    final mobilePushController =
-        ref.read(mobilePushControllerProvider.notifier);
+    final mobilePushController = ref.read(
+      mobilePushControllerProvider.notifier,
+    );
     final canUseMobilePush = authState.isRealSession;
 
     Future<void> handleSaveRequest() async {
@@ -100,14 +103,18 @@ class _UserNotificationSettingsScreenBody extends ConsumerWidget {
 
       final previousSavedAt = before.lastSavedAt;
       await controller.save();
+      if (!context.mounted) return;
       final latest = ref.read(userNotificationSettingsControllerProvider);
       final error = latest.errorMessage?.trim();
-      final didSave = latest.lastSavedAt != null &&
+      final didSave =
+          latest.lastSavedAt != null &&
           latest.lastSavedAt != previousSavedAt &&
           (error == null || error.isEmpty);
 
       if (didSave) {
-        ToastHelper.showSuccess('Notification settings saved successfully.');
+        ToastHelper.showSuccess(
+          context.mobileText('Notification settings saved successfully.'),
+        );
         return;
       }
 
@@ -163,6 +170,7 @@ class _UserNotificationSettingsScreenBody extends ConsumerWidget {
 
       await mobilePushController
           .requestPermissionAndRegisterForCurrentSession();
+      if (!context.mounted) return;
       final latest = ref.read(mobilePushControllerProvider);
       final error = latest.lastError?.trim();
       if (error != null && error.isNotEmpty) {
@@ -170,20 +178,22 @@ class _UserNotificationSettingsScreenBody extends ConsumerWidget {
         return;
       }
 
-      ToastHelper.showSuccess('Mobile push registration retried.');
+      ToastHelper.showSuccess(
+        context.mobileText('Mobile push registration retried.'),
+      );
     }
 
     if (state.isLoading && !state.hasData) {
-      return const OpenVtsPageScaffold(
-        title: 'Notifications',
+      return OpenVtsPageScaffold(
+        title: context.mobileText('Notifications'),
         headerMode: OpenVtsPageHeaderMode.closeable,
-        body: OpenVtsLoader(),
+        body: const OpenVtsLoader(),
       );
     }
 
     if (state.errorMessage != null && !state.hasData) {
       return OpenVtsPageScaffold(
-        title: 'Notifications',
+        title: context.mobileText('Notifications'),
         headerMode: OpenVtsPageHeaderMode.closeable,
         body: OpenVtsErrorView(
           message: state.errorMessage!,
@@ -194,20 +204,22 @@ class _UserNotificationSettingsScreenBody extends ConsumerWidget {
 
     final preferences = state.draftPreferences;
     if (preferences == null) {
-      return const OpenVtsPageScaffold(
-        title: 'Notifications',
+      return OpenVtsPageScaffold(
+        title: context.mobileText('Notifications'),
         headerMode: OpenVtsPageHeaderMode.closeable,
         body: OpenVtsEmptyState(
-          title: 'No notification settings found',
-          message:
-              'Try refreshing. If this persists, your account may not have notification preferences yet.',
+          title: context.mobileText('No notification settings found'),
+          message: context.mobileText(
+            'Try refreshing. If this persists, your account may not have notification preferences yet.',
+          ),
         ),
       );
     }
 
     final selectedGroup = state.selectedTab;
     final showSaveBar = state.isDirty || state.isSaving;
-    final isMobilePushBusy = !canUseMobilePush ||
+    final isMobilePushBusy =
+        !canUseMobilePush ||
         mobilePushState.isInitializing ||
         mobilePushState.isTesting;
 
@@ -235,7 +247,7 @@ class _UserNotificationSettingsScreenBody extends ConsumerWidget {
     }
 
     return OpenVtsPageScaffold(
-      title: 'Notifications',
+      title: context.mobileText('Notifications'),
       headerMode: OpenVtsPageHeaderMode.closeable,
       padding: const EdgeInsets.fromLTRB(
         OpenVtsSpacing.sm,
@@ -245,7 +257,7 @@ class _UserNotificationSettingsScreenBody extends ConsumerWidget {
       ),
       actions: [
         IconButton(
-          tooltip: 'Refresh settings',
+          tooltip: context.mobileText('Refresh settings'),
           onPressed: state.isRefreshing || state.isLoading
               ? null
               : () {
@@ -274,8 +286,9 @@ class _UserNotificationSettingsScreenBody extends ConsumerWidget {
           return Align(
             alignment: Alignment.topCenter,
             child: ConstrainedBox(
-              constraints:
-                  const BoxConstraints(maxWidth: _notificationSettingsMaxWidth),
+              constraints: const BoxConstraints(
+                maxWidth: _notificationSettingsMaxWidth,
+              ),
               child: Column(
                 children: [
                   Expanded(
@@ -290,7 +303,8 @@ class _UserNotificationSettingsScreenBody extends ConsumerWidget {
                           if (state.errorMessage != null)
                             Padding(
                               padding: const EdgeInsets.only(
-                                  bottom: OpenVtsSpacing.sm),
+                                bottom: OpenVtsSpacing.sm,
+                              ),
                               child: _InlineErrorBanner(
                                 message: state.errorMessage!,
                                 onDismiss: controller.clearError,
@@ -306,11 +320,6 @@ class _UserNotificationSettingsScreenBody extends ConsumerWidget {
                           UserNotificationGroupTabs(
                             selectedGroup: selectedGroup,
                             onChanged: controller.setSelectedTab,
-                          ),
-                          const SizedBox(height: OpenVtsSpacing.sm),
-                          const Text(
-                            'Notifications are optional. Enabling or testing notifications '
-                            'shares a push token with your server and Firebase to deliver alerts.',
                           ),
                           const SizedBox(height: OpenVtsSpacing.sm),
                           _GroupActionsCard(
@@ -333,7 +342,8 @@ class _UserNotificationSettingsScreenBody extends ConsumerWidget {
                           UserMobilePushDiagnosticsCard(
                             state: mobilePushState,
                             showActions: canUseMobilePush,
-                            onRetryRegistration: canUseMobilePush &&
+                            onRetryRegistration:
+                                canUseMobilePush &&
                                     mobilePushState.isSupported &&
                                     !isMobilePushBusy
                                 ? () {
@@ -342,10 +352,10 @@ class _UserNotificationSettingsScreenBody extends ConsumerWidget {
                                 : null,
                             onSendTestNotification:
                                 canUseMobilePush && !isMobilePushBusy
-                                    ? () {
-                                        unawaited(handleTestNotification());
-                                      }
-                                    : null,
+                                ? () {
+                                    unawaited(handleTestNotification());
+                                  }
+                                : null,
                           ),
                           const SizedBox(height: OpenVtsSpacing.sm),
                           switch (selectedGroup) {
@@ -563,7 +573,7 @@ class _SettingsActionMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return PopupMenuButton<_SettingsMenuAction>(
-      tooltip: 'Notification actions',
+      tooltip: context.mobileText('Notification actions'),
       icon: const Icon(Icons.more_horiz_rounded, size: 20),
       onSelected: onSelected,
       itemBuilder: (context) => [
@@ -572,7 +582,7 @@ class _SettingsActionMenu extends StatelessWidget {
           enabled: !isTesting,
           child: _ActionMenuItem(
             icon: Icons.campaign_outlined,
-            label: 'Test Mobile Push',
+            label: context.mobileText('Test Mobile Push'),
             tooltip: _mobilePushTestTooltip,
             isLoading: isTesting,
           ),
@@ -580,25 +590,25 @@ class _SettingsActionMenu extends StatelessWidget {
         PopupMenuItem<_SettingsMenuAction>(
           value: _SettingsMenuAction.refresh,
           enabled: !isRefreshing && !isLoading,
-          child: const _ActionMenuItem(
+          child: _ActionMenuItem(
             icon: Icons.refresh_rounded,
-            label: 'Refresh',
+            label: context.mobileText('Refresh'),
           ),
         ),
         PopupMenuItem<_SettingsMenuAction>(
           value: _SettingsMenuAction.reset,
           enabled: isDirty && !isSaving,
-          child: const _ActionMenuItem(
+          child: _ActionMenuItem(
             icon: Icons.restart_alt_rounded,
-            label: 'Reset',
+            label: context.mobileText('Reset'),
           ),
         ),
         PopupMenuItem<_SettingsMenuAction>(
           value: _SettingsMenuAction.save,
           enabled: isDirty && !isSaving && !isTesting,
-          child: const _ActionMenuItem(
+          child: _ActionMenuItem(
             icon: Icons.save_outlined,
-            label: 'Save Changes',
+            label: context.mobileText('Save Changes'),
           ),
         ),
       ],
@@ -655,10 +665,7 @@ class _ActionMenuItem extends StatelessWidget {
       return child;
     }
 
-    return Tooltip(
-      message: message,
-      child: child,
-    );
+    return Tooltip(message: message, child: child);
   }
 }
 
@@ -685,19 +692,19 @@ class _GroupActionsCard extends StatelessWidget {
         children: [
           _CompactActionChip(
             icon: Icons.campaign_outlined,
-            label: 'Test Mobile Push',
+            label: context.mobileText('Test Mobile Push'),
             tooltip: _mobilePushTestTooltip,
             isLoading: isTestNotifyLoading,
             onTap: onTestNotify,
           ),
           _CompactActionChip(
             icon: Icons.refresh_rounded,
-            label: 'Refresh',
+            label: context.mobileText('Refresh'),
             onTap: onRefresh,
           ),
           _CompactActionChip(
             icon: Icons.restart_alt_rounded,
-            label: 'Reset',
+            label: context.mobileText('Reset'),
             onTap: onReset,
           ),
         ],
@@ -728,8 +735,8 @@ class _CompactActionChip extends StatelessWidget {
     final disabled = onTap == null && !isLoading;
     final foregroundColor = isDark
         ? (disabled
-            ? OpenVtsColors.white.withValues(alpha: 0.5)
-            : OpenVtsColors.white.withValues(alpha: 0.7))
+              ? OpenVtsColors.white.withValues(alpha: 0.5)
+              : OpenVtsColors.white.withValues(alpha: 0.7))
         : (disabled ? OpenVtsColors.textTertiary : OpenVtsColors.textSecondary);
     final child = InkWell(
       borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
@@ -741,8 +748,8 @@ class _CompactActionChip extends StatelessWidget {
           color: isDark
               ? Colors.black
               : (disabled
-                  ? OpenVtsColors.surface
-                  : OpenVtsColors.surfaceElevated),
+                    ? OpenVtsColors.surface
+                    : OpenVtsColors.surfaceElevated),
           borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
           border: Border.all(
             color: isDark
@@ -759,22 +766,18 @@ class _CompactActionChip extends StatelessWidget {
                 child: CircularProgressIndicator(strokeWidth: 2),
               )
             else
-              Icon(
-                icon,
-                size: 14,
-                color: foregroundColor,
-              ),
+              Icon(icon, size: 14, color: foregroundColor),
             const SizedBox(width: OpenVtsSpacing.xxs),
             Text(
               label,
               style: OpenVtsTypography.meta.copyWith(
                 color: isDark
                     ? (disabled
-                        ? OpenVtsColors.white.withValues(alpha: 0.5)
-                        : OpenVtsColors.white)
+                          ? OpenVtsColors.white.withValues(alpha: 0.5)
+                          : OpenVtsColors.white)
                     : (disabled
-                        ? OpenVtsColors.textTertiary
-                        : OpenVtsColors.textPrimary),
+                          ? OpenVtsColors.textTertiary
+                          : OpenVtsColors.textPrimary),
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -788,18 +791,12 @@ class _CompactActionChip extends StatelessWidget {
       return child;
     }
 
-    return Tooltip(
-      message: message,
-      child: child,
-    );
+    return Tooltip(message: message, child: child);
   }
 }
 
 class _InlineErrorBanner extends StatelessWidget {
-  const _InlineErrorBanner({
-    required this.message,
-    required this.onDismiss,
-  });
+  const _InlineErrorBanner({required this.message, required this.onDismiss});
 
   final String message;
   final VoidCallback onDismiss;
@@ -833,14 +830,16 @@ class _InlineErrorBanner extends StatelessWidget {
             onPressed: onDismiss,
             style: TextButton.styleFrom(
               minimumSize: const Size(44, 30),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: OpenVtsSpacing.xs),
+              padding: const EdgeInsets.symmetric(
+                horizontal: OpenVtsSpacing.xs,
+              ),
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
             child: Text(
-              'Dismiss',
-              style:
-                  OpenVtsTypography.meta.copyWith(fontWeight: FontWeight.w600),
+              context.mobileText('Dismiss'),
+              style: OpenVtsTypography.meta.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],
@@ -869,7 +868,7 @@ Future<bool> _showRefreshDiscardSheet(BuildContext context) async {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Discard unsaved changes?',
+                  context.mobileText('Discard unsaved changes?'),
                   style: OpenVtsTypography.label.copyWith(
                     color: isDark
                         ? OpenVtsColors.white
@@ -879,7 +878,9 @@ Future<bool> _showRefreshDiscardSheet(BuildContext context) async {
                 ),
                 const SizedBox(height: OpenVtsSpacing.xxs),
                 Text(
-                  'Refreshing will replace your current unsaved notification edits with the latest server settings.',
+                  context.mobileText(
+                    'Refreshing will replace your current unsaved notification edits with the latest server settings.',
+                  ),
                   style: OpenVtsTypography.meta.copyWith(
                     color: isDark
                         ? OpenVtsColors.white.withValues(alpha: 0.7)
@@ -891,7 +892,7 @@ Future<bool> _showRefreshDiscardSheet(BuildContext context) async {
                   children: [
                     Expanded(
                       child: OpenVtsButton(
-                        label: 'Keep Editing',
+                        label: context.mobileText('Keep Editing'),
                         height: 44,
                         variant: OpenVtsButtonVariant.secondary,
                         onPressed: () {
@@ -902,7 +903,7 @@ Future<bool> _showRefreshDiscardSheet(BuildContext context) async {
                     const SizedBox(width: OpenVtsSpacing.xs),
                     Expanded(
                       child: OpenVtsButton(
-                        label: 'Discard & Refresh',
+                        label: context.mobileText('Discard & Refresh'),
                         height: 44,
                         onPressed: () {
                           Navigator.of(context).pop(true);

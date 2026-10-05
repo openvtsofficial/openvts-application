@@ -5,6 +5,7 @@ import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 
 class UserOtpVerificationSheet extends StatefulWidget {
@@ -133,12 +134,10 @@ class _UserOtpVerificationSheetState extends State<UserOtpVerificationSheet> {
                 textInputAction: TextInputAction.done,
                 onSubmitted: (_) => _submit(),
                 maxLength: 6,
-                inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly,
-                ],
-                decoration: const InputDecoration(
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                decoration: InputDecoration(
                   labelText: 'OTP',
-                  hintText: 'Enter 6-digit code',
+                  hintText: context.mobileText('Enter 6-digit code'),
                   counterText: '',
                 ),
               ),
@@ -157,7 +156,9 @@ class _UserOtpVerificationSheetState extends State<UserOtpVerificationSheet> {
                 children: [
                   Expanded(
                     child: OpenVtsButton(
-                      label: _isResending ? 'Resending...' : 'Resend OTP',
+                      label: _isResending
+                          ? context.mobileText('Resending...')
+                          : context.mobileText('Resend OTP'),
                       variant: OpenVtsButtonVariant.secondary,
                       height: 44,
                       onPressed: _isResending || _isSubmitting ? null : _resend,
@@ -166,7 +167,7 @@ class _UserOtpVerificationSheetState extends State<UserOtpVerificationSheet> {
                   const SizedBox(width: OpenVtsSpacing.xs),
                   Expanded(
                     child: OpenVtsButton(
-                      label: 'Verify',
+                      label: context.mobileText('Verify'),
                       height: 44,
                       isLoading: _isSubmitting,
                       onPressed: _isSubmitting || _isResending ? null : _submit,

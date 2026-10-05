@@ -5,6 +5,8 @@ import 'package:http_parser/http_parser.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/api/api_endpoints.dart';
 import '../../../core/api/api_options.dart';
+import '../../../core/utils/permission_helper.dart';
+import '../../../shared/models/user_role.dart';
 import '../models/admin_driver_details_model.dart';
 import '../models/admin_drivers_model.dart';
 
@@ -12,6 +14,7 @@ class AdminDriversService {
   AdminDriversService(this._apiClient);
 
   final ApiClient _apiClient;
+  bool get _isTeam => _apiClient.activeRole == UserRole.team;
 
   static final Options _readOptions = normalReadOptions();
 
@@ -45,7 +48,7 @@ class AdminDriversService {
     String? refreshKey,
   }) async {
     final response = await _apiClient.get<dynamic>(
-      ApiEndpoints.admin.users,
+      _isTeam ? TeamContextEndpoints.driverUsers : ApiEndpoints.admin.users,
       queryParameters: _queryParameters(refreshKey: refreshKey),
       options: _readOptions,
       parser: (json) => json,
@@ -99,7 +102,7 @@ class AdminDriversService {
     required String password,
   }) async {
     final driverId = _requireId(id, 'driverId');
-    final pass = password.trim();
+    final pass = password;
     if (pass.isEmpty) {
       throw ArgumentError('password is required');
     }
@@ -149,7 +152,9 @@ class AdminDriversService {
       includeFile: true,
     );
     await _apiClient.post<void>(
-      ApiEndpoints.admin.uploadDoc,
+      _isTeam
+          ? TeamContextEndpoints.driverDocuments(request.driverId)
+          : ApiEndpoints.admin.uploadDoc,
       data: form,
       options: _uploadOptions,
       parser: (_) {},
@@ -167,17 +172,27 @@ class AdminDriversService {
       includeFile: request.file != null,
     );
     await _apiClient.patch<void>(
-      ApiEndpoints.admin.uploadDocById(id),
+      _isTeam
+          ? TeamContextEndpoints.driverDocuments(
+              request.driverId,
+              documentId: id,
+            )
+          : ApiEndpoints.admin.uploadDocById(id),
       data: form,
       options: _uploadOptions,
       parser: (_) {},
     );
   }
 
-  Future<void> deleteDriverDocument(String docId) async {
+  Future<void> deleteDriverDocument(String docId, {String? driverId}) async {
     final id = _requireId(docId, 'docId');
     await _apiClient.delete<void>(
-      ApiEndpoints.admin.uploadDocById(id),
+      _isTeam
+          ? TeamContextEndpoints.driverDocuments(
+              _requireId(driverId ?? '', 'driverId'),
+              documentId: id,
+            )
+          : ApiEndpoints.admin.uploadDocById(id),
       options: _mutationOptions,
       parser: (_) {},
     );
@@ -194,6 +209,10 @@ class AdminDriversService {
   }
 
   Future<List<AdminDriverLinkedUser>> getUnlinkedUsers(String driverId) async {
+    if (_isTeam &&
+        !PermissionHelper.canPerform(_apiClient.activeUser, 'drivers.update')) {
+      return [];
+    }
     final id = _requireId(driverId, 'driverId');
     final response = await _apiClient.get<dynamic>(
       ApiEndpoints.admin.driverUnlinkedUsers(id),
@@ -256,27 +275,30 @@ class AdminDriversService {
     final map = raw is Map<String, dynamic>
         ? raw
         : raw is Map
-            ? raw.map((key, value) => MapEntry(key.toString(), value))
-            : const <String, dynamic>{};
+        ? raw.map((key, value) => MapEntry(key.toString(), value))
+        : const <String, dynamic>{};
     final id = (map['uid'] ?? map['id'] ?? map['_id'] ?? '').toString().trim();
     final name = (map['name'] ?? map['Name'] ?? '').toString().trim();
     final username = (map['username'] ?? '').toString().trim();
     final email = (map['email'] ?? '').toString().trim();
-    final mobilePrefix =
-        (map['mobilePrefix'] ?? map['mobile_prefix'] ?? '').toString().trim();
-    final mobile =
-        (map['mobileNumber'] ?? map['mobile'] ?? '').toString().trim();
+    final mobilePrefix = (map['mobilePrefix'] ?? map['mobile_prefix'] ?? '')
+        .toString()
+        .trim();
+    final mobile = (map['mobileNumber'] ?? map['mobile'] ?? '')
+        .toString()
+        .trim();
     final addressMap = map['address'] is Map<String, dynamic>
         ? map['address'] as Map<String, dynamic>
         : map['address'] is Map
-            ? (map['address'] as Map)
-                .map((key, value) => MapEntry(key.toString(), value))
-            : const <String, dynamic>{};
+        ? (map['address'] as Map).map(
+            (key, value) => MapEntry(key.toString(), value),
+          )
+        : const <String, dynamic>{};
     final fullAddress =
         (addressMap['fullAddress'] ?? addressMap['addressLine'] ?? '')
             .toString();
-    final phone =
-        '${mobilePrefix.isNotEmpty ? '$mobilePrefix ' : ''}$mobile'.trim();
+    final phone = '${mobilePrefix.isNotEmpty ? '$mobilePrefix ' : ''}$mobile'
+        .trim();
     return AdminDriverListItem(
       id: id,
       firstName: name.isNotEmpty ? name : username,

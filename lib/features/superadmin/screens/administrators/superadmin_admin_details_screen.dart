@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/open_vts_colors.dart';
 import '../../../../core/theme/open_vts_radius.dart';
 import '../../../../core/theme/open_vts_spacing.dart';
+import '../../../../shared/helpers/mobile_text.dart';
 import '../../../../shared/helpers/toast_helper.dart';
 import '../../../../shared/widgets/open_vts_card.dart';
 import '../../../../shared/widgets/open_vts_error_view.dart';
@@ -43,7 +44,8 @@ class _SuperadminAdminDetailsScreenState
     if (widget.initialAdmin != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         final controller = ref.read(
-            superadminAdminDetailsControllerProvider(widget.adminId).notifier);
+          superadminAdminDetailsControllerProvider(widget.adminId).notifier,
+        );
         controller.seedInitialAdmin(widget.initialAdmin);
         controller.seedInitialData(
           vehicleCount: widget.initialAdmin!.totalVehicles > 0
@@ -61,23 +63,23 @@ class _SuperadminAdminDetailsScreenState
 
     final adminName = ref.watch(provider.select((s) => s.admin?.name ?? ''));
     final isActive = ref.watch(provider.select((s) => s.effectiveIsActive));
-    final isUpdatingStatus =
-        ref.watch(provider.select((s) => s.isUpdatingStatus));
-    final isDeletingAdmin =
-        ref.watch(provider.select((s) => s.isDeletingAdmin));
+    final isUpdatingStatus = ref.watch(
+      provider.select((s) => s.isUpdatingStatus),
+    );
+    final isDeletingAdmin = ref.watch(
+      provider.select((s) => s.isDeletingAdmin),
+    );
 
     final title = adminName.trim().isNotEmpty
         ? adminName
         : (widget.initialAdmin?.name.trim().isNotEmpty == true
-            ? widget.initialAdmin!.name
-            : 'Administrator');
+              ? widget.initialAdmin!.name
+              : 'Administrator');
 
     return OpenVtsPageScaffold(
       title: title,
       headerMode: OpenVtsPageHeaderMode.closeable,
-      leading: _HeaderAvatar(
-        adminName: title,
-      ),
+      leading: _HeaderAvatar(adminName: title),
       onClose: () => Navigator.of(context).maybePop(),
       actions: [
         _HeaderStatusChip(isActive: isActive),
@@ -122,20 +124,20 @@ class _SuperadminAdminDetailsScreenState
     }
   }
 
-  Future<void> _handleToggleStatus(
-    BuildContext context,
-    WidgetRef ref,
-  ) async {
+  Future<void> _handleToggleStatus(BuildContext context, WidgetRef ref) async {
     final provider = superadminAdminDetailsControllerProvider(widget.adminId);
     final controller = ref.read(provider.notifier);
-    final currentlyActive =
-        ref.read(provider.select((s) => s.effectiveIsActive));
+    final currentlyActive = ref.read(
+      provider.select((s) => s.effectiveIsActive),
+    );
     final next = !currentlyActive;
     final ok = await controller.updateStatus(next);
     if (!context.mounted) return;
     if (ok) {
       ToastHelper.showSuccess(
-        next ? 'Administrator activated.' : 'Administrator deactivated.',
+        next
+            ? context.mobileText('Administrator activated.')
+            : context.mobileText('Administrator deactivated.'),
         context: context,
       );
     } else {
@@ -147,38 +149,36 @@ class _SuperadminAdminDetailsScreenState
     }
   }
 
-  Future<void> _handleDelete(
-    BuildContext context,
-    WidgetRef ref,
-  ) async {
+  Future<void> _handleDelete(BuildContext context, WidgetRef ref) async {
     final provider = superadminAdminDetailsControllerProvider(widget.adminId);
     final controller = ref.read(provider.notifier);
     final adminNameNow = ref.read(provider.select((s) => s.admin?.name ?? ''));
     final name = adminNameNow.trim().isNotEmpty
         ? adminNameNow
         : (widget.initialAdmin?.name.trim().isNotEmpty == true
-            ? widget.initialAdmin!.name
-            : 'this administrator');
+              ? widget.initialAdmin!.name
+              : 'this administrator');
 
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('Delete administrator'),
+          title: Text(context.mobileText('Delete administrator')),
           content: Text(
-            'Remove $name from the platform? This action cannot be undone.',
+            context.mobileText(
+              "Remove {value1} from the platform? This action cannot be undone.",
+              {'value1': (name).toString()},
+            ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('Cancel'),
+              child: Text(context.mobileText('Cancel')),
             ),
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(true),
-              style: TextButton.styleFrom(
-                foregroundColor: OpenVtsColors.error,
-              ),
-              child: const Text('Delete'),
+              style: TextButton.styleFrom(foregroundColor: OpenVtsColors.error),
+              child: Text(context.mobileText('Delete')),
             ),
           ],
         );
@@ -191,7 +191,10 @@ class _SuperadminAdminDetailsScreenState
     final ok = await controller.deleteAdmin();
     if (!context.mounted) return;
     if (ok) {
-      ToastHelper.showSuccess('$name deleted.', context: context);
+      ToastHelper.showSuccess(
+        context.mobileText("{value1} deleted.", {'value1': (name).toString()}),
+        context: context,
+      );
       Navigator.of(context).maybePop();
     } else {
       final err = ref.read(provider.select((s) => s.sectionErrorMessage));
@@ -215,8 +218,9 @@ class _HeaderAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final initial =
-        adminName.trim().isNotEmpty ? adminName.trim()[0].toUpperCase() : '?';
+    final initial = adminName.trim().isNotEmpty
+        ? adminName.trim()[0].toUpperCase()
+        : '?';
 
     return Padding(
       padding: const EdgeInsetsDirectional.only(start: OpenVtsSpacing.sm),
@@ -226,8 +230,9 @@ class _HeaderAvatar extends StatelessWidget {
           height: 36,
           width: 36,
           decoration: BoxDecoration(
-            color:
-                isDark ? Colors.black : Theme.of(context).colorScheme.primary,
+            color: isDark
+                ? Colors.black
+                : Theme.of(context).colorScheme.primary,
             borderRadius: BorderRadius.circular(OpenVtsRadius.md),
             border: isDark ? Border.all(color: Colors.white, width: 1) : null,
           ),
@@ -259,8 +264,8 @@ class _HeaderStatusChip extends StatelessWidget {
     final color = isActive
         ? (isDark ? OpenVtsColors.darkTextPrimary : OpenVtsColors.brandInk)
         : (isDark
-            ? OpenVtsColors.darkTextTertiary
-            : OpenVtsColors.textTertiary);
+              ? OpenVtsColors.darkTextTertiary
+              : OpenVtsColors.textTertiary);
     return Center(
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -270,7 +275,9 @@ class _HeaderStatusChip extends StatelessWidget {
           border: Border.all(color: color.withValues(alpha: 0.25)),
         ),
         child: Text(
-          isActive ? 'Active' : 'Inactive',
+          isActive
+              ? context.mobileText('Active')
+              : context.mobileText('Inactive'),
           style: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w600,
@@ -305,7 +312,7 @@ class _HeaderMenu extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return PopupMenuButton<_AdminDetailsMenuAction>(
-      tooltip: 'More actions',
+      tooltip: context.mobileText('More actions'),
       icon: Icon(
         Icons.more_vert_rounded,
         size: 20,
@@ -327,12 +334,12 @@ class _HeaderMenu extends StatelessWidget {
         }
       },
       itemBuilder: (context) => [
-        const PopupMenuItem(
+        PopupMenuItem(
           value: _AdminDetailsMenuAction.refresh,
           height: 40,
           child: _MenuRow(
             icon: Icons.refresh_rounded,
-            label: 'Refresh',
+            label: context.mobileText('Refresh'),
           ),
         ),
         PopupMenuItem(
@@ -340,18 +347,21 @@ class _HeaderMenu extends StatelessWidget {
           height: 40,
           enabled: !isUpdatingStatus,
           child: _MenuRow(
-            icon:
-                isActive ? Icons.toggle_off_outlined : Icons.toggle_on_outlined,
-            label: isActive ? 'Deactivate' : 'Activate',
+            icon: isActive
+                ? Icons.toggle_off_outlined
+                : Icons.toggle_on_outlined,
+            label: isActive
+                ? context.mobileText('Deactivate')
+                : context.mobileText('Activate'),
           ),
         ),
         PopupMenuItem(
           value: _AdminDetailsMenuAction.delete,
           height: 40,
           enabled: !isDeleting,
-          child: const _MenuRow(
+          child: _MenuRow(
             icon: Icons.delete_outline_rounded,
-            label: 'Delete admin',
+            label: context.mobileText('Delete admin'),
             isDestructive: true,
           ),
         ),
@@ -398,10 +408,7 @@ class _MenuRow extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _Body extends ConsumerWidget {
-  const _Body({
-    required this.adminId,
-    required this.initialAdmin,
-  });
+  const _Body({required this.adminId, required this.initialAdmin});
 
   final String adminId;
   final SuperadminAdministrator? initialAdmin;
@@ -457,15 +464,9 @@ class _Body extends ConsumerWidget {
         children: [
           _SummaryCard(admin: admin, fallback: initialAdmin),
           const SizedBox(height: OpenVtsSpacing.sm),
-          _TabChips(
-            selected: selectedTab,
-            onSelect: controller.selectTab,
-          ),
+          _TabChips(selected: selectedTab, onSelect: controller.selectTab),
           const SizedBox(height: OpenVtsSpacing.sm),
-          _TabContent(
-            adminId: adminId,
-            selectedTab: selectedTab,
-          ),
+          _TabContent(adminId: adminId, selectedTab: selectedTab),
           const SizedBox(height: OpenVtsSpacing.lg),
         ],
       ),
@@ -613,19 +614,21 @@ class _SummaryCard extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   _Pill(
-                    label: isActive ? 'Active' : 'Inactive',
+                    label: isActive
+                        ? context.mobileText('Active')
+                        : context.mobileText('Inactive'),
                     color: isActive
                         ? (Theme.of(context).brightness == Brightness.dark
-                            ? OpenVtsColors.darkTextPrimary
-                            : OpenVtsColors.brandInk)
+                              ? OpenVtsColors.darkTextPrimary
+                              : OpenVtsColors.brandInk)
                         : (Theme.of(context).brightness == Brightness.dark
-                            ? OpenVtsColors.darkTextTertiary
-                            : OpenVtsColors.textTertiary),
+                              ? OpenVtsColors.darkTextTertiary
+                              : OpenVtsColors.textTertiary),
                   ),
                   if (isVerified) ...[
                     const SizedBox(height: 4),
-                    const _Pill(
-                      label: 'Verified',
+                    _Pill(
+                      label: context.mobileText('Verified'),
                       icon: Icons.verified_outlined,
                       color: OpenVtsColors.success,
                     ),
@@ -654,7 +657,7 @@ class _SummaryCard extends ConsumerWidget {
               Expanded(
                 child: _MetricTile(
                   icon: Icons.credit_card_outlined,
-                  label: 'Credits',
+                  label: context.mobileText('Credits'),
                   value: credits.toString(),
                 ),
               ),
@@ -662,7 +665,7 @@ class _SummaryCard extends ConsumerWidget {
               Expanded(
                 child: _MetricTile(
                   icon: Icons.local_shipping_outlined,
-                  label: 'Vehicles',
+                  label: context.mobileText('Vehicles'),
                   value: vehicles.toString(),
                 ),
               ),
@@ -684,8 +687,11 @@ class _ContactLine extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon,
-            size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
+        Icon(
+          icon,
+          size: 14,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
         const SizedBox(width: 6),
         Expanded(
           child: Text(
@@ -719,8 +725,11 @@ class _ContactLineWithVerification extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon,
-            size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
+        Icon(
+          icon,
+          size: 14,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
         const SizedBox(width: 6),
         Flexible(
           child: Text(
@@ -736,7 +745,9 @@ class _ContactLineWithVerification extends StatelessWidget {
         ),
         const SizedBox(width: 4),
         Tooltip(
-          message: isVerified ? 'Email verified' : 'Email unverified',
+          message: isVerified
+              ? context.mobileText('Email verified')
+              : context.mobileText('Email unverified'),
           child: Icon(
             isVerified
                 ? Icons.check_circle_rounded
@@ -932,8 +943,9 @@ class _TabChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bg =
-        isSelected ? OpenVtsColors.brandInk : OpenVtsColors.surfaceElevated;
+    final bg = isSelected
+        ? OpenVtsColors.brandInk
+        : OpenVtsColors.surfaceElevated;
     final fg = isSelected ? OpenVtsColors.white : OpenVtsColors.textPrimary;
     return Material(
       color: bg,
@@ -978,10 +990,7 @@ class _TabChip extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _TabContent extends StatelessWidget {
-  const _TabContent({
-    required this.adminId,
-    required this.selectedTab,
-  });
+  const _TabContent({required this.adminId, required this.selectedTab});
 
   final String adminId;
   final SuperadminAdminDetailsTab selectedTab;

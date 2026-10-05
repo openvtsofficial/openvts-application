@@ -3,21 +3,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../../../core/router/route_paths.dart';
-import '../../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../../core/utils/date_time_formatter.dart';
+import '../../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../../shared/helpers/phone_helper.dart';
 import '../../../../../../shared/widgets/open_vts_card.dart';
 import '../../../../../../shared/widgets/open_vts_status_chip.dart';
 import '../../../../models/user_driver_model.dart';
 
 class UserDriverCard extends ConsumerWidget {
-  const UserDriverCard({
-    required this.driver,
-    super.key,
-  });
+  const UserDriverCard({required this.driver, super.key});
 
   final UserDriver driver;
 
@@ -49,7 +46,8 @@ class UserDriverCard extends ConsumerWidget {
                   color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
                   border: Border.all(
-                      color: Theme.of(context).colorScheme.outlineVariant),
+                    color: Theme.of(context).colorScheme.outlineVariant,
+                  ),
                 ),
                 child: Icon(
                   Icons.badge_outlined,
@@ -100,13 +98,17 @@ class UserDriverCard extends ConsumerWidget {
             runSpacing: OpenVtsSpacing.xs,
             children: [
               OpenVtsStatusChip(
-                label: driver.isActive ? 'Active' : 'Inactive',
+                label: driver.isActive
+                    ? context.mobileText('Active')
+                    : context.mobileText('Inactive'),
                 type: driver.isActive
                     ? OpenVtsStatusType.success
                     : OpenVtsStatusType.neutral,
               ),
               OpenVtsStatusChip(
-                label: driver.isVerified ? 'Verified' : 'Unverified',
+                label: driver.isVerified
+                    ? context.mobileText('Verified')
+                    : context.mobileText('Unverified'),
                 type: driver.isVerified
                     ? OpenVtsStatusType.info
                     : OpenVtsStatusType.neutral,
@@ -118,10 +120,7 @@ class UserDriverCard extends ConsumerWidget {
             spacing: OpenVtsSpacing.xs,
             runSpacing: OpenVtsSpacing.xs,
             children: [
-              _MetaPill(
-                icon: Icons.phone_outlined,
-                label: _phoneLabel(driver),
-              ),
+              _MetaPill(icon: Icons.phone_outlined, label: _phoneLabel(driver)),
               if (driver.email.trim().isNotEmpty)
                 _MetaPill(
                   icon: Icons.mail_outline_rounded,
@@ -144,10 +143,7 @@ class UserDriverCard extends ConsumerWidget {
 }
 
 class _MetaPill extends StatelessWidget {
-  const _MetaPill({
-    required this.icon,
-    required this.label,
-  });
+  const _MetaPill({required this.icon, required this.label});
 
   final IconData icon;
   final String label;
@@ -222,10 +218,10 @@ String _assignmentLabel(UserDriver driver) {
 
   final name = vehicle.name.trim();
   final plate = vehicle.plateNumber.trim();
-  final combined = [name, plate]
-      .where((part) => part.isNotEmpty && part != '-')
-      .join(' - ')
-      .trim();
+  final combined = [
+    name,
+    plate,
+  ].where((part) => part.isNotEmpty && part != '-').join(' - ').trim();
   return combined.isEmpty ? 'Assigned' : combined;
 }
 

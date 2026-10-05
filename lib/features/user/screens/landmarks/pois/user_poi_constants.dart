@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../../../shared/helpers/mobile_text.dart';
+
 /// Shared POI categories. Backend stores the [value] as free text; the [label]
 /// is what we render. Keep values lowercase snake-case so they remain stable.
 class UserPoiCategoryOption {
@@ -20,11 +22,7 @@ const List<UserPoiCategoryOption> kUserPoiCategories = <UserPoiCategoryOption>[
     label: 'Airport',
     icon: Icons.flight_outlined,
   ),
-  UserPoiCategoryOption(
-    value: 'atm',
-    label: 'ATM',
-    icon: Icons.atm_outlined,
-  ),
+  UserPoiCategoryOption(value: 'atm', label: 'ATM', icon: Icons.atm_outlined),
   UserPoiCategoryOption(
     value: 'office',
     label: 'Office',
@@ -115,7 +113,9 @@ const List<UserPoiIconOption> kUserPoiIcons = <UserPoiIconOption>[
   UserPoiIconOption(slug: 'hospital', icon: Icons.local_hospital_outlined),
   UserPoiIconOption(slug: 'school', icon: Icons.school_outlined),
   UserPoiIconOption(
-      slug: 'gas-station', icon: Icons.local_gas_station_outlined),
+    slug: 'gas-station',
+    icon: Icons.local_gas_station_outlined,
+  ),
   UserPoiIconOption(slug: 'gym', icon: Icons.fitness_center_outlined),
   UserPoiIconOption(slug: 'cafe', icon: Icons.local_cafe_outlined),
   UserPoiIconOption(slug: 'library', icon: Icons.local_library_outlined),
@@ -149,12 +149,12 @@ IconData iconForUserPoiSlug(String? slug) {
 
 /// Returns the label for a category value, falling back to the value itself
 /// (Title Cased) when the category is custom/unknown.
-String labelForUserPoiCategory(String? value) {
+String labelForUserPoiCategory(String? value, {BuildContext? context}) {
   if (value == null || value.trim().isEmpty) return 'Uncategorised';
   final needle = value.trim();
   for (final option in kUserPoiCategories) {
     if (option.value.toLowerCase() == needle.toLowerCase()) {
-      return option.label;
+      return context?.mobileText(option.label) ?? option.label;
     }
   }
   return needle;

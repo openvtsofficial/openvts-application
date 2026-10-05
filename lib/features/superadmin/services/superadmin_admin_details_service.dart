@@ -234,7 +234,7 @@ class SuperadminAdminDetailsService {
     String? refreshKey,
   }) async {
     final id = _requireAdminId(adminId);
-    final normalizedLimit = limit.clamp(5, 50).toInt();
+    final normalizedLimit = limit < 1 ? 1 : (limit > 100 ? 100 : limit);
 
     final query = <String, dynamic>{
       'limit': normalizedLimit,

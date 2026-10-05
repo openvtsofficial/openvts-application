@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../../../shared/widgets/open_vts_status_chip.dart';
@@ -40,7 +41,7 @@ class UserEmailSubscriptionCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  'Email Subscription',
+                  context.mobileText('Email Subscription'),
                   style: OpenVtsTypography.label.copyWith(
                     color: Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.w700,
@@ -48,7 +49,7 @@ class UserEmailSubscriptionCard extends StatelessWidget {
                 ),
               ),
               IconButton(
-                tooltip: 'Refresh status',
+                tooltip: context.mobileText('Refresh status'),
                 onPressed: isLoading ? null : onRefresh,
                 iconSize: 16,
                 constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
@@ -64,14 +65,16 @@ class UserEmailSubscriptionCard extends StatelessWidget {
           const SizedBox(height: OpenVtsSpacing.xxs),
           if (status == null && isLoading)
             Text(
-              'Loading subscription status...',
+              context.mobileText('Loading subscription status...'),
               style: OpenVtsTypography.meta.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             )
           else ...[
             OpenVtsStatusChip(
-              label: isSubscribed ? 'Subscribed' : 'Not subscribed',
+              label: isSubscribed
+                  ? context.mobileText('Subscribed')
+                  : context.mobileText('Not subscribed'),
               type: isSubscribed
                   ? OpenVtsStatusType.success
                   : OpenVtsStatusType.neutral,
@@ -79,8 +82,12 @@ class UserEmailSubscriptionCard extends StatelessWidget {
             const SizedBox(height: OpenVtsSpacing.xs),
             Text(
               isSubscribed
-                  ? 'You are subscribed to profile email notifications.'
-                  : 'Subscribe to receive profile and account email updates.',
+                  ? context.mobileText(
+                      'You are subscribed to profile email notifications.',
+                    )
+                  : context.mobileText(
+                      'Subscribe to receive profile and account email updates.',
+                    ),
               style: OpenVtsTypography.meta.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
@@ -90,7 +97,7 @@ class UserEmailSubscriptionCard extends StatelessWidget {
               SizedBox(
                 width: 150,
                 child: OpenVtsButton(
-                  label: 'Subscribe',
+                  label: context.mobileText('Subscribe'),
                   height: 44,
                   isLoading: isSubscribing,
                   onPressed: isSubscribing ? null : onSubscribe,

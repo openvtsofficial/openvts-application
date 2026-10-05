@@ -5,6 +5,7 @@ import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../l10n/app_localizations.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 
 class UserLocalizationSelectCard extends StatelessWidget {
@@ -40,7 +41,8 @@ class UserLocalizationSelectCard extends StatelessWidget {
                   color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
                   border: Border.all(
-                      color: Theme.of(context).colorScheme.outlineVariant),
+                    color: Theme.of(context).colorScheme.outlineVariant,
+                  ),
                 ),
                 child: Icon(
                   icon,
@@ -130,7 +132,9 @@ class UserLocalizationPickerTile extends StatelessWidget {
         const SizedBox(height: OpenVtsSpacing.xxs),
         Semantics(
           button: true,
-          label: '$label picker',
+          label: context.mobileText("{value1} picker", {
+            'value1': (label).toString(),
+          }),
           child: InkWell(
             borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
             onTap: onTap,
@@ -144,7 +148,8 @@ class UserLocalizationPickerTile extends StatelessWidget {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
                 border: Border.all(
-                    color: Theme.of(context).colorScheme.outlineVariant),
+                  color: Theme.of(context).colorScheme.outlineVariant,
+                ),
                 color: Theme.of(context).colorScheme.surface,
               ),
               child: Row(
@@ -212,8 +217,9 @@ class UserLocalizationSegmentedControl<T> extends StatelessWidget {
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-            border:
-                Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+            border: Border.all(
+              color: Theme.of(context).colorScheme.outlineVariant,
+            ),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -392,9 +398,9 @@ class _LocalizationOptionPickerSheetState<T>
                             child: Text(
                               AppLocalizations.of(context).noData,
                               style: OpenVtsTypography.meta.copyWith(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onSurfaceVariant,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurfaceVariant,
                               ),
                             ),
                           ),
@@ -418,8 +424,9 @@ class _LocalizationOptionPickerSheetState<T>
                               title: Text(
                                 option.label,
                                 style: OpenVtsTypography.body.copyWith(
-                                  color:
-                                      Theme.of(context).colorScheme.onSurface,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface,
                                   fontWeight: isSelected
                                       ? FontWeight.w700
                                       : FontWeight.w500,
@@ -430,9 +437,9 @@ class _LocalizationOptionPickerSheetState<T>
                                   : Text(
                                       option.subtitle!,
                                       style: OpenVtsTypography.meta.copyWith(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onSurfaceVariant,
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.onSurfaceVariant,
                                       ),
                                     ),
                               trailing: isSelected
@@ -463,21 +470,23 @@ class _LocalizationOptionPickerSheetState<T>
       return widget.options;
     }
 
-    return widget.options.where((option) {
-      if (option.label.toLowerCase().contains(query)) {
-        return true;
-      }
+    return widget.options
+        .where((option) {
+          if (option.label.toLowerCase().contains(query)) {
+            return true;
+          }
 
-      if (option.subtitle?.toLowerCase().contains(query) == true) {
-        return true;
-      }
+          if (option.subtitle?.toLowerCase().contains(query) == true) {
+            return true;
+          }
 
-      for (final token in option.searchTokens) {
-        if (token.toLowerCase().contains(query)) {
-          return true;
-        }
-      }
-      return false;
-    }).toList(growable: false);
+          for (final token in option.searchTokens) {
+            if (token.toLowerCase().contains(query)) {
+              return true;
+            }
+          }
+          return false;
+        })
+        .toList(growable: false);
   }
 }

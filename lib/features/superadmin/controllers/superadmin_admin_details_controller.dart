@@ -19,10 +19,10 @@ class SuperadminAdminDetailsController
     required SuperadminAdminDetailsService detailsService,
     required SuperadminPaymentsService paymentsService,
     required this.onAdminStatusChanged,
-  })  : _adminId = adminId,
-        _detailsService = detailsService,
-        _paymentsService = paymentsService,
-        super(SuperadminAdminDetailsState.initial(adminId: adminId));
+  }) : _adminId = adminId,
+       _detailsService = detailsService,
+       _paymentsService = paymentsService,
+       super(SuperadminAdminDetailsState.initial(adminId: adminId));
 
   final String _adminId;
   final SuperadminAdminDetailsService _detailsService;
@@ -57,9 +57,7 @@ class SuperadminAdminDetailsController
     final knownActive =
         state.statusOverride ?? state.resolvedIsActive ?? admin.isActive;
 
-    final mergedAdmin = state.admin == null
-        ? null
-        : state.admin!.copyWith(isActive: knownActive);
+    final mergedAdmin = state.admin?.copyWith(isActive: knownActive);
 
     state = state.copyWith(
       initialAdmin: admin,
@@ -84,10 +82,7 @@ class SuperadminAdminDetailsController
   }
 
   Future<void> refreshAdmin() async {
-    state = state.copyWith(
-      isLoadingAdmin: true,
-      errorMessage: null,
-    );
+    state = state.copyWith(isLoadingAdmin: true, errorMessage: null);
     try {
       final fresh = await _detailsService.getAdminDetails(_adminId);
 
@@ -101,7 +96,8 @@ class SuperadminAdminDetailsController
 
       // Preserve vehicle count if missing
       if (fresh.totalVehicles < 0) {
-        final knownCount = preservedVehicleCount ??
+        final knownCount =
+            preservedVehicleCount ??
             (preservedAdminCount != null && preservedAdminCount >= 0
                 ? preservedAdminCount
                 : null);
@@ -122,7 +118,8 @@ class SuperadminAdminDetailsController
       }
 
       // Preserve active status: prioritize override, then resolved, then initial, then current
-      final knownActive = state.statusOverride ??
+      final knownActive =
+          state.statusOverride ??
           state.resolvedIsActive ??
           state.initialAdmin?.isActive ??
           state.admin?.isActive;
@@ -146,10 +143,7 @@ class SuperadminAdminDetailsController
 
   void selectTab(SuperadminAdminDetailsTab tab) {
     if (state.selectedTab == tab) return;
-    state = state.copyWith(
-      selectedTab: tab,
-      sectionErrorMessage: null,
-    );
+    state = state.copyWith(selectedTab: tab, sectionErrorMessage: null);
     _lazyLoadForTab(tab);
   }
 
@@ -229,19 +223,13 @@ class SuperadminAdminDetailsController
   // -------------------------------------------------------------------------
 
   Future<bool> updateProfile(SuperadminUpdateAdminRequest request) async {
-    state = state.copyWith(
-      isSavingProfile: true,
-      sectionErrorMessage: null,
-    );
+    state = state.copyWith(isSavingProfile: true, sectionErrorMessage: null);
     try {
       final admin = await _detailsService.updateAdminDetails(
         adminId: _adminId,
         request: request,
       );
-      state = state.copyWith(
-        admin: admin,
-        isSavingProfile: false,
-      );
+      state = state.copyWith(admin: admin, isSavingProfile: false);
       return true;
     } catch (error) {
       state = state.copyWith(
@@ -257,10 +245,7 @@ class SuperadminAdminDetailsController
     final previousOverride = state.statusOverride;
     final previousResolved = state.resolvedIsActive;
 
-    state = state.copyWith(
-      isUpdatingStatus: true,
-      sectionErrorMessage: null,
-    );
+    state = state.copyWith(isUpdatingStatus: true, sectionErrorMessage: null);
 
     try {
       await _detailsService.setAdminActive(
@@ -311,10 +296,7 @@ class SuperadminAdminDetailsController
     required String newPassword,
     required String confirmPassword,
   }) async {
-    state = state.copyWith(
-      isChangingPassword: true,
-      sectionErrorMessage: null,
-    );
+    state = state.copyWith(isChangingPassword: true, sectionErrorMessage: null);
     try {
       await _detailsService.updateAdminPassword(
         adminId: _adminId,
@@ -335,19 +317,13 @@ class SuperadminAdminDetailsController
   Future<bool> updateCompany(
     SuperadminAdminCompanyUpdateRequest request,
   ) async {
-    state = state.copyWith(
-      isSavingCompany: true,
-      sectionErrorMessage: null,
-    );
+    state = state.copyWith(isSavingCompany: true, sectionErrorMessage: null);
     try {
       final admin = await _detailsService.updateAdminCompany(
         adminId: _adminId,
         request: request,
       );
-      state = state.copyWith(
-        admin: admin,
-        isSavingCompany: false,
-      );
+      state = state.copyWith(admin: admin, isSavingCompany: false);
       return true;
     } catch (error) {
       state = state.copyWith(
@@ -359,10 +335,7 @@ class SuperadminAdminDetailsController
   }
 
   Future<bool> deleteAdmin() async {
-    state = state.copyWith(
-      isDeletingAdmin: true,
-      sectionErrorMessage: null,
-    );
+    state = state.copyWith(isDeletingAdmin: true, sectionErrorMessage: null);
     try {
       await _detailsService.deleteAdmin(_adminId);
       state = state.copyWith(isDeletingAdmin: false);
@@ -383,10 +356,7 @@ class SuperadminAdminDetailsController
   Future<void> loadCreditLogs({bool force = false}) async {
     if (!force && state.hasLoadedCreditLogs) return;
     if (state.isLoadingCredits) return;
-    state = state.copyWith(
-      isLoadingCredits: true,
-      creditsErrorMessage: null,
-    );
+    state = state.copyWith(isLoadingCredits: true, creditsErrorMessage: null);
     try {
       final logs = await _detailsService.getCreditLogs(_adminId);
       state = state.copyWith(
@@ -403,15 +373,9 @@ class SuperadminAdminDetailsController
   }
 
   Future<bool> updateCredits(SuperadminCreditUpdateRequest request) async {
-    state = state.copyWith(
-      isUpdatingCredits: true,
-      creditsErrorMessage: null,
-    );
+    state = state.copyWith(isUpdatingCredits: true, creditsErrorMessage: null);
     try {
-      await _detailsService.updateCredits(
-        adminId: _adminId,
-        request: request,
-      );
+      await _detailsService.updateCredits(adminId: _adminId, request: request);
       state = state.copyWith(isUpdatingCredits: false);
       await Future.wait<void>(<Future<void>>[
         loadCreditLogs(force: true),
@@ -522,31 +486,20 @@ class SuperadminAdminDetailsController
   Future<bool> recordManualPayment(
     SuperadminRecordPaymentRequest request,
   ) async {
-    state = state.copyWith(
-      isRecordingPayment: true,
-      sectionErrorMessage: null,
-    );
+    state = state.copyWith(isRecordingPayment: true, sectionErrorMessage: null);
     try {
       final transaction = await _paymentsService.recordManualPayment(request);
 
-      state = state.copyWith(
-        isRecordingPayment: false,
-        paymentsPage: 1,
-      );
+      state = state.copyWith(isRecordingPayment: false, paymentsPage: 1);
 
       final optimisticTransactions = _insertTransactionOptimistically(
         state.transactions,
         transaction,
       );
 
-      state = state.copyWith(
-        transactions: optimisticTransactions,
-      );
+      state = state.copyWith(transactions: optimisticTransactions);
 
-      await Future.wait<void>(<Future<void>>[
-        loadPayments(),
-        refreshAdmin(),
-      ]);
+      await Future.wait<void>(<Future<void>>[loadPayments(), refreshAdmin()]);
       return true;
     } catch (error) {
       state = state.copyWith(
@@ -675,10 +628,7 @@ class SuperadminAdminDetailsController
       documentMutationErrorMessage: null,
     );
     try {
-      await _detailsService.updateAdminDocument(
-        docId: docId,
-        request: request,
-      );
+      await _detailsService.updateAdminDocument(docId: docId, request: request);
       state = state.copyWith(
         isUploadingDocument: false,
         documentMutationErrorMessage: null,
@@ -723,10 +673,7 @@ class SuperadminAdminDetailsController
   Future<void> loadVehicles({bool force = false}) async {
     if (!force && state.hasLoadedVehicles) return;
     if (state.isLoadingVehicles) return;
-    state = state.copyWith(
-      isLoadingVehicles: true,
-      vehiclesErrorMessage: null,
-    );
+    state = state.copyWith(isLoadingVehicles: true, vehiclesErrorMessage: null);
     try {
       final vehicles = await _detailsService.getAdminVehicles(_adminId);
       state = state.copyWith(
@@ -840,10 +787,7 @@ class SuperadminAdminDetailsController
 
   bool setActivityDateRange({DateTime? from, DateTime? to}) {
     if (from != null && to != null && from.isAfter(to)) return false;
-    state = state.copyWith(
-      activityFrom: from,
-      activityTo: to,
-    );
+    state = state.copyWith(activityFrom: from, activityTo: to);
     return true;
   }
 
@@ -878,8 +822,9 @@ class SuperadminAdminDetailsController
       );
       cursor = page.nextCursorId;
       hasMore = page.hasMore && cursor != null;
-    } while (
-        category.requiresClientAggregation && items.length < 20 && hasMore);
+    } while (category.requiresClientAggregation &&
+        items.length < 20 &&
+        hasMore);
 
     return SuperadminAdminActivityLogPage(
       items: items,
@@ -915,10 +860,12 @@ class SuperadminAdminDetailsController
       if (lines.isEmpty) return fallback;
       // If stack-trace markers exist, prefer the first line only
       if (lines.length > 1 ||
-          lines.any((l) =>
-              l.contains('package:') ||
-              l.startsWith('#') ||
-              l.contains('Stack trace'))) {
+          lines.any(
+            (l) =>
+                l.contains('package:') ||
+                l.startsWith('#') ||
+                l.contains('Stack trace'),
+          )) {
         msg = lines.first;
       } else {
         msg = lines.join(' ');

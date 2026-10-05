@@ -103,7 +103,7 @@ void main() {
 
     final searchField = find.byType(TextField).last;
     final aliceOption = find.descendant(
-      of: find.byType(ListView).last,
+      of: find.byType(SliverList).last,
       matching: find.text('Alice Sharma'),
     );
     for (final query in const [

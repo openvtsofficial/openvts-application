@@ -9,6 +9,7 @@ import '../../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../models/user_landmark_model.dart';
@@ -16,10 +17,7 @@ import 'user_route_search_panel.dart';
 
 /// Result returned from the full-screen route editor on save.
 class UserRouteEditorResult {
-  const UserRouteEditorResult({
-    required this.points,
-    required this.toleranceM,
-  });
+  const UserRouteEditorResult({required this.points, required this.toleranceM});
 
   final List<UserGeoPoint> points;
   final double toleranceM;
@@ -62,9 +60,7 @@ class _UserRouteEditorScreenState extends State<UserRouteEditorScreen> {
   @override
   void initState() {
     super.initState();
-    _points.addAll(
-      widget.initialPoints.map((p) => LatLng(p.lat, p.lon)),
-    );
+    _points.addAll(widget.initialPoints.map((p) => LatLng(p.lat, p.lon)));
     final t = widget.initialToleranceM;
     if (t != null && t > 0) _tolerance = t;
   }
@@ -115,7 +111,9 @@ class _UserRouteEditorScreenState extends State<UserRouteEditorScreen> {
       if (_points.length == 1) {
         try {
           _map.move(_points.first, 14);
-        } catch (_) {/* map not yet ready */}
+        } catch (_) {
+          /* map not yet ready */
+        }
       }
       return;
     }
@@ -132,15 +130,14 @@ class _UserRouteEditorScreenState extends State<UserRouteEditorScreen> {
     try {
       _map.fitCamera(
         CameraFit.bounds(
-          bounds: LatLngBounds(
-            LatLng(minLat, minLon),
-            LatLng(maxLat, maxLon),
-          ),
+          bounds: LatLngBounds(LatLng(minLat, minLon), LatLng(maxLat, maxLon)),
           padding: const EdgeInsets.all(48),
           maxZoom: 16,
         ),
       );
-    } catch (_) {/* map not yet ready */}
+    } catch (_) {
+      /* map not yet ready */
+    }
   }
 
   // -------------------------------------------------------------------------
@@ -214,8 +211,9 @@ class _UserRouteEditorScreenState extends State<UserRouteEditorScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final initialCenter =
-        _points.isNotEmpty ? _points.first : const LatLng(20.5937, 78.9629);
+    final initialCenter = _points.isNotEmpty
+        ? _points.first
+        : const LatLng(20.5937, 78.9629);
     final initialZoom = _points.isNotEmpty ? 12.0 : 5.0;
 
     return Scaffold(
@@ -240,7 +238,8 @@ class _UserRouteEditorScreenState extends State<UserRouteEditorScreen> {
                         minZoom: 3,
                         maxZoom: 19,
                         interactionOptions: const InteractionOptions(
-                          flags: InteractiveFlag.drag |
+                          flags:
+                              InteractiveFlag.drag |
                               InteractiveFlag.pinchZoom |
                               InteractiveFlag.doubleTapZoom |
                               InteractiveFlag.scrollWheelZoom,
@@ -362,7 +361,8 @@ class _UserRouteEditorScreenState extends State<UserRouteEditorScreen> {
       final lat2 = b.latitude * math.pi / 180;
       final dLat = (b.latitude - a.latitude) * math.pi / 180;
       final dLon = (b.longitude - a.longitude) * math.pi / 180;
-      final h = math.sin(dLat / 2) * math.sin(dLat / 2) +
+      final h =
+          math.sin(dLat / 2) * math.sin(dLat / 2) +
           math.cos(lat1) *
               math.cos(lat2) *
               math.sin(dLon / 2) *
@@ -393,8 +393,9 @@ class _TopBar extends StatelessWidget {
     return Container(
       decoration: const BoxDecoration(
         color: OpenVtsColors.brandInk,
-        border:
-            Border(bottom: BorderSide(color: OpenVtsColors.white, width: 1)),
+        border: Border(
+          bottom: BorderSide(color: OpenVtsColors.white, width: 1),
+        ),
       ),
       padding: const EdgeInsets.fromLTRB(4, 4, 4, 4),
       child: Row(
@@ -420,7 +421,7 @@ class _TopBar extends StatelessWidget {
               side: const BorderSide(color: OpenVtsColors.white, width: 1),
             ),
             child: Text(
-              'Save',
+              context.mobileText('Save'),
               style: OpenVtsTypography.label.copyWith(
                 color: OpenVtsColors.white,
                 fontWeight: FontWeight.w700,
@@ -456,13 +457,13 @@ class _ModeToggle extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           _ModeChip(
-            label: 'Draw',
+            label: context.mobileText('Draw'),
             icon: Icons.edit_road_outlined,
             selected: mode == _EditorMode.manual,
             onTap: () => onChanged(_EditorMode.manual),
           ),
           _ModeChip(
-            label: 'Search',
+            label: context.mobileText('Search'),
             icon: Icons.search,
             selected: mode == _EditorMode.search,
             onTap: () => onChanged(_EditorMode.search),
@@ -508,11 +509,7 @@ class _ModeChip extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              icon,
-              size: 14,
-              color: OpenVtsColors.white,
-            ),
+            Icon(icon, size: 14, color: OpenVtsColors.white),
             const SizedBox(width: 4),
             Text(
               label,
@@ -715,7 +712,9 @@ class _BottomPanel extends StatelessWidget {
             children: [
               _MetaChip(
                 icon: Icons.scatter_plot_outlined,
-                label: '$pointCount points',
+                label: context.mobileText("{value1} points", {
+                  'value1': (pointCount).toString(),
+                }),
               ),
               const SizedBox(width: OpenVtsSpacing.xs),
               _MetaChip(
@@ -733,7 +732,7 @@ class _BottomPanel extends StatelessWidget {
           Row(
             children: [
               Text(
-                'Tolerance',
+                context.mobileText('Tolerance'),
                 style: OpenVtsTypography.meta.copyWith(
                   color: fgColor,
                   fontWeight: FontWeight.w600,
@@ -932,9 +931,12 @@ class _VertexEditorSheetState extends State<_VertexEditorSheet> {
         111111.0 * math.cos(current.latitude * math.pi / 180).abs();
     final nextLat = (current.latitude + dLat * stepMeters / metersPerDegLat)
         .clamp(-90.0, 90.0);
-    final nextLon = (current.longitude +
-            dLon * stepMeters / (metersPerDegLon == 0 ? 1 : metersPerDegLon))
-        .clamp(-180.0, 180.0);
+    final nextLon =
+        (current.longitude +
+                dLon *
+                    stepMeters /
+                    (metersPerDegLon == 0 ? 1 : metersPerDegLon))
+            .clamp(-180.0, 180.0);
     setState(() {
       _lat.text = nextLat.toStringAsFixed(6);
       _lon.text = nextLon.toStringAsFixed(6);
@@ -959,7 +961,9 @@ class _VertexEditorSheetState extends State<_VertexEditorSheet> {
             Row(
               children: [
                 Text(
-                  'Vertex ${widget.index + 1}',
+                  context.mobileText("Vertex {value1}", {
+                    'value1': (widget.index + 1).toString(),
+                  }),
                   style: OpenVtsTypography.titleSmall.copyWith(
                     color: Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.w600,
@@ -979,11 +983,17 @@ class _VertexEditorSheetState extends State<_VertexEditorSheet> {
             Row(
               children: [
                 Expanded(
-                  child: _CoordField(label: 'Latitude', controller: _lat),
+                  child: _CoordField(
+                    label: context.mobileText('Latitude'),
+                    controller: _lat,
+                  ),
                 ),
                 const SizedBox(width: OpenVtsSpacing.xs),
                 Expanded(
-                  child: _CoordField(label: 'Longitude', controller: _lon),
+                  child: _CoordField(
+                    label: context.mobileText('Longitude'),
+                    controller: _lon,
+                  ),
                 ),
               ],
             ),
@@ -1013,7 +1023,10 @@ class _VertexEditorSheetState extends State<_VertexEditorSheet> {
               ],
             ),
             const SizedBox(height: OpenVtsSpacing.md),
-            OpenVtsButton(label: 'Apply', onPressed: _apply),
+            OpenVtsButton(
+              label: context.mobileText('Apply'),
+              onPressed: _apply,
+            ),
           ],
         ),
       ),
@@ -1043,14 +1056,18 @@ class _CoordField extends StatelessWidget {
           controller: controller,
           style: OpenVtsTypography.numeric,
           keyboardType: const TextInputType.numberWithOptions(
-              decimal: true, signed: true),
+            decimal: true,
+            signed: true,
+          ),
           inputFormatters: [
             FilteringTextInputFormatter.allow(RegExp(r'[0-9.\-]')),
           ],
           decoration: InputDecoration(
             isDense: true,
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 10,
+              vertical: 8,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(OpenVtsRadius.button),
               borderSide: const BorderSide(color: OpenVtsColors.border),
@@ -1082,8 +1099,11 @@ class _NudgeBtn extends StatelessWidget {
           borderRadius: BorderRadius.circular(OpenVtsRadius.button),
           border: Border.all(color: OpenVtsColors.border),
         ),
-        child: Icon(icon,
-            size: 16, color: Theme.of(context).colorScheme.onSurface),
+        child: Icon(
+          icon,
+          size: 16,
+          color: Theme.of(context).colorScheme.onSurface,
+        ),
       ),
     );
   }

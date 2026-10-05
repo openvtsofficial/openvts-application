@@ -7,6 +7,7 @@ import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../../../shared/widgets/open_vts_empty_state.dart';
 import '../../../models/admin_payments_model.dart';
@@ -26,71 +27,89 @@ class AdminPaymentsModeBreakdown extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Payment Mode Breakdown',
-              style: OpenVtsTypography.titleSmall),
+          Text(
+            context.mobileText('Payment Mode Breakdown'),
+            style: OpenVtsTypography.titleSmall,
+          ),
           const SizedBox(height: OpenVtsSpacing.xxs),
-          Text('Ranked by transaction count',
-              style: OpenVtsTypography.meta
-                  .copyWith(color: OpenVtsColors.textSecondary)),
+          Text(
+            context.mobileText('Ranked by transaction count'),
+            style: OpenVtsTypography.meta.copyWith(
+              color: OpenVtsColors.textSecondary,
+            ),
+          ),
           const SizedBox(height: OpenVtsSpacing.sm),
           if (ranked.isEmpty)
-            const OpenVtsEmptyState(
-              title: 'No mode data',
-              message:
-                  'Payment mode breakdown is not available for this range.',
+            OpenVtsEmptyState(
+              title: context.mobileText('No mode data'),
+              message: context.mobileText(
+                'Payment mode breakdown is not available for this range.',
+              ),
             )
           else
             Column(
-              children: ranked.map((e) {
-                final ratio = max == 0 ? 0.0 : e.count / max;
-                final pct = total == 0 ? 0 : ((e.count / total) * 100).round();
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: OpenVtsSpacing.xs),
-                  child: Row(
-                    children: [
-                      SizedBox(
-                          width: 118,
-                          child: Text(e.mode.label,
-                              style: OpenVtsTypography.body)),
-                      Expanded(
-                        child: ClipRRect(
-                          borderRadius:
-                              BorderRadius.circular(OpenVtsRadius.pill),
-                          child: SizedBox(
-                            height: 10,
-                            child: Stack(
-                              fit: StackFit.expand,
-                              children: [
-                                const DecoratedBox(
-                                    decoration: BoxDecoration(
-                                        color: OpenVtsColors.surface)),
-                                FractionallySizedBox(
-                                  alignment: Alignment.centerLeft,
-                                  widthFactor: ratio,
-                                  child: const DecoratedBox(
-                                    decoration: BoxDecoration(
-                                        color: OpenVtsColors.textSecondary),
-                                  ),
-                                ),
-                              ],
+              children: ranked
+                  .map((e) {
+                    final ratio = max == 0 ? 0.0 : e.count / max;
+                    final pct = total == 0
+                        ? 0
+                        : ((e.count / total) * 100).round();
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: OpenVtsSpacing.xs),
+                      child: Row(
+                        children: [
+                          SizedBox(
+                            width: 118,
+                            child: Text(
+                              e.mode.label,
+                              style: OpenVtsTypography.body,
                             ),
                           ),
-                        ),
+                          Expanded(
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(
+                                OpenVtsRadius.pill,
+                              ),
+                              child: SizedBox(
+                                height: 10,
+                                child: Stack(
+                                  fit: StackFit.expand,
+                                  children: [
+                                    const DecoratedBox(
+                                      decoration: BoxDecoration(
+                                        color: OpenVtsColors.surface,
+                                      ),
+                                    ),
+                                    FractionallySizedBox(
+                                      alignment: Alignment.centerLeft,
+                                      widthFactor: ratio,
+                                      child: const DecoratedBox(
+                                        decoration: BoxDecoration(
+                                          color: OpenVtsColors.textSecondary,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: OpenVtsSpacing.xs),
+                          SizedBox(
+                            width: 52,
+                            child: Text(
+                              '${NumberFormat.compact().format(e.count)} ($pct%)',
+                              textAlign: TextAlign.right,
+                              style: OpenVtsTypography.meta.copyWith(
+                                color: OpenVtsColors.textSecondary,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: OpenVtsSpacing.xs),
-                      SizedBox(
-                        width: 52,
-                        child: Text(
-                          '${NumberFormat.compact().format(e.count)} ($pct%)',
-                          textAlign: TextAlign.right,
-                          style: OpenVtsTypography.meta
-                              .copyWith(color: OpenVtsColors.textSecondary),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }).toList(growable: false),
+                    );
+                  })
+                  .toList(growable: false),
             ),
         ],
       ),

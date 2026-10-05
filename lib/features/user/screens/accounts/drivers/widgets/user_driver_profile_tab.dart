@@ -8,6 +8,7 @@ import '../../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../../core/utils/date_time_formatter.dart';
+import '../../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../../shared/helpers/phone_helper.dart';
 import '../../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../../shared/widgets/open_vts_bottom_sheet.dart';
@@ -24,8 +25,11 @@ import 'user_driver_edit_sheet.dart';
 class UserDriverProfileTab extends ConsumerWidget {
   const UserDriverProfileTab({required this.provider, super.key});
 
-  final AutoDisposeStateNotifierProvider<UserDriverDetailsController,
-      UserDriverDetailsState> provider;
+  final AutoDisposeStateNotifierProvider<
+    UserDriverDetailsController,
+    UserDriverDetailsState
+  >
+  provider;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -64,43 +68,71 @@ class UserDriverProfileTab extends ConsumerWidget {
         ],
         const SizedBox(height: OpenVtsSpacing.sm),
         _InfoCard(
-          title: 'Driver Profile',
+          title: context.mobileText('Driver Profile'),
           icon: Icons.badge_outlined,
           rows: [
-            _InfoRow(label: 'Name', value: _display(driver.name)),
-            _InfoRow(label: 'Username', value: _username(driver.username)),
             _InfoRow(
-                label: 'Status',
-                value: driver.isActive ? 'Active' : 'Inactive'),
+              label: context.mobileText('Name'),
+              value: _display(driver.name),
+            ),
             _InfoRow(
-              label: 'Verification',
+              label: context.mobileText('Username'),
+              value: _username(driver.username),
+            ),
+            _InfoRow(
+              label: context.mobileText('Status'),
+              value: driver.isActive ? 'Active' : 'Inactive',
+            ),
+            _InfoRow(
+              label: context.mobileText('Verification'),
               value: driver.isVerified ? 'Verified' : 'Unverified',
             ),
             _InfoRow(
-              label: 'Created',
+              label: context.mobileText('Created'),
               value: _dateText(driver.createdAt, dateFormatter),
             ),
           ],
         ),
         const SizedBox(height: OpenVtsSpacing.sm),
         _InfoCard(
-          title: 'Contact',
+          title: context.mobileText('Contact'),
           icon: Icons.phone_outlined,
           rows: [
-            _InfoRow(label: 'Mobile', value: _phoneLabel(driver)),
-            _InfoRow(label: 'Email', value: _display(driver.email)),
+            _InfoRow(
+              label: context.mobileText('Mobile'),
+              value: _phoneLabel(driver),
+            ),
+            _InfoRow(
+              label: context.mobileText('Email'),
+              value: _display(driver.email),
+            ),
           ],
         ),
         const SizedBox(height: OpenVtsSpacing.sm),
         _InfoCard(
-          title: 'Address',
+          title: context.mobileText('Address'),
           icon: Icons.location_on_outlined,
           rows: [
-            _InfoRow(label: 'Address', value: _addressText(driver)),
-            _InfoRow(label: 'Country', value: _display(driver.countryCode)),
-            _InfoRow(label: 'State', value: _display(driver.stateCode)),
-            _InfoRow(label: 'City', value: _display(driver.city)),
-            _InfoRow(label: 'Pincode', value: _display(driver.pincode)),
+            _InfoRow(
+              label: context.mobileText('Address'),
+              value: _addressText(driver),
+            ),
+            _InfoRow(
+              label: context.mobileText('Country'),
+              value: _display(driver.countryCode),
+            ),
+            _InfoRow(
+              label: context.mobileText('State'),
+              value: _display(driver.stateCode),
+            ),
+            _InfoRow(
+              label: context.mobileText('City'),
+              value: _display(driver.city),
+            ),
+            _InfoRow(
+              label: context.mobileText('Pincode'),
+              value: _display(driver.pincode),
+            ),
           ],
         ),
         const SizedBox(height: OpenVtsSpacing.sm),
@@ -109,37 +141,27 @@ class UserDriverProfileTab extends ConsumerWidget {
     );
   }
 
-  Future<void> _showEditSheet(
-    BuildContext context,
-    UserDriver driver,
-  ) {
+  Future<void> _showEditSheet(BuildContext context, UserDriver driver) {
     return OpenVtsBottomSheet.show<bool>(
       context: context,
-      title: 'Edit Driver',
+      title: context.mobileText('Edit Driver'),
       initialChildSize: 0.9,
       minChildSize: 0.5,
       maxChildSize: 0.97,
-      child: UserDriverEditSheet(
-        provider: provider,
-        driver: driver,
-      ),
+      child: UserDriverEditSheet(provider: provider, driver: driver),
     );
   }
 
-  Future<void> _showAssignSheet(
-    BuildContext context,
-    UserDriver driver,
-  ) {
+  Future<void> _showAssignSheet(BuildContext context, UserDriver driver) {
     return OpenVtsBottomSheet.show<bool>(
       context: context,
-      title: driver.hasAssignedVehicle ? 'Change Vehicle' : 'Assign Vehicle',
+      title: driver.hasAssignedVehicle
+          ? context.mobileText('Change Vehicle')
+          : context.mobileText('Assign Vehicle'),
       initialChildSize: 0.84,
       minChildSize: 0.48,
       maxChildSize: 0.96,
-      child: UserDriverAssignVehicleSheet(
-        provider: provider,
-        driver: driver,
-      ),
+      child: UserDriverAssignVehicleSheet(provider: provider, driver: driver),
     );
   }
 
@@ -148,16 +170,18 @@ class UserDriverProfileTab extends ConsumerWidget {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('Unassign vehicle'),
-          content: const Text('Remove vehicle assignment from this driver?'),
+          title: Text(context.mobileText('Unassign vehicle')),
+          content: Text(
+            context.mobileText('Remove vehicle assignment from this driver?'),
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('Cancel'),
+              child: Text(context.mobileText('Cancel')),
             ),
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: const Text('Unassign'),
+              child: Text(context.mobileText('Unassign')),
             ),
           ],
         );
@@ -174,7 +198,10 @@ class UserDriverProfileTab extends ConsumerWidget {
     }
 
     if (ok) {
-      ToastHelper.showSuccess('Vehicle unassigned.', context: context);
+      ToastHelper.showSuccess(
+        context.mobileText('Vehicle unassigned.'),
+        context: context,
+      );
       return;
     }
 
@@ -191,14 +218,11 @@ class UserDriverProfileTab extends ConsumerWidget {
   ) async {
     final deleted = await OpenVtsBottomSheet.show<bool>(
       context: context,
-      title: 'Delete Driver',
+      title: context.mobileText('Delete Driver'),
       initialChildSize: 0.44,
       minChildSize: 0.36,
       maxChildSize: 0.64,
-      child: UserDriverDeleteSheet(
-        provider: provider,
-        driver: driver,
-      ),
+      child: UserDriverDeleteSheet(provider: provider, driver: driver),
     );
 
     if (deleted != true || !context.mounted) {
@@ -210,7 +234,10 @@ class UserDriverProfileTab extends ConsumerWidget {
       return;
     }
 
-    ToastHelper.showSuccess('Driver deleted.', context: context);
+    ToastHelper.showSuccess(
+      context.mobileText('Driver deleted.'),
+      context: context,
+    );
     context.go(RoutePaths.userDrivers);
   }
 }
@@ -245,25 +272,27 @@ class _ActionButtons extends StatelessWidget {
       runSpacing: OpenVtsSpacing.xs,
       children: [
         _CompactActionButton(
-          label: 'Edit',
+          label: context.mobileText('Edit'),
           icon: Icons.edit_outlined,
           isLoading: isSaving,
           onPressed: isSaving ? null : onEdit,
         ),
         _CompactActionButton(
-          label: hasAssignedVehicle ? 'Change Vehicle' : 'Assign Vehicle',
+          label: hasAssignedVehicle
+              ? context.mobileText('Change Vehicle')
+              : context.mobileText('Assign Vehicle'),
           icon: Icons.directions_car_outlined,
           isLoading: isAssigning,
           onPressed: isAssigning ? null : onAssign,
         ),
         _CompactActionButton(
-          label: 'Unassign',
+          label: context.mobileText('Unassign'),
           icon: Icons.link_off_rounded,
           isLoading: isUnassigning,
           onPressed: isUnassigning ? null : onUnassign,
         ),
         _CompactActionButton(
-          label: 'Delete',
+          label: context.mobileText('Delete'),
           icon: Icons.delete_outline_rounded,
           isDestructive: true,
           isLoading: isDeleting,
@@ -291,8 +320,9 @@ class _CompactActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final foreground =
-        isDestructive ? OpenVtsColors.error : OpenVtsColors.textPrimary;
+    final foreground = isDestructive
+        ? OpenVtsColors.error
+        : OpenVtsColors.textPrimary;
 
     return SizedBox(
       height: 34,
@@ -448,7 +478,7 @@ class _AssignmentCard extends StatelessWidget {
               ),
               const SizedBox(width: OpenVtsSpacing.xs),
               Text(
-                'Assigned Vehicle',
+                context.mobileText('Assigned Vehicle'),
                 style: OpenVtsTypography.label.copyWith(
                   color: OpenVtsColors.textPrimary,
                   fontWeight: FontWeight.w800,
@@ -459,15 +489,21 @@ class _AssignmentCard extends StatelessWidget {
           const SizedBox(height: OpenVtsSpacing.xs),
           if (assigned == null)
             Text(
-              'No vehicle assigned.',
+              context.mobileText('No vehicle assigned.'),
               style: OpenVtsTypography.meta.copyWith(
                 color: OpenVtsColors.textSecondary,
                 fontWeight: FontWeight.w700,
               ),
             )
           else ...[
-            _InfoRow(label: 'Name', value: _display(assigned.name)),
-            _InfoRow(label: 'Plate', value: _display(assigned.plateNumber)),
+            _InfoRow(
+              label: context.mobileText('Name'),
+              value: _display(assigned.name),
+            ),
+            _InfoRow(
+              label: context.mobileText('Plate'),
+              value: _display(assigned.plateNumber),
+            ),
             _InfoRow(label: 'IMEI', value: _display(assigned.imei)),
             _InfoRow(label: 'VIN', value: _display(assigned.vin)),
           ],
@@ -539,7 +575,7 @@ class _SectionStateCard extends StatelessWidget {
                 ),
                 const SizedBox(width: OpenVtsSpacing.sm),
                 Text(
-                  'Loading profile',
+                  context.mobileText('Loading profile'),
                   style: OpenVtsTypography.meta.copyWith(
                     color: OpenVtsColors.textSecondary,
                     fontWeight: FontWeight.w700,
@@ -559,7 +595,7 @@ class _SectionStateCard extends StatelessWidget {
                 ),
                 const SizedBox(height: OpenVtsSpacing.sm),
                 OpenVtsButton(
-                  label: 'Retry',
+                  label: context.mobileText('Retry'),
                   height: 36,
                   variant: OpenVtsButtonVariant.secondary,
                   onPressed: onRetry,
@@ -605,18 +641,19 @@ String _addressText(UserDriver driver) {
     return fullAddress;
   }
 
-  final joined = [
-    driver.address,
-    driver.city,
-    driver.stateCode,
-    driver.countryCode,
-    driver.pincode,
-  ]
-      .map((item) => item.trim())
-      .where((item) => item.isNotEmpty && item != '-')
-      .toList(growable: false)
-      .join(', ')
-      .trim();
+  final joined =
+      [
+            driver.address,
+            driver.city,
+            driver.stateCode,
+            driver.countryCode,
+            driver.pincode,
+          ]
+          .map((item) => item.trim())
+          .where((item) => item.isNotEmpty && item != '-')
+          .toList(growable: false)
+          .join(', ')
+          .trim();
 
   if (joined.isEmpty) {
     return '-';

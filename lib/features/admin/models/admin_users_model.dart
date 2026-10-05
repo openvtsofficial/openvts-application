@@ -638,7 +638,7 @@ class AdminCreateUserRequest {
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
       'name': name.trim(),
-      if (email.trim().isNotEmpty) 'email': email.trim(),
+      'email': email.trim(),
       'mobilePrefix': mobilePrefix.trim(),
       'mobileNumber': mobileNumber.trim(),
       'username': username.trim(),
@@ -646,8 +646,8 @@ class AdminCreateUserRequest {
       'companyName': companyName.trim(),
       'address': address.trim(),
       'countryCode': countryCode.trim().toUpperCase(),
-      if (stateCode.trim().isNotEmpty) 'stateCode': stateCode.trim(),
-      if (city.trim().isNotEmpty) 'city': city.trim(),
+      'stateCode': stateCode.trim(),
+      'city': city.trim(),
       'pincode': pincode.trim(),
     };
   }

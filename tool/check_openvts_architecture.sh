@@ -28,11 +28,22 @@ filter_matches() {
   shift 3
   local output
 
-  output="$(rg -n --hidden --glob '!build/**' --glob '!android/.gradle/**' "$pattern" "$path" "$@" || true)"
+  local allow
+  local -a search_options=()
+  local -a allowlist=()
+  for allow in "$@"; do
+    if [[ "$allow" == "--pcre2" ]]; then
+      search_options+=("$allow")
+    else
+      allowlist+=("$allow")
+    fi
+  done
+
+  output="$(rg -n --hidden --glob '!build/**' --glob '!android/.gradle/**' "${search_options[@]}" -- "$pattern" "$path" || true)"
   if [[ -n "$output" ]]; then
-    while IFS= read -r allow; do
+    for allow in "${allowlist[@]}"; do
       [[ -z "$allow" ]] && continue
-      output="$(printf '%s\n' "$output" | rg -v "$allow" || true)"
+      output="$(printf '%s\n' "$output" | rg -v -- "$allow" || true)"
     done
   fi
   if [[ -n "$output" ]]; then
@@ -55,7 +66,7 @@ filter_matches \
 # 2. Dio is allowed only in central API plumbing and temporary controller/service migration zones.
 filter_matches \
   "No Dio import/use outside approved API layers" \
-  "package:dio/dio.dart|\\bDio\\b|DioException|Options\\(" \
+  "package:dio/dio.dart|\\bDio\\b|DioException|\\bOptions\\(" \
   "lib" \
   "lib/core/api/" \
   "lib/core/providers/"

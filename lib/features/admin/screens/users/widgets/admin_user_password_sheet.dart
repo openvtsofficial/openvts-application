@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../core/theme/open_vts_spacing.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../shared/widgets/open_vts_text_field.dart';
@@ -46,13 +47,15 @@ class _AdminUserPasswordSheetState extends State<AdminUserPasswordSheet> {
         padding: const EdgeInsets.all(OpenVtsSpacing.md),
         children: [
           OpenVtsTextField(
-            label: 'New password',
+            label: context.mobileText('New password'),
             controller: _passwordController,
             obscureText: _obscurePassword,
             textInputAction: TextInputAction.next,
             prefixIcon: Icons.lock_outline_rounded,
             suffixIcon: IconButton(
-              tooltip: _obscurePassword ? 'Show password' : 'Hide password',
+              tooltip: _obscurePassword
+                  ? context.mobileText('Show password')
+                  : context.mobileText('Hide password'),
               onPressed: () {
                 setState(() => _obscurePassword = !_obscurePassword);
               },
@@ -67,13 +70,15 @@ class _AdminUserPasswordSheetState extends State<AdminUserPasswordSheet> {
           ),
           const SizedBox(height: OpenVtsSpacing.sm),
           OpenVtsTextField(
-            label: 'Confirm password',
+            label: context.mobileText('Confirm password'),
             controller: _confirmController,
             obscureText: _obscureConfirm,
             textInputAction: TextInputAction.done,
             prefixIcon: Icons.lock_reset_rounded,
             suffixIcon: IconButton(
-              tooltip: _obscureConfirm ? 'Show password' : 'Hide password',
+              tooltip: _obscureConfirm
+                  ? context.mobileText('Show password')
+                  : context.mobileText('Hide password'),
               onPressed: () {
                 setState(() => _obscureConfirm = !_obscureConfirm);
               },
@@ -88,7 +93,7 @@ class _AdminUserPasswordSheetState extends State<AdminUserPasswordSheet> {
           ),
           const SizedBox(height: OpenVtsSpacing.lg),
           OpenVtsButton(
-            label: 'Update Password',
+            label: context.mobileText('Update Password'),
             onPressed: widget.isSubmitting ? null : _submit,
             isLoading: widget.isSubmitting,
             trailingIcon: Icons.check_rounded,
@@ -104,7 +109,7 @@ class _AdminUserPasswordSheetState extends State<AdminUserPasswordSheet> {
     }
 
     try {
-      await widget.onSubmit(_passwordController.text.trim());
+      await widget.onSubmit(_passwordController.text);
       if (!mounted) {
         return;
       }
@@ -123,7 +128,7 @@ class _AdminUserPasswordSheetState extends State<AdminUserPasswordSheet> {
   }
 
   String? _passwordValidator(String? value) {
-    final normalized = value?.trim() ?? '';
+    final normalized = value ?? '';
     if (normalized.isEmpty) {
       return 'Required';
     }
@@ -134,11 +139,11 @@ class _AdminUserPasswordSheetState extends State<AdminUserPasswordSheet> {
   }
 
   String? _confirmValidator(String? value) {
-    final normalized = value?.trim() ?? '';
+    final normalized = value ?? '';
     if (normalized.isEmpty) {
       return 'Required';
     }
-    if (normalized != _passwordController.text.trim()) {
+    if (normalized != _passwordController.text) {
       return 'Passwords do not match';
     }
     return null;

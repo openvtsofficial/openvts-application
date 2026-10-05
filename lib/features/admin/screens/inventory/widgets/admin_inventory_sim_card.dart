@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../core/theme/open_vts_spacing.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../models/admin_inventory_model.dart';
 import 'admin_inventory_card_shared.dart';
 
@@ -18,13 +19,14 @@ class AdminInventorySimCardWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final simNumber =
-        simCard.simNumber.trim().isEmpty ? '—' : simCard.simNumber.trim();
+    final simNumber = simCard.simNumber.trim().isEmpty
+        ? '—'
+        : simCard.simNumber.trim();
     final deviceLabel = simCard.associatedDeviceImeis.isNotEmpty
         ? simCard.associatedDeviceImeis.first
         : (simCard.associatedDeviceImei.trim().isEmpty
-            ? 'Unassigned'
-            : simCard.associatedDeviceImei.trim());
+              ? 'Unassigned'
+              : simCard.associatedDeviceImei.trim());
 
     return AdminInventoryRoundedSurface(
       child: Column(
@@ -42,7 +44,7 @@ class AdminInventorySimCardWidget extends StatelessWidget {
           AdminInventoryInfoGrid(
             leftTop: AdminInventoryInfoField(
               icon: Icons.network_cell_rounded,
-              label: 'Provider',
+              label: context.mobileText('Provider'),
               value: simCard.provider,
             ),
             leftBottom: AdminInventoryInfoField(
@@ -57,7 +59,7 @@ class AdminInventorySimCardWidget extends StatelessWidget {
             ),
             rightBottom: AdminInventoryInfoField(
               icon: Icons.link_rounded,
-              label: 'Device',
+              label: context.mobileText('Device'),
               value: deviceLabel,
             ),
           ),

@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/api/api_exception.dart';
 import '../models/admin_payments_model.dart';
 import '../models/admin_payments_state.dart';
+import '../models/admin_users_model.dart';
 import '../services/admin_payments_service.dart';
 
 class AdminPaymentsController extends StateNotifier<AdminPaymentsState> {
@@ -14,6 +15,8 @@ class AdminPaymentsController extends StateNotifier<AdminPaymentsState> {
         super(const AdminPaymentsState.initial());
 
   final AdminPaymentsService _service;
+  int _paymentRequest = 0;
+  int _analyticsRequest = 0;
   List<AdminPaymentTransaction> _serverItems =
       const <AdminPaymentTransaction>[];
 
@@ -129,6 +132,9 @@ class AdminPaymentsController extends StateNotifier<AdminPaymentsState> {
     }
   }
 
+  Future<List<AdminUserListItem>> loadRenewalUsers() =>
+      _service.getRenewalUsers();
+
   Future<List<AdminRenewVehicleOption>> loadRenewVehicles(String userId) {
     return _service.getLinkedVehicles(userId);
   }
@@ -171,6 +177,7 @@ class AdminPaymentsController extends StateNotifier<AdminPaymentsState> {
   }
 
   Future<void> loadAnalytics() async {
+    final request = ++_analyticsRequest;
     state =
         state.copyWith(isLoadingAnalytics: true, analyticsErrorMessage: null);
     final range = _resolveRange();
@@ -182,13 +189,13 @@ class AdminPaymentsController extends StateNotifier<AdminPaymentsState> {
         to: range.to,
         refreshKey: state.refreshKey.toString(),
       );
-      if (!mounted) return;
+      if (!mounted || request != _analyticsRequest) return;
       state = state.copyWith(
           isLoadingAnalytics: false,
           analytics: analytics,
           analyticsErrorMessage: null);
     } catch (error) {
-      if (!mounted) return;
+      if (!mounted || request != _analyticsRequest) return;
       state = state.copyWith(
           isLoadingAnalytics: false,
           analyticsErrorMessage: _toErrorMessage(error));
@@ -200,6 +207,7 @@ class AdminPaymentsController extends StateNotifier<AdminPaymentsState> {
     required bool append,
     required bool refreshing,
   }) async {
+    final request = ++_paymentRequest;
     final hasData = state.transactions.isNotEmpty;
     state = state.copyWith(
       isLoading: !hasData && !append && !refreshing,
@@ -222,10 +230,16 @@ class AdminPaymentsController extends StateNotifier<AdminPaymentsState> {
         refreshKey: state.refreshKey.toString(),
       );
 
-      // Always merge so that vehicle/display info enriched by prior operations
-      // (e.g. the renewal response's updatedVehicles) is not wiped when the
-      // server returns the same transaction without a vehicle field.
-      final merged = _mergeById(_serverItems, response.items);
+      if (!mounted || request != _paymentRequest) return;
+      // Refresh/filter responses replace rows; only append pages accumulate.
+      // Preserve enriched vehicle information only for rows still returned.
+      final incomingIds = response.items.map((item) => item.id).toSet();
+      final previous = append
+          ? _serverItems
+          : _serverItems
+              .where((item) => incomingIds.contains(item.id))
+              .toList();
+      final merged = _mergeById(previous, response.items);
       _serverItems = merged;
 
       state = state.copyWith(
@@ -238,6 +252,7 @@ class AdminPaymentsController extends StateNotifier<AdminPaymentsState> {
         isLoadingMore: false,
       );
     } catch (error) {
+      if (!mounted || request != _paymentRequest) return;
       state = state.copyWith(
         isLoading: false,
         isRefreshing: false,

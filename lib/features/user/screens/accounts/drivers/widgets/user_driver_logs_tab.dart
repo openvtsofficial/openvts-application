@@ -6,6 +6,7 @@ import '../../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../../core/utils/date_time_formatter.dart';
+import '../../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../../shared/widgets/open_vts_card.dart';
 import '../../../../../../shared/widgets/open_vts_empty_state.dart';
@@ -16,18 +17,21 @@ import '../../../../models/user_drivers_state.dart';
 class UserDriverLogsTab extends ConsumerWidget {
   const UserDriverLogsTab({required this.provider, super.key});
 
-  final AutoDisposeStateNotifierProvider<UserDriverDetailsController,
-      UserDriverDetailsState> provider;
+  final AutoDisposeStateNotifierProvider<
+    UserDriverDetailsController,
+    UserDriverDetailsState
+  >
+  provider;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final dateFormatter = ref.watch(appDateFormatterProvider);
+    ref.watch(appDateFormatterProvider);
     final state = ref.watch(provider);
     final controller = ref.read(provider.notifier);
     final isInitialLoading = state.isLoadingLogs && state.logs.isEmpty;
 
     if (isInitialLoading) {
-      return const _LoadingCard(label: 'Loading logs');
+      return _LoadingCard(label: context.mobileText('Loading logs'));
     }
 
     if (state.errorMessage != null && state.logs.isEmpty) {
@@ -38,11 +42,13 @@ class UserDriverLogsTab extends ConsumerWidget {
     }
 
     if (state.logs.isEmpty) {
-      return const OpenVtsCard(
-        padding: EdgeInsets.all(OpenVtsSpacing.md),
+      return OpenVtsCard(
+        padding: const EdgeInsets.all(OpenVtsSpacing.md),
         child: OpenVtsEmptyState(
-          title: 'No activity logs',
-          message: 'Driver assignment and profile activity will appear here.',
+          title: context.mobileText('No activity logs'),
+          message: context.mobileText(
+            'Driver assignment and profile activity will appear here.',
+          ),
         ),
       );
     }
@@ -75,10 +81,12 @@ class _LogCard extends ConsumerWidget {
     final vehicle = _vehicleLabel(log.vehicle);
     final actor = log.actorName.trim().isEmpty ? '-' : log.actorName.trim();
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor =
-        isDark ? OpenVtsColors.darkTextPrimary : OpenVtsColors.textPrimary;
-    final secondaryColor =
-        isDark ? OpenVtsColors.darkTextSecondary : OpenVtsColors.textSecondary;
+    final primaryColor = isDark
+        ? OpenVtsColors.darkTextPrimary
+        : OpenVtsColors.textPrimary;
+    final secondaryColor = isDark
+        ? OpenVtsColors.darkTextSecondary
+        : OpenVtsColors.textSecondary;
 
     return OpenVtsCard(
       padding: const EdgeInsets.all(OpenVtsSpacing.sm),
@@ -132,10 +140,7 @@ class _LogCard extends ConsumerWidget {
                       icon: Icons.directions_car_outlined,
                       label: vehicle,
                     ),
-                    _MetaPill(
-                      icon: Icons.person_outline_rounded,
-                      label: actor,
-                    ),
+                    _MetaPill(icon: Icons.person_outline_rounded, label: actor),
                     _MetaPill(
                       icon: Icons.schedule_rounded,
                       label: _dateTimeText(log.createdAt, dateFormatter),
@@ -160,8 +165,9 @@ class _MetaPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final color =
-        isDark ? OpenVtsColors.darkTextSecondary : OpenVtsColors.textSecondary;
+    final color = isDark
+        ? OpenVtsColors.darkTextSecondary
+        : OpenVtsColors.textSecondary;
 
     return Container(
       constraints: const BoxConstraints(maxWidth: 280),
@@ -169,9 +175,7 @@ class _MetaPill extends StatelessWidget {
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
-        border: Border.all(
-          color: color.withValues(alpha: 0.16),
-        ),
+        border: Border.all(color: color.withValues(alpha: 0.16)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -204,8 +208,9 @@ class _LoadingCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final color =
-        isDark ? OpenVtsColors.darkTextSecondary : OpenVtsColors.textSecondary;
+    final color = isDark
+        ? OpenVtsColors.darkTextSecondary
+        : OpenVtsColors.textSecondary;
 
     return OpenVtsCard(
       padding: const EdgeInsets.all(OpenVtsSpacing.sm),
@@ -252,7 +257,7 @@ class _ErrorCard extends StatelessWidget {
           ),
           const SizedBox(height: OpenVtsSpacing.sm),
           OpenVtsButton(
-            label: 'Retry',
+            label: context.mobileText('Retry'),
             height: 36,
             variant: OpenVtsButtonVariant.secondary,
             onPressed: onRetry,
@@ -318,14 +323,15 @@ String _activityLabel(String value) {
       .replaceAll('_', ' ')
       .replaceAll('-', ' ')
       .replaceAllMapped(RegExp(r'([a-z])([A-Z])'), (match) {
-    return '${match.group(1)} ${match.group(2)}';
-  });
+        return '${match.group(1)} ${match.group(2)}';
+      });
 
   return withSpaces
       .split(RegExp(r'\s+'))
       .where((word) => word.isNotEmpty)
-      .map((word) =>
-          '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}')
+      .map(
+        (word) => '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}',
+      )
       .join(' ');
 }
 

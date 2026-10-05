@@ -175,6 +175,32 @@ class UserSubUserService {
     );
   }
 
+  Future<Map<String, dynamic>> fetchPermissions(String id) async {
+    final response = await _apiClient.get<Map<String, dynamic>>(
+      '${ApiEndpoints.user.subuserById(_requireId(id, 'id'))}/permissions',
+      options: _readOptions,
+      parser: (json) => Map<String, dynamic>.from(json as Map),
+    );
+    return response.data;
+  }
+
+  Future<Map<String, dynamic>> replacePermissions(
+    String id, {
+    required List<String> disabledFeatures,
+    required List<String> disabledReports,
+  }) async {
+    final response = await _apiClient.put<Map<String, dynamic>>(
+      '${ApiEndpoints.user.subuserById(_requireId(id, 'id'))}/permissions',
+      data: {
+        'disabledFeatures': disabledFeatures,
+        'disabledReports': disabledReports
+      },
+      options: _mutationOptions,
+      parser: (json) => Map<String, dynamic>.from(json as Map),
+    );
+    return response.data;
+  }
+
   int _normalizeLimit(int value) {
     if (value <= 0) {
       return _maxLimit;

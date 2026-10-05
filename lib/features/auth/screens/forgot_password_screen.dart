@@ -4,15 +4,14 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/api/api_exception.dart';
 import '../../../core/router/route_paths.dart';
+import '../../../shared/helpers/mobile_text.dart';
 import '../../../shared/helpers/toast_helper.dart';
+import '../../../shared/helpers/validation_localizations.dart';
 import '../../../shared/widgets/open_vts_page_scaffold.dart';
 import '../controllers/auth_controller.dart';
 
 class ForgotPasswordScreen extends ConsumerStatefulWidget {
-  const ForgotPasswordScreen({
-    this.initialToken,
-    super.key,
-  });
+  const ForgotPasswordScreen({this.initialToken, super.key});
 
   final String? initialToken;
 
@@ -57,9 +56,11 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return OpenVtsPageScaffold(
-      title: _showResetForm ? 'Reset Password' : 'Forgot Password',
+      title: _showResetForm
+          ? context.mobileText('Reset Password')
+          : context.mobileText('Forgot Password'),
       leading: IconButton(
-        tooltip: 'Back to sign in',
+        tooltip: context.mobileText('Back to sign in'),
         onPressed: () => context.go(RoutePaths.login),
         icon: const Icon(Icons.arrow_back_rounded),
       ),
@@ -98,14 +99,16 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           ),
           const SizedBox(height: 16),
           Text(
-            'Recover your account',
+            context.mobileText('Recover your account'),
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.headlineSmall,
           ),
           const SizedBox(height: 8),
-          const Text(
-            'Enter the email address or username used to sign in. If the '
-            'account exists, we will send a time-limited reset link.',
+          Text(
+            context.mobileText(
+              'Enter the email address or username used to sign in. If the '
+              'account exists, we will send a time-limited reset link.',
+            ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24),
@@ -113,18 +116,13 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             controller: _identifierController,
             enabled: !_isSubmitting,
             autofocus: true,
-            autofillHints: const [
-              AutofillHints.username,
-              AutofillHints.email,
-            ],
+            autofillHints: const [AutofillHints.username, AutofillHints.email],
             textInputAction: TextInputAction.done,
-            decoration: const InputDecoration(
-              labelText: 'Email or username',
-              prefixIcon: Icon(Icons.person_outline_rounded),
+            decoration: InputDecoration(
+              labelText: context.mobileText('Email or username'),
+              prefixIcon: const Icon(Icons.person_outline_rounded),
             ),
-            validator: (value) => value?.trim().isEmpty == true
-                ? 'Enter your email address or username.'
-                : null,
+            validator: context.localizedValidator((value) => value?.trim().isEmpty == true ? 'Enter your email address or username.' : null),
             onFieldSubmitted: (_) => _requestReset(),
           ),
           const SizedBox(height: 16),
@@ -137,18 +135,18 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Icon(Icons.send_rounded),
-            label: const Text('Send reset link'),
+            label: Text(context.mobileText('Send reset link')),
           ),
           const SizedBox(height: 8),
           TextButton(
             onPressed: _isSubmitting
                 ? null
                 : () => setState(() {
-                      _showResetForm = true;
-                      _statusMessage = null;
-                      _errorMessage = null;
-                    }),
-            child: const Text('I already have a reset link'),
+                    _showResetForm = true;
+                    _statusMessage = null;
+                    _errorMessage = null;
+                  }),
+            child: Text(context.mobileText('I already have a reset link')),
           ),
         ],
       ),
@@ -169,14 +167,16 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           ),
           const SizedBox(height: 16),
           Text(
-            'Choose a new password',
+            context.mobileText('Choose a new password'),
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.headlineSmall,
           ),
           const SizedBox(height: 8),
-          const Text(
-            'Paste the complete reset link or token from your email. '
-            'Reset links are single-use and expire automatically.',
+          Text(
+            context.mobileText(
+              'Paste the complete reset link or token from your email. '
+              'Reset links are single-use and expire automatically.',
+            ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24),
@@ -186,13 +186,11 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             minLines: 1,
             maxLines: 3,
             textInputAction: TextInputAction.next,
-            decoration: const InputDecoration(
-              labelText: 'Reset link or token',
-              prefixIcon: Icon(Icons.link_rounded),
+            decoration: InputDecoration(
+              labelText: context.mobileText('Reset link or token'),
+              prefixIcon: const Icon(Icons.link_rounded),
             ),
-            validator: (value) => value?.trim().isEmpty == true
-                ? 'Enter the reset link or token from your email.'
-                : null,
+            validator: context.localizedValidator((value) => value?.trim().isEmpty == true ? 'Enter the reset link or token from your email.' : null),
           ),
           const SizedBox(height: 12),
           TextFormField(
@@ -202,14 +200,15 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             autofillHints: const [AutofillHints.newPassword],
             textInputAction: TextInputAction.next,
             decoration: InputDecoration(
-              labelText: 'New password',
-              helperText: '6–35 characters',
+              labelText: context.mobileText('New password'),
+              helperText: context.mobileText('6–35 characters'),
               prefixIcon: const Icon(Icons.lock_outline_rounded),
               suffixIcon: IconButton(
-                tooltip: _obscurePassword ? 'Show password' : 'Hide password',
-                onPressed: () => setState(
-                  () => _obscurePassword = !_obscurePassword,
-                ),
+                tooltip: _obscurePassword
+                    ? context.mobileText('Show password')
+                    : context.mobileText('Hide password'),
+                onPressed: () =>
+                    setState(() => _obscurePassword = !_obscurePassword),
                 icon: Icon(
                   _obscurePassword
                       ? Icons.visibility_outlined
@@ -217,7 +216,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                 ),
               ),
             ),
-            validator: _validatePassword,
+            validator: context.localizedValidator(_validatePassword),
           ),
           const SizedBox(height: 12),
           TextFormField(
@@ -226,13 +225,11 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             obscureText: _obscurePassword,
             autofillHints: const [AutofillHints.newPassword],
             textInputAction: TextInputAction.done,
-            decoration: const InputDecoration(
-              labelText: 'Confirm password',
-              prefixIcon: Icon(Icons.lock_outline_rounded),
+            decoration: InputDecoration(
+              labelText: context.mobileText('Confirm password'),
+              prefixIcon: const Icon(Icons.lock_outline_rounded),
             ),
-            validator: (value) => value != _passwordController.text
-                ? 'Passwords do not match.'
-                : null,
+            validator: context.localizedValidator((value) => value != _passwordController.text ? 'Passwords do not match.' : null),
             onFieldSubmitted: (_) => _completeReset(),
           ),
           const SizedBox(height: 16),
@@ -245,18 +242,18 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Icon(Icons.check_circle_outline_rounded),
-            label: const Text('Reset password'),
+            label: Text(context.mobileText('Reset password')),
           ),
           const SizedBox(height: 8),
           TextButton(
             onPressed: _isSubmitting
                 ? null
                 : () => setState(() {
-                      _showResetForm = false;
-                      _statusMessage = null;
-                      _errorMessage = null;
-                    }),
-            child: const Text('Request a new reset link'),
+                    _showResetForm = false;
+                    _statusMessage = null;
+                    _errorMessage = null;
+                  }),
+            child: Text(context.mobileText('Request a new reset link')),
           ),
         ],
       ),
@@ -278,10 +275,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
       padding: const EdgeInsets.only(bottom: 12),
       child: Semantics(
         liveRegion: true,
-        child: Text(
-          error ?? status!,
-          style: TextStyle(color: color),
-        ),
+        child: Text(error ?? status!, style: TextStyle(color: color)),
       ),
     );
   }
@@ -326,11 +320,12 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
       _errorMessage = null;
     });
     try {
-      final message =
-          await ref.read(authControllerProvider.notifier).resetPassword(
-                token: _tokenController.text,
-                newPassword: _passwordController.text,
-              );
+      final message = await ref
+          .read(authControllerProvider.notifier)
+          .resetPassword(
+            token: _tokenController.text,
+            newPassword: _passwordController.text,
+          );
       if (!mounted) return;
       // The backend revokes every existing access/refresh token after a
       // successful reset. Clear matching local role sessions as one atomic

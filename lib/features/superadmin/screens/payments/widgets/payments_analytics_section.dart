@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../../../shared/widgets/open_vts_empty_state.dart';
 import '../../../models/superadmin_payments_model.dart';
@@ -39,10 +40,12 @@ class PaymentsAnalyticsSection extends StatelessWidget {
 
     final model = analytics;
     if (model == null) {
-      return const OpenVtsCard(
+      return OpenVtsCard(
         child: OpenVtsEmptyState(
-          title: 'No analytics data',
-          message: 'Analytics will appear once transactions are available.',
+          title: context.mobileText('No analytics data'),
+          message: context.mobileText(
+            'Analytics will appear once transactions are available.',
+          ),
         ),
       );
     }
@@ -78,8 +81,9 @@ class PaymentsAnalyticsSection extends StatelessWidget {
             countSuccess: 0,
           );
 
-    final currency =
-        primary.currency.trim().isEmpty ? 'USD' : primary.currency.trim();
+    final currency = primary.currency.trim().isEmpty
+        ? 'USD'
+        : primary.currency.trim();
     final revenue = primary.totalAmountAsDouble ?? 0;
 
     final success =
@@ -89,10 +93,12 @@ class PaymentsAnalyticsSection extends StatelessWidget {
     final failed =
         model.statusBreakdown[SuperadminTransactionStatus.failed] ?? 0;
 
-    final totalTransactions =
-        model.totalTransactions < 0 ? 0 : model.totalTransactions;
-    final successRate =
-        totalTransactions <= 0 ? 0.0 : (success / totalTransactions) * 100;
+    final totalTransactions = model.totalTransactions < 0
+        ? 0
+        : model.totalTransactions;
+    final successRate = totalTransactions <= 0
+        ? 0.0
+        : (success / totalTransactions) * 100;
     final avgValue = success <= 0 ? 0.0 : revenue / success;
 
     return _AnalyticsSummary(
@@ -123,7 +129,7 @@ class _KpiStrip extends StatelessWidget {
           child: _CompactKpiCard(
             icon: Icons.check_circle_rounded,
             iconColor: OpenVtsColors.brandInk,
-            label: 'Successful',
+            label: context.mobileText('Successful'),
             value: compact.format(summary.success),
           ),
         ),
@@ -132,7 +138,7 @@ class _KpiStrip extends StatelessWidget {
           child: _CompactKpiCard(
             icon: Icons.pending_rounded,
             iconColor: OpenVtsColors.brandInk,
-            label: 'Pending',
+            label: context.mobileText('Pending'),
             value: compact.format(summary.pending),
           ),
         ),
@@ -141,7 +147,7 @@ class _KpiStrip extends StatelessWidget {
           child: _CompactKpiCard(
             icon: Icons.cancel_rounded,
             iconColor: OpenVtsColors.brandInk,
-            label: 'Failed',
+            label: context.mobileText('Failed'),
             value: compact.format(summary.failed),
           ),
         ),
@@ -166,19 +172,16 @@ class _CompactKpiCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final effectiveIconColor =
-        isDark ? Theme.of(context).colorScheme.primary : iconColor;
+    final effectiveIconColor = isDark
+        ? Theme.of(context).colorScheme.primary
+        : iconColor;
 
     return OpenVtsCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            icon,
-            size: 18,
-            color: effectiveIconColor,
-          ),
+          Icon(icon, size: 18, color: effectiveIconColor),
           const SizedBox(height: OpenVtsSpacing.xs),
           Text(
             value,
@@ -222,14 +225,10 @@ class _RevenueSummaryCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(
-                Icons.payments_rounded,
-                size: 18,
-                color: iconColor,
-              ),
+              Icon(Icons.payments_rounded, size: 18, color: iconColor),
               const SizedBox(width: OpenVtsSpacing.xs),
               Text(
-                'Total Revenue',
+                context.mobileText('Total Revenue'),
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
@@ -250,7 +249,10 @@ class _RevenueSummaryCard extends StatelessWidget {
           if (summary.success > 0) ...[
             const SizedBox(height: 4),
             Text(
-              'Avg ${summary.currency} ${currencyFormat.format(summary.avgValue)} per transaction',
+              context.mobileText("Avg {value1} {value2} per transaction", {
+                'value1': (summary.currency).toString(),
+                'value2': (currencyFormat.format(summary.avgValue)).toString(),
+              }),
               style: TextStyle(
                 fontSize: 11,
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -330,9 +332,7 @@ class _SkeletonSectionCard extends StatelessWidget {
             SizedBox(height: OpenVtsSpacing.xs),
             _SkeletonLine(width: 172, height: 10),
             SizedBox(height: OpenVtsSpacing.sm),
-            Expanded(
-              child: _SkeletonBlock(),
-            ),
+            Expanded(child: _SkeletonBlock()),
           ],
         ),
       ),
@@ -341,10 +341,7 @@ class _SkeletonSectionCard extends StatelessWidget {
 }
 
 class _SkeletonLine extends StatelessWidget {
-  const _SkeletonLine({
-    required this.width,
-    required this.height,
-  });
+  const _SkeletonLine({required this.width, required this.height});
 
   final double width;
   final double height;

@@ -9,6 +9,7 @@ import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../core/utils/date_time_formatter.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../shared/widgets/open_vts_bottom_sheet.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
@@ -16,6 +17,7 @@ import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../../../shared/widgets/open_vts_text_field.dart';
 import '../../../controllers/admin_providers.dart';
 import '../../../models/admin_user_details_model.dart';
+import '../../../widgets/admin_action_gate.dart';
 
 const DateTimeFormatter _dateFormatter = DateTimeFormatter();
 const int _maxAttachmentCount = 5;
@@ -54,10 +56,7 @@ const List<String> _blockedAttachmentExtensions = <String>[
 ];
 
 class AdminUserTicketsTab extends ConsumerStatefulWidget {
-  const AdminUserTicketsTab({
-    super.key,
-    required this.userId,
-  });
+  const AdminUserTicketsTab({super.key, required this.userId});
 
   final String userId;
 
@@ -85,7 +84,7 @@ class _AdminUserTicketsTabState extends ConsumerState<AdminUserTicketsTab> {
     final isInitialLoading = state.isLoadingTickets && state.tickets.isEmpty;
 
     if (isInitialLoading) {
-      return const _SectionLoader(title: 'Tickets');
+      return _SectionLoader(title: context.mobileText('Tickets'));
     }
 
     if (state.sectionErrorMessage != null && state.tickets.isEmpty) {
@@ -111,21 +110,22 @@ class _AdminUserTicketsTabState extends ConsumerState<AdminUserTicketsTab> {
         ],
         _SearchField(
           controller: _searchController,
-          hintText: 'Search tickets',
+          hintText: context.mobileText('Search tickets'),
           onChanged: (value) => setState(() => _query = value),
         ),
         const SizedBox(height: OpenVtsSpacing.sm),
         if (tickets.isEmpty)
           _EmptyCard(
             label: _query.trim().isEmpty
-                ? 'No tickets found'
-                : 'No tickets match your search',
+                ? context.mobileText('No tickets found')
+                : context.mobileText('No tickets match your search'),
           )
         else
           for (final ticket in tickets) ...[
             _TicketCard(
               ticket: ticket,
-              isLoadingDetails: state.isLoadingTicketDetails &&
+              isLoadingDetails:
+                  state.isLoadingTicketDetails &&
                   state.selectedTicket?.id == ticket.id,
               onTap: () => _showTicketConversation(ticket.id),
             ),
@@ -153,7 +153,7 @@ class _AdminUserTicketsTabState extends ConsumerState<AdminUserTicketsTab> {
   Future<void> _showCreateTicketSheet() async {
     final ticketId = await OpenVtsBottomSheet.show<String>(
       context: context,
-      title: 'New Ticket',
+      title: context.mobileText('New Ticket'),
       initialChildSize: 0.86,
       minChildSize: 0.5,
       maxChildSize: 0.96,
@@ -168,7 +168,7 @@ class _AdminUserTicketsTabState extends ConsumerState<AdminUserTicketsTab> {
   Future<void> _showTicketConversation(String ticketId) {
     return OpenVtsBottomSheet.show<void>(
       context: context,
-      title: 'Ticket Conversation',
+      title: context.mobileText('Ticket Conversation'),
       initialChildSize: 0.9,
       minChildSize: 0.52,
       maxChildSize: 0.96,
@@ -212,7 +212,7 @@ class _SummaryCard extends StatelessWidget {
                     ),
                     const SizedBox(width: OpenVtsSpacing.xs),
                     Text(
-                      'Tickets',
+                      context.mobileText('Tickets'),
                       style: OpenVtsTypography.label.copyWith(
                         color: Theme.of(context).colorScheme.onSurface,
                         fontWeight: FontWeight.w800,
@@ -230,7 +230,9 @@ class _SummaryCard extends StatelessWidget {
                 ),
                 const SizedBox(height: OpenVtsSpacing.xs),
                 Text(
-                  ticketCount == 1 ? '1 ticket' : '$ticketCount tickets',
+                  ticketCount == 1
+                      ? context.mobileText('1 ticket')
+                      : '$ticketCount tickets',
                   style: OpenVtsTypography.meta.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontWeight: FontWeight.w700,
@@ -241,12 +243,15 @@ class _SummaryCard extends StatelessWidget {
           ),
           SizedBox(
             height: 34,
-            child: OpenVtsButton(
-              label: 'Create',
-              height: 34,
-              isLoading: isCreating,
-              onPressed: onCreate,
-              trailingIcon: Icons.add_rounded,
+            child: AdminActionGate(
+              capability: 'users.update',
+              child: OpenVtsButton(
+                label: context.mobileText('Create'),
+                height: 34,
+                isLoading: isCreating,
+                onPressed: onCreate,
+                trailingIcon: Icons.add_rounded,
+              ),
             ),
           ),
         ],
@@ -290,14 +295,16 @@ class _SearchField extends StatelessWidget {
         suffixIcon: controller.text.isEmpty
             ? null
             : IconButton(
-                tooltip: 'Clear search',
+                tooltip: context.mobileText('Clear search'),
                 onPressed: () {
                   controller.clear();
                   onChanged('');
                 },
-                icon: Icon(Icons.close_rounded,
-                    size: 17,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant),
+                icon: Icon(
+                  Icons.close_rounded,
+                  size: 17,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
               ),
       ),
     );
@@ -379,11 +386,15 @@ class _TicketCard extends StatelessWidget {
               ),
               _MetaPill(
                 icon: Icons.mark_chat_read_outlined,
-                label: 'Last ${_dateTimeText(ticket.lastMessageAt)}',
+                label: context.mobileText("Last {value1}", {
+                  'value1': (_dateTimeText(ticket.lastMessageAt)).toString(),
+                }),
               ),
               _MetaPill(
                 icon: Icons.calendar_today_outlined,
-                label: 'Created ${_dateTimeText(ticket.createdAt)}',
+                label: context.mobileText("Created {value1}", {
+                  'value1': (_dateTimeText(ticket.createdAt)).toString(),
+                }),
               ),
             ],
           ),
@@ -435,9 +446,9 @@ class _CreateTicketSheetState extends ConsumerState<_CreateTicketSheet> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   OpenVtsTextField(
-                    label: 'Title',
+                    label: context.mobileText('Title'),
                     controller: _titleController,
-                    hintText: 'Short issue title',
+                    hintText: context.mobileText('Short issue title'),
                     prefixIcon: Icons.title_rounded,
                     textInputAction: TextInputAction.next,
                     validator: (value) {
@@ -456,7 +467,7 @@ class _CreateTicketSheetState extends ConsumerState<_CreateTicketSheet> {
                     children: [
                       Expanded(
                         child: _OptionDropdown(
-                          label: 'Category',
+                          label: context.mobileText('Category'),
                           value: _category,
                           values: _ticketCategories,
                           icon: Icons.category_outlined,
@@ -470,7 +481,7 @@ class _CreateTicketSheetState extends ConsumerState<_CreateTicketSheet> {
                       const SizedBox(width: OpenVtsSpacing.sm),
                       Expanded(
                         child: _OptionDropdown(
-                          label: 'Priority',
+                          label: context.mobileText('Priority'),
                           value: _priority,
                           values: _ticketPriorities,
                           icon: Icons.flag_outlined,
@@ -485,9 +496,11 @@ class _CreateTicketSheetState extends ConsumerState<_CreateTicketSheet> {
                   ),
                   const SizedBox(height: OpenVtsSpacing.sm),
                   OpenVtsTextField(
-                    label: 'Message',
+                    label: context.mobileText('Message'),
                     controller: _messageController,
-                    hintText: 'Describe the request or issue',
+                    hintText: context.mobileText(
+                      'Describe the request or issue',
+                    ),
                     prefixIcon: Icons.notes_rounded,
                     maxLines: 5,
                     validator: (value) {
@@ -509,9 +522,11 @@ class _CreateTicketSheetState extends ConsumerState<_CreateTicketSheet> {
                     onRemove: (file) {
                       setState(() {
                         _attachments = _attachments
-                            .where((item) =>
-                                _attachmentIdentity(item) !=
-                                _attachmentIdentity(file))
+                            .where(
+                              (item) =>
+                                  _attachmentIdentity(item) !=
+                                  _attachmentIdentity(file),
+                            )
                             .toList(growable: false);
                       });
                     },
@@ -530,7 +545,7 @@ class _CreateTicketSheetState extends ConsumerState<_CreateTicketSheet> {
               children: [
                 Expanded(
                   child: OpenVtsButton(
-                    label: 'Cancel',
+                    label: context.mobileText('Cancel'),
                     height: 40,
                     variant: OpenVtsButtonVariant.secondary,
                     onPressed: state.isCreatingTicket
@@ -540,12 +555,15 @@ class _CreateTicketSheetState extends ConsumerState<_CreateTicketSheet> {
                 ),
                 const SizedBox(width: OpenVtsSpacing.sm),
                 Expanded(
-                  child: OpenVtsButton(
-                    label: 'Create',
-                    height: 40,
-                    isLoading: state.isCreatingTicket,
-                    trailingIcon: Icons.check_rounded,
-                    onPressed: state.isCreatingTicket ? null : _submit,
+                  child: AdminActionGate(
+                    capability: 'users.update',
+                    child: OpenVtsButton(
+                      label: context.mobileText('Create'),
+                      height: 40,
+                      isLoading: state.isCreatingTicket,
+                      trailingIcon: Icons.check_rounded,
+                      onPressed: state.isCreatingTicket ? null : _submit,
+                    ),
                   ),
                 ),
               ],
@@ -562,7 +580,9 @@ class _CreateTicketSheetState extends ConsumerState<_CreateTicketSheet> {
     }
     if (_attachments.length >= _maxAttachmentCount) {
       ToastHelper.showError(
-        'You can upload up to $_maxAttachmentCount files.',
+        context.mobileText("You can upload up to {value1} files.", {
+          'value1': (_maxAttachmentCount).toString(),
+        }),
         context: context,
       );
       return;
@@ -588,7 +608,9 @@ class _CreateTicketSheetState extends ConsumerState<_CreateTicketSheet> {
     }
 
     final provider = adminUserDetailsControllerProvider(widget.userId);
-    final ok = await ref.read(provider.notifier).createTicket(
+    final ok = await ref
+        .read(provider.notifier)
+        .createTicket(
           title: _titleController.text.trim(),
           message: _messageController.text.trim(),
           category: _category,
@@ -600,7 +622,10 @@ class _CreateTicketSheetState extends ConsumerState<_CreateTicketSheet> {
     }
 
     if (ok) {
-      ToastHelper.showSuccess('Ticket created.', context: context);
+      ToastHelper.showSuccess(
+        context.mobileText('Ticket created.'),
+        context: context,
+      );
       Navigator.of(context).pop(ref.read(provider).selectedTicket?.id);
     } else {
       ToastHelper.showError(
@@ -664,9 +689,9 @@ class _TicketConversationSheetState
         : _ticketFromList(state.tickets, widget.ticketId);
 
     if (state.isLoadingTicketDetails && ticket == null) {
-      return const Padding(
-        padding: EdgeInsets.all(OpenVtsSpacing.md),
-        child: _SectionLoader(title: 'Ticket details'),
+      return Padding(
+        padding: const EdgeInsets.all(OpenVtsSpacing.md),
+        child: _SectionLoader(title: context.mobileText('Ticket details')),
       );
     }
 
@@ -681,9 +706,11 @@ class _TicketConversationSheetState
     }
 
     if (ticket == null) {
-      return const Padding(
-        padding: EdgeInsets.all(OpenVtsSpacing.md),
-        child: _EmptyCard(label: 'Ticket details are not available'),
+      return Padding(
+        padding: const EdgeInsets.all(OpenVtsSpacing.md),
+        child: _EmptyCard(
+          label: context.mobileText('Ticket details are not available'),
+        ),
       );
     }
 
@@ -705,9 +732,9 @@ class _TicketConversationSheetState
               ],
               const SizedBox(height: OpenVtsSpacing.sm),
               if (state.isLoadingTicketDetails && ticket.messages.isEmpty)
-                const _SectionLoader(title: 'Messages')
+                _SectionLoader(title: context.mobileText('Messages'))
               else if (ticket.messages.isEmpty)
-                const _EmptyCard(label: 'No messages yet')
+                _EmptyCard(label: context.mobileText('No messages yet'))
               else
                 for (final message in ticket.messages) ...[
                   _MessageBubble(
@@ -741,7 +768,7 @@ class _TicketConversationSheetState
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
                   decoration: InputDecoration(
-                    hintText: 'Write a reply',
+                    hintText: context.mobileText('Write a reply'),
                     hintStyle: TextStyle(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
@@ -758,9 +785,11 @@ class _TicketConversationSheetState
                     onRemove: (file) {
                       setState(() {
                         _replyAttachments = _replyAttachments
-                            .where((item) =>
-                                _attachmentIdentity(item) !=
-                                _attachmentIdentity(file))
+                            .where(
+                              (item) =>
+                                  _attachmentIdentity(item) !=
+                                  _attachmentIdentity(file),
+                            )
                             .toList(growable: false);
                       });
                     },
@@ -771,26 +800,32 @@ class _TicketConversationSheetState
                   children: [
                     SizedBox(
                       width: 108,
-                      child: OpenVtsButton(
-                        label: 'Attach',
-                        height: 38,
-                        variant: OpenVtsButtonVariant.secondary,
-                        isLoading: _isPicking,
-                        onPressed: state.isReplyingTicket
-                            ? null
-                            : _pickReplyAttachments,
+                      child: AdminActionGate(
+                        capability: 'support.reply',
+                        child: OpenVtsButton(
+                          label: context.mobileText('Attach'),
+                          height: 38,
+                          variant: OpenVtsButtonVariant.secondary,
+                          isLoading: _isPicking,
+                          onPressed: state.isReplyingTicket
+                              ? null
+                              : _pickReplyAttachments,
+                        ),
                       ),
                     ),
                     const SizedBox(width: OpenVtsSpacing.sm),
                     Expanded(
-                      child: OpenVtsButton(
-                        label: 'Send',
-                        height: 38,
-                        isLoading: state.isReplyingTicket,
-                        trailingIcon: Icons.send_rounded,
-                        onPressed: state.isReplyingTicket
-                            ? null
-                            : () => _sendReply(ticket),
+                      child: AdminActionGate(
+                        capability: 'support.reply',
+                        child: OpenVtsButton(
+                          label: context.mobileText('Send'),
+                          height: 38,
+                          isLoading: state.isReplyingTicket,
+                          trailingIcon: Icons.send_rounded,
+                          onPressed: state.isReplyingTicket
+                              ? null
+                              : () => _sendReply(ticket),
+                        ),
                       ),
                     ),
                   ],
@@ -809,7 +844,9 @@ class _TicketConversationSheetState
     }
     if (_replyAttachments.length >= _maxAttachmentCount) {
       ToastHelper.showError(
-        'You can upload up to $_maxAttachmentCount files.',
+        context.mobileText("You can upload up to {value1} files.", {
+          'value1': (_maxAttachmentCount).toString(),
+        }),
         context: context,
       );
       return;
@@ -832,16 +869,24 @@ class _TicketConversationSheetState
   Future<void> _sendReply(AdminUserTicket ticket) async {
     final message = _replyController.text.trim();
     if (message.isEmpty) {
-      ToastHelper.showError('Reply message is required.', context: context);
+      ToastHelper.showError(
+        context.mobileText('Reply message is required.'),
+        context: context,
+      );
       return;
     }
     if (message.length > _maxMessageLength) {
-      ToastHelper.showError('Reply is too long.', context: context);
+      ToastHelper.showError(
+        context.mobileText('Reply is too long.'),
+        context: context,
+      );
       return;
     }
 
     final provider = adminUserDetailsControllerProvider(widget.userId);
-    final ok = await ref.read(provider.notifier).replyTicket(
+    final ok = await ref
+        .read(provider.notifier)
+        .replyTicket(
           ticketId: ticket.id,
           message: message,
           attachments: _replyAttachments,
@@ -853,7 +898,10 @@ class _TicketConversationSheetState
     if (ok) {
       _replyController.clear();
       setState(() => _replyAttachments = <PlatformFile>[]);
-      ToastHelper.showSuccess('Reply sent.', context: context);
+      ToastHelper.showSuccess(
+        context.mobileText('Reply sent.'),
+        context: context,
+      );
     } else {
       ToastHelper.showError(
         ref.read(provider).sectionErrorMessage ?? 'Unable to send reply.',
@@ -865,22 +913,28 @@ class _TicketConversationSheetState
   Future<void> _updateStatus(AdminUserTicket ticket, String status) async {
     final current = _normalizeValue(ticket.status);
     if (current == status) {
-      ToastHelper.showInfo('Ticket is already ${_statusLabel(status)}.',
-          context: context);
+      ToastHelper.showInfo(
+        context.mobileText("Ticket is already {value1}.", {
+          'value1': (_statusLabel(status)).toString(),
+        }),
+        context: context,
+      );
       return;
     }
 
     final provider = adminUserDetailsControllerProvider(widget.userId);
-    final ok = await ref.read(provider.notifier).updateTicketStatus(
-          ticket.id,
-          status,
-        );
+    final ok = await ref
+        .read(provider.notifier)
+        .updateTicketStatus(ticket.id, status);
     if (!mounted) {
       return;
     }
 
     if (ok) {
-      ToastHelper.showSuccess('Ticket status updated.', context: context);
+      ToastHelper.showSuccess(
+        context.mobileText('Ticket status updated.'),
+        context: context,
+      );
     } else {
       ToastHelper.showError(
         ref.read(provider).sectionErrorMessage ?? 'Unable to update status.',
@@ -899,13 +953,19 @@ class _TicketConversationSheetState
         return;
       }
       if (!launched) {
-        ToastHelper.showError('Could not open attachment.', context: context);
+        ToastHelper.showError(
+          context.mobileText('Could not open attachment.'),
+          context: context,
+        );
       }
     } catch (_) {
       if (!mounted) {
         return;
       }
-      ToastHelper.showError('Could not open attachment.', context: context);
+      ToastHelper.showError(
+        context.mobileText('Could not open attachment.'),
+        context: context,
+      );
     }
   }
 }
@@ -979,11 +1039,15 @@ class _TicketDetailsHeader extends StatelessWidget {
               ),
               _MetaPill(
                 icon: Icons.mark_chat_read_outlined,
-                label: 'Last ${_dateTimeText(ticket.lastMessageAt)}',
+                label: context.mobileText("Last {value1}", {
+                  'value1': (_dateTimeText(ticket.lastMessageAt)).toString(),
+                }),
               ),
               _MetaPill(
                 icon: Icons.calendar_today_outlined,
-                label: 'Created ${_dateTimeText(ticket.createdAt)}',
+                label: context.mobileText("Created {value1}", {
+                  'value1': (_dateTimeText(ticket.createdAt)).toString(),
+                }),
               ),
             ],
           ),
@@ -993,7 +1057,7 @@ class _TicketDetailsHeader extends StatelessWidget {
   }
 }
 
-class _StatusAction extends StatelessWidget {
+class _StatusAction extends ConsumerWidget {
   const _StatusAction({
     required this.status,
     required this.isLoading,
@@ -1005,10 +1069,10 @@ class _StatusAction extends StatelessWidget {
   final ValueChanged<String> onSelected;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return PopupMenuButton<String>(
-      tooltip: 'Change status',
-      enabled: !isLoading,
+      tooltip: context.mobileText('Change status'),
+      enabled: !isLoading && adminCanPerform(ref, 'support.reply'),
       onSelected: onSelected,
       itemBuilder: (context) => _ticketStatuses
           .map(
@@ -1030,8 +1094,9 @@ class _StatusAction extends StatelessWidget {
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
-          border:
-              Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+          border: Border.all(
+            color: Theme.of(context).colorScheme.outlineVariant,
+          ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -1043,8 +1108,11 @@ class _StatusAction extends StatelessWidget {
                 child: CircularProgressIndicator(strokeWidth: 2),
               )
             else
-              Icon(Icons.swap_horiz_rounded,
-                  size: 13, color: Theme.of(context).colorScheme.onSurface),
+              Icon(
+                Icons.swap_horiz_rounded,
+                size: 13,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
             const SizedBox(width: 4),
             Text(
               _statusLabel(status),
@@ -1081,8 +1149,9 @@ class _MessageBubble extends StatelessWidget {
     final backgroundColor = isUserMessage
         ? Theme.of(context).colorScheme.surface
         : OpenVtsColors.brandInk;
-    final textColor =
-        isUserMessage ? Theme.of(context).colorScheme.onSurface : Colors.white;
+    final textColor = isUserMessage
+        ? Theme.of(context).colorScheme.onSurface
+        : Colors.white;
     final sender = _senderLabel(message, isUserMessage: isUserMessage);
 
     return Align(
@@ -1102,8 +1171,9 @@ class _MessageBubble extends StatelessWidget {
           ),
         ),
         child: Column(
-          crossAxisAlignment:
-              isUserMessage ? CrossAxisAlignment.start : CrossAxisAlignment.end,
+          crossAxisAlignment: isUserMessage
+              ? CrossAxisAlignment.start
+              : CrossAxisAlignment.end,
           children: [
             Row(
               mainAxisSize: MainAxisSize.min,
@@ -1154,7 +1224,9 @@ class _MessageBubble extends StatelessWidget {
                         final url = _attachmentUrl(attachment, baseUrl);
                         if (url == null) {
                           ToastHelper.showError(
-                            'Attachment URL is not available.',
+                            context.mobileText(
+                              'Attachment URL is not available.',
+                            ),
                             context: context,
                           );
                           return;
@@ -1252,7 +1324,7 @@ class _AttachmentPicker extends StatelessWidget {
               const SizedBox(width: OpenVtsSpacing.xs),
               Expanded(
                 child: Text(
-                  'Attachments',
+                  context.mobileText('Attachments'),
                   style: OpenVtsTypography.label.copyWith(
                     color: Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.w800,
@@ -1273,7 +1345,7 @@ class _AttachmentPicker extends StatelessWidget {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : Text(
-                        'Add',
+                        context.mobileText('Add'),
                         style: OpenVtsTypography.meta.copyWith(
                           fontWeight: FontWeight.w800,
                         ),
@@ -1283,17 +1355,16 @@ class _AttachmentPicker extends StatelessWidget {
           ),
           if (attachments.isEmpty)
             Text(
-              'Optional files, up to $_maxAttachmentCount.',
+              context.mobileText("Optional files, up to {value1}.", {
+                'value1': (_maxAttachmentCount).toString(),
+              }),
               style: OpenVtsTypography.meta.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             )
           else ...[
             const SizedBox(height: OpenVtsSpacing.xs),
-            _DraftAttachmentWrap(
-              attachments: attachments,
-              onRemove: onRemove,
-            ),
+            _DraftAttachmentWrap(attachments: attachments, onRemove: onRemove),
           ],
         ],
       ),
@@ -1380,11 +1451,7 @@ class _StatusPill extends StatelessWidget {
 }
 
 class _MetaPill extends StatelessWidget {
-  const _MetaPill({
-    required this.icon,
-    required this.label,
-    this.color,
-  });
+  const _MetaPill({required this.icon, required this.label, this.color});
 
   final IconData icon;
   final String label;
@@ -1432,7 +1499,8 @@ class _InlineError extends StatelessWidget {
         color: Theme.of(context).colorScheme.error.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
         border: Border.all(
-            color: Theme.of(context).colorScheme.error.withValues(alpha: 0.2)),
+          color: Theme.of(context).colorScheme.error.withValues(alpha: 0.2),
+        ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1476,7 +1544,9 @@ class _SectionLoader extends StatelessWidget {
           ),
           const SizedBox(width: OpenVtsSpacing.sm),
           Text(
-            'Loading $title',
+            context.mobileText("Loading {value1}", {
+              'value1': (title).toString(),
+            }),
             style: OpenVtsTypography.label.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
               fontWeight: FontWeight.w700,
@@ -1511,7 +1581,7 @@ class _SectionErrorCard extends StatelessWidget {
               const SizedBox(width: OpenVtsSpacing.xs),
               Expanded(
                 child: Text(
-                  'Unable to load tickets',
+                  context.mobileText('Unable to load tickets'),
                   style: OpenVtsTypography.label.copyWith(
                     color: Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.w800,
@@ -1529,7 +1599,7 @@ class _SectionErrorCard extends StatelessWidget {
           ),
           const SizedBox(height: OpenVtsSpacing.sm),
           OpenVtsButton(
-            label: 'Retry',
+            label: context.mobileText('Retry'),
             height: 34,
             variant: OpenVtsButtonVariant.secondary,
             onPressed: onRetry,
@@ -1607,7 +1677,9 @@ String _attachmentIdentity(PlatformFile file) {
 }
 
 AdminUserTicket? _ticketFromList(
-    List<AdminUserTicket> tickets, String ticketId) {
+  List<AdminUserTicket> tickets,
+  String ticketId,
+) {
   for (final ticket in tickets) {
     if (ticket.id == ticketId) {
       return ticket;
@@ -1663,9 +1735,11 @@ String _statusLabel(String value) {
   }
   return normalized
       .split('_')
-      .map((part) => part.isEmpty
-          ? part
-          : '${part.substring(0, 1)}${part.substring(1).toLowerCase()}')
+      .map(
+        (part) => part.isEmpty
+            ? part
+            : '${part.substring(0, 1)}${part.substring(1).toLowerCase()}',
+      )
       .join(' ');
 }
 

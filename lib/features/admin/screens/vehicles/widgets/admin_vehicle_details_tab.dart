@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../models/admin_vehicle_model.dart';
+import '../../../widgets/admin_action_gate.dart';
 
 class AdminVehicleDetailsOverviewTab extends StatelessWidget {
   const AdminVehicleDetailsOverviewTab({
@@ -31,13 +33,21 @@ class AdminVehicleDetailsOverviewTab extends StatelessWidget {
         OpenVtsCard(
           padding: const EdgeInsets.all(OpenVtsSpacing.md),
           child: _Section(
-            title: 'Identity',
+            title: context.mobileText('Identity'),
             items: [
-              _SectionItem(label: 'Name', value: vehicle.name),
-              _SectionItem(label: 'Plate Number', value: vehicle.plateNumber),
+              _SectionItem(
+                label: context.mobileText('Name'),
+                value: vehicle.name,
+              ),
+              _SectionItem(
+                label: context.mobileText('Plate Number'),
+                value: vehicle.plateNumber,
+              ),
               _SectionItem(label: 'VIN', value: vehicle.vin),
               _SectionItem(
-                  label: 'Type', value: vehicle.vehicleType?.name ?? '-'),
+                label: context.mobileText('Type'),
+                value: vehicle.vehicleType?.name ?? '-',
+              ),
             ],
           ),
         ),
@@ -45,25 +55,28 @@ class AdminVehicleDetailsOverviewTab extends StatelessWidget {
         OpenVtsCard(
           padding: const EdgeInsets.all(OpenVtsSpacing.md),
           child: _Section(
-            title: 'Device',
+            title: context.mobileText('Device'),
             items: [
               _SectionItem(label: 'IMEI', value: vehicle.imei),
               _SectionItem(label: 'SIM', value: vehicle.simNumber),
               _SectionItem(
-                label: 'Speed Variation',
+                label: context.mobileText('Speed Variation'),
                 value: _num(vehicle.device?.speedVariation),
               ),
               _SectionItem(
-                label: 'Distance Variation',
+                label: context.mobileText('Distance Variation'),
                 value: _num(vehicle.device?.distanceVariation),
               ),
               _SectionItem(
-                  label: 'Odometer', value: _num(vehicle.device?.odometer)),
+                label: context.mobileText('Odometer'),
+                value: _num(vehicle.device?.odometer),
+              ),
               _SectionItem(
-                  label: 'Engine Hours',
-                  value: _num(vehicle.device?.engineHours)),
+                label: context.mobileText('Engine Hours'),
+                value: _num(vehicle.device?.engineHours),
+              ),
               _SectionItem(
-                label: 'Ignition Source',
+                label: context.mobileText('Ignition Source'),
                 value: vehicle.device?.ignitionSource ?? '-',
               ),
             ],
@@ -73,15 +86,18 @@ class AdminVehicleDetailsOverviewTab extends StatelessWidget {
         OpenVtsCard(
           padding: const EdgeInsets.all(OpenVtsSpacing.md),
           child: _Section(
-            title: 'Ownership',
+            title: context.mobileText('Ownership'),
             items: [
               _SectionItem(
-                label: 'Primary User',
+                label: context.mobileText('Primary User'),
                 value: vehicle.primaryUser?.displayName.isNotEmpty == true
                     ? vehicle.primaryUser!.displayName
                     : '-',
               ),
-              _SectionItem(label: 'Plan', value: vehicle.plan?.name ?? '-'),
+              _SectionItem(
+                label: context.mobileText('Plan'),
+                value: vehicle.plan?.name ?? '-',
+              ),
             ],
           ),
         ),
@@ -89,12 +105,16 @@ class AdminVehicleDetailsOverviewTab extends StatelessWidget {
         OpenVtsCard(
           padding: const EdgeInsets.all(OpenVtsSpacing.md),
           child: _Section(
-            title: 'Dates',
+            title: context.mobileText('Dates'),
             items: [
               _SectionItem(
-                  label: 'Created At', value: _date(vehicle.createdAt)),
+                label: context.mobileText('Created At'),
+                value: _date(vehicle.createdAt),
+              ),
               _SectionItem(
-                  label: 'Updated At', value: _date(vehicle.displayUpdatedAt)),
+                label: context.mobileText('Updated At'),
+                value: _date(vehicle.displayUpdatedAt),
+              ),
             ],
           ),
         ),
@@ -103,10 +123,14 @@ class AdminVehicleDetailsOverviewTab extends StatelessWidget {
           OpenVtsCard(
             padding: const EdgeInsets.all(OpenVtsSpacing.md),
             child: _Section(
-              title: 'Metadata',
+              title: context.mobileText('Metadata'),
               items: vehicle.vehicleMeta.entries
-                  .map((e) => _SectionItem(
-                      label: e.key, value: e.value?.toString() ?? '-'))
+                  .map(
+                    (e) => _SectionItem(
+                      label: e.key,
+                      value: e.value?.toString() ?? '-',
+                    ),
+                  )
                   .toList(growable: false),
             ),
           ),
@@ -117,24 +141,41 @@ class AdminVehicleDetailsOverviewTab extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Actions', style: Theme.of(context).textTheme.titleSmall),
+              Text(
+                context.mobileText('Actions'),
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
               const SizedBox(height: OpenVtsSpacing.sm),
               Wrap(
                 spacing: OpenVtsSpacing.xs,
                 runSpacing: OpenVtsSpacing.xs,
                 children: [
-                  OpenVtsButton(label: 'Edit', onPressed: onEdit),
-                  OpenVtsButton(
-                    label: vehicle.isActive ? 'Deactivate' : 'Activate',
-                    onPressed: isUpdatingStatus ? null : onToggleStatus,
-                    isLoading: isUpdatingStatus,
-                    variant: OpenVtsButtonVariant.secondary,
+                  AdminActionGate(
+                    capability: 'vehicles.update',
+                    child: OpenVtsButton(
+                      label: context.mobileText('Edit'),
+                      onPressed: onEdit,
+                    ),
                   ),
-                  OpenVtsButton(
-                    label: 'Delete',
-                    onPressed: isDeleting ? null : onDelete,
-                    isLoading: isDeleting,
-                    variant: OpenVtsButtonVariant.secondary,
+                  AdminActionGate(
+                    capability: 'vehicles.update',
+                    child: OpenVtsButton(
+                      label: vehicle.isActive
+                          ? context.mobileText('Deactivate')
+                          : context.mobileText('Activate'),
+                      onPressed: isUpdatingStatus ? null : onToggleStatus,
+                      isLoading: isUpdatingStatus,
+                      variant: OpenVtsButtonVariant.secondary,
+                    ),
+                  ),
+                  AdminActionGate(
+                    capability: 'vehicles.delete',
+                    child: OpenVtsButton(
+                      label: context.mobileText('Delete'),
+                      onPressed: isDeleting ? null : onDelete,
+                      isLoading: isDeleting,
+                      variant: OpenVtsButtonVariant.secondary,
+                    ),
                   ),
                 ],
               ),

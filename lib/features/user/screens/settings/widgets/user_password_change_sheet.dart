@@ -4,14 +4,13 @@ import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
+import '../../../../../shared/helpers/validation_localizations.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../models/user_settings_model.dart';
 
 class UserPasswordChangeSheet extends StatefulWidget {
-  const UserPasswordChangeSheet({
-    required this.onSave,
-    super.key,
-  });
+  const UserPasswordChangeSheet({required this.onSave, super.key});
 
   final Future<bool> Function(UserChangePasswordRequest request) onSave;
 
@@ -101,7 +100,7 @@ class _UserPasswordChangeSheetState extends State<UserPasswordChangeSheet> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Change Password',
+                  context.mobileText('Change Password'),
                   style: OpenVtsTypography.label.copyWith(
                     color: Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.w700,
@@ -109,7 +108,7 @@ class _UserPasswordChangeSheetState extends State<UserPasswordChangeSheet> {
                 ),
                 const SizedBox(height: OpenVtsSpacing.xxs),
                 Text(
-                  'Use a strong password with at least 8 characters.',
+                  context.mobileText('Use 6–72 English characters.'),
                   style: OpenVtsTypography.meta.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
@@ -120,10 +119,12 @@ class _UserPasswordChangeSheetState extends State<UserPasswordChangeSheet> {
                   obscureText: _obscureCurrent,
                   textInputAction: TextInputAction.next,
                   decoration: InputDecoration(
-                    labelText: 'Current Password',
+                    labelText: context.mobileText('Current password'),
                     suffixIcon: IconButton(
-                      constraints:
-                          const BoxConstraints(minWidth: 44, minHeight: 44),
+                      constraints: const BoxConstraints(
+                        minWidth: 44,
+                        minHeight: 44,
+                      ),
                       onPressed: () {
                         setState(() {
                           _obscureCurrent = !_obscureCurrent;
@@ -137,12 +138,7 @@ class _UserPasswordChangeSheetState extends State<UserPasswordChangeSheet> {
                       ),
                     ),
                   ),
-                  validator: (value) {
-                    if ((value ?? '').isEmpty) {
-                      return 'Current password is required.';
-                    }
-                    return null;
-                  },
+                  validator: context.localizedValidator((value) {if ((value ?? '').isEmpty) {return 'Current password is required.';} return null;}),
                 ),
                 const SizedBox(height: OpenVtsSpacing.xs),
                 TextFormField(
@@ -150,10 +146,12 @@ class _UserPasswordChangeSheetState extends State<UserPasswordChangeSheet> {
                   obscureText: _obscureNew,
                   textInputAction: TextInputAction.next,
                   decoration: InputDecoration(
-                    labelText: 'New Password',
+                    labelText: context.mobileText('New Password'),
                     suffixIcon: IconButton(
-                      constraints:
-                          const BoxConstraints(minWidth: 44, minHeight: 44),
+                      constraints: const BoxConstraints(
+                        minWidth: 44,
+                        minHeight: 44,
+                      ),
                       onPressed: () {
                         setState(() {
                           _obscureNew = !_obscureNew;
@@ -167,19 +165,7 @@ class _UserPasswordChangeSheetState extends State<UserPasswordChangeSheet> {
                       ),
                     ),
                   ),
-                  validator: (value) {
-                    final next = value ?? '';
-                    if (next.isEmpty) {
-                      return 'New password is required.';
-                    }
-                    if (next.length < 8) {
-                      return 'Password must be at least 8 characters.';
-                    }
-                    if (next == _currentController.text) {
-                      return 'New password must be different.';
-                    }
-                    return null;
-                  },
+                  validator: context.localizedValidator((value) {final next = value ?? ''; if (next.isEmpty) {return 'New password is required.';} if (next.length < 6 || next.length > 72 || next.runes.any((r) => r < 32 || r > 126)) {return context.mobileText('Use 6–72 English characters.');} if (next == _currentController.text) {return 'New password must be different.';} return null;}),
                 ),
                 const SizedBox(height: OpenVtsSpacing.xs),
                 TextFormField(
@@ -188,10 +174,12 @@ class _UserPasswordChangeSheetState extends State<UserPasswordChangeSheet> {
                   textInputAction: TextInputAction.done,
                   onFieldSubmitted: (_) => _handleSave(),
                   decoration: InputDecoration(
-                    labelText: 'Confirm New Password',
+                    labelText: context.mobileText('Confirm new password'),
                     suffixIcon: IconButton(
-                      constraints:
-                          const BoxConstraints(minWidth: 44, minHeight: 44),
+                      constraints: const BoxConstraints(
+                        minWidth: 44,
+                        minHeight: 44,
+                      ),
                       onPressed: () {
                         setState(() {
                           _obscureConfirm = !_obscureConfirm;
@@ -205,15 +193,7 @@ class _UserPasswordChangeSheetState extends State<UserPasswordChangeSheet> {
                       ),
                     ),
                   ),
-                  validator: (value) {
-                    if ((value ?? '').isEmpty) {
-                      return 'Confirm your new password.';
-                    }
-                    if (value != _newController.text) {
-                      return 'Passwords do not match.';
-                    }
-                    return null;
-                  },
+                  validator: context.localizedValidator((value) {if ((value ?? '').isEmpty) {return 'Confirm your new password.';} if (value != _newController.text) {return 'Passwords do not match.';} return null;}),
                 ),
                 if (_errorText != null) ...[
                   const SizedBox(height: OpenVtsSpacing.xs),
@@ -230,7 +210,7 @@ class _UserPasswordChangeSheetState extends State<UserPasswordChangeSheet> {
                   children: [
                     Expanded(
                       child: OpenVtsButton(
-                        label: 'Cancel',
+                        label: context.mobileText('Cancel'),
                         variant: OpenVtsButtonVariant.secondary,
                         height: 44,
                         onPressed: _isSaving
@@ -241,7 +221,7 @@ class _UserPasswordChangeSheetState extends State<UserPasswordChangeSheet> {
                     const SizedBox(width: OpenVtsSpacing.xs),
                     Expanded(
                       child: OpenVtsButton(
-                        label: 'Update Password',
+                        label: context.mobileText('Update Password'),
                         height: 44,
                         isLoading: _isSaving,
                         onPressed: _isSaving ? null : _handleSave,

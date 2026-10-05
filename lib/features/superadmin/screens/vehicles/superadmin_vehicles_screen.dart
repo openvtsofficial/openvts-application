@@ -6,6 +6,7 @@ import '../../../../core/theme/open_vts_radius.dart';
 import '../../../../core/theme/open_vts_spacing.dart';
 import '../../../../core/theme/open_vts_typography.dart';
 import '../../../../core/utils/date_time_formatter.dart';
+import '../../../../shared/helpers/mobile_text.dart';
 import '../../../../shared/widgets/open_vts_button.dart';
 import '../../../../shared/widgets/open_vts_card.dart';
 import '../../../../shared/widgets/open_vts_empty_state.dart';
@@ -21,7 +22,8 @@ const List<int> _recordsPerPageOptions = <int>[10, 25, 50, 100];
 enum _VehicleStatusFilter {
   all,
   active,
-  inactive;
+  inactive,
+  licenseBlocked;
 
   String get label {
     switch (this) {
@@ -31,6 +33,8 @@ enum _VehicleStatusFilter {
         return 'Active';
       case _VehicleStatusFilter.inactive:
         return 'Inactive';
+      case _VehicleStatusFilter.licenseBlocked:
+        return 'License blocked';
     }
   }
 }
@@ -80,13 +84,13 @@ class _SuperadminVehiclesScreenState
     final state = ref.watch(superadminVehiclePageProvider);
 
     return OpenVtsPageScaffold(
-      title: 'Vehicles',
+      title: context.mobileText('Vehicles'),
       headerMode: OpenVtsPageHeaderMode.closeable,
       actions: [
         Padding(
           padding: const EdgeInsetsDirectional.only(end: OpenVtsSpacing.xs),
           child: IconButton(
-            tooltip: 'Refresh vehicles',
+            tooltip: context.mobileText('Refresh vehicles'),
             onPressed: _isRefreshing ? null : _refreshVehicles,
             icon: _isRefreshing
                 ? const SizedBox.square(
@@ -107,7 +111,7 @@ class _SuperadminVehiclesScreenState
         skipLoadingOnRefresh: true,
         loading: () => const OpenVtsLoader(),
         error: (error, stackTrace) => OpenVtsErrorView(
-          message: 'Vehicles could not be loaded.',
+          message: context.mobileText('Vehicles could not be loaded.'),
           onRetry: _refreshVehicles,
         ),
         data: _buildLoadedState,
@@ -127,9 +131,9 @@ class _SuperadminVehiclesScreenState
     final visibleVehicles = start >= filteredVehicles.length
         ? const <SuperadminVehicleRecord>[]
         : filteredVehicles
-            .skip(start)
-            .take(_recordsPerPage)
-            .toList(growable: false);
+              .skip(start)
+              .take(_recordsPerPage)
+              .toList(growable: false);
     final hasActiveFilters = _statusFilter != _VehicleStatusFilter.all;
 
     return Column(
@@ -160,11 +164,13 @@ class _SuperadminVehiclesScreenState
             child: filteredVehicles.isEmpty
                 ? ListView(
                     physics: const AlwaysScrollableScrollPhysics(),
-                    children: const [
-                      SizedBox(height: OpenVtsSpacing.section),
+                    children: [
+                      const SizedBox(height: OpenVtsSpacing.section),
                       OpenVtsEmptyState(
-                        title: 'No vehicles found',
-                        message: 'Try a different search or filter.',
+                        title: context.mobileText('No vehicles found'),
+                        message: context.mobileText(
+                          'Try a different search or filter.',
+                        ),
                       ),
                     ],
                   )
@@ -219,10 +225,10 @@ class _SuperadminVehiclesScreenState
         return StatefulBuilder(
           builder: (context, setSheetState) {
             return _OptionsSheet(
-              title: 'Filter vehicles',
+              title: context.mobileText('Filter vehicles'),
               sections: [
                 _OptionsSheetSection(
-                  label: 'Status',
+                  label: context.mobileText('Status'),
                   child: Wrap(
                     spacing: OpenVtsSpacing.xs,
                     runSpacing: OpenVtsSpacing.xs,
@@ -231,9 +237,8 @@ class _SuperadminVehiclesScreenState
                           (option) => _ChoiceChip(
                             label: option.label,
                             selected: selectedStatus == option,
-                            onSelected: () => setSheetState(
-                              () => selectedStatus = option,
-                            ),
+                            onSelected: () =>
+                                setSheetState(() => selectedStatus = option),
                           ),
                         )
                         .toList(growable: false),
@@ -276,10 +281,10 @@ class _SuperadminVehiclesScreenState
       ),
       builder: (sheetContext) {
         return _OptionsSheet(
-          title: 'Sort vehicles',
+          title: context.mobileText('Sort vehicles'),
           sections: [
             _OptionsSheetSection(
-              label: 'Order by',
+              label: context.mobileText('Order by'),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: _VehicleSortOption.values
@@ -331,13 +336,15 @@ class _SuperadminVehiclesScreenState
   ) {
     final normalizedQuery = _searchQuery.toLowerCase();
     final filtered = vehicles.where((vehicle) {
-      final matchesSearch = normalizedQuery.isEmpty ||
+      final matchesSearch =
+          normalizedQuery.isEmpty ||
           vehicle.searchContent.contains(normalizedQuery);
       final normalizedStatus = vehicle.status.trim().toLowerCase();
       final matchesStatus = switch (_statusFilter) {
         _VehicleStatusFilter.all => true,
         _VehicleStatusFilter.active => normalizedStatus == 'active',
         _VehicleStatusFilter.inactive => normalizedStatus == 'inactive',
+        _VehicleStatusFilter.licenseBlocked => vehicle.isLicenseBlocked,
       };
 
       return matchesSearch && matchesStatus;
@@ -354,9 +361,9 @@ class _SuperadminVehiclesScreenState
         case _VehicleSortOption.nameDescending:
           return right.name.toLowerCase().compareTo(left.name.toLowerCase());
         case _VehicleSortOption.activeFirst:
-          final statusComparison = _statusRank(left).compareTo(
-            _statusRank(right),
-          );
+          final statusComparison = _statusRank(
+            left,
+          ).compareTo(_statusRank(right));
           if (statusComparison != 0) {
             return statusComparison;
           }
@@ -454,14 +461,14 @@ class _VehiclesToolbarState extends State<_VehiclesToolbar> {
           const SizedBox(width: OpenVtsSpacing.xs),
           _SquareIconButton(
             icon: Icons.filter_alt_outlined,
-            tooltip: 'Filter vehicles',
+            tooltip: context.mobileText('Filter vehicles'),
             onPressed: widget.onOpenFilters,
             showDot: widget.hasActiveFilters,
           ),
           const SizedBox(width: OpenVtsSpacing.xs),
           _SquareIconButton(
             icon: Icons.swap_vert_rounded,
-            tooltip: 'Sort vehicles',
+            tooltip: context.mobileText('Sort vehicles'),
             onPressed: widget.onOpenSort,
           ),
           const SizedBox(width: OpenVtsSpacing.xs),
@@ -476,10 +483,7 @@ class _VehiclesToolbarState extends State<_VehiclesToolbar> {
 }
 
 class _SearchInput extends StatelessWidget {
-  const _SearchInput({
-    required this.controller,
-    required this.onChanged,
-  });
+  const _SearchInput({required this.controller, required this.onChanged});
 
   final TextEditingController controller;
   final ValueChanged<String> onChanged;
@@ -539,7 +543,7 @@ class _SearchInput extends StatelessWidget {
               fillColor: fillColor,
               isDense: true,
               isCollapsed: false,
-              hintText: 'Search by name, plate, IMEI…',
+              hintText: context.mobileText('Search by name, plate, IMEI…'),
               hintStyle: _baseStyle.copyWith(
                 color: Theme.of(context).brightness == Brightness.dark
                     ? OpenVtsColors.darkTextSecondary.withValues(alpha: 0.6)
@@ -570,7 +574,7 @@ class _SearchInput extends StatelessWidget {
                         end: OpenVtsSpacing.xxs,
                       ),
                       child: IconButton(
-                        tooltip: 'Clear search',
+                        tooltip: context.mobileText('Clear search'),
                         onPressed: () {
                           controller.clear();
                           onChanged('');
@@ -642,11 +646,7 @@ class _SquareIconButton extends StatelessWidget {
                   border: Border.all(color: _softBorderColor(context)),
                 ),
                 alignment: Alignment.center,
-                child: Icon(
-                  icon,
-                  size: 18,
-                  color: _primaryInkColor(context),
-                ),
+                child: Icon(icon, size: 18, color: _primaryInkColor(context)),
               ),
               if (showDot)
                 PositionedDirectional(
@@ -674,10 +674,7 @@ class _SquareIconButton extends StatelessWidget {
 }
 
 class _RecordsPerPageDropdown extends StatelessWidget {
-  const _RecordsPerPageDropdown({
-    required this.value,
-    required this.onChanged,
-  });
+  const _RecordsPerPageDropdown({required this.value, required this.onChanged});
 
   final int value;
   final ValueChanged<int> onChanged;
@@ -765,7 +762,10 @@ class _PaginationFooter extends StatelessWidget {
       child: Column(
         children: [
           Text(
-            'Showing $showingCount of $totalCount',
+            context.mobileText("Showing {value1} of {value2}", {
+              'value1': (showingCount).toString(),
+              'value2': (totalCount).toString(),
+            }),
             style: OpenVtsTypography.meta.copyWith(
               color: Theme.of(context).brightness == Brightness.dark
                   ? OpenVtsColors.darkTextSecondary
@@ -786,7 +786,10 @@ class _PaginationFooter extends StatelessWidget {
                     horizontal: OpenVtsSpacing.sm,
                   ),
                   child: Text(
-                    'Page $currentPage of $pageCount',
+                    context.mobileText("Page {value1} of {value2}", {
+                      'value1': (currentPage).toString(),
+                      'value2': (pageCount).toString(),
+                    }),
                     style: OpenVtsTypography.label.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
@@ -836,8 +839,8 @@ class _PageButton extends StatelessWidget {
             color: enabled
                 ? _primaryInkColor(context)
                 : (Theme.of(context).brightness == Brightness.dark
-                    ? OpenVtsColors.darkTextSecondary.withValues(alpha: 0.5)
-                    : OpenVtsColors.textTertiary),
+                      ? OpenVtsColors.darkTextSecondary.withValues(alpha: 0.5)
+                      : OpenVtsColors.textTertiary),
           ),
         ),
       ),
@@ -897,9 +900,9 @@ class _OptionsSheet extends StatelessWidget {
                   child: Text(
                     title,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
+                      fontWeight: FontWeight.w700,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
                   ),
                 ),
                 IconButton(
@@ -909,7 +912,7 @@ class _OptionsSheet extends StatelessWidget {
                     size: 20,
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
-                  tooltip: 'Close',
+                  tooltip: context.mobileText('Close'),
                 ),
               ],
             ),
@@ -978,11 +981,13 @@ class _ChoiceChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final backgroundColor =
-        selected ? (isDark ? Colors.black : Colors.white) : Colors.transparent;
+    final backgroundColor = selected
+        ? (isDark ? Colors.black : Colors.white)
+        : Colors.transparent;
     final textColor = isDark ? Colors.white : Colors.black;
-    final borderColor =
-        isDark ? Colors.white : Colors.black.withValues(alpha: 0.2);
+    final borderColor = isDark
+        ? Colors.white
+        : Colors.black.withValues(alpha: 0.2);
 
     return Material(
       color: backgroundColor,
@@ -1169,6 +1174,17 @@ class _VehicleCard extends StatelessWidget {
           ),
           const SizedBox(height: OpenVtsSpacing.sm),
           _VehicleDetailsPanel(vehicle: vehicle),
+          if (vehicle.isLicenseBlocked) ...[
+            const SizedBox(height: OpenVtsSpacing.sm),
+            Text(
+              vehicle.licenseBlockReason?.trim().isNotEmpty == true
+                  ? vehicle.licenseBlockReason!
+                  : context.mobileText(
+                      'Tracking is blocked by the software license limit.',
+                    ),
+              style: OpenVtsTypography.meta.copyWith(color: scheme.error),
+            ),
+          ],
         ],
       ),
     );
@@ -1250,7 +1266,7 @@ class _VehicleDetailsPanel extends StatelessWidget {
                 alignment: AlignmentDirectional.centerStart,
                 child: _VehicleInfoRow(
                   icon: Icons.schedule_rounded,
-                  label: 'Created',
+                  label: context.mobileText('Created'),
                   value: createdLabel,
                 ),
               ),
@@ -1293,7 +1309,7 @@ class _VehicleDetailsPanel extends StatelessWidget {
             const SizedBox(height: OpenVtsSpacing.xs),
             _VehicleInfoRow(
               icon: Icons.schedule_rounded,
-              label: 'Created',
+              label: context.mobileText('Created'),
               value: createdLabel,
             ),
           ],

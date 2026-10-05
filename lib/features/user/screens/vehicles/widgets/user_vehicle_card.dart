@@ -9,6 +9,7 @@ import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../core/utils/date_time_formatter.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../../../shared/widgets/open_vts_status_chip.dart';
@@ -38,10 +39,9 @@ class UserVehicleCard extends ConsumerWidget {
                 width: 34,
                 height: 34,
                 decoration: BoxDecoration(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onSurface
-                      .withValues(alpha: 0.04),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.04),
                   borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
                   border: Border.all(color: _softBorderColor(context)),
                 ),
@@ -83,7 +83,9 @@ class UserVehicleCard extends ConsumerWidget {
               ),
               const SizedBox(width: OpenVtsSpacing.xs),
               OpenVtsStatusChip(
-                label: vehicle.isActive ? 'Active' : 'Inactive',
+                label: vehicle.isActive
+                    ? context.mobileText('Active')
+                    : context.mobileText('Inactive'),
                 type: vehicle.isActive
                     ? OpenVtsStatusType.success
                     : OpenVtsStatusType.neutral,
@@ -97,16 +99,23 @@ class UserVehicleCard extends ConsumerWidget {
             children: [
               if (vehicle.vin.trim().isNotEmpty)
                 _MetaPill(
-                    icon: Icons.tag_outlined,
-                    label: 'VIN ${vehicle.vin.trim()}'),
+                  icon: Icons.tag_outlined,
+                  label: context.mobileText("VIN {value1}", {
+                    'value1': (vehicle.vin.trim()).toString(),
+                  }),
+                ),
               _MetaPill(
                 icon: Icons.memory_outlined,
-                label: 'IMEI ${_display(vehicle.imei)}',
+                label: context.mobileText("IMEI {value1}", {
+                  'value1': (_display(vehicle.imei)).toString(),
+                }),
                 copyValue: vehicle.imei,
               ),
               _MetaPill(
                 icon: Icons.sim_card_outlined,
-                label: 'SIM ${_display(vehicle.simNumber)}',
+                label: context.mobileText("SIM {value1}", {
+                  'value1': (_display(vehicle.simNumber)).toString(),
+                }),
                 copyValue: vehicle.simNumber,
               ),
               if (vehicle.createdAt != null)
@@ -115,9 +124,9 @@ class UserVehicleCard extends ConsumerWidget {
                   label: formatter.formatDate(vehicle.createdAt!),
                 ),
               if (vehicle.isLicenseBlocked)
-                const _StatusPill(
+                _StatusPill(
                   icon: Icons.block_rounded,
-                  label: 'License Blocked',
+                  label: context.mobileText('License Blocked'),
                   color: OpenVtsColors.error,
                 ),
             ],
@@ -129,11 +138,7 @@ class UserVehicleCard extends ConsumerWidget {
 }
 
 class _MetaPill extends StatelessWidget {
-  const _MetaPill({
-    required this.icon,
-    required this.label,
-    this.copyValue,
-  });
+  const _MetaPill({required this.icon, required this.label, this.copyValue});
 
   final IconData icon;
   final String label;
@@ -151,12 +156,15 @@ class _MetaPill extends StatelessWidget {
     if (normalizedCopyValue.isEmpty) return content;
 
     return Tooltip(
-      message: 'Copy',
+      message: context.mobileText('Copy'),
       child: InkWell(
         borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
         onTap: () {
           Clipboard.setData(ClipboardData(text: normalizedCopyValue));
-          ToastHelper.showSuccess('Copied', context: context);
+          ToastHelper.showSuccess(
+            context.mobileText('Copied'),
+            context: context,
+          );
         },
         child: content,
       ),

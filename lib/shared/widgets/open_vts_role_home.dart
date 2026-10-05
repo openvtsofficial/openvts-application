@@ -1,9 +1,14 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/theme/open_vts_colors.dart';
 import '../../core/theme/open_vts_spacing.dart';
 import '../../core/theme/open_vts_typography.dart';
+import '../../l10n/app_localizations.dart';
+import '../helpers/mobile_text.dart';
+import 'open_vts_language_picker.dart';
 
 class OpenVtsRoleHomeItem {
   const OpenVtsRoleHomeItem({
@@ -66,7 +71,10 @@ class OpenVtsRoleHome extends StatelessWidget {
     required this.roleLabel,
     required this.items,
     required this.onToggleTheme,
-    required this.onNotificationsPressed,
+    this.onNotificationsPressed,
+    this.onLanguagePressed,
+    this.onRefresh,
+    this.accessAvailable = true,
     required this.onProfilePressed,
     this.notificationBadgeCount = 0,
     this.profileImageUrl,
@@ -77,7 +85,10 @@ class OpenVtsRoleHome extends StatelessWidget {
   final String roleLabel;
   final List<OpenVtsRoleHomeItem> items;
   final VoidCallback onToggleTheme;
-  final VoidCallback onNotificationsPressed;
+  final VoidCallback? onNotificationsPressed;
+  final VoidCallback? onLanguagePressed;
+  final Future<void> Function()? onRefresh;
+  final bool accessAvailable;
   final VoidCallback onProfilePressed;
   final int notificationBadgeCount;
   final String? profileImageUrl;
@@ -85,6 +96,7 @@ class OpenVtsRoleHome extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final currentPath = GoRouterState.of(context).uri.path;
     final screenWidth = MediaQuery.sizeOf(context).width;
@@ -92,22 +104,44 @@ class OpenVtsRoleHome extends StatelessWidget {
     final headerGap = _headerGap(screenWidth);
     final footerPadding = _footerPadding(screenWidth);
     final logoHeight = _logoHeight(screenWidth);
-    final contentHorizontalPadding =
-        screenWidth < 520 ? 0.0 : OpenVtsSpacing.sm;
+    final contentHorizontalPadding = screenWidth < 520
+        ? 0.0
+        : OpenVtsSpacing.sm;
     final gridMainSpacing = _gridMainSpacing(screenWidth);
     final gridCrossSpacing = _gridCrossSpacing(screenWidth);
-    final gridChildAspectRatio = _gridChildAspectRatio(screenWidth);
-    final topBarColor =
-        isDark ? OpenVtsColors.darkSurface : OpenVtsColors.surfaceElevated;
+    final textScale = MediaQuery.textScalerOf(context).scale(1);
+    final gridColumns = textScale > 2
+        ? math.max(1, _gridColumnCount(screenWidth) - 2)
+        : textScale > 1.3
+        ? math.max(2, _gridColumnCount(screenWidth) - 1)
+        : _gridColumnCount(screenWidth);
+    final contentWidth =
+        math.min(980.0, screenWidth - pageHorizontalPadding * 2) -
+        contentHorizontalPadding * 2;
+    final cellWidth =
+        (contentWidth - gridCrossSpacing * (gridColumns - 1)) / gridColumns;
+    final metrics = _tileMetrics(screenWidth);
+    final labelHeight =
+        metrics.labelFontSize * metrics.labelLineHeight * textScale * 2;
+    final gridExtent = math.max(
+      cellWidth / _gridChildAspectRatio(screenWidth),
+      metrics.iconBoxSize + metrics.labelGap + labelHeight + 16,
+    );
+    final topBarColor = isDark
+        ? OpenVtsColors.darkSurface
+        : OpenVtsColors.surfaceElevated;
     final cardColor = isDark
         ? OpenVtsColors.darkSurface.withValues(alpha: 0.94)
         : OpenVtsColors.surfaceElevated.withValues(alpha: 0.96);
-    final borderColor =
-        isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border;
-    final secondaryTextColor =
-        isDark ? OpenVtsColors.darkTextSecondary : OpenVtsColors.textSecondary;
-    final tertiaryTextColor =
-        theme.colorScheme.onSurface.withValues(alpha: 0.58);
+    final borderColor = isDark
+        ? OpenVtsColors.darkBorder
+        : OpenVtsColors.border;
+    final secondaryTextColor = isDark
+        ? OpenVtsColors.darkTextSecondary
+        : OpenVtsColors.textSecondary;
+    final tertiaryTextColor = theme.colorScheme.onSurface.withValues(
+      alpha: 0.58,
+    );
 
     return Scaffold(
       body: DecoratedBox(
@@ -136,9 +170,7 @@ class OpenVtsRoleHome extends StatelessWidget {
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: topBarColor,
-                  border: Border(
-                    bottom: BorderSide(color: borderColor),
-                  ),
+                  border: Border(bottom: BorderSide(color: borderColor)),
                   boxShadow: [
                     BoxShadow(
                       color: OpenVtsColors.brandInk.withValues(
@@ -161,69 +193,92 @@ class OpenVtsRoleHome extends StatelessWidget {
                         children: [
                           Expanded(
                             child: Text(
-                              'Fleet OS',
+                              context.mobileText('Fleet OS'),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: OpenVtsTypography.titleSmall.copyWith(
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
                           ),
                           _TopBarAction(
-                            tooltip: isDark ? 'Light mode' : 'Dark mode',
+                            key: const ValueKey('home-language'),
+                            tooltip: l10n.language,
+                            icon: Icons.language_rounded,
+                            borderColor: borderColor,
+                            onPressed:
+                                onLanguagePressed ??
+                                () => showOpenVtsLanguagePicker(context),
+                          ),
+                          const SizedBox(width: OpenVtsSpacing.xxs),
+                          _TopBarAction(
+                            key: const ValueKey('home-theme'),
+                            tooltip: isDark ? l10n.lightMode : l10n.darkMode,
                             icon: isDark ? Icons.light_mode : Icons.dark_mode,
                             borderColor: borderColor,
                             onPressed: onToggleTheme,
                           ),
-                          const SizedBox(width: OpenVtsSpacing.xxs),
-                          _TopBarAction(
-                            tooltip: 'Notifications',
-                            icon: Icons.notifications_none_rounded,
-                            borderColor: borderColor,
-                            badgeCount: notificationBadgeCount,
-                            onPressed: onNotificationsPressed,
-                          ),
+                          if (onNotificationsPressed != null) ...[
+                            const SizedBox(width: OpenVtsSpacing.xxs),
+                            _TopBarAction(
+                              key: const ValueKey('home-notifications'),
+                              tooltip: l10n.notifications,
+                              icon: Icons.notifications_none_rounded,
+                              borderColor: borderColor,
+                              badgeCount: notificationBadgeCount,
+                              onPressed: onNotificationsPressed!,
+                            ),
+                          ],
                           const SizedBox(width: OpenVtsSpacing.xxs),
                           Tooltip(
-                            message: 'Profile',
+                            key: const ValueKey('home-profile'),
+                            message: l10n.profile,
                             child: Material(
                               color: Colors.transparent,
                               child: InkWell(
                                 customBorder: const CircleBorder(),
                                 onTap: onProfilePressed,
-                                child: Container(
-                                  width: 40,
-                                  height: 40,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    border: Border.all(color: borderColor),
-                                    color: isDark
-                                        ? OpenVtsColors.brandInkSoft
-                                        : OpenVtsColors.surface,
-                                  ),
-                                  child: ClipOval(
-                                    child: profileImageUrl == null
-                                        ? Center(
-                                            child: Text(
-                                              _initialsFromName(displayName),
-                                              style: OpenVtsTypography.meta
-                                                  .copyWith(
-                                                color:
-                                                    theme.colorScheme.onSurface,
-                                                fontWeight: FontWeight.w700,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(4),
+                                  child: Container(
+                                    width: 40,
+                                    height: 40,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      border: Border.all(color: borderColor),
+                                      color: isDark
+                                          ? OpenVtsColors.brandInkSoft
+                                          : OpenVtsColors.surface,
+                                    ),
+                                    child: ClipOval(
+                                      child: profileImageUrl == null
+                                          ? Center(
+                                              child: Text(
+                                                _initialsFromName(displayName),
+                                                style: OpenVtsTypography.meta
+                                                    .copyWith(
+                                                      color: theme
+                                                          .colorScheme
+                                                          .onSurface,
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                    ),
                                               ),
+                                            )
+                                          : Image.network(
+                                              profileImageUrl!,
+                                              fit: BoxFit.cover,
+                                              errorBuilder: (_, __, ___) {
+                                                return Icon(
+                                                  Icons.person_outline_rounded,
+                                                  size: 18,
+                                                  color: theme
+                                                      .colorScheme
+                                                      .onSurface,
+                                                );
+                                              },
                                             ),
-                                          )
-                                        : Image.network(
-                                            profileImageUrl!,
-                                            fit: BoxFit.cover,
-                                            errorBuilder: (_, __, ___) {
-                                              return Icon(
-                                                Icons.person_outline_rounded,
-                                                size: 18,
-                                                color:
-                                                    theme.colorScheme.onSurface,
-                                              );
-                                            },
-                                          ),
+                                    ),
                                   ),
                                 ),
                               ),
@@ -239,129 +294,165 @@ class OpenVtsRoleHome extends StatelessWidget {
             Expanded(
               child: SafeArea(
                 top: false,
-                child: CustomScrollView(
-                  slivers: [
-                    SliverPadding(
-                      padding: EdgeInsets.fromLTRB(
-                        pageHorizontalPadding,
-                        headerGap,
-                        pageHorizontalPadding,
-                        0,
-                      ),
-                      sliver: SliverToBoxAdapter(
-                        child: Center(
-                          child: ConstrainedBox(
-                            constraints: const BoxConstraints(maxWidth: 980),
-                            child: Padding(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: contentHorizontalPadding,
-                              ),
-                              child: Column(
-                                children: [
-                                  Image.asset(
-                                    isDark
-                                        ? 'assets/brand/dark-logo.png'
-                                        : 'assets/brand/logo.png',
-                                    height: logoHeight,
-                                    fit: BoxFit.contain,
-                                    errorBuilder: (_, __, ___) {
-                                      return Text(
-                                        'Open VTS',
-                                        style: OpenVtsTypography.brandTitle
-                                            .copyWith(
-                                          color: theme.colorScheme.onSurface,
-                                          fontSize: screenWidth < 520 ? 24 : 30,
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                  const SizedBox(height: OpenVtsSpacing.xxs),
-                                  Text(
-                                    '$roleLabel workspace',
-                                    style: OpenVtsTypography.meta.copyWith(
-                                      color: secondaryTextColor,
-                                      letterSpacing: 0.2,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                  SizedBox(height: headerGap),
-                                  GridView.builder(
-                                    shrinkWrap: true,
-                                    physics:
-                                        const NeverScrollableScrollPhysics(),
-                                    itemCount: items.length,
-                                    gridDelegate:
-                                        SliverGridDelegateWithFixedCrossAxisCount(
-                                      crossAxisCount:
-                                          _gridColumnCount(screenWidth),
-                                      mainAxisSpacing: gridMainSpacing,
-                                      crossAxisSpacing: gridCrossSpacing,
-                                      childAspectRatio: gridChildAspectRatio,
-                                    ),
-                                    itemBuilder: (context, index) {
-                                      final item = items[index];
-                                      final isActive =
-                                          currentPath == item.route;
-
-                                      return _DesktopLauncherTile(
-                                        screenWidth: screenWidth,
-                                        label: item.label,
-                                        icon: item.icon,
-                                        isActive: isActive,
-                                        borderColor: borderColor,
-                                        backgroundColor: cardColor,
-                                        activeColor: theme.colorScheme.primary,
-                                        secondaryTextColor: tertiaryTextColor,
-                                        onTap: () {
-                                          if (!isActive) {
-                                            context.push(item.route);
-                                          }
-                                        },
-                                      );
-                                    },
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    SliverFillRemaining(
-                      hasScrollBody: false,
-                      child: Padding(
+                child: _RefreshableLauncher(
+                  onRefresh: onRefresh,
+                  child: CustomScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    slivers: [
+                      SliverPadding(
                         padding: EdgeInsets.fromLTRB(
                           pageHorizontalPadding,
-                          screenWidth < 520
-                              ? OpenVtsSpacing.xs
-                              : OpenVtsSpacing.sm,
+                          headerGap,
                           pageHorizontalPadding,
-                          footerPadding,
+                          0,
                         ),
-                        child: Center(
-                          child: ConstrainedBox(
-                            constraints: const BoxConstraints(maxWidth: 980),
-                            child: Padding(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: contentHorizontalPadding,
-                              ),
-                              child: Align(
-                                alignment: Alignment.bottomCenter,
-                                child: Text(
-                                  '© 2026 Open VTS All rights reserved.',
-                                  style: OpenVtsTypography.meta.copyWith(
-                                    color: secondaryTextColor,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                  textAlign: TextAlign.center,
+                        sliver: SliverToBoxAdapter(
+                          child: Center(
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 980),
+                              child: Padding(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: contentHorizontalPadding,
+                                ),
+                                child: Column(
+                                  children: [
+                                    Image.asset(
+                                      isDark
+                                          ? 'assets/brand/dark-logo.png'
+                                          : 'assets/brand/logo.png',
+                                      height: logoHeight,
+                                      fit: BoxFit.contain,
+                                      errorBuilder: (_, __, ___) {
+                                        return Text(
+                                          context.mobileText('Open VTS'),
+                                          style: OpenVtsTypography.brandTitle
+                                              .copyWith(
+                                                color:
+                                                    theme.colorScheme.onSurface,
+                                                fontSize: screenWidth < 520
+                                                    ? 24
+                                                    : 30,
+                                              ),
+                                        );
+                                      },
+                                    ),
+                                    const SizedBox(height: OpenVtsSpacing.xxs),
+                                    Text(
+                                      l10n.homeWorkspace(roleLabel),
+                                      style: OpenVtsTypography.meta.copyWith(
+                                        color: secondaryTextColor,
+                                        letterSpacing: 0.2,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                    if (!accessAvailable) ...[
+                                      const SizedBox(height: OpenVtsSpacing.sm),
+                                      Semantics(
+                                        liveRegion: true,
+                                        child: Container(
+                                          padding: const EdgeInsets.all(
+                                            OpenVtsSpacing.sm,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: theme
+                                                .colorScheme
+                                                .errorContainer,
+                                            borderRadius: BorderRadius.circular(
+                                              14,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            l10n.homeAccessUnavailable,
+                                            textAlign: TextAlign.center,
+                                            style: theme.textTheme.bodyMedium
+                                                ?.copyWith(
+                                                  color: theme
+                                                      .colorScheme
+                                                      .onErrorContainer,
+                                                ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                    SizedBox(height: headerGap),
+                                    GridView.builder(
+                                      shrinkWrap: true,
+                                      physics:
+                                          const NeverScrollableScrollPhysics(),
+                                      itemCount: items.length,
+                                      gridDelegate:
+                                          SliverGridDelegateWithFixedCrossAxisCount(
+                                            crossAxisCount: gridColumns,
+                                            mainAxisSpacing: gridMainSpacing,
+                                            crossAxisSpacing: gridCrossSpacing,
+                                            mainAxisExtent: gridExtent,
+                                          ),
+                                      itemBuilder: (context, index) {
+                                        final item = items[index];
+                                        final isActive =
+                                            currentPath == item.route;
+
+                                        return _DesktopLauncherTile(
+                                          screenWidth: screenWidth,
+                                          label: item.label,
+                                          icon: item.icon,
+                                          isActive: isActive,
+                                          borderColor: borderColor,
+                                          backgroundColor: cardColor,
+                                          activeColor:
+                                              theme.colorScheme.primary,
+                                          secondaryTextColor: tertiaryTextColor,
+                                          onTap: () {
+                                            if (!isActive) {
+                                              context.push(item.route);
+                                            }
+                                          },
+                                        );
+                                      },
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
+                      SliverFillRemaining(
+                        hasScrollBody: false,
+                        child: Padding(
+                          padding: EdgeInsets.fromLTRB(
+                            pageHorizontalPadding,
+                            screenWidth < 520
+                                ? OpenVtsSpacing.xs
+                                : OpenVtsSpacing.sm,
+                            pageHorizontalPadding,
+                            footerPadding,
+                          ),
+                          child: Center(
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 980),
+                              child: Padding(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: contentHorizontalPadding,
+                                ),
+                                child: Align(
+                                  alignment: Alignment.bottomCenter,
+                                  child: Text(
+                                    l10n.homeCopyright,
+                                    style: OpenVtsTypography.meta.copyWith(
+                                      color: secondaryTextColor,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -472,12 +563,11 @@ class OpenVtsRoleHome extends StatelessWidget {
     }
 
     if (parts.length == 1) {
-      return parts.first
-          .substring(0, parts.first.length.clamp(1, 2))
-          .toUpperCase();
+      return parts.first.characters.take(2).toString().toUpperCase();
     }
 
-    return (parts.first[0] + parts.last[0]).toUpperCase();
+    return (parts.first.characters.first + parts.last.characters.first)
+        .toUpperCase();
   }
 }
 
@@ -528,66 +618,72 @@ class _DesktopLauncherTile extends StatelessWidget {
     final labelHorizontalPadding = screenWidth < 360
         ? 1.0
         : screenWidth < 520
-            ? 2.0
-            : OpenVtsSpacing.xxs;
+        ? 2.0
+        : OpenVtsSpacing.xxs;
     final shadowBlur = screenWidth < 520 ? 9.0 : 14.0;
     final shadowOffset = screenWidth < 520 ? 3.0 : 5.0;
     final shadowAlpha = screenWidth < 520 ? 0.04 : 0.05;
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(metrics.radius),
-        onTap: onTap,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              width: metrics.iconBoxSize,
-              height: metrics.iconBoxSize,
-              decoration: BoxDecoration(
-                color: isActive
-                    ? activeColor.withValues(alpha: 0.08)
-                    : backgroundColor,
-                borderRadius: BorderRadius.circular(metrics.radius),
-                border: Border.all(
-                  color: isActive ? activeColor : borderColor,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color:
-                        OpenVtsColors.brandInk.withValues(alpha: shadowAlpha),
-                    blurRadius: shadowBlur,
-                    offset: Offset(0, shadowOffset),
+    return Semantics(
+      button: true,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(metrics.radius),
+          onTap: onTap,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                width: metrics.iconBoxSize,
+                height: metrics.iconBoxSize,
+                decoration: BoxDecoration(
+                  color: isActive
+                      ? activeColor.withValues(alpha: 0.08)
+                      : backgroundColor,
+                  borderRadius: BorderRadius.circular(metrics.radius),
+                  border: Border.all(
+                    color: isActive ? activeColor : borderColor,
                   ),
-                ],
-              ),
-              child: Icon(
-                icon,
-                size: metrics.iconSize,
-                color: isActive
-                    ? activeColor
-                    : Theme.of(context).colorScheme.onSurface,
-              ),
-            ),
-            SizedBox(height: metrics.labelGap),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: labelHorizontalPadding),
-              child: Text(
-                label,
-                style: OpenVtsTypography.meta.copyWith(
-                  color: secondaryTextColor,
-                  fontWeight: FontWeight.w500,
-                  fontSize: metrics.labelFontSize,
-                  height: metrics.labelLineHeight,
+                  boxShadow: [
+                    BoxShadow(
+                      color: OpenVtsColors.brandInk.withValues(
+                        alpha: shadowAlpha,
+                      ),
+                      blurRadius: shadowBlur,
+                      offset: Offset(0, shadowOffset),
+                    ),
+                  ],
                 ),
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+                child: Icon(
+                  icon,
+                  size: metrics.iconSize,
+                  color: isActive
+                      ? activeColor
+                      : Theme.of(context).colorScheme.onSurface,
+                ),
               ),
-            ),
-          ],
+              SizedBox(height: metrics.labelGap),
+              Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: labelHorizontalPadding,
+                ),
+                child: Text(
+                  label,
+                  style: OpenVtsTypography.meta.copyWith(
+                    color: secondaryTextColor,
+                    fontWeight: FontWeight.w500,
+                    fontSize: metrics.labelFontSize,
+                    height: metrics.labelLineHeight,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -600,6 +696,7 @@ class _TopBarAction extends StatelessWidget {
     required this.icon,
     required this.borderColor,
     required this.onPressed,
+    super.key,
     this.badgeCount = 0,
   });
 
@@ -611,52 +708,67 @@ class _TopBarAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        Material(
-          color: Colors.transparent,
-          child: InkWell(
-            borderRadius: BorderRadius.circular(14),
-            onTap: onPressed,
-            child: Container(
-              width: 40,
-              height: 40,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: borderColor),
-              ),
-              child: Tooltip(
-                message: tooltip,
-                child: Icon(icon, size: 20),
-              ),
-            ),
-          ),
-        ),
-        if (badgeCount > 0)
-          PositionedDirectional(
-            end: -4,
-            top: -4,
-            child: Container(
-              constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              alignment: Alignment.center,
-              decoration: const BoxDecoration(
-                color: OpenVtsColors.brandInk,
-                borderRadius: BorderRadius.all(Radius.circular(999)),
-              ),
-              child: Text(
-                badgeCount.toString(),
-                style: OpenVtsTypography.meta.copyWith(
-                  color: OpenVtsColors.white,
-                  fontWeight: FontWeight.w700,
-                  height: 1,
+    return Semantics(
+      button: true,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(14),
+              onTap: onPressed,
+              child: Padding(
+                padding: const EdgeInsets.all(4),
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: borderColor),
+                  ),
+                  child: Tooltip(message: tooltip, child: Icon(icon, size: 20)),
                 ),
               ),
             ),
           ),
-      ],
+          if (badgeCount > 0)
+            PositionedDirectional(
+              end: -4,
+              top: -4,
+              child: Container(
+                constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                alignment: Alignment.center,
+                decoration: const BoxDecoration(
+                  color: OpenVtsColors.brandInk,
+                  borderRadius: BorderRadius.all(Radius.circular(999)),
+                ),
+                child: Text(
+                  badgeCount > 99 ? '99+' : badgeCount.toString(),
+                  style: OpenVtsTypography.meta.copyWith(
+                    color: OpenVtsColors.white,
+                    fontWeight: FontWeight.w700,
+                    height: 1,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
+}
+
+class _RefreshableLauncher extends StatelessWidget {
+  const _RefreshableLauncher({required this.child, this.onRefresh});
+
+  final Widget child;
+  final Future<void> Function()? onRefresh;
+
+  @override
+  Widget build(BuildContext context) => onRefresh == null
+      ? child
+      : RefreshIndicator(onRefresh: onRefresh!, child: child);
 }

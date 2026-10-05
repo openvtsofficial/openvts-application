@@ -270,14 +270,24 @@ class SuperadminDashboardService {
     String? refreshKey,
   }) async {
     final queryParameters = <String, dynamic>{
-      'limit': limit.clamp(5, 50).toInt(),
-      if (cursorId != null) 'cursorId': cursorId,
-      if (actorId != null) 'actorId': actorId,
-      if (from != null) 'from': from.toUtc().toIso8601String(),
-      if (to != null) 'to': to.toUtc().toIso8601String(),
-      if (cursorId == null)
-        'rk': refreshKey ?? DateTime.now().millisecondsSinceEpoch.toString(),
+      'limit': limit,
     };
+
+    if (cursorId != null) {
+      queryParameters['cursorId'] = cursorId;
+    } else {
+      if (actorId != null) {
+        queryParameters['actorId'] = actorId;
+      }
+      if (from != null) {
+        queryParameters['from'] = from.toUtc().toIso8601String();
+      }
+      if (to != null) {
+        queryParameters['to'] = to.toUtc().toIso8601String();
+      }
+      queryParameters['rk'] =
+          refreshKey ?? DateTime.now().millisecondsSinceEpoch.toString();
+    }
 
     final response = await _apiClient.get<dynamic>(
       ApiEndpoints.superadmin.dashboardActivityLogs,

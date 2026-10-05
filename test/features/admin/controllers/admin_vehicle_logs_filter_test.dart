@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:open_vts/features/admin/controllers/admin_logs_controller.dart';
 import 'package:open_vts/features/admin/models/admin_logs_model.dart';
-import 'package:open_vts/features/admin/models/admin_logs_state.dart';
 import 'package:open_vts/features/admin/services/admin_logs_service.dart';
 
 // ---------------------------------------------------------------------------
@@ -28,7 +27,7 @@ class _FakeService extends Fake implements AdminLogsService {
     String? to,
     String? cursorId,
   }) async =>
-      AdminActivityLogPage(items: const [], nextCursorId: null, hasMore: false);
+      const AdminActivityLogPage(items: [], nextCursorId: null, hasMore: false);
 
   @override
   Future<AdminVehicleEventLogPage> getVehicleEventLogs({
@@ -59,7 +58,9 @@ class _FakeService extends Fake implements AdminLogsService {
       'dedupe': dedupe,
     });
     return AdminVehicleEventLogPage(
-        items: nextItems, nextCursorId: nextCursorId);
+      items: nextItems,
+      nextCursorId: nextCursorId,
+    );
   }
 }
 
@@ -103,16 +104,22 @@ void main() {
       final ctrl = _build(svc);
       await Future<void>.delayed(Duration.zero); // drain auto-load
 
-      expect(svc.vehicleCalls, isEmpty,
-          reason: 'vehicle tab is not loaded until selected');
+      expect(
+        svc.vehicleCalls,
+        isEmpty,
+        reason: 'vehicle tab is not loaded until selected',
+      );
 
       await ctrl.loadVehicleLogs();
 
       expect(svc.vehicleCalls, hasLength(1));
       final call = svc.vehicleCalls.first;
-      expect(call['from'], isNotNull,
-          reason:
-              'the visible 24h default must be sent — no silent hidden override');
+      expect(
+        call['from'],
+        isNotNull,
+        reason:
+            'the visible 24h default must be sent — no silent hidden override',
+      );
       expect(call['from'], contains('T'));
     });
 
@@ -129,8 +136,11 @@ void main() {
       ctrl.setVehicleFilters(clearFrom: true);
       await ctrl.loadVehicleLogs();
 
-      expect(svc.vehicleCalls.first['from'], isNull,
-          reason: 'clearing From must omit from entirely');
+      expect(
+        svc.vehicleCalls.first['from'],
+        isNull,
+        reason: 'clearing From must omit from entirely',
+      );
     });
 
     test('clearFrom + clearTo both null after clear', () {
@@ -161,8 +171,11 @@ void main() {
       expect(ctrl.state.vehicleVehicleId, '77');
 
       ctrl.setVehicleFilters(clearVehicleId: true);
-      expect(ctrl.state.vehicleVehicleId, isNull,
-          reason: 'clearVehicleId must nullify vehicleVehicleId');
+      expect(
+        ctrl.state.vehicleVehicleId,
+        isNull,
+        reason: 'clearVehicleId must nullify vehicleVehicleId',
+      );
 
       await ctrl.loadVehicleLogs();
       expect(svc.vehicleCalls.first['vehicleId'], isNull);
@@ -178,8 +191,11 @@ void main() {
       expect(ctrl.state.vehicleUserId, '55');
 
       ctrl.setVehicleFilters(clearUserId: true);
-      expect(ctrl.state.vehicleUserId, isNull,
-          reason: 'clearUserId must nullify vehicleUserId');
+      expect(
+        ctrl.state.vehicleUserId,
+        isNull,
+        reason: 'clearUserId must nullify vehicleUserId',
+      );
 
       await ctrl.loadVehicleLogs();
       expect(svc.vehicleCalls.first['userId'], isNull);
@@ -229,8 +245,11 @@ void main() {
       expect(call['severity'], 'CRITICAL');
       expect(call['q'], 'brake');
       expect(call['dedupe'], false);
-      expect(call['isRead'], false,
-          reason: 'Unread filter must map to isRead=false');
+      expect(
+        call['isRead'],
+        false,
+        reason: 'Unread filter must map to isRead=false',
+      );
     });
 
     test('AdminReadFilter.all sends null isRead', () async {
@@ -349,48 +368,52 @@ void main() {
     // Full reset sends null vehicleId, userId, no from
     // -----------------------------------------------------------------------
 
-    test('clearing all vehicle filters sends null vehicleId/userId/from/to',
-        () async {
-      final svc = _FakeService();
-      final ctrl = _build(svc);
-      await Future<void>.delayed(Duration.zero);
-      svc.vehicleCalls.clear();
+    test(
+      'clearing all vehicle filters sends null vehicleId/userId/from/to',
+      () async {
+        final svc = _FakeService();
+        final ctrl = _build(svc);
+        await Future<void>.delayed(Duration.zero);
+        svc.vehicleCalls.clear();
 
-      ctrl.setVehicleFilters(
-        vehicleId: '5',
-        userId: '6',
-        from: DateTime.utc(2026, 1, 1),
-        to: DateTime.utc(2026, 12, 31),
-      );
+        ctrl.setVehicleFilters(
+          vehicleId: '5',
+          userId: '6',
+          from: DateTime.utc(2026, 1, 1),
+          to: DateTime.utc(2026, 12, 31),
+        );
 
-      ctrl.setVehicleFilters(
-        clearVehicleId: true,
-        clearUserId: true,
-        clearFrom: true,
-        clearTo: true,
-      );
-      await ctrl.loadVehicleLogs();
+        ctrl.setVehicleFilters(
+          clearVehicleId: true,
+          clearUserId: true,
+          clearFrom: true,
+          clearTo: true,
+        );
+        await ctrl.loadVehicleLogs();
 
-      final call = svc.vehicleCalls.first;
-      expect(call['vehicleId'], isNull);
-      expect(call['userId'], isNull);
-      expect(call['from'], isNull);
-      expect(call['to'], isNull);
-    });
+        final call = svc.vehicleCalls.first;
+        expect(call['vehicleId'], isNull);
+        expect(call['userId'], isNull);
+        expect(call['from'], isNull);
+        expect(call['to'], isNull);
+      },
+    );
 
     // -----------------------------------------------------------------------
     // Error handling
     // -----------------------------------------------------------------------
 
-    test('service error sets sectionErrorMessage and clears isLoadingVehicle',
-        () async {
-      final svc = _FakeService()..throwError = ArgumentError('backend error');
-      final ctrl = _build(svc);
+    test(
+      'service error sets sectionErrorMessage and clears isLoadingVehicle',
+      () async {
+        final svc = _FakeService()..throwError = ArgumentError('backend error');
+        final ctrl = _build(svc);
 
-      await ctrl.loadVehicleLogs();
+        await ctrl.loadVehicleLogs();
 
-      expect(ctrl.state.isLoadingVehicle, isFalse);
-      expect(ctrl.state.sectionErrorMessage, isNotNull);
-    });
+        expect(ctrl.state.isLoadingVehicle, isFalse);
+        expect(ctrl.state.sectionErrorMessage, isNotNull);
+      },
+    );
   });
 }

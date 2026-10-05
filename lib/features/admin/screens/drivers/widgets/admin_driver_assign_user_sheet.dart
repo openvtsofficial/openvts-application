@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/theme/open_vts_spacing.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../shared/widgets/open_vts_bottom_sheet.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
@@ -13,14 +14,16 @@ import '../../../models/admin_driver_details_state.dart';
 
 Future<void> showDriverAssignUserSheet({
   required BuildContext context,
-  required AutoDisposeStateNotifierProvider<AdminDriverDetailsController,
-          AdminDriverDetailsState>
-      provider,
+  required AutoDisposeStateNotifierProvider<
+    AdminDriverDetailsController,
+    AdminDriverDetailsState
+  >
+  provider,
   required List<AdminDriverLinkedUser> users,
 }) {
   return OpenVtsBottomSheet.show<void>(
     context: context,
-    title: 'Assign User',
+    title: context.mobileText('Assign User'),
     initialChildSize: 0.72,
     minChildSize: 0.4,
     maxChildSize: 0.94,
@@ -31,8 +34,11 @@ Future<void> showDriverAssignUserSheet({
 class _DriverAssignUserSheet extends ConsumerStatefulWidget {
   const _DriverAssignUserSheet({required this.provider, required this.users});
 
-  final AutoDisposeStateNotifierProvider<AdminDriverDetailsController,
-      AdminDriverDetailsState> provider;
+  final AutoDisposeStateNotifierProvider<
+    AdminDriverDetailsController,
+    AdminDriverDetailsState
+  >
+  provider;
   final List<AdminDriverLinkedUser> users;
 
   @override
@@ -48,31 +54,33 @@ class _DriverAssignUserSheetState
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(widget.provider);
-    final filtered = widget.users.where((u) {
-      final q = _query.trim().toLowerCase();
-      if (q.isEmpty) return true;
-      return [
-        u.name,
-        u.username,
-        u.phone,
-        u.email,
-      ].any((v) => v.toLowerCase().contains(q));
-    }).toList(growable: false);
+    final filtered = widget.users
+        .where((u) {
+          final q = _query.trim().toLowerCase();
+          if (q.isEmpty) return true;
+          return [
+            u.name,
+            u.username,
+            u.phone,
+            u.email,
+          ].any((v) => v.toLowerCase().contains(q));
+        })
+        .toList(growable: false);
 
     return Column(
       children: [
         Padding(
           padding: const EdgeInsets.all(OpenVtsSpacing.md),
           child: OpenVtsSearchField(
-            hintText: 'Search users...',
+            hintText: context.mobileText('Search users...'),
             onChanged: (value) => setState(() => _query = value),
           ),
         ),
         Expanded(
           child: filtered.isEmpty
-              ? const OpenVtsEmptyState(
-                  title: 'No users available',
-                  message: 'No unlinked users found.',
+              ? OpenVtsEmptyState(
+                  title: context.mobileText('No users available'),
+                  message: context.mobileText('No unlinked users found.'),
                 )
               : ListView.builder(
                   itemCount: filtered.length,
@@ -96,7 +104,7 @@ class _DriverAssignUserSheetState
         Padding(
           padding: const EdgeInsets.all(OpenVtsSpacing.md),
           child: OpenVtsButton(
-            label: 'Assign',
+            label: context.mobileText('Assign'),
             isLoading: state.isAssigningUser,
             onPressed: state.isAssigningUser
                 ? null
@@ -104,18 +112,19 @@ class _DriverAssignUserSheetState
                     final id = _selectedId;
                     if (id == null || id.trim().isEmpty) {
                       ToastHelper.showError(
-                        'Select a user first.',
+                        context.mobileText('Select a user first.'),
                         context: context,
                       );
                       return;
                     }
-                    final ok =
-                        await ref.read(widget.provider.notifier).assignUser(id);
+                    final ok = await ref
+                        .read(widget.provider.notifier)
+                        .assignUser(id);
                     if (!mounted) return;
                     if (ok) {
                       Navigator.of(this.context).pop();
                       ToastHelper.showSuccess(
-                        'User assigned.',
+                        this.context.mobileText('User assigned.'),
                         context: this.context,
                       );
                     } else {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../models/user_settings_model.dart';
 
@@ -31,7 +32,8 @@ class UserAddressCard extends StatelessWidget {
     final city = address?.cityName ?? '';
     final pincode = address?.pincode ?? '';
 
-    final hasAddress = addressLine.trim().isNotEmpty ||
+    final hasAddress =
+        addressLine.trim().isNotEmpty ||
         countryCode.trim().isNotEmpty ||
         stateCode.trim().isNotEmpty ||
         city.trim().isNotEmpty ||
@@ -43,10 +45,12 @@ class UserAddressCard extends StatelessWidget {
 
     // Prefer human-readable labels; fall back to raw codes for legacy data that
     // cannot be resolved against the current reference catalogue.
-    final countryDisplay =
-        (countryLabel?.trim().isNotEmpty == true) ? countryLabel! : countryCode;
-    final stateDisplay =
-        (stateLabel?.trim().isNotEmpty == true) ? stateLabel! : stateCode;
+    final countryDisplay = (countryLabel?.trim().isNotEmpty == true)
+        ? countryLabel!
+        : countryCode;
+    final stateDisplay = (stateLabel?.trim().isNotEmpty == true)
+        ? stateLabel!
+        : stateCode;
 
     return OpenVtsCard(
       padding: const EdgeInsets.all(OpenVtsSpacing.sm),
@@ -54,7 +58,7 @@ class UserAddressCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'ADDRESS',
+            context.mobileText('Address'),
             style: OpenVtsTypography.meta.copyWith(
               fontWeight: FontWeight.w700,
               color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -63,29 +67,23 @@ class UserAddressCard extends StatelessWidget {
           const SizedBox(height: OpenVtsSpacing.xs),
           if (addressLine.trim().isNotEmpty)
             _AddressRow(
-              label: 'Address',
+              label: context.mobileText('Address'),
               value: addressLine,
             ),
           if (countryCode.trim().isNotEmpty)
             _AddressRow(
-              label: 'Country',
+              label: context.mobileText('Country'),
               value: countryDisplay,
             ),
           if (stateCode.trim().isNotEmpty)
             _AddressRow(
-              label: 'State',
+              label: context.mobileText('State'),
               value: stateDisplay,
             ),
           if (city.trim().isNotEmpty)
-            _AddressRow(
-              label: 'City',
-              value: city,
-            ),
+            _AddressRow(label: context.mobileText('City'), value: city),
           if (pincode.trim().isNotEmpty)
-            _AddressRow(
-              label: 'Pincode',
-              value: pincode,
-            ),
+            _AddressRow(label: context.mobileText('Pincode'), value: pincode),
         ],
       ),
     );
@@ -93,10 +91,7 @@ class UserAddressCard extends StatelessWidget {
 }
 
 class _AddressRow extends StatelessWidget {
-  const _AddressRow({
-    required this.label,
-    required this.value,
-  });
+  const _AddressRow({required this.label, required this.value});
 
   final String label;
   final String value;

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../../../shared/widgets/open_vts_empty_state.dart';
 import '../../../models/admin_payments_model.dart';
@@ -17,34 +18,36 @@ class AdminPaymentsRevenueTrendChart extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
 
-    final points = analytics.dailySeriesByCurrency.isEmpty
-        ? const <AdminDailyPoint>[]
-        : [...analytics.dailySeriesByCurrency.first.points]
-      ..sort((a, b) => (a.dateTime ?? DateTime(1970))
-          .compareTo(b.dateTime ?? DateTime(1970)));
+    final points =
+        analytics.dailySeriesByCurrency.isEmpty
+              ? const <AdminDailyPoint>[]
+              : [...analytics.dailySeriesByCurrency.first.points]
+          ..sort(
+            (a, b) => (a.dateTime ?? DateTime(1970)).compareTo(
+              b.dateTime ?? DateTime(1970),
+            ),
+          );
 
     return OpenVtsCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Revenue Trend',
-            style: OpenVtsTypography.titleSmall.copyWith(
-              color: cs.onSurface,
-            ),
+            context.mobileText('Revenue Trend'),
+            style: OpenVtsTypography.titleSmall.copyWith(color: cs.onSurface),
           ),
           const SizedBox(height: OpenVtsSpacing.xxs),
           Text(
-            'Daily totals for selected range',
-            style: OpenVtsTypography.meta.copyWith(
-              color: cs.onSurfaceVariant,
-            ),
+            context.mobileText('Daily totals for selected range'),
+            style: OpenVtsTypography.meta.copyWith(color: cs.onSurfaceVariant),
           ),
           const SizedBox(height: OpenVtsSpacing.sm),
           if (points.isEmpty)
-            const OpenVtsEmptyState(
-              title: 'No trend data',
-              message: 'Daily revenue points are not available for this range.',
+            OpenVtsEmptyState(
+              title: context.mobileText('No trend data'),
+              message: context.mobileText(
+                'Daily revenue points are not available for this range.',
+              ),
             )
           else
             SizedBox(
@@ -77,8 +80,9 @@ class _TrendPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final values =
-        points.map((e) => e.totalAmountValue).toList(growable: false);
+    final values = points
+        .map((e) => e.totalAmountValue)
+        .toList(growable: false);
     final maxValue = values.fold<double>(0, (p, c) => math.max(p, c));
     final safeMax = maxValue <= 0 ? 1 : maxValue;
 

@@ -5,6 +5,7 @@ import '../../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../../shared/widgets/open_vts_card.dart';
@@ -21,8 +22,11 @@ class UserDriverAssignVehicleSheet extends ConsumerStatefulWidget {
     super.key,
   });
 
-  final AutoDisposeStateNotifierProvider<UserDriverDetailsController,
-      UserDriverDetailsState> provider;
+  final AutoDisposeStateNotifierProvider<
+    UserDriverDetailsController,
+    UserDriverDetailsState
+  >
+  provider;
   final UserDriver driver;
 
   @override
@@ -51,7 +55,9 @@ class _UserDriverAssignVehicleSheetState
             padding: const EdgeInsets.all(OpenVtsSpacing.md),
             children: [
               OpenVtsSearchField(
-                hintText: 'Search by name, plate, IMEI, or VIN',
+                hintText: context.mobileText(
+                  'Search by name, plate, IMEI, or VIN',
+                ),
                 onChanged: (value) {
                   setState(() => _searchQuery = value.trim());
                 },
@@ -68,17 +74,21 @@ class _UserDriverAssignVehicleSheetState
               ],
               const SizedBox(height: OpenVtsSpacing.sm),
               if (isLoading)
-                const _LoadingCard(label: 'Loading available vehicles')
+                _LoadingCard(
+                  label: context.mobileText('Loading available vehicles'),
+                )
               else if (filteredVehicles.isEmpty)
                 OpenVtsCard(
                   padding: const EdgeInsets.all(OpenVtsSpacing.md),
                   child: OpenVtsEmptyState(
                     title: vehicles.isEmpty
-                        ? 'No unassigned vehicles'
-                        : 'No matching vehicles',
+                        ? context.mobileText('No unassigned vehicles')
+                        : context.mobileText('No matching vehicles'),
                     message: vehicles.isEmpty
-                        ? 'All vehicles are already assigned.'
-                        : 'Try a different search query.',
+                        ? context.mobileText(
+                            'All vehicles are already assigned.',
+                          )
+                        : context.mobileText('Try a different search query.'),
                   ),
                 )
               else
@@ -105,17 +115,18 @@ class _UserDriverAssignVehicleSheetState
               children: [
                 Expanded(
                   child: OpenVtsButton(
-                    label: 'Cancel',
+                    label: context.mobileText('Cancel'),
                     height: 40,
                     variant: OpenVtsButtonVariant.secondary,
-                    onPressed:
-                        isSubmitting ? null : () => Navigator.of(context).pop(),
+                    onPressed: isSubmitting
+                        ? null
+                        : () => Navigator.of(context).pop(),
                   ),
                 ),
                 const SizedBox(width: OpenVtsSpacing.sm),
                 Expanded(
                   child: OpenVtsButton(
-                    label: 'Assign',
+                    label: context.mobileText('Assign'),
                     height: 40,
                     trailingIcon: Icons.check_rounded,
                     isLoading: isSubmitting,
@@ -133,18 +144,25 @@ class _UserDriverAssignVehicleSheetState
   Future<void> _assignVehicle() async {
     final selectedId = _selectedVehicleId?.trim() ?? '';
     if (selectedId.isEmpty) {
-      ToastHelper.showError('Select a vehicle first.', context: context);
+      ToastHelper.showError(
+        context.mobileText('Select a vehicle first.'),
+        context: context,
+      );
       return;
     }
 
-    final ok =
-        await ref.read(widget.provider.notifier).assignVehicle(selectedId);
+    final ok = await ref
+        .read(widget.provider.notifier)
+        .assignVehicle(selectedId);
     if (!mounted) {
       return;
     }
 
     if (ok) {
-      ToastHelper.showSuccess('Vehicle assigned.', context: context);
+      ToastHelper.showSuccess(
+        context.mobileText('Vehicle assigned.'),
+        context: context,
+      );
       Navigator.of(context).pop(true);
       return;
     }
@@ -164,9 +182,11 @@ class _UserDriverAssignVehicleSheetState
       return vehicles;
     }
 
-    return vehicles.where((vehicle) {
-      return vehicle.searchContent.contains(normalizedQuery);
-    }).toList(growable: false);
+    return vehicles
+        .where((vehicle) {
+          return vehicle.searchContent.contains(normalizedQuery);
+        })
+        .toList(growable: false);
   }
 }
 
@@ -193,7 +213,10 @@ class _HeaderRow extends StatelessWidget {
         const SizedBox(width: OpenVtsSpacing.xs),
         Expanded(
           child: Text(
-            '$visibleCount of $totalCount vehicles',
+            context.mobileText("{value1} of {value2} vehicles", {
+              'value1': (visibleCount).toString(),
+              'value2': (totalCount).toString(),
+            }),
             style: OpenVtsTypography.meta.copyWith(
               color: OpenVtsColors.textSecondary,
               fontWeight: FontWeight.w700,
@@ -295,8 +318,8 @@ class _VehicleOptionCard extends StatelessWidget {
               border: Border.all(
                 color: isSelected
                     ? (Theme.of(context).brightness == Brightness.dark
-                        ? Colors.white
-                        : OpenVtsColors.brandInk)
+                          ? Colors.white
+                          : OpenVtsColors.brandInk)
                     : OpenVtsColors.border,
               ),
             ),
@@ -305,8 +328,8 @@ class _VehicleOptionCard extends StatelessWidget {
               size: 14,
               color: isSelected
                   ? (Theme.of(context).brightness == Brightness.dark
-                      ? Colors.white
-                      : OpenVtsColors.brandInk)
+                        ? Colors.white
+                        : OpenVtsColors.brandInk)
                   : OpenVtsColors.textTertiary,
             ),
           ),

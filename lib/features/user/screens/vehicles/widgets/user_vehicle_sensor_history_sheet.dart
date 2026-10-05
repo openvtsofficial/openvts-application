@@ -6,6 +6,7 @@ import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../core/utils/date_time_formatter.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../shared/widgets/open_vts_date_time_range_selector.dart';
 import '../../../controllers/user_vehicle_details_controller.dart';
@@ -21,8 +22,11 @@ class UserVehicleSensorHistorySheet extends ConsumerStatefulWidget {
     super.key,
   });
 
-  final AutoDisposeStateNotifierProvider<UserVehicleDetailsController,
-      UserVehicleDetailsState> provider;
+  final AutoDisposeStateNotifierProvider<
+    UserVehicleDetailsController,
+    UserVehicleDetailsState
+  >
+  provider;
   final UserVehicleSensor sensor;
 
   @override
@@ -63,8 +67,8 @@ class _UserVehicleSensorHistorySheetState
         _HistoryHeader(sensor: widget.sensor),
         const SizedBox(height: OpenVtsSpacing.md),
         OpenVtsDateTimeRangeField(
-          label: 'Range',
-          title: 'Sensor History Range',
+          label: context.mobileText('Range'),
+          title: context.mobileText('Sensor History Range'),
           value: _range,
           dateTimeEnabled: true,
           lastDate: DateTime.now(),
@@ -72,7 +76,9 @@ class _UserVehicleSensorHistorySheetState
         ),
         const SizedBox(height: OpenVtsSpacing.sm),
         OpenVtsButton(
-          label: isLoading ? 'Loading...' : 'Reload History',
+          label: isLoading
+              ? context.mobileText('Loading...')
+              : context.mobileText('Reload History'),
           height: 38,
           variant: OpenVtsButtonVariant.secondary,
           trailingIcon: Icons.refresh_rounded,
@@ -86,13 +92,18 @@ class _UserVehicleSensorHistorySheetState
         if (isLoading && history == null)
           const _LoadingHistory()
         else if (history == null)
-          const _HistoryEmpty(message: 'Select a range to load history.')
+          _HistoryEmpty(
+            message: context.mobileText('Select a range to load history.'),
+          )
         else if (!history.supported)
           _HistoryEmpty(
-              message:
-                  history.reason ?? 'History is not supported for this sensor.')
+            message:
+                history.reason ?? 'History is not supported for this sensor.',
+          )
         else if (history.points.isEmpty)
-          const _HistoryEmpty(message: 'No history points for this range.')
+          _HistoryEmpty(
+            message: context.mobileText('No history points for this range.'),
+          )
         else ...[
           _HistoryStatsGrid(stats: _HistoryStats.fromHistory(history)),
           const SizedBox(height: OpenVtsSpacing.md),
@@ -114,7 +125,9 @@ class _UserVehicleSensorHistorySheetState
     final normalized = _range.normalized(dateTimeEnabled: true);
     if (!normalized.isComplete) return;
 
-    final history = await ref.read(widget.provider.notifier).loadSensorHistory(
+    final history = await ref
+        .read(widget.provider.notifier)
+        .loadSensorHistory(
           sensorId: widget.sensor.id,
           from: normalized.start!.toUtc(),
           to: normalized.end!.toUtc(),
@@ -149,8 +162,11 @@ class _HistoryHeader extends StatelessWidget {
               borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
               border: Border.all(color: _softBorderColor(context)),
             ),
-            child: Icon(Icons.timeline_rounded,
-                size: 18, color: _primaryInkColor(context)),
+            child: Icon(
+              Icons.timeline_rounded,
+              size: 18,
+              color: _primaryInkColor(context),
+            ),
           ),
           const SizedBox(width: OpenVtsSpacing.sm),
           Expanded(
@@ -169,7 +185,7 @@ class _HistoryHeader extends StatelessWidget {
                 const SizedBox(height: 3),
                 Text(
                   sensor.code.trim().isEmpty
-                      ? 'Sensor history'
+                      ? context.mobileText('Sensor history')
                       : sensor.code.trim(),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -198,11 +214,11 @@ class _HistoryStatsGrid extends StatelessWidget {
       spacing: OpenVtsSpacing.xs,
       runSpacing: OpenVtsSpacing.xs,
       children: [
-        _StatTile(label: 'Min', value: stats.min),
-        _StatTile(label: 'Max', value: stats.max),
-        _StatTile(label: 'Avg', value: stats.avg),
-        _StatTile(label: 'First', value: stats.first),
-        _StatTile(label: 'Last', value: stats.last),
+        _StatTile(label: context.mobileText('Min'), value: stats.min),
+        _StatTile(label: context.mobileText('Max'), value: stats.max),
+        _StatTile(label: context.mobileText('Avg'), value: stats.avg),
+        _StatTile(label: context.mobileText('First'), value: stats.first),
+        _StatTile(label: context.mobileText('Last'), value: stats.last),
       ],
     );
   }
@@ -267,7 +283,9 @@ class _HistoryChart extends StatelessWidget {
         .nonNulls
         .toList(growable: false);
     if (values.isEmpty) {
-      return const _HistoryEmpty(message: 'History values are not numeric.');
+      return _HistoryEmpty(
+        message: context.mobileText('History values are not numeric.'),
+      );
     }
 
     return Container(
@@ -282,7 +300,9 @@ class _HistoryChart extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            '${values.length} numeric points',
+            context.mobileText("{value1} numeric points", {
+              'value1': (values.length).toString(),
+            }),
             style: OpenVtsTypography.meta.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
               fontWeight: FontWeight.w700,
@@ -317,7 +337,7 @@ class _HistoryRangeSummary extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Samples',
+            context.mobileText('Samples'),
             style: OpenVtsTypography.meta.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
               fontWeight: FontWeight.w800,
@@ -358,7 +378,7 @@ class _LoadingHistory extends StatelessWidget {
           ),
           const SizedBox(width: OpenVtsSpacing.sm),
           Text(
-            'Loading history',
+            context.mobileText('Loading history'),
             style: OpenVtsTypography.meta.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
               fontWeight: FontWeight.w700,
@@ -412,8 +432,11 @@ class _InlineError extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.error_outline_rounded,
-              size: 16, color: OpenVtsColors.error),
+          const Icon(
+            Icons.error_outline_rounded,
+            size: 16,
+            color: OpenVtsColors.error,
+          ),
           const SizedBox(width: OpenVtsSpacing.xs),
           Expanded(
             child: Text(
@@ -525,20 +548,27 @@ class _HistoryStats {
       return '-';
     }
 
-    final computedMin =
-        values.isEmpty ? null : values.reduce((a, b) => a < b ? a : b);
-    final computedMax =
-        values.isEmpty ? null : values.reduce((a, b) => a > b ? a : b);
-    final computedAvg =
-        values.isEmpty ? null : values.reduce((a, b) => a + b) / values.length;
+    final computedMin = values.isEmpty
+        ? null
+        : values.reduce((a, b) => a < b ? a : b);
+    final computedMax = values.isEmpty
+        ? null
+        : values.reduce((a, b) => a > b ? a : b);
+    final computedAvg = values.isEmpty
+        ? null
+        : values.reduce((a, b) => a + b) / values.length;
 
     return _HistoryStats(
       min: fromStats(const ['min', 'minimum']).replaceIfDash(computedMin),
       max: fromStats(const ['max', 'maximum']).replaceIfDash(computedMax),
-      avg: fromStats(const ['avg', 'average', 'mean'])
-          .replaceIfDash(computedAvg),
-      first:
-          fromStats(const ['first']).replaceIfDash(history.points.first.value),
+      avg: fromStats(const [
+        'avg',
+        'average',
+        'mean',
+      ]).replaceIfDash(computedAvg),
+      first: fromStats(const [
+        'first',
+      ]).replaceIfDash(history.points.first.value),
       last: fromStats(const ['last']).replaceIfDash(history.points.last.value),
     );
   }
@@ -569,8 +599,9 @@ String _sampleText(DateTime? first, DateTime? last, int count) {
   final firstLabel = first == null
       ? 'unknown'
       : _dateFormatter.formatDateTime(first.toLocal());
-  final lastLabel =
-      last == null ? 'unknown' : _dateFormatter.formatDateTime(last.toLocal());
+  final lastLabel = last == null
+      ? 'unknown'
+      : _dateFormatter.formatDateTime(last.toLocal());
   return '$count points from $firstLabel to $lastLabel';
 }
 

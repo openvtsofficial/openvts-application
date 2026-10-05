@@ -7,6 +7,7 @@ import '../../../../core/theme/open_vts_colors.dart';
 import '../../../../core/theme/open_vts_radius.dart';
 import '../../../../core/theme/open_vts_spacing.dart';
 import '../../../../core/theme/open_vts_typography.dart';
+import '../../../../shared/helpers/mobile_text.dart';
 import '../../../../shared/widgets/open_vts_button.dart';
 import '../../../../shared/widgets/open_vts_card.dart';
 import '../../../../shared/widgets/open_vts_empty_state.dart';
@@ -57,7 +58,8 @@ class _SuperadminPaymentsScreenState
   }
 
   Future<void> _openTransactionDetails(
-      SuperadminTransaction transaction) async {
+    SuperadminTransaction transaction,
+  ) async {
     if (!mounted) {
       return;
     }
@@ -98,7 +100,7 @@ class _SuperadminPaymentsScreenState
     final controller = ref.read(superadminPaymentsControllerProvider.notifier);
 
     return OpenVtsPageScaffold(
-      title: 'Payments',
+      title: context.mobileText('Payments'),
       headerMode: OpenVtsPageHeaderMode.closeable,
       padding: EdgeInsets.zero,
       body: RefreshIndicator(
@@ -122,7 +124,8 @@ class _SuperadminPaymentsScreenState
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     _PaymentsHeaderCard(
-                        onRecordPressed: _openRecordPaymentSheet),
+                      onRecordPressed: _openRecordPaymentSheet,
+                    ),
                     const SizedBox(height: OpenVtsSpacing.sm),
                     SuperadminPaymentsFiltersCard(
                       state: state,
@@ -176,10 +179,7 @@ class _SuperadminPaymentsScreenState
     SuperadminPaymentsController controller,
   ) {
     if (state.isLoadingTransactions && !state.hasTransactions) {
-      return const SizedBox(
-        height: 190,
-        child: OpenVtsLoader(),
-      );
+      return const SizedBox(height: 190, child: OpenVtsLoader());
     }
 
     if (!state.hasTransactions && state.errorMessage != null) {
@@ -194,13 +194,17 @@ class _SuperadminPaymentsScreenState
       return OpenVtsCard(
         child: OpenVtsEmptyState(
           title: hasFilters
-              ? 'No transactions match your filters'
-              : 'No transactions found',
+              ? context.mobileText('No transactions match your filters')
+              : context.mobileText('No transactions found'),
           message: hasFilters
               ? state.selectedAdminId != null
-                  ? 'No payments found for this admin. Try clearing filters.'
-                  : 'Try adjusting your filters or date range.'
-              : 'Record a manual payment to get started.',
+                    ? context.mobileText(
+                        'No payments found for this admin. Try clearing filters.',
+                      )
+                    : context.mobileText(
+                        'Try adjusting your filters or date range.',
+                      )
+              : context.mobileText('Record a manual payment to get started.'),
         ),
       );
     }
@@ -220,7 +224,7 @@ class _SuperadminPaymentsScreenState
           Padding(
             padding: const EdgeInsets.only(top: OpenVtsSpacing.sm),
             child: OpenVtsButton(
-              label: 'Load More',
+              label: context.mobileText('Load More'),
               variant: OpenVtsButtonVariant.secondary,
               isLoading: state.isLoadingTransactions,
               onPressed: state.isLoadingTransactions
@@ -246,7 +250,7 @@ class _PaymentsHeaderCard extends StatelessWidget {
       children: [
         Expanded(
           child: Text(
-            'Transactions and revenue',
+            context.mobileText('Transactions and revenue'),
             style: OpenVtsTypography.meta.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
@@ -254,7 +258,7 @@ class _PaymentsHeaderCard extends StatelessWidget {
         ),
         const SizedBox(width: OpenVtsSpacing.xs),
         OpenVtsButton(
-          label: 'Record Payment',
+          label: context.mobileText('Record Payment'),
           trailingIcon: Icons.add_rounded,
           onPressed: onRecordPressed,
         ),
@@ -278,7 +282,7 @@ class _TransactionsHeader extends StatelessWidget {
       children: [
         Expanded(
           child: Text(
-            'Transactions',
+            context.mobileText('Transactions'),
             style: OpenVtsTypography.titleSmall.copyWith(
               color: scheme.onSurface,
             ),
@@ -320,15 +324,11 @@ class _InlineErrorBanner extends StatelessWidget {
       decoration: BoxDecoration(
         color: OpenVtsColors.error.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(OpenVtsRadius.md),
-        border: Border.all(
-          color: OpenVtsColors.error.withValues(alpha: 0.28),
-        ),
+        border: Border.all(color: OpenVtsColors.error.withValues(alpha: 0.28)),
       ),
       child: Text(
         message,
-        style: OpenVtsTypography.body.copyWith(
-          color: OpenVtsColors.error,
-        ),
+        style: OpenVtsTypography.body.copyWith(color: OpenVtsColors.error),
       ),
     );
   }

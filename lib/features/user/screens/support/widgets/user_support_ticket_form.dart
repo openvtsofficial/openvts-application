@@ -11,6 +11,8 @@ import 'package:open_vts/shared/helpers/toast_helper.dart';
 import 'package:open_vts/shared/widgets/open_vts_button.dart';
 import 'package:open_vts/shared/widgets/open_vts_card.dart';
 
+import '../../../../../shared/helpers/mobile_text.dart';
+
 class UserSupportTicketForm extends ConsumerStatefulWidget {
   const UserSupportTicketForm({
     this.showHelperCard = true,
@@ -76,13 +78,17 @@ class _UserSupportTicketFormState extends ConsumerState<UserSupportTicketForm> {
     }
 
     if (detail == null) {
-      final error = ref.read(userSupportControllerProvider).errorMessage ??
+      final error =
+          ref.read(userSupportControllerProvider).errorMessage ??
           'Unable to create ticket right now.';
       ToastHelper.showError(error, context: context);
       return;
     }
 
-    ToastHelper.showSuccess('Ticket created.', context: context);
+    ToastHelper.showSuccess(
+      context.mobileText('Ticket created.'),
+      context: context,
+    );
     Navigator.of(context).pop(detail.id);
   }
 
@@ -157,19 +163,26 @@ class _UserSupportTicketFormState extends ConsumerState<UserSupportTicketForm> {
 
   bool _validateSubject(String value) {
     if (value.trim().isEmpty) {
-      ToastHelper.showError('Subject is required.', context: context);
+      ToastHelper.showError(
+        context.mobileText('Subject is required.'),
+        context: context,
+      );
       return false;
     }
     if (value.length > userSupportMaxTitleLength) {
       ToastHelper.showError(
-        'Subject must be $userSupportMaxTitleLength characters or less.',
+        context.mobileText("Subject must be {value1} characters or less.", {
+          'value1': (userSupportMaxTitleLength).toString(),
+        }),
         context: context,
       );
       return false;
     }
     if (!userSupportContainsLetterOrNumber(value)) {
       ToastHelper.showError(
-        'Subject must contain at least one letter or number.',
+        context.mobileText(
+          'Subject must contain at least one letter or number.',
+        ),
         context: context,
       );
       return false;
@@ -179,19 +192,26 @@ class _UserSupportTicketFormState extends ConsumerState<UserSupportTicketForm> {
 
   bool _validateMessage(String value) {
     if (value.trim().isEmpty) {
-      ToastHelper.showError('Description is required.', context: context);
+      ToastHelper.showError(
+        context.mobileText('Description is required.'),
+        context: context,
+      );
       return false;
     }
     if (value.length > userSupportMaxMessageLength) {
       ToastHelper.showError(
-        'Description must be $userSupportMaxMessageLength characters or less.',
+        context.mobileText("Description must be {value1} characters or less.", {
+          'value1': (userSupportMaxMessageLength).toString(),
+        }),
         context: context,
       );
       return false;
     }
     if (!userSupportContainsLetterOrNumber(value)) {
       ToastHelper.showError(
-        'Description must contain at least one letter or number.',
+        context.mobileText(
+          'Description must contain at least one letter or number.',
+        ),
         context: context,
       );
       return false;
@@ -212,7 +232,7 @@ class _CreateTicketHelperCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'New support ticket',
+            context.mobileText('New support ticket'),
             style: OpenVtsTypography.titleSmall.copyWith(
               color: colorScheme.onSurface,
               fontWeight: FontWeight.w800,
@@ -221,7 +241,9 @@ class _CreateTicketHelperCard extends StatelessWidget {
           ),
           const SizedBox(height: OpenVtsSpacing.xxs),
           Text(
-            'Briefly describe the issue and attach files if needed.',
+            context.mobileText(
+              'Briefly describe the issue and attach files if needed.',
+            ),
             style: OpenVtsTypography.meta.copyWith(
               color: colorScheme.onSurfaceVariant,
             ),
@@ -273,36 +295,36 @@ class _TicketFields extends StatelessWidget {
             final stackFields = constraints.maxWidth < 460;
             final categoryField =
                 DropdownButtonFormField<UserSupportTicketCategory>(
-              initialValue: category,
-              isDense: true,
-              isExpanded: true,
-              decoration: _fieldDecoration('Category'),
-              items: UserSupportTicketCategory.values
-                  .map(
-                    (value) => DropdownMenuItem(
-                      value: value,
-                      child: Text(value.label),
-                    ),
-                  )
-                  .toList(growable: false),
-              onChanged: isCreating ? null : onCategoryChanged,
-            );
+                  initialValue: category,
+                  isDense: true,
+                  isExpanded: true,
+                  decoration: _fieldDecoration('Category'),
+                  items: UserSupportTicketCategory.values
+                      .map(
+                        (value) => DropdownMenuItem(
+                          value: value,
+                          child: Text(value.label),
+                        ),
+                      )
+                      .toList(growable: false),
+                  onChanged: isCreating ? null : onCategoryChanged,
+                );
             final priorityField =
                 DropdownButtonFormField<UserSupportTicketPriority>(
-              initialValue: priority,
-              isDense: true,
-              isExpanded: true,
-              decoration: _fieldDecoration('Priority'),
-              items: UserSupportTicketPriority.values
-                  .map(
-                    (value) => DropdownMenuItem(
-                      value: value,
-                      child: Text(value.label),
-                    ),
-                  )
-                  .toList(growable: false),
-              onChanged: isCreating ? null : onPriorityChanged,
-            );
+                  initialValue: priority,
+                  isDense: true,
+                  isExpanded: true,
+                  decoration: _fieldDecoration('Priority'),
+                  items: UserSupportTicketPriority.values
+                      .map(
+                        (value) => DropdownMenuItem(
+                          value: value,
+                          child: Text(value.label),
+                        ),
+                      )
+                      .toList(growable: false),
+                  onChanged: isCreating ? null : onPriorityChanged,
+                );
 
             if (stackFields) {
               return Column(
@@ -375,8 +397,9 @@ class _TicketFormActionBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final backgroundColor =
-        isDark ? colorScheme.surface : const Color(0xFFF5F5F5);
+    final backgroundColor = isDark
+        ? colorScheme.surface
+        : const Color(0xFFF5F5F5);
     final borderColor = isDark ? colorScheme.outline : const Color(0xFFE0E0E0);
 
     return SafeArea(
@@ -411,7 +434,7 @@ class _TicketFormActionBar extends StatelessWidget {
                     ),
                   ),
                   child: IconButton.filledTonal(
-                    tooltip: 'Attach files',
+                    tooltip: context.mobileText('Attach files'),
                     onPressed: onAttach,
                     icon: const Icon(Icons.attach_file_rounded, size: 18),
                   ),

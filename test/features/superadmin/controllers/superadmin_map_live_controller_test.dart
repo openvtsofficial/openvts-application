@@ -13,7 +13,8 @@ import 'package:open_vts/shared/models/vehicle_summary.dart';
 
 void main() {
   group('SuperadminMapLiveController', () {
-    test('loads REST baseline and skips telemetry snapshot subscription', () async {
+    testWidgets('loads REST baseline and skips telemetry snapshot subscription',
+        (tester) async {
       final telemetryConnection = _FakeSocketConnection();
       final notificationsConnection = _FakeSocketConnection();
       final vehicleService = _FakeVehicleService(
@@ -43,10 +44,10 @@ void main() {
       addTearDown(controller.dispose);
 
       controller.initialize();
-      await _flushAsync();
+      await _flushAsync(tester);
       telemetryConnection.triggerConnect();
       notificationsConnection.triggerConnect();
-      await _flushAsync();
+      await _flushAsync(tester);
 
       expect(vehicleService.getMapTelemetryCalls, 1);
       expect(
@@ -58,7 +59,9 @@ void main() {
         contains('notif:subscribe'),
       );
       expect(
-        notificationsConnection.emittedEvents.firstWhere((event) => event.name == 'notif:subscribe').data,
+        notificationsConnection.emittedEvents
+            .firstWhere((event) => event.name == 'notif:subscribe')
+            .data,
         const <String, dynamic>{'scope': 'superadmin'},
       );
       expect(controller.state.alerts, hasLength(1));
@@ -67,7 +70,8 @@ void main() {
       expect(controller.state.telemetry.stopCount, 1);
     });
 
-    test('inserts notif:new alerts immediately newest first', () async {
+    testWidgets('inserts notif:new alerts immediately newest first',
+        (tester) async {
       final notificationsConnection = _FakeSocketConnection();
       final controller = SuperadminMapLiveController(
         _FakeVehicleService(fallbackTelemetry: _buildTelemetry(const [])),
@@ -88,7 +92,7 @@ void main() {
       addTearDown(controller.dispose);
 
       controller.initialize();
-      await _flushAsync();
+      await _flushAsync(tester);
       notificationsConnection.triggerConnect();
       notificationsConnection.triggerEvent('notif:new', <String, dynamic>{
         'id': 2,
@@ -98,7 +102,7 @@ void main() {
         'vehicleName': 'TRK-204',
         'createdAt': '2026-05-16T10:05:00.000Z',
       });
-      await _flushAsync();
+      await _flushAsync(tester);
 
       expect(controller.state.alerts.map((alert) => alert.title), [
         'Live alert',
@@ -107,7 +111,8 @@ void main() {
       expect(controller.state.alerts.first.contextLabel, 'TRK-204');
     });
 
-    test('deduplicates REST and socket alerts by parsed event identity', () async {
+    testWidgets('deduplicates REST and socket alerts by parsed event identity',
+        (tester) async {
       final notificationsConnection = _FakeSocketConnection();
       final controller = SuperadminMapLiveController(
         _FakeVehicleService(fallbackTelemetry: _buildTelemetry(const [])),
@@ -130,7 +135,7 @@ void main() {
       addTearDown(controller.dispose);
 
       controller.initialize();
-      await _flushAsync();
+      await _flushAsync(tester);
       notificationsConnection.triggerConnect();
       notificationsConnection.triggerEvent('notif:new', <String, dynamic>{
         'id': 12345,
@@ -144,14 +149,15 @@ void main() {
         'title': 'Notification',
         'message': 'OpenVTS sent a new update.',
       });
-      await _flushAsync();
+      await _flushAsync(tester);
 
       expect(controller.state.alerts, hasLength(1));
       expect(controller.state.alerts.single.id, 9001);
       expect(controller.state.alerts.single.eventId, 77);
     });
 
-    test('caps live alerts at 300 and keeps them newest first', () async {
+    testWidgets('caps live alerts at 300 and keeps them newest first',
+        (tester) async {
       final notificationsConnection = _FakeSocketConnection();
       final controller = SuperadminMapLiveController(
         _FakeVehicleService(fallbackTelemetry: _buildTelemetry(const [])),
@@ -164,7 +170,7 @@ void main() {
       addTearDown(controller.dispose);
 
       controller.initialize();
-      await _flushAsync();
+      await _flushAsync(tester);
       notificationsConnection.triggerConnect();
       for (var index = 0; index < 305; index += 1) {
         notificationsConnection.triggerEvent('notif:new', <String, dynamic>{
@@ -175,14 +181,15 @@ void main() {
           'createdAt': DateTime.utc(2026, 5, 16, 10, index).toIso8601String(),
         });
       }
-      await _flushAsync();
+      await _flushAsync(tester);
 
       expect(controller.state.alerts, hasLength(300));
       expect(controller.state.alerts.first.title, 'Alert 305');
       expect(controller.state.alerts.last.title, 'Alert 6');
     });
 
-    test('applies telemetry updates to existing vehicles by IMEI', () async {
+    testWidgets('applies telemetry updates to existing vehicles by IMEI',
+        (tester) async {
       final telemetryConnection = _FakeSocketConnection();
       final controller = SuperadminMapLiveController(
         _FakeVehicleService(
@@ -199,7 +206,7 @@ void main() {
       addTearDown(controller.dispose);
 
       controller.initialize();
-      await _flushAsync();
+      await _flushAsync(tester);
       telemetryConnection.triggerConnect();
       telemetryConnection.triggerEvent(
         'telemetry:update',
@@ -228,7 +235,7 @@ void main() {
           longitude: 21,
         ),
       );
-      await _flushLiveBatch();
+      await _flushLiveBatch(tester);
 
       expect(controller.state.telemetry.allCount, 1);
       expect(controller.state.telemetry.runningCount, 1);
@@ -249,7 +256,8 @@ void main() {
       expect(controller.state.telemetry.vehicles.single.satellites, 9);
     });
 
-    test('batches rapid telemetry updates into one state publish', () async {
+    testWidgets('batches rapid telemetry updates into one state publish',
+        (tester) async {
       final telemetryConnection = _FakeSocketConnection();
       final controller = SuperadminMapLiveController(
         _FakeVehicleService(
@@ -267,9 +275,9 @@ void main() {
       addTearDown(controller.dispose);
 
       controller.initialize();
-      await _flushAsync();
+      await _flushAsync(tester);
       telemetryConnection.triggerConnect();
-      await _flushAsync();
+      await _flushAsync(tester);
 
       var statePublishes = 0;
       final removeListener = controller.addListener(
@@ -301,23 +309,29 @@ void main() {
         ),
       );
 
-      await _flushAsync();
+      await _flushAsync(tester);
       expect(statePublishes, 0);
-
-      await _flushLiveBatch();
+      await tester.pump(const Duration(milliseconds: 119));
+      expect(statePublishes, 0);
+      await tester.pump(const Duration(milliseconds: 1));
 
       expect(statePublishes, 1);
       expect(
-        controller.state.telemetry.vehicles.firstWhere((vehicle) => vehicle.imei == 'imei-1').speed,
+        controller.state.telemetry.vehicles
+            .firstWhere((vehicle) => vehicle.imei == 'imei-1')
+            .speed,
         24,
       );
       expect(
-        controller.state.telemetry.vehicles.firstWhere((vehicle) => vehicle.imei == 'imei-2').speed,
+        controller.state.telemetry.vehicles
+            .firstWhere((vehicle) => vehicle.imei == 'imei-2')
+            .speed,
         18,
       );
     });
 
-    test('ignores GPS jitter drift and impossible coordinate jumps', () async {
+    testWidgets('ignores GPS jitter drift and impossible coordinate jumps',
+        (tester) async {
       final telemetryConnection = _FakeSocketConnection();
       final baselineTime = DateTime.utc(2026, 5, 16, 10);
       final controller = SuperadminMapLiveController(
@@ -343,7 +357,7 @@ void main() {
       addTearDown(controller.dispose);
 
       controller.initialize();
-      await _flushAsync();
+      await _flushAsync(tester);
       telemetryConnection.triggerConnect();
 
       telemetryConnection.triggerEvent(
@@ -357,7 +371,7 @@ void main() {
           updatedAt: baselineTime.add(const Duration(seconds: 10)),
         ),
       );
-      await _flushLiveBatch();
+      await _flushLiveBatch(tester);
 
       expect(controller.state.telemetry.vehicles.single.speed, 1);
       expect(controller.state.telemetry.vehicles.single.latitude, 10);
@@ -374,14 +388,16 @@ void main() {
           updatedAt: baselineTime.add(const Duration(seconds: 20)),
         ),
       );
-      await _flushLiveBatch();
+      await _flushLiveBatch(tester);
 
       expect(controller.state.telemetry.vehicles.single.speed, 80);
       expect(controller.state.telemetry.vehicles.single.latitude, 10);
       expect(controller.state.telemetry.vehicles.single.longitude, 20);
     });
 
-    test('patches existing vehicles from snapshots without creating baseline', () async {
+    testWidgets(
+        'patches existing vehicles from snapshots without creating baseline',
+        (tester) async {
       final telemetryConnection = _FakeSocketConnection();
       final controller = SuperadminMapLiveController(
         _FakeVehicleService(
@@ -399,7 +415,7 @@ void main() {
       addTearDown(controller.dispose);
 
       controller.initialize();
-      await _flushAsync();
+      await _flushAsync(tester);
       telemetryConnection.triggerConnect();
       telemetryConnection.triggerEvent('telemetry:snapshot', <String, dynamic>{
         'vehicles': <Map<String, dynamic>>[
@@ -419,21 +435,26 @@ void main() {
           ),
         ],
       });
-      await _flushLiveBatch();
+      await _flushLiveBatch(tester);
 
       expect(controller.state.telemetry.allCount, 2);
       expect(controller.state.telemetry.vehicles, hasLength(2));
       expect(
-        controller.state.telemetry.vehicles.firstWhere((vehicle) => vehicle.imei == 'imei-2').speed,
+        controller.state.telemetry.vehicles
+            .firstWhere((vehicle) => vehicle.imei == 'imei-2')
+            .speed,
         35,
       );
       expect(
-        controller.state.telemetry.vehicles.any((vehicle) => vehicle.imei == 'socket-only-imei'),
+        controller.state.telemetry.vehicles
+            .any((vehicle) => vehicle.imei == 'socket-only-imei'),
         isFalse,
       );
     });
 
-    test('never expands a 10 vehicle REST baseline from socket-only updates', () async {
+    testWidgets(
+        'never expands a 10 vehicle REST baseline from socket-only updates',
+        (tester) async {
       final telemetryConnection = _FakeSocketConnection();
       final baselineVehicles = List<VehicleSummary>.generate(
         10,
@@ -445,7 +466,8 @@ void main() {
         ),
       );
       final controller = SuperadminMapLiveController(
-        _FakeVehicleService(fallbackTelemetry: _buildTelemetry(baselineVehicles)),
+        _FakeVehicleService(
+            fallbackTelemetry: _buildTelemetry(baselineVehicles)),
         _FakeMapEventsService(notifications: const <AppNotification>[]),
         _FakeSocketService(
           telemetryConnection: telemetryConnection,
@@ -455,7 +477,7 @@ void main() {
       addTearDown(controller.dispose);
 
       controller.initialize();
-      await _flushAsync();
+      await _flushAsync(tester);
       telemetryConnection.triggerConnect();
       for (var index = 0; index < 6; index += 1) {
         telemetryConnection.triggerEvent(
@@ -469,13 +491,14 @@ void main() {
           ),
         );
       }
-      await _flushLiveBatch();
+      await _flushLiveBatch(tester);
 
       expect(controller.state.telemetry.allCount, 10);
       expect(controller.state.telemetry.vehicles, hasLength(10));
     });
 
-    test('updates known vehicles from device status events only', () async {
+    testWidgets('updates known vehicles from device status events only',
+        (tester) async {
       final telemetryConnection = _FakeSocketConnection();
       final controller = SuperadminMapLiveController(
         _FakeVehicleService(
@@ -498,7 +521,7 @@ void main() {
       addTearDown(controller.dispose);
 
       controller.initialize();
-      await _flushAsync();
+      await _flushAsync(tester);
       telemetryConnection.triggerConnect();
       telemetryConnection.triggerEvent('devicestatus:update', <String, dynamic>{
         'imei': 'imei-1',
@@ -509,7 +532,7 @@ void main() {
         'imei': 'unknown-imei',
         'status': 'CONNECTED',
       });
-      await _flushLiveBatch();
+      await _flushLiveBatch(tester);
 
       expect(controller.state.telemetry.vehicles, hasLength(1));
       expect(controller.state.telemetry.vehicles.single.status, 'idle');
@@ -519,7 +542,8 @@ void main() {
       );
     });
 
-    test('loads telemetry seed once and disconnects sockets on dispose', () async {
+    testWidgets('loads telemetry seed once and disconnects sockets on dispose',
+        (tester) async {
       final telemetryConnection = _FakeSocketConnection();
       final notificationsConnection = _FakeSocketConnection();
       final vehicleService = _FakeVehicleService(
@@ -538,11 +562,11 @@ void main() {
       );
 
       controller.initialize();
-      await _flushAsync();
+      await _flushAsync(tester);
       telemetryConnection.triggerError('socket failed');
-      await _flushAsync();
+      await _flushAsync(tester);
       telemetryConnection.triggerError('socket failed again');
-      await _flushAsync();
+      await _flushAsync(tester);
 
       expect(vehicleService.getMapTelemetryCalls, 1);
       expect(controller.state.telemetry.allCount, 2);
@@ -556,19 +580,22 @@ void main() {
   });
 }
 
-Future<void> _flushAsync() async {
-  await Future<void>.delayed(Duration.zero);
-  await Future<void>.delayed(Duration.zero);
+Future<void> _flushAsync(WidgetTester tester) async {
+  await tester.pump();
+  await tester.pump();
 }
 
-Future<void> _flushLiveBatch() async {
-  await _flushAsync();
-  await Future<void>.delayed(const Duration(milliseconds: 100));
-  await _flushAsync();
+Future<void> _flushLiveBatch(WidgetTester tester) async {
+  await _flushAsync(tester);
+  // Both map controllers intentionally publish a batch at 120 ms. Advance the
+  // fake clock to that boundary; real 100 ms sleeps asserted before publication.
+  await tester.pump(const Duration(milliseconds: 120));
+  await _flushAsync(tester);
 }
 
 class _FakeVehicleService extends SuperadminVehicleService {
-  _FakeVehicleService({required this.fallbackTelemetry}) : super(ApiClient(Dio()));
+  _FakeVehicleService({required this.fallbackTelemetry})
+      : super(ApiClient(Dio()));
 
   final SuperadminMapTelemetry fallbackTelemetry;
   int getMapTelemetryCalls = 0;
@@ -581,7 +608,10 @@ class _FakeVehicleService extends SuperadminVehicleService {
 
   @override
   SuperadminMapTelemetry parseMapTelemetryPayload(dynamic json) {
-    final vehicles = _extractVehicleMaps(json).map(_vehicleFromMap).whereType<VehicleSummary>().toList(growable: false);
+    final vehicles = _extractVehicleMaps(json)
+        .map(_vehicleFromMap)
+        .whereType<VehicleSummary>()
+        .toList(growable: false);
     return buildTelemetryFromVehicles(vehicles);
   }
 
@@ -664,7 +694,8 @@ class _FakeMapEventsService extends SuperadminMapEventsService {
     return NotificationPage(
       items: _notifications.take(limit).toList(growable: false),
       hasMore: _notifications.length > limit,
-      nextBeforeId: _notifications.length > limit ? _notifications[limit - 1].id : null,
+      nextBeforeId:
+          _notifications.length > limit ? _notifications[limit - 1].id : null,
       unreadCount: _notifications.where((item) => !item.isRead).length,
     );
   }
@@ -686,7 +717,8 @@ class _FakeSocketService extends SocketService {
   final Map<String, _FakeSocketConnection> _connections;
 
   @override
-  Future<SocketConnection> connect(String namespace, {bool authenticated = true}) async {
+  Future<SocketConnection> connect(String namespace,
+      {bool authenticated = true}) async {
     final connection = _connections[namespace];
     if (connection == null) {
       throw StateError('No fake socket registered for $namespace');
@@ -697,7 +729,8 @@ class _FakeSocketService extends SocketService {
 }
 
 class _FakeSocketConnection implements SocketConnection {
-  final Map<String, List<SocketEventHandler>> _eventHandlers = <String, List<SocketEventHandler>>{};
+  final Map<String, List<SocketEventHandler>> _eventHandlers =
+      <String, List<SocketEventHandler>>{};
   final List<void Function()> _connectHandlers = <void Function()>[];
   final List<SocketEventHandler> _disconnectHandlers = <SocketEventHandler>[];
   final List<SocketEventHandler> _errorHandlers = <SocketEventHandler>[];
@@ -716,7 +749,9 @@ class _FakeSocketConnection implements SocketConnection {
 
   @override
   void on(String event, SocketEventHandler handler) {
-    _eventHandlers.putIfAbsent(event, () => <SocketEventHandler>[]).add(handler);
+    _eventHandlers
+        .putIfAbsent(event, () => <SocketEventHandler>[])
+        .add(handler);
   }
 
   @override
@@ -795,7 +830,9 @@ SuperadminMapTelemetry _buildTelemetry(List<VehicleSummary> vehicles) {
   final runningCount = vehicles
       .where((vehicle) => !_isInactiveVehicle(vehicle))
       .where(
-        (vehicle) => vehicle.speed > 0 || vehicle.status.toLowerCase().contains('running'),
+        (vehicle) =>
+            vehicle.speed > 0 ||
+            vehicle.status.toLowerCase().contains('running'),
       )
       .length;
   return SuperadminMapTelemetry(
@@ -930,20 +967,28 @@ VehicleSummary? _vehicleFromMap(Map<String, dynamic>? map) {
     name: map['name']?.toString() ?? map['plateNumber']?.toString() ?? '',
     plateNumber: map['plateNumber']?.toString() ?? '',
     status: map['status']?.toString() ?? 'stop',
-    speed: (map['speed'] as num?)?.toDouble() ?? (map['speedKph'] as num?)?.toDouble() ?? 0,
+    speed: (map['speed'] as num?)?.toDouble() ??
+        (map['speedKph'] as num?)?.toDouble() ??
+        0,
     latitude: (map['latitude'] as num?)?.toDouble() ?? 0,
     longitude: (map['longitude'] as num?)?.toDouble() ?? 0,
-    hasValidLocation: map.containsKey('latitude') && map.containsKey('longitude'),
-    distanceKm: (map['distanceToday'] as num?)?.toDouble() ?? (map['distanceKm'] as num?)?.toDouble() ?? (map['distance'] as num?)?.toDouble(),
-    odometerKm: (map['odometer'] as num?)?.toDouble() ?? (map['odometerKm'] as num?)?.toDouble(),
+    hasValidLocation:
+        map.containsKey('latitude') && map.containsKey('longitude'),
+    distanceKm: (map['distanceToday'] as num?)?.toDouble() ??
+        (map['distanceKm'] as num?)?.toDouble() ??
+        (map['distance'] as num?)?.toDouble(),
+    odometerKm: (map['odometer'] as num?)?.toDouble() ??
+        (map['odometerKm'] as num?)?.toDouble(),
     engineHoursToday: (map['engineHoursToday'] as num?)?.toDouble(),
     engineHours: (map['engineHours'] as num?)?.toDouble(),
-    totalEngineHours: (map['totalengineHours'] as num?)?.toDouble() ?? (map['totalEngineHours'] as num?)?.toDouble(),
+    totalEngineHours: (map['totalengineHours'] as num?)?.toDouble() ??
+        (map['totalEngineHours'] as num?)?.toDouble(),
     satellites: (map['satellites'] as num?)?.round(),
     headingDegrees: (map['course'] as num?)?.toDouble(),
     ignition: map['ignition'] as bool?,
     acc: map['acc'] as bool?,
-    deviceConnectionStatus: map['deviceConnectionStatus']?.toString() ?? map['connectionStatus']?.toString(),
+    deviceConnectionStatus: map['deviceConnectionStatus']?.toString() ??
+        map['connectionStatus']?.toString(),
     updatedAt: _parseDateTime(map['updatedAt']),
   );
 }

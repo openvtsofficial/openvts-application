@@ -5,6 +5,7 @@ import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../core/utils/date_time_formatter.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../../../shared/widgets/open_vts_status_chip.dart';
 
@@ -61,7 +62,7 @@ class UserNotificationSettingsHeader extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Notification Preferences',
+                      context.mobileText('Notification Preferences'),
                       style: OpenVtsTypography.label.copyWith(
                         color: isDark
                             ? OpenVtsColors.white
@@ -71,7 +72,9 @@ class UserNotificationSettingsHeader extends StatelessWidget {
                     ),
                     const SizedBox(height: OpenVtsSpacing.xxs),
                     Text(
-                      'Choose how vehicle alerts, overspeed events, and geofence events reach you.',
+                      context.mobileText(
+                        'Choose how vehicle alerts, overspeed events, and geofence events reach you.',
+                      ),
                       style: OpenVtsTypography.meta.copyWith(
                         color: isDark
                             ? OpenVtsColors.white.withValues(alpha: 0.7)
@@ -83,7 +86,9 @@ class UserNotificationSettingsHeader extends StatelessWidget {
               ),
               const SizedBox(width: OpenVtsSpacing.xs),
               OpenVtsStatusChip(
-                label: isDirty ? 'Unsaved changes' : 'Saved',
+                label: isDirty
+                    ? context.mobileText('Unsaved changes')
+                    : context.mobileText('Saved'),
                 type: isDirty
                     ? OpenVtsStatusType.warning
                     : OpenVtsStatusType.neutral,
@@ -97,18 +102,26 @@ class UserNotificationSettingsHeader extends StatelessWidget {
             children: [
               _MetricChip(
                 icon: Icons.directions_car_outlined,
-                label: '$vehicleCount vehicles',
+                label: context.mobileText("{value1} vehicles", {
+                  'value1': (vehicleCount).toString(),
+                }),
               ),
               _MetricChip(
                 icon: Icons.location_on_outlined,
-                label: '$geofenceCount geofences',
+                label: context.mobileText("{value1} geofences", {
+                  'value1': (geofenceCount).toString(),
+                }),
               ),
             ],
           ),
           if (lastSavedAt != null) ...[
             const SizedBox(height: OpenVtsSpacing.xs),
             Text(
-              'Last saved ${_headerDateFormatter.formatDateTime(lastSavedAt!.toLocal())}',
+              context.mobileText("Last saved {value1}", {
+                'value1': (_headerDateFormatter.formatDateTime(
+                  lastSavedAt!.toLocal(),
+                )).toString(),
+              }),
               style: OpenVtsTypography.meta.copyWith(
                 color: isDark
                     ? OpenVtsColors.white.withValues(alpha: 0.5)
@@ -123,10 +136,7 @@ class UserNotificationSettingsHeader extends StatelessWidget {
 }
 
 class _MetricChip extends StatelessWidget {
-  const _MetricChip({
-    required this.icon,
-    required this.label,
-  });
+  const _MetricChip({required this.icon, required this.label});
 
   final IconData icon;
   final String label;

@@ -5,6 +5,7 @@ import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../shared/widgets/open_vts_empty_state.dart';
@@ -14,11 +15,11 @@ import '../../../../../shared/widgets/open_vts_page_scaffold.dart';
 import '../../../controllers/user_providers.dart';
 import '../../../models/user_landmark_model.dart';
 import '../../../models/user_landmark_state.dart';
+import '../../operations/user_operation_route_builder_screen.dart';
 import '../widgets/user_landmark_export_sheet.dart';
 import '../widgets/user_landmark_import_sheet.dart';
 import 'widgets/user_route_card.dart';
 import 'widgets/user_route_filter_bar.dart';
-import 'widgets/user_route_form_sheet.dart';
 import 'widgets/user_route_preview_map.dart';
 
 /// Landing screen for the Routes module inside Landmark Studio.
@@ -38,7 +39,7 @@ class UserRoutesScreen extends ConsumerWidget {
     final controller = ref.read(userRoutesControllerProvider.notifier);
 
     return OpenVtsPageScaffold(
-      title: 'Route',
+      title: context.mobileText('Route'),
       headerMode: OpenVtsPageHeaderMode.closeable,
       padding: const EdgeInsets.fromLTRB(
         OpenVtsSpacing.sm,
@@ -55,8 +56,9 @@ class UserRoutesScreen extends ConsumerWidget {
               _HeaderRow(
                 isRefreshing: state.isRefreshing,
                 onCreate: () => _openCreate(context),
-                onRefresh:
-                    state.isRefreshing ? null : () => controller.refresh(),
+                onRefresh: state.isRefreshing
+                    ? null
+                    : () => controller.refresh(),
                 onExport: () => UserLandmarkExportSheet.show(
                   context: context,
                   entityType: UserLandmarkEntityType.route,
@@ -97,11 +99,19 @@ class UserRoutesScreen extends ConsumerWidget {
   }
 
   Future<void> _openCreate(BuildContext context) async {
-    await UserRouteFormSheet.show(context: context);
+    await Navigator.of(context).push<UserRouteLandmark>(
+      MaterialPageRoute(
+        builder: (_) => const UserOperationRouteBuilderScreen(),
+      ),
+    );
   }
 
   Future<void> _openEdit(BuildContext context, UserRouteLandmark route) async {
-    await UserRouteFormSheet.show(context: context, route: route);
+    await Navigator.of(context).push<UserRouteLandmark>(
+      MaterialPageRoute(
+        builder: (_) => UserOperationRouteBuilderScreen(initialRoute: route),
+      ),
+    );
   }
 
   Future<void> _confirmAndDelete(
@@ -128,7 +138,7 @@ class UserRoutesScreen extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  'Delete route?',
+                  context.mobileText('Delete route?'),
                   style: OpenVtsTypography.titleSmall.copyWith(
                     color: OpenVtsColors.textPrimary,
                     fontWeight: FontWeight.w700,
@@ -136,7 +146,10 @@ class UserRoutesScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '"${route.name}" will be permanently removed.',
+                  context.mobileText(
+                    "\"{value1}\" will be permanently removed.",
+                    {'value1': (route.name).toString()},
+                  ),
                   style: OpenVtsTypography.meta.copyWith(
                     color: OpenVtsColors.textSecondary,
                   ),
@@ -146,7 +159,7 @@ class UserRoutesScreen extends ConsumerWidget {
                   children: [
                     Expanded(
                       child: OpenVtsButton(
-                        label: 'Cancel',
+                        label: context.mobileText('Cancel'),
                         onPressed: () => Navigator.of(ctx).pop(false),
                         variant: OpenVtsButtonVariant.secondary,
                       ),
@@ -154,7 +167,7 @@ class UserRoutesScreen extends ConsumerWidget {
                     const SizedBox(width: OpenVtsSpacing.sm),
                     Expanded(
                       child: OpenVtsButton(
-                        label: 'Delete',
+                        label: context.mobileText('Delete'),
                         onPressed: () => Navigator.of(ctx).pop(true),
                       ),
                     ),
@@ -208,7 +221,9 @@ class _HeaderRow extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Create and manage operational route corridors.',
+                context.mobileText(
+                  'Create and manage operational route corridors.',
+                ),
                 style: TextStyle(
                   fontSize: 12,
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -220,26 +235,26 @@ class _HeaderRow extends StatelessWidget {
         ),
         _HeaderIconButton(
           icon: Icons.refresh,
-          tooltip: 'Refresh',
+          tooltip: context.mobileText('Refresh'),
           onTap: onRefresh,
           showSpinner: isRefreshing,
         ),
         const SizedBox(width: 6),
         _HeaderIconButton(
           icon: Icons.file_upload_outlined,
-          tooltip: 'Import CSV',
+          tooltip: context.mobileText('Import CSV'),
           onTap: onImport,
         ),
         const SizedBox(width: 6),
         _HeaderIconButton(
           icon: Icons.file_download_outlined,
-          tooltip: 'Export KML',
+          tooltip: context.mobileText('Export KML'),
           onTap: onExport,
         ),
         const SizedBox(width: 6),
         _HeaderIconButton(
           icon: Icons.add,
-          tooltip: 'New route',
+          tooltip: context.mobileText('New route'),
           onTap: onCreate,
           primary: true,
         ),
@@ -288,9 +303,7 @@ class _HeaderIconButton extends StatelessWidget {
               ? const SizedBox(
                   width: 14,
                   height: 14,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                  ),
+                  child: CircularProgressIndicator(strokeWidth: 2),
                 )
               : Icon(icon, size: 16, color: fg),
         ),
@@ -418,16 +431,22 @@ class _ListBody extends StatelessWidget {
     }
     if (!state.hasRoutes) {
       return _EmptyState(
-        title: 'No routes yet',
-        message: 'Draw your first route corridor to start tracking.',
+        title: context.mobileText('No routes yet'),
+        message: context.mobileText(
+          'Draw your first route corridor to start tracking.',
+        ),
         actionLabel: 'Create route',
-        onAction: () => UserRouteFormSheet.show(context: context),
+        onAction: () => Navigator.of(context).push<UserRouteLandmark>(
+          MaterialPageRoute(
+            builder: (_) => const UserOperationRouteBuilderScreen(),
+          ),
+        ),
       );
     }
     if (filtered.isEmpty) {
       return _EmptyState(
-        title: 'No matching routes',
-        message: 'Try adjusting your filters.',
+        title: context.mobileText('No matching routes'),
+        message: context.mobileText('Try adjusting your filters.'),
         actionLabel: 'Clear filters',
         onAction: () => controller.clearFilters(),
         secondary: true,

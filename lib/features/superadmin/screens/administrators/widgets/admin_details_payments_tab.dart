@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
@@ -53,10 +54,7 @@ class _AdminDetailsPaymentsTabState
     if (state.isLoadingPayments &&
         state.transactions.isEmpty &&
         state.transactionAnalytics == null) {
-      return const SizedBox(
-        height: 200,
-        child: Center(child: OpenVtsLoader()),
-      );
+      return const SizedBox(height: 200, child: Center(child: OpenVtsLoader()));
     }
 
     if (state.sectionErrorMessage != null &&
@@ -100,7 +98,7 @@ class _AdminDetailsPaymentsTabState
             ),
           ),
         if (state.transactions.isEmpty)
-          const _EmptyState(message: 'No transactions yet.')
+          _EmptyState(message: context.mobileText('No transactions yet.'))
         else
           ListView.separated(
             shrinkWrap: true,
@@ -119,7 +117,7 @@ class _AdminDetailsPaymentsTabState
         if (state.paymentsHasMore) ...[
           const SizedBox(height: OpenVtsSpacing.sm),
           OpenVtsButton(
-            label: 'Load More',
+            label: context.mobileText('Load More'),
             variant: OpenVtsButtonVariant.secondary,
             isLoading: state.isLoadingMorePayments,
             onPressed: state.isLoadingMorePayments
@@ -148,7 +146,7 @@ class _AdminDetailsPaymentsTabState
     final numericAdminId = int.tryParse(widget.adminId);
     if (numericAdminId == null || numericAdminId <= 0) {
       ToastHelper.showError(
-        'Invalid administrator id.',
+        context.mobileText('Invalid administrator id.'),
         context: context,
       );
       return;
@@ -199,7 +197,7 @@ class _PaymentsHeader extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Payments',
+                  context.mobileText('Payments'),
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -208,18 +206,15 @@ class _PaymentsHeader extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Transaction history',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: onSurfaceVariant,
-                  ),
+                  context.mobileText('Transaction history'),
+                  style: TextStyle(fontSize: 11, color: onSurfaceVariant),
                 ),
               ],
             ),
           ),
           const SizedBox(width: OpenVtsSpacing.xs),
           OpenVtsButton(
-            label: 'Record Payment',
+            label: context.mobileText('Record Payment'),
             trailingIcon: Icons.add_rounded,
             onPressed: isRecording ? null : onRecordPressed,
           ),
@@ -253,7 +248,7 @@ class _KpiStrip extends StatelessWidget {
           child: _CompactKpiCard(
             icon: Icons.check_circle_rounded,
             iconColor: theme.colorScheme.primary,
-            label: 'Successful',
+            label: context.mobileText('Successful'),
             value: compact.format(success),
           ),
         ),
@@ -262,7 +257,7 @@ class _KpiStrip extends StatelessWidget {
           child: _CompactKpiCard(
             icon: Icons.pending_rounded,
             iconColor: theme.colorScheme.primary,
-            label: 'Pending',
+            label: context.mobileText('Pending'),
             value: compact.format(pending),
           ),
         ),
@@ -271,7 +266,7 @@ class _KpiStrip extends StatelessWidget {
           child: _CompactKpiCard(
             icon: Icons.cancel_rounded,
             iconColor: theme.colorScheme.primary,
-            label: 'Failed',
+            label: context.mobileText('Failed'),
             value: compact.format(failed),
           ),
         ),
@@ -304,11 +299,7 @@ class _CompactKpiCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            icon,
-            size: 18,
-            color: iconColor,
-          ),
+          Icon(icon, size: 18, color: iconColor),
           const SizedBox(height: OpenVtsSpacing.xs),
           Text(
             value,
@@ -319,13 +310,7 @@ class _CompactKpiCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 2),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 11,
-              color: onSurfaceVariant,
-            ),
-          ),
+          Text(label, style: TextStyle(fontSize: 11, color: onSurfaceVariant)),
         ],
       ),
     );
@@ -360,7 +345,7 @@ class _RevenueCard extends StatelessWidget {
                 ),
                 const SizedBox(width: OpenVtsSpacing.xs),
                 Text(
-                  'Total Revenue',
+                  context.mobileText('Total Revenue'),
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
@@ -385,8 +370,9 @@ class _RevenueCard extends StatelessWidget {
 
     final primary = totals.first;
     final revenue = primary.totalAmountAsDouble ?? 0;
-    final currency =
-        primary.currency.trim().isEmpty ? 'USD' : primary.currency.trim();
+    final currency = primary.currency.trim().isEmpty
+        ? 'USD'
+        : primary.currency.trim();
     final success = primary.countSuccess;
 
     final theme = Theme.of(context);
@@ -407,7 +393,7 @@ class _RevenueCard extends StatelessWidget {
               ),
               const SizedBox(width: OpenVtsSpacing.xs),
               Text(
-                'Total Revenue',
+                context.mobileText('Total Revenue'),
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
@@ -428,11 +414,11 @@ class _RevenueCard extends StatelessWidget {
           if (success > 0) ...[
             const SizedBox(height: 4),
             Text(
-              'Avg $currency ${currencyFormat.format(revenue / success)} per transaction',
-              style: TextStyle(
-                fontSize: 11,
-                color: onSurfaceVariant,
-              ),
+              context.mobileText("Avg {value1} {value2} per transaction", {
+                'value1': (currency).toString(),
+                'value2': (currencyFormat.format(revenue / success)).toString(),
+              }),
+              style: TextStyle(fontSize: 11, color: onSurfaceVariant),
             ),
           ],
         ],
@@ -466,10 +452,7 @@ class _EmptyState extends StatelessWidget {
               const SizedBox(height: OpenVtsSpacing.xs),
               Text(
                 message,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: onSurfaceVariant,
-                ),
+                style: TextStyle(fontSize: 13, color: onSurfaceVariant),
               ),
             ],
           ),
@@ -500,15 +483,15 @@ class _RecordPaymentSheet extends ConsumerStatefulWidget {
 class _RecordPaymentSheetState extends ConsumerState<_RecordPaymentSheet> {
   static const List<SuperadminPaymentMode> _paymentModeOrder =
       <SuperadminPaymentMode>[
-    SuperadminPaymentMode.bankTransfer,
-    SuperadminPaymentMode.cash,
-    SuperadminPaymentMode.upi,
-    SuperadminPaymentMode.card,
-    SuperadminPaymentMode.wallet,
-    SuperadminPaymentMode.razorpay,
-    SuperadminPaymentMode.stripe,
-    SuperadminPaymentMode.other,
-  ];
+        SuperadminPaymentMode.bankTransfer,
+        SuperadminPaymentMode.cash,
+        SuperadminPaymentMode.upi,
+        SuperadminPaymentMode.card,
+        SuperadminPaymentMode.wallet,
+        SuperadminPaymentMode.razorpay,
+        SuperadminPaymentMode.stripe,
+        SuperadminPaymentMode.other,
+      ];
   static final RegExp _amountPattern = RegExp(r'^\d+(\.\d{1,2})?$');
 
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
@@ -556,10 +539,14 @@ class _RecordPaymentSheetState extends ConsumerState<_RecordPaymentSheet> {
     );
     if (!mounted) return;
     if (ok) {
-      ToastHelper.showSuccess('Payment recorded', context: context);
+      ToastHelper.showSuccess(
+        context.mobileText('Payment recorded'),
+        context: context,
+      );
       Navigator.of(context).pop();
     } else {
-      final message = ref.read(provider).sectionErrorMessage ??
+      final message =
+          ref.read(provider).sectionErrorMessage ??
           'Unable to record payment right now.';
       ToastHelper.showError(message, context: context);
     }
@@ -600,7 +587,7 @@ class _RecordPaymentSheetState extends ConsumerState<_RecordPaymentSheet> {
                 ),
               ),
               const SizedBox(height: OpenVtsSpacing.xs),
-              const _SheetHeader(title: 'Record Payment'),
+              _SheetHeader(title: context.mobileText('Record Payment')),
               Divider(height: 1, color: theme.colorScheme.outlineVariant),
               Expanded(
                 child: ListView(
@@ -613,7 +600,7 @@ class _RecordPaymentSheetState extends ConsumerState<_RecordPaymentSheet> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           OpenVtsTextField(
-                            label: 'Amount',
+                            label: context.mobileText('Amount'),
                             controller: _amount,
                             hintText: '0.00',
                             keyboardType: const TextInputType.numberWithOptions(
@@ -633,16 +620,20 @@ class _RecordPaymentSheetState extends ConsumerState<_RecordPaymentSheet> {
                           ),
                           const SizedBox(height: OpenVtsSpacing.sm),
                           OpenVtsTextField(
-                            label: 'Reference (optional)',
+                            label: context.mobileText('Reference (optional)'),
                             controller: _reference,
-                            hintText: 'Bank ref / UTR / transaction ID',
+                            hintText: context.mobileText(
+                              'Bank ref / UTR / transaction ID',
+                            ),
                             textInputAction: TextInputAction.done,
                             validator: _validateReference,
                             prefixIcon: Icons.tag,
                           ),
                           const SizedBox(height: OpenVtsSpacing.xs),
                           Text(
-                            'Payment will appear immediately in transaction list.',
+                            context.mobileText(
+                              'Payment will appear immediately in transaction list.',
+                            ),
                             style: TextStyle(
                               fontSize: 11,
                               color: theme.colorScheme.onSurfaceVariant,
@@ -692,11 +683,8 @@ class _ModeDropdown extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Payment mode',
-          style: TextStyle(
-            fontSize: 11,
-            color: onSurfaceVariant,
-          ),
+          context.mobileText('Payment mode'),
+          style: TextStyle(fontSize: 11, color: onSurfaceVariant),
         ),
         const SizedBox(height: 4),
         DropdownButtonFormField<SuperadminPaymentMode>(
@@ -729,10 +717,7 @@ class _ModeDropdown extends StatelessWidget {
                   value: m,
                   child: Text(
                     m.label,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: onSurface,
-                    ),
+                    style: TextStyle(fontSize: 13, color: onSurface),
                   ),
                 ),
               )
@@ -772,13 +757,10 @@ class _SheetHeader extends StatelessWidget {
             ),
           ),
           IconButton(
-            constraints: const BoxConstraints(
-              minWidth: 44,
-              minHeight: 44,
-            ),
+            constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
             icon: const Icon(Icons.close_rounded, size: 20),
             onPressed: () => Navigator.of(context).pop(),
-            tooltip: 'Close',
+            tooltip: context.mobileText('Close'),
           ),
         ],
       ),
@@ -814,7 +796,7 @@ class _SheetFooter extends StatelessWidget {
           children: [
             Expanded(
               child: OpenVtsButton(
-                label: 'Cancel',
+                label: context.mobileText('Cancel'),
                 variant: OpenVtsButtonVariant.secondary,
                 onPressed: isLoading ? null : onCancel,
               ),

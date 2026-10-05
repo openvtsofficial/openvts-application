@@ -23,28 +23,28 @@ class _MapTelemetryFilters extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         _TelemetryCircleButton(
-          label: 'All',
+          label: context.mobileText('All'),
           count: allCount,
           isSelected: selectedFilter == _MapFilter.all,
           onTap: () => onSelected(_MapFilter.all),
         ),
         const SizedBox(width: 6),
         _TelemetryCircleButton(
-          label: 'Running',
+          label: context.mobileText('Running'),
           count: runningCount,
           isSelected: selectedFilter == _MapFilter.running,
           onTap: () => onSelected(_MapFilter.running),
         ),
         const SizedBox(width: 6),
         _TelemetryCircleButton(
-          label: 'Stop',
+          label: context.mobileText('Stop'),
           count: stopCount,
           isSelected: selectedFilter == _MapFilter.stop,
           onTap: () => onSelected(_MapFilter.stop),
         ),
         const SizedBox(width: 6),
         _TelemetryCircleButton(
-          label: 'Inactive',
+          label: context.mobileText('Inactive'),
           count: inactiveCount,
           isSelected: selectedFilter == _MapFilter.inactive,
           onTap: () => onSelected(_MapFilter.inactive),

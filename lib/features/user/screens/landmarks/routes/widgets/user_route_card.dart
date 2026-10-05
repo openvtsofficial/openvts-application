@@ -8,6 +8,7 @@ import '../../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../../core/utils/date_time_formatter.dart';
+import '../../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../../shared/widgets/open_vts_card.dart';
 import '../../../../../../shared/widgets/open_vts_status_chip.dart';
 import '../../../../models/user_landmark_model.dart';
@@ -67,7 +68,7 @@ class UserRouteCard extends ConsumerWidget {
                           children: [
                             Text(
                               route.name.isEmpty
-                                  ? 'Untitled route'
+                                  ? context.mobileText('Untitled route')
                                   : route.name,
                               style: OpenVtsTypography.titleSmall.copyWith(
                                 color: Theme.of(context).colorScheme.onSurface,
@@ -78,7 +79,9 @@ class UserRouteCard extends ConsumerWidget {
                             ),
                             const SizedBox(height: 4),
                             OpenVtsStatusChip(
-                              label: route.isActive ? 'Active' : 'Inactive',
+                              label: route.isActive
+                                  ? context.mobileText('Active')
+                                  : context.mobileText('Inactive'),
                               type: route.isActive
                                   ? OpenVtsStatusType.success
                                   : OpenVtsStatusType.neutral,
@@ -88,12 +91,12 @@ class UserRouteCard extends ConsumerWidget {
                       ),
                       _RowAction(
                         icon: Icons.edit_outlined,
-                        tooltip: 'Edit',
+                        tooltip: context.mobileText('Edit'),
                         onTap: onEdit,
                       ),
                       _RowAction(
                         icon: Icons.delete_outline,
-                        tooltip: 'Delete',
+                        tooltip: context.mobileText('Delete'),
                         onTap: isDeleting ? null : onDelete,
                         destructive: true,
                       ),
@@ -118,8 +121,9 @@ class UserRouteCard extends ConsumerWidget {
                         child: Text(
                           _meta(route),
                           style: OpenVtsTypography.meta.copyWith(
-                            color:
-                                Theme.of(context).colorScheme.onSurfaceVariant,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -187,7 +191,8 @@ class UserRouteCard extends ConsumerWidget {
       final lat2 = b.lat * math.pi / 180;
       final dLat = (b.lat - a.lat) * math.pi / 180;
       final dLon = (b.lon - a.lon) * math.pi / 180;
-      final h = math.sin(dLat / 2) * math.sin(dLat / 2) +
+      final h =
+          math.sin(dLat / 2) * math.sin(dLat / 2) +
           math.cos(lat1) *
               math.cos(lat2) *
               math.sin(dLon / 2) *

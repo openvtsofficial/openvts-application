@@ -1,5 +1,7 @@
 import 'package:latlong2/latlong.dart';
 
+import 'user_route_stop.dart';
+
 // ---------------------------------------------------------------------------
 // Enums
 // ---------------------------------------------------------------------------
@@ -139,8 +141,10 @@ class UserGeoPoint {
   /// GeoJSON-compatible serialization: [lon, lat].
   List<double> toLonLat() => <double>[lon, lat];
 
-  Map<String, dynamic> toLatLngJson() =>
-      <String, dynamic>{'lat': lat, 'lng': lon};
+  Map<String, dynamic> toLatLngJson() => <String, dynamic>{
+    'lat': lat,
+    'lng': lon,
+  };
 
   bool isCloseTo(UserGeoPoint other, {double epsilon = 1e-9}) {
     return (lat - other.lat).abs() < epsilon &&
@@ -238,8 +242,11 @@ abstract class UserGeofenceGeoData {
             source.containsKey('radiusM')) {
           return UserCircleGeoData.fromJson(source);
         }
-        final coords =
-            _firstValue(source, const ['coordinates', 'points', 'path']);
+        final coords = _firstValue(source, const [
+          'coordinates',
+          'points',
+          'path',
+        ]);
         if (coords is List && coords.isNotEmpty) {
           // GeoJSON polygon nests rings one level deep.
           final first = coords.first;
@@ -278,15 +285,19 @@ class UserCircleGeoData extends UserGeofenceGeoData {
 
   factory UserCircleGeoData.fromJson(dynamic value) {
     final source = _asMap(value);
-    final center = UserGeoPoint.tryParse(
+    final center =
+        UserGeoPoint.tryParse(
           _firstValue(source, const ['center', 'centre', 'point']),
         ) ??
         const UserGeoPoint(lat: 0, lon: 0);
-    final radius = _toDouble(
-          _firstValue(
-            source,
-            const ['radius', 'radiusM', 'radius_m', 'radiusMeters'],
-          ),
+    final radius =
+        _toDouble(
+          _firstValue(source, const [
+            'radius',
+            'radiusM',
+            'radius_m',
+            'radiusMeters',
+          ]),
         ) ??
         0;
     return UserCircleGeoData(center: center, radiusM: radius);
@@ -305,8 +316,10 @@ class UserPolygonGeoData extends UserGeofenceGeoData {
   bool get isValid {
     final unique = <String>{};
     for (final point in coordinates) {
-      unique.add('${point.lat.toStringAsFixed(8)}_'
-          '${point.lon.toStringAsFixed(8)}');
+      unique.add(
+        '${point.lat.toStringAsFixed(8)}_'
+        '${point.lon.toStringAsFixed(8)}',
+      );
     }
     return unique.length >= 3;
   }
@@ -360,10 +373,7 @@ class UserPolygonGeoData extends UserGeofenceGeoData {
 }
 
 class UserLineGeoData extends UserGeofenceGeoData {
-  const UserLineGeoData({
-    required this.coordinates,
-    this.toleranceM,
-  });
+  const UserLineGeoData({required this.coordinates, this.toleranceM});
 
   @override
   String get kind => 'LINE';
@@ -380,8 +390,9 @@ class UserLineGeoData extends UserGeofenceGeoData {
       'kind': kind,
       'geometry': <String, dynamic>{
         'type': 'LineString',
-        'coordinates':
-            coordinates.map((p) => p.toLonLat()).toList(growable: false),
+        'coordinates': coordinates
+            .map((p) => p.toLonLat())
+            .toList(growable: false),
       },
     };
     if (toleranceM != null) {
@@ -393,15 +404,12 @@ class UserLineGeoData extends UserGeofenceGeoData {
   factory UserLineGeoData.fromJson(dynamic value) {
     final source = _asMap(value);
     final tolerance = _toDouble(
-      _firstValue(
-        source,
-        const [
-          'toleranceM',
-          'tolerance_m',
-          'tolerance',
-          'toleranceMeters',
-        ],
-      ),
+      _firstValue(source, const [
+        'toleranceM',
+        'tolerance_m',
+        'tolerance',
+        'toleranceMeters',
+      ]),
     );
 
     dynamic raw = _firstValue(source, const ['coordinates', 'points', 'path']);
@@ -463,7 +471,8 @@ class UserGeofence {
     final geo = UserGeofenceGeoData.tryParse(
       _firstValue(source, const ['geodata', 'geoData', 'geometry', 'shape']),
     );
-    final type = UserGeofenceTypeX.tryParse(
+    final type =
+        UserGeofenceTypeX.tryParse(
           _firstValue(source, const ['type', 'shapeType', 'geofenceType']),
         ) ??
         _typeFromGeoData(geo) ??
@@ -480,31 +489,42 @@ class UserGeofence {
         _firstValue(source, const ['radius', 'radiusM', 'radius_m']),
       ),
       toleranceMeters: _toDouble(
-        _firstValue(
-          source,
-          const ['toleranceMeters', 'tolerance_m', 'toleranceM', 'tolerance'],
-        ),
+        _firstValue(source, const [
+          'toleranceMeters',
+          'tolerance_m',
+          'toleranceM',
+          'tolerance',
+        ]),
       ),
-      isActive: _toBool(
-            _firstValue(
-              source,
-              const ['isActive', 'is_active', 'active', 'status'],
-            ),
+      isActive:
+          _toBool(
+            _firstValue(source, const [
+              'isActive',
+              'is_active',
+              'active',
+              'status',
+            ]),
           ) ??
           true,
-      createdAt:
-          _parseDate(_firstValue(source, const ['createdAt', 'created_at'])),
-      updatedAt:
-          _parseDate(_firstValue(source, const ['updatedAt', 'updated_at'])),
+      createdAt: _parseDate(
+        _firstValue(source, const ['createdAt', 'created_at']),
+      ),
+      updatedAt: _parseDate(
+        _firstValue(source, const ['updatedAt', 'updated_at']),
+      ),
       geodata: geo,
     );
   }
 
   static List<UserGeofence> listFromJson(dynamic json) {
-    final list = _extractList(
-      json,
-      const ['geofences', 'data', 'items', 'rows', 'records', 'list'],
-    );
+    final list = _extractList(json, const [
+      'geofences',
+      'data',
+      'items',
+      'rows',
+      'records',
+      'list',
+    ]);
     return list.map(UserGeofence.fromJson).toList(growable: false);
   }
 }
@@ -537,18 +557,16 @@ class UserPoi {
   final UserGeoPoint? coordinates;
 
   factory UserPoi.fromJson(dynamic json) {
-    final source = _unwrapSingle(json, const [
-      'poi',
-      'data',
-      'item',
-      'record',
-    ]);
+    final source = _unwrapSingle(json, const ['poi', 'data', 'item', 'record']);
 
     UserGeoPoint? coords = UserGeoPoint.tryParse(
-      _firstValue(
-        source,
-        const ['coordinates', 'location', 'point', 'position', 'latlng'],
-      ),
+      _firstValue(source, const [
+        'coordinates',
+        'location',
+        'point',
+        'position',
+        'latlng',
+      ]),
     );
 
     // Some backends store lat/lon at the top level.
@@ -573,37 +591,51 @@ class UserPoi {
           _firstString(source, const ['description', 'desc', 'notes']) ?? '',
       category: _firstString(source, const ['category', 'type', 'group']) ?? '',
       color: _firstString(source, const ['color', 'colour', 'hexColor']) ?? '',
-      iconSlug: _firstString(
-            source,
-            const ['icon', 'iconSlug', 'icon_slug', 'iconName'],
-          ) ??
+      iconSlug:
+          _firstString(source, const [
+            'icon',
+            'iconSlug',
+            'icon_slug',
+            'iconName',
+          ]) ??
           '',
       toleranceMeters: _toDouble(
-        _firstValue(
-          source,
-          const ['toleranceMeters', 'tolerance_m', 'toleranceM', 'tolerance'],
-        ),
+        _firstValue(source, const [
+          'toleranceMeters',
+          'tolerance_m',
+          'toleranceM',
+          'tolerance',
+        ]),
       ),
-      isActive: _toBool(
-            _firstValue(
-              source,
-              const ['isActive', 'is_active', 'active', 'status'],
-            ),
+      isActive:
+          _toBool(
+            _firstValue(source, const [
+              'isActive',
+              'is_active',
+              'active',
+              'status',
+            ]),
           ) ??
           true,
-      createdAt:
-          _parseDate(_firstValue(source, const ['createdAt', 'created_at'])),
-      updatedAt:
-          _parseDate(_firstValue(source, const ['updatedAt', 'updated_at'])),
+      createdAt: _parseDate(
+        _firstValue(source, const ['createdAt', 'created_at']),
+      ),
+      updatedAt: _parseDate(
+        _firstValue(source, const ['updatedAt', 'updated_at']),
+      ),
       coordinates: coords,
     );
   }
 
   static List<UserPoi> listFromJson(dynamic json) {
-    final list = _extractList(
-      json,
-      const ['pois', 'data', 'items', 'rows', 'records', 'list'],
-    );
+    final list = _extractList(json, const [
+      'pois',
+      'data',
+      'items',
+      'rows',
+      'records',
+      'list',
+    ]);
     return list.map(UserPoi.fromJson).toList(growable: false);
   }
 }
@@ -630,21 +662,26 @@ class UserRouteAlert {
   factory UserRouteAlert.fromJson(dynamic json) {
     final source = _asMap(json);
     return UserRouteAlert(
-      enabled: _toBool(
+      enabled:
+          _toBool(
             _firstValue(source, const ['enabled', 'isEnabled', 'active']),
           ) ??
           false,
-      toleranceMeters: _toDouble(
-            _firstValue(
-              source,
-              const ['toleranceMeters', 'tolerance_m', 'tolerance'],
-            ),
+      toleranceMeters:
+          _toDouble(
+            _firstValue(source, const [
+              'toleranceMeters',
+              'tolerance_m',
+              'tolerance',
+            ]),
           ) ??
           100,
-      cooldownMinutes: _firstInt(
-            source,
-            const ['cooldownMinutes', 'cooldown_minutes', 'cooldown'],
-          ) ??
+      cooldownMinutes:
+          _firstInt(source, const [
+            'cooldownMinutes',
+            'cooldown_minutes',
+            'cooldown',
+          ]) ??
           10,
     );
   }
@@ -663,6 +700,7 @@ class UserRouteLandmark {
     required this.geodata,
     required this.assignedVehicleIds,
     required this.routeAlert,
+    this.stops = const <UserRouteStop>[],
   });
 
   final String id;
@@ -676,6 +714,8 @@ class UserRouteLandmark {
   final UserLineGeoData? geodata;
   final List<String> assignedVehicleIds;
   final UserRouteAlert? routeAlert;
+
+  final List<UserRouteStop> stops;
 
   int get assignedVehicleCount => assignedVehicleIds.length;
 
@@ -698,27 +738,26 @@ class UserRouteLandmark {
       // attempt to extract coordinates anyway.
       final raw = _firstValue(
         _asMap(
-          _firstValue(
-              source, const ['geodata', 'geoData', 'geometry', 'shape']),
+          _firstValue(source, const [
+            'geodata',
+            'geoData',
+            'geometry',
+            'shape',
+          ]),
         ),
         const ['coordinates', 'points', 'path'],
       );
       if (raw is List) {
-        line = UserLineGeoData(
-          coordinates: UserGeoPoint.listFromJson(raw),
-        );
+        line = UserLineGeoData(coordinates: UserGeoPoint.listFromJson(raw));
       }
     }
 
-    final vehicleIdsRaw = _firstValue(
-      source,
-      const [
-        'assignedVehicleIds',
-        'assigned_vehicle_ids',
-        'vehicleIds',
-        'vehicles'
-      ],
-    );
+    final vehicleIdsRaw = _firstValue(source, const [
+      'assignedVehicleIds',
+      'assigned_vehicle_ids',
+      'vehicleIds',
+      'vehicles',
+    ]);
     List<String> vehicleIds = const <String>[];
     if (vehicleIdsRaw is List) {
       vehicleIds = vehicleIdsRaw
@@ -727,10 +766,12 @@ class UserRouteLandmark {
           .toList();
     }
 
-    final alertMap = _firstMap(
-      source,
-      const ['routeAlert', 'route_alert', 'alert', 'alertConfig'],
-    );
+    final alertMap = _firstMap(source, const [
+      'routeAlert',
+      'route_alert',
+      'alert',
+      'alertConfig',
+    ]);
     UserRouteAlert? routeAlert;
     if (alertMap != null && alertMap.isNotEmpty) {
       routeAlert = UserRouteAlert.fromJson(alertMap);
@@ -743,33 +784,45 @@ class UserRouteLandmark {
           _firstString(source, const ['description', 'desc', 'notes']) ?? '',
       color: _firstString(source, const ['color', 'colour', 'hexColor']) ?? '',
       toleranceMeters: _toDouble(
-        _firstValue(
-          source,
-          const ['toleranceMeters', 'tolerance_m', 'toleranceM', 'tolerance'],
-        ),
+        _firstValue(source, const [
+          'toleranceMeters',
+          'tolerance_m',
+          'toleranceM',
+          'tolerance',
+        ]),
       ),
-      isActive: _toBool(
-            _firstValue(
-              source,
-              const ['isActive', 'is_active', 'active', 'status'],
-            ),
+      isActive:
+          _toBool(
+            _firstValue(source, const [
+              'isActive',
+              'is_active',
+              'active',
+              'status',
+            ]),
           ) ??
           true,
-      createdAt:
-          _parseDate(_firstValue(source, const ['createdAt', 'created_at'])),
-      updatedAt:
-          _parseDate(_firstValue(source, const ['updatedAt', 'updated_at'])),
+      createdAt: _parseDate(
+        _firstValue(source, const ['createdAt', 'created_at']),
+      ),
+      updatedAt: _parseDate(
+        _firstValue(source, const ['updatedAt', 'updated_at']),
+      ),
       geodata: line,
       assignedVehicleIds: vehicleIds,
       routeAlert: routeAlert,
+      stops: UserRouteStop.listFromJson(source['stops']),
     );
   }
 
   static List<UserRouteLandmark> listFromJson(dynamic json) {
-    final list = _extractList(
-      json,
-      const ['routes', 'data', 'items', 'rows', 'records', 'list'],
-    );
+    final list = _extractList(json, const [
+      'routes',
+      'data',
+      'items',
+      'rows',
+      'records',
+      'list',
+    ]);
     return list.map(UserRouteLandmark.fromJson).toList(growable: false);
   }
 }
@@ -825,13 +878,10 @@ class CreateUserGeofenceRequest {
       'name': name.trim(),
       if (description != null) 'description': description!.trim(),
       if (color != null && color!.trim().isNotEmpty) 'color': color!.trim(),
+      if (toleranceMeters != null) 'toleranceMeters': toleranceMeters,
       'isActive': isActive,
       'type': _typeFromGeoData(geodata)?.apiValue ?? geodata.kind,
-      'geodata': <String, dynamic>{
-        ...geodata.toJson(),
-        if (geodata is UserLineGeoData && toleranceMeters != null)
-          'toleranceM': toleranceMeters,
-      },
+      'geodata': geodata.toJson(),
     };
   }
 }
@@ -858,15 +908,12 @@ class UpdateUserGeofenceRequest {
     if (name != null) payload['name'] = name!.trim();
     if (description != null) payload['description'] = description!.trim();
     if (color != null) payload['color'] = color!.trim();
+    if (toleranceMeters != null) payload['toleranceMeters'] = toleranceMeters;
     if (isActive != null) payload['isActive'] = isActive;
     final geo = geodata;
     if (geo != null) {
       payload['type'] = _typeFromGeoData(geo)?.apiValue ?? geo.kind;
-      payload['geodata'] = <String, dynamic>{
-        ...geo.toJson(),
-        if (geo is UserLineGeoData && toleranceMeters != null)
-          'toleranceM': toleranceMeters,
-      };
+      payload['geodata'] = geo.toJson();
     }
     return payload;
   }
@@ -907,8 +954,6 @@ class CreateUserPoiRequest {
       if (category != null && category!.trim().isNotEmpty)
         'category': category!.trim(),
       if (color != null && color!.trim().isNotEmpty) 'color': color!.trim(),
-      if (iconSlug != null && iconSlug!.trim().isNotEmpty)
-        'iconSlug': iconSlug!.trim(),
       if (toleranceMeters != null) 'toleranceMeters': toleranceMeters,
       'isActive': isActive,
       'coordinates': <String, double>{
@@ -946,7 +991,6 @@ class UpdateUserPoiRequest {
     if (description != null) payload['description'] = description!.trim();
     if (category != null) payload['category'] = category!.trim();
     if (color != null) payload['color'] = color!.trim();
-    if (iconSlug != null) payload['iconSlug'] = iconSlug!.trim();
     if (toleranceMeters != null) payload['toleranceMeters'] = toleranceMeters;
     if (isActive != null) payload['isActive'] = isActive;
     if (coordinates != null) {
@@ -968,6 +1012,7 @@ class CreateUserRouteRequest {
     this.toleranceMeters,
     this.isActive = true,
     this.routeAlert,
+    this.stops,
   });
 
   final String name;
@@ -977,13 +1022,25 @@ class CreateUserRouteRequest {
   final double? toleranceMeters;
   final bool isActive;
   final UserRouteAlert? routeAlert;
+  final List<UserRouteStop>? stops;
 
   void validate() {
-    if (name.trim().isEmpty) {
-      throw ArgumentError('Route name is required');
+    if (name.trim().length < 2) {
+      throw ArgumentError('Route name requires at least 2 characters');
     }
-    if (geodata.coordinates.length < 2) {
-      throw ArgumentError('Route requires at least 2 points');
+    if (geodata.coordinates.length < 2 ||
+        geodata.coordinates.any(
+          (point) =>
+              !point.lat.isFinite ||
+              !point.lon.isFinite ||
+              point.lat.abs() > 90 ||
+              point.lon.abs() > 180,
+        )) {
+      throw ArgumentError('Route requires at least 2 valid points');
+    }
+    if (toleranceMeters != null &&
+        (!toleranceMeters!.isFinite || toleranceMeters! < 1)) {
+      throw ArgumentError('Invalid route tolerance');
     }
   }
 
@@ -1007,6 +1064,13 @@ class CreateUserRouteRequest {
       },
     };
 
+    if (stops != null) {
+      validateUserRouteStops(stops!);
+      payload['stops'] = stops!
+          .map((stop) => stop.toJson())
+          .toList(growable: false);
+    }
+
     // TODO: Uncomment this line once backend supports route alerts
     // if (routeAlert != null) payload['routeAlert'] = routeAlert!.toJson();
 
@@ -1023,6 +1087,7 @@ class UpdateUserRouteRequest {
     this.isActive,
     this.geodata,
     this.routeAlert,
+    this.stops,
   });
 
   final String? name;
@@ -1032,8 +1097,27 @@ class UpdateUserRouteRequest {
   final bool? isActive;
   final UserLineGeoData? geodata;
   final UserRouteAlert? routeAlert;
+  final List<UserRouteStop>? stops;
 
   Map<String, dynamic> toJson() {
+    if (name != null && name!.trim().length < 2) {
+      throw ArgumentError('Route name requires at least 2 characters');
+    }
+    if (toleranceMeters != null &&
+        (!toleranceMeters!.isFinite || toleranceMeters! < 1)) {
+      throw ArgumentError('Invalid route tolerance');
+    }
+    if (geodata != null &&
+        (geodata!.coordinates.length < 2 ||
+            geodata!.coordinates.any(
+              (point) =>
+                  !point.lat.isFinite ||
+                  !point.lon.isFinite ||
+                  point.lat.abs() > 90 ||
+                  point.lon.abs() > 180,
+            ))) {
+      throw ArgumentError('Route requires at least 2 valid points');
+    }
     final payload = <String, dynamic>{};
     if (name != null) payload['name'] = name!.trim();
     if (description != null) payload['description'] = description!.trim();
@@ -1051,6 +1135,13 @@ class UpdateUserRouteRequest {
         },
         if (toleranceMeters != null) 'toleranceM': toleranceMeters,
       };
+    }
+
+    if (stops != null) {
+      validateUserRouteStops(stops!);
+      payload['stops'] = stops!
+          .map((stop) => stop.toJson())
+          .toList(growable: false);
     }
 
     // TODO: Uncomment this line once backend supports route alerts
@@ -1138,10 +1229,7 @@ class UserLandmarkBulkJobRow {
   factory UserLandmarkBulkJobRow.fromJson(dynamic json) {
     final source = _asMap(json);
     final entityRaw = _normalizeEnumValue(
-      _firstValue(
-        source,
-        const ['entity', 'entityType', 'kind', 'type'],
-      ),
+      _firstValue(source, const ['entity', 'entityType', 'kind', 'type']),
     );
     UserLandmarkEntityType? entity;
     switch (entityRaw) {
@@ -1162,7 +1250,7 @@ class UserLandmarkBulkJobRow {
       entityType: entity,
       errorMessage:
           _firstString(source, const ['error', 'errorMessage', 'message']) ??
-              '',
+          '',
       raw: source,
     );
   }
@@ -1229,12 +1317,15 @@ class UserLandmarkBulkJob {
         break;
     }
 
-    final failedRowsRaw =
-        _firstValue(source, const ['failedRows', 'errors', 'failures']);
+    final failedRowsRaw = _firstValue(source, const [
+      'failedRows',
+      'errors',
+      'failures',
+    ]);
     final failedRows = (failedRowsRaw is List)
         ? failedRowsRaw
-            .map(UserLandmarkBulkJobRow.fromJson)
-            .toList(growable: false)
+              .map(UserLandmarkBulkJobRow.fromJson)
+              .toList(growable: false)
         : const <UserLandmarkBulkJobRow>[];
 
     return UserLandmarkBulkJob(
@@ -1246,23 +1337,21 @@ class UserLandmarkBulkJob {
       total: _firstInt(source, const ['total', 'totalRows', 'count']) ?? 0,
       processed:
           _firstInt(source, const ['processed', 'processedRows', 'done']) ?? 0,
-      succeeded: _firstInt(
-            source,
-            const ['succeeded', 'successCount', 'success'],
-          ) ??
+      succeeded:
+          _firstInt(source, const ['succeeded', 'successCount', 'success']) ??
           0,
-      failed: _firstInt(
-            source,
-            const ['failed', 'failedCount', 'errorsCount'],
-          ) ??
+      failed:
+          _firstInt(source, const ['failed', 'failedCount', 'errorsCount']) ??
           0,
-      createdAt:
-          _parseDate(_firstValue(source, const ['createdAt', 'created_at'])),
-      updatedAt:
-          _parseDate(_firstValue(source, const ['updatedAt', 'updated_at'])),
+      createdAt: _parseDate(
+        _firstValue(source, const ['createdAt', 'created_at']),
+      ),
+      updatedAt: _parseDate(
+        _firstValue(source, const ['updatedAt', 'updated_at']),
+      ),
       errorMessage:
           _firstString(source, const ['error', 'errorMessage', 'message']) ??
-              '',
+          '',
       failedRows: failedRows,
     );
   }
@@ -1285,10 +1374,7 @@ class CreateUserLandmarkBulkJobRequest {
 
   Map<String, dynamic> toJson() {
     validate();
-    return <String, dynamic>{
-      'entityType': entityType.name,
-      '${entityType.name}Rows': rows,
-    };
+    return <String, dynamic>{'entity': entityType.apiValue, 'rows': rows};
   }
 }
 
@@ -1329,7 +1415,9 @@ String? _firstString(Map<String, dynamic> source, List<String> keys) {
 }
 
 Map<String, dynamic>? _firstMap(
-    Map<String, dynamic> source, List<String> keys) {
+  Map<String, dynamic> source,
+  List<String> keys,
+) {
   for (final key in keys) {
     if (source.containsKey(key) && source[key] != null) {
       final value = source[key];

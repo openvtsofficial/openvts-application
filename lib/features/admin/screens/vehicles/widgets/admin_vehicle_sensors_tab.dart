@@ -1,14 +1,17 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:open_vts/shared/helpers/toast_helper.dart';
 
 import '../../../../../core/theme/open_vts_spacing.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/widgets/open_vts_bottom_sheet.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../../../shared/widgets/open_vts_empty_state.dart';
 import '../../../../../shared/widgets/open_vts_loader.dart';
 import '../../../models/admin_vehicle_model.dart';
+import '../../../widgets/admin_action_gate.dart';
 import 'admin_vehicle_sensor_sheet.dart';
 
 class AdminVehicleSensorsTab extends StatefulWidget {
@@ -36,7 +39,10 @@ class AdminVehicleSensorsTab extends StatefulWidget {
   final Future<void> Function({String? search}) onLoad;
   final Future<void> Function(AdminVehicleSensorUpsertRequest request) onCreate;
   final Future<void> Function(
-      String sensorId, AdminVehicleSensorUpsertRequest request) onUpdate;
+    String sensorId,
+    AdminVehicleSensorUpsertRequest request,
+  )
+  onUpdate;
   final Future<void> Function(String sensorId) onDelete;
   final Future<void> Function(AdminVehicleSensorRunRequest request) onRun;
 
@@ -65,19 +71,22 @@ class _AdminVehicleSensorsTabState extends State<AdminVehicleSensorsTab> {
                   Expanded(
                     child: TextField(
                       controller: _searchController,
-                      decoration: const InputDecoration(
-                        hintText: 'Search sensors...',
-                        prefixIcon: Icon(Icons.search_rounded),
+                      decoration: InputDecoration(
+                        hintText: context.mobileText('Search sensors...'),
+                        prefixIcon: const Icon(Icons.search_rounded),
                       ),
                       onSubmitted: (value) =>
                           widget.onLoad(search: value.trim()),
                     ),
                   ),
                   const SizedBox(width: OpenVtsSpacing.xs),
-                  OpenVtsButton(
-                    label: 'Add Sensor',
-                    variant: OpenVtsButtonVariant.secondary,
-                    onPressed: _openCreateSheet,
+                  AdminActionGate(
+                    capability: 'vehicles.update',
+                    child: OpenVtsButton(
+                      label: context.mobileText('Add Sensor'),
+                      variant: OpenVtsButtonVariant.secondary,
+                      onPressed: _openCreateSheet,
+                    ),
                   ),
                 ],
               ),
@@ -88,9 +97,9 @@ class _AdminVehicleSensorsTabState extends State<AdminVehicleSensorsTab> {
         if (widget.isLoading)
           const OpenVtsLoader()
         else if (widget.sensors.isEmpty)
-          const OpenVtsEmptyState(
-            title: 'No sensors',
-            message: 'Create a sensor for this vehicle.',
+          OpenVtsEmptyState(
+            title: context.mobileText('No sensors'),
+            message: context.mobileText('Create a sensor for this vehicle.'),
           )
         else
           ...widget.sensors.map(
@@ -108,42 +117,69 @@ class _AdminVehicleSensorsTabState extends State<AdminVehicleSensorsTab> {
                             style: Theme.of(context).textTheme.titleSmall,
                           ),
                         ),
-                        Text(sensor.isOk ? 'Active' : 'Inactive'),
+                        Text(
+                          sensor.isOk
+                              ? context.mobileText('Active')
+                              : context.mobileText('Inactive'),
+                        ),
                       ],
                     ),
                     const SizedBox(height: OpenVtsSpacing.xxs),
                     Text(
-                        'Live Value: ${_safe(sensor.latestValue)} ${_safe(sensor.unit ?? '')}'),
-                    Text('Status: ${_safe(sensor.status)}'),
+                      context.mobileText("Live Value: {value1} {value2}", {
+                        'value1': (_safe(sensor.latestValue)).toString(),
+                        'value2': (_safe(sensor.unit ?? '')).toString(),
+                      }),
+                    ),
                     Text(
-                        'Code: ${_safe(sensor.sourceKey ?? sensor.expression ?? '')}'),
+                      context.mobileText("Status: {value1}", {
+                        'value1': (_safe(sensor.status)).toString(),
+                      }),
+                    ),
+                    Text(
+                      context.mobileText("Code: {value1}", {
+                        'value1': (_safe(
+                          sensor.sourceKey ?? sensor.expression ?? '',
+                        )).toString(),
+                      }),
+                    ),
                     const SizedBox(height: OpenVtsSpacing.sm),
                     Wrap(
                       spacing: OpenVtsSpacing.xs,
                       runSpacing: OpenVtsSpacing.xs,
                       children: [
-                        OutlinedButton(
-                          onPressed: () => _openEditSheet(sensor),
-                          child: const Text('Edit'),
+                        AdminActionGate(
+                          capability: 'vehicles.update',
+                          child: OutlinedButton(
+                            onPressed: () => _openEditSheet(sensor),
+                            child: Text(context.mobileText('Edit')),
+                          ),
                         ),
-                        OutlinedButton(
-                          onPressed: widget.isRunning
-                              ? null
-                              : () => _runSensor(sensor),
-                          child: widget.isRunning
-                              ? const SizedBox(
-                                  width: 14,
-                                  height: 14,
-                                  child:
-                                      CircularProgressIndicator(strokeWidth: 2),
-                                )
-                              : const Text('Run'),
+                        AdminActionGate(
+                          capability: 'vehicles.update',
+                          child: OutlinedButton(
+                            onPressed: widget.isRunning
+                                ? null
+                                : () => _runSensor(sensor),
+                            child: widget.isRunning
+                                ? const SizedBox(
+                                    width: 14,
+                                    height: 14,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : Text(context.mobileText('Run')),
+                          ),
                         ),
-                        OutlinedButton(
-                          onPressed: widget.isDeleting
-                              ? null
-                              : () => _deleteSensor(sensor),
-                          child: const Text('Delete'),
+                        AdminActionGate(
+                          capability: 'vehicles.update',
+                          child: OutlinedButton(
+                            onPressed: widget.isDeleting
+                                ? null
+                                : () => _deleteSensor(sensor),
+                            child: Text(context.mobileText('Delete')),
+                          ),
                         ),
                       ],
                     ),
@@ -159,7 +195,7 @@ class _AdminVehicleSensorsTabState extends State<AdminVehicleSensorsTab> {
   Future<void> _openCreateSheet() {
     return OpenVtsBottomSheet.show<void>(
       context: context,
-      title: 'Add Sensor',
+      title: context.mobileText('Add Sensor'),
       initialChildSize: 0.8,
       minChildSize: 0.5,
       maxChildSize: 0.94,
@@ -179,7 +215,7 @@ class _AdminVehicleSensorsTabState extends State<AdminVehicleSensorsTab> {
   Future<void> _openEditSheet(AdminVehicleSensor sensor) {
     return OpenVtsBottomSheet.show<void>(
       context: context,
-      title: 'Edit Sensor',
+      title: context.mobileText('Edit Sensor'),
       initialChildSize: 0.8,
       minChildSize: 0.5,
       maxChildSize: 0.94,
@@ -208,7 +244,7 @@ class _AdminVehicleSensorsTabState extends State<AdminVehicleSensorsTab> {
 
     await OpenVtsBottomSheet.show<void>(
       context: context,
-      title: 'Run Sensor',
+      title: context.mobileText('Run Sensor'),
       initialChildSize: 0.6,
       minChildSize: 0.4,
       maxChildSize: 0.9,
@@ -228,16 +264,20 @@ class _AdminVehicleSensorsTabState extends State<AdminVehicleSensorsTab> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Delete sensor'),
-        content: Text('Delete ${sensor.name}?'),
+        title: Text(context.mobileText('Delete sensor')),
+        content: Text(
+          context.mobileText("Delete {value1}?", {
+            'value1': (sensor.name).toString(),
+          }),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Cancel'),
+            child: Text(context.mobileText('Cancel')),
           ),
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Delete'),
+            child: Text(context.mobileText('Delete')),
           ),
         ],
       ),
@@ -248,8 +288,7 @@ class _AdminVehicleSensorsTabState extends State<AdminVehicleSensorsTab> {
   }
 
   void _toast(String message) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
+    ToastHelper.show(context, message);
   }
 
   String _safe(String value) => value.trim().isEmpty ? '-' : value.trim();
@@ -272,8 +311,9 @@ class _RunSensorSheet extends StatefulWidget {
 
 class _RunSensorSheetState extends State<_RunSensorSheet> {
   late final TextEditingController _codeController;
-  final TextEditingController _payloadController =
-      TextEditingController(text: '{}');
+  final TextEditingController _payloadController = TextEditingController(
+    text: '{}',
+  );
 
   @override
   void initState() {
@@ -295,17 +335,19 @@ class _RunSensorSheetState extends State<_RunSensorSheet> {
       children: [
         TextField(
           controller: _codeController,
-          decoration: const InputDecoration(labelText: 'Code'),
+          decoration: InputDecoration(labelText: context.mobileText('Code')),
         ),
         const SizedBox(height: OpenVtsSpacing.sm),
         TextField(
           controller: _payloadController,
           maxLines: 6,
-          decoration: const InputDecoration(labelText: 'Payload JSON'),
+          decoration: InputDecoration(
+            labelText: context.mobileText('Payload JSON'),
+          ),
         ),
         const SizedBox(height: OpenVtsSpacing.sm),
         OpenVtsButton(
-          label: 'Run Sensor',
+          label: context.mobileText('Run Sensor'),
           isLoading: widget.isRunning,
           onPressed: widget.isRunning ? null : _submit,
         ),
@@ -316,8 +358,9 @@ class _RunSensorSheetState extends State<_RunSensorSheet> {
   Future<void> _submit() async {
     final code = _codeController.text.trim();
     if (code.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Code is required.')),
+      ToastHelper.showError(
+        context.mobileText('Code is required.'),
+        context: context,
       );
       return;
     }
@@ -327,18 +370,21 @@ class _RunSensorSheetState extends State<_RunSensorSheet> {
     if (raw.isNotEmpty) {
       try {
         final decoded = jsonDecode(raw);
-        if (decoded is Map<String, dynamic>) {
-          payload = decoded;
+        if (decoded is! Map<String, dynamic>) {
+          throw const FormatException('Payload must be a JSON object.');
         }
+        payload = decoded;
       } catch (_) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Payload must be valid JSON object.')),
+        ToastHelper.showError(
+          context.mobileText('Payload must be valid JSON object.'),
+          context: context,
         );
         return;
       }
     }
 
-    await widget
-        .onRun(AdminVehicleSensorRunRequest(code: code, payload: payload));
+    await widget.onRun(
+      AdminVehicleSensorRunRequest(code: code, payload: payload),
+    );
   }
 }

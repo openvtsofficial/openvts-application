@@ -4,6 +4,7 @@ import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../l10n/app_localizations.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../models/user_settings_model.dart';
 
@@ -38,6 +39,13 @@ class UserSettingsTabSelector extends StatelessWidget {
               icon: Icons.public_rounded,
               selected: selectedTab == UserSettingsTab.localization,
               onTap: () => onChanged(UserSettingsTab.localization),
+            ),
+            const SizedBox(width: OpenVtsSpacing.xs),
+            _SettingsTabChip(
+              label: l10n.security,
+              icon: Icons.shield_outlined,
+              selected: selectedTab == UserSettingsTab.security,
+              onTap: () => onChanged(UserSettingsTab.security),
             ),
           ],
         ),
@@ -75,7 +83,9 @@ class _SettingsTabChip extends StatelessWidget {
           child: Semantics(
             button: true,
             selected: selected,
-            label: 'Switch to $label tab',
+            label: context.mobileText("Switch to {value1} tab", {
+              'value1': (label).toString(),
+            }),
             child: Container(
               padding: const EdgeInsets.symmetric(
                 horizontal: OpenVtsSpacing.sm,

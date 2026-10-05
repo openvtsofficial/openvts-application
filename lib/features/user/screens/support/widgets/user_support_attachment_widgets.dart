@@ -8,6 +8,8 @@ import 'package:open_vts/features/user/models/user_support_model.dart';
 import 'package:open_vts/shared/helpers/toast_helper.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../../../shared/helpers/mobile_text.dart';
+
 Future<List<PlatformFile>?> pickUserSupportAttachments(
   BuildContext context, {
   required List<PlatformFile> existing,
@@ -16,7 +18,9 @@ Future<List<PlatformFile>?> pickUserSupportAttachments(
   final remaining = maxCount - existing.length;
   if (remaining <= 0) {
     ToastHelper.showError(
-      'You can upload up to $maxCount files.',
+      context.mobileText("You can upload up to {value1} files.", {
+        'value1': (maxCount).toString(),
+      }),
       context: context,
     );
     return existing;
@@ -26,8 +30,9 @@ Future<List<PlatformFile>?> pickUserSupportAttachments(
     allowMultiple: true,
     withData: true,
     type: FileType.custom,
-    allowedExtensions:
-        userSupportAllowedAttachmentExtensions.toList(growable: false),
+    allowedExtensions: userSupportAllowedAttachmentExtensions.toList(
+      growable: false,
+    ),
   );
 
   if (!context.mounted || result == null || result.files.isEmpty) {
@@ -60,8 +65,9 @@ Future<List<PlatformFile>?> pickUserSupportAttachments(
     }
 
     final id = userSupportAttachmentIdentity(file);
-    final exists =
-        merged.any((item) => userSupportAttachmentIdentity(item) == id);
+    final exists = merged.any(
+      (item) => userSupportAttachmentIdentity(item) == id,
+    );
     if (!exists) {
       merged.add(file);
     }
@@ -69,19 +75,25 @@ Future<List<PlatformFile>?> pickUserSupportAttachments(
 
   if (blocked.isNotEmpty) {
     ToastHelper.showError(
-      'Blocked file removed: ${_compactFileList(blocked)}',
+      context.mobileText("Blocked file removed: {value1}", {
+        'value1': (_compactFileList(blocked)).toString(),
+      }),
       context: context,
     );
   }
   if (unsupported.isNotEmpty) {
     ToastHelper.showError(
-      'Unsupported file removed: ${_compactFileList(unsupported)}',
+      context.mobileText("Unsupported file removed: {value1}", {
+        'value1': (_compactFileList(unsupported)).toString(),
+      }),
       context: context,
     );
   }
   if (oversized.isNotEmpty) {
     ToastHelper.showError(
-      'File exceeds 5MB: ${_compactFileList(oversized)}',
+      context.mobileText("File exceeds 5MB: {value1}", {
+        'value1': (_compactFileList(oversized)).toString(),
+      }),
       context: context,
     );
   }
@@ -137,7 +149,7 @@ class UserSupportDraftAttachmentWrap extends StatelessWidget {
                   ),
                   const SizedBox(width: OpenVtsSpacing.xxs),
                   IconButton(
-                    tooltip: 'Remove attachment',
+                    tooltip: context.mobileText('Remove attachment'),
                     constraints: const BoxConstraints(
                       minWidth: 36,
                       minHeight: 36,
@@ -188,8 +200,10 @@ class UserSupportMessageAttachmentWrap extends StatelessWidget {
 }
 
 class _UploadedAttachmentChip extends StatelessWidget {
-  const _UploadedAttachmentChip(
-      {required this.attachment, required this.baseUrl});
+  const _UploadedAttachmentChip({
+    required this.attachment,
+    required this.baseUrl,
+  });
 
   final UserSupportTicketAttachment attachment;
   final String baseUrl;
@@ -253,28 +267,40 @@ class _UploadedAttachmentChip extends StatelessWidget {
   Future<void> _openAttachment(BuildContext context) async {
     final path = attachment.filePath.trim();
     if (path.isEmpty) {
-      ToastHelper.showError('Attachment path is not available.',
-          context: context);
+      ToastHelper.showError(
+        context.mobileText('Attachment path is not available.'),
+        context: context,
+      );
       return;
     }
 
     final resolved = _resolveAttachmentUrl(baseUrl, path);
     final uri = Uri.tryParse(resolved);
     if (uri == null) {
-      ToastHelper.showError('Unable to open this attachment.',
-          context: context);
+      ToastHelper.showError(
+        context.mobileText('Unable to open this attachment.'),
+        context: context,
+      );
       return;
     }
 
     try {
-      final launched =
-          await launchUrl(uri, mode: LaunchMode.externalApplication);
+      final launched = await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+      );
       if (!launched && context.mounted) {
-        ToastHelper.showError('Could not open attachment.', context: context);
+        ToastHelper.showError(
+          context.mobileText('Could not open attachment.'),
+          context: context,
+        );
       }
     } catch (_) {
       if (context.mounted) {
-        ToastHelper.showError('Could not open attachment.', context: context);
+        ToastHelper.showError(
+          context.mobileText('Could not open attachment.'),
+          context: context,
+        );
       }
     }
   }

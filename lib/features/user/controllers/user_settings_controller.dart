@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/api/api_exception.dart';
+import '../../../core/providers/app_preferences_provider.dart';
 import '../../../core/utils/validators.dart';
 import '../models/user_settings_model.dart';
 import '../models/user_settings_state.dart';
@@ -21,12 +22,15 @@ void _debugLog(String message) {
 class UserSettingsController extends StateNotifier<UserSettingsState> {
   UserSettingsController({
     required UserSettingsService service,
-  })  : _service = service,
-        super(const UserSettingsState.initial()) {
+    AppLocalizationPreferences? Function()? languageOverride,
+  }) : _service = service,
+       _languageOverride = languageOverride,
+       super(const UserSettingsState.initial()) {
     _debugLog('controller created');
   }
 
   final UserSettingsService _service;
+  final AppLocalizationPreferences? Function()? _languageOverride;
 
   // ── Request generation counters ──────────────────────────────────────────
   // Each new loadStates / loadCities call increments the counter; the
@@ -104,10 +108,9 @@ class UserSettingsController extends StateNotifier<UserSettingsState> {
   void selectTab(UserSettingsTab tab) {
     if (state.selectedTab == tab) return;
 
-    state = state.copyWith(
-      selectedTab: tab,
-      errorMessage: null,
-    );
+    state = state.copyWith(selectedTab: tab, errorMessage: null);
+
+    if (tab == UserSettingsTab.security) return;
 
     if (tab == UserSettingsTab.profile) {
       if (state.profile == null && !state.isLoadingProfile) {
@@ -128,7 +131,8 @@ class UserSettingsController extends StateNotifier<UserSettingsState> {
     if (state.localization == null && !state.isLoadingLocalization) {
       unawaited(loadLocalization());
     }
-    final needsLocalizationReferences = state.languages.isEmpty ||
+    final needsLocalizationReferences =
+        state.languages.isEmpty ||
         state.dateFormats.isEmpty ||
         state.timezones.isEmpty;
     if (needsLocalizationReferences && !state.isLoadingReferences) {
@@ -145,10 +149,7 @@ class UserSettingsController extends StateNotifier<UserSettingsState> {
     _profileLoadCount++;
     _debugLog('loadProfile #$_profileLoadCount start');
 
-    state = state.copyWith(
-      isLoadingProfile: true,
-      profileErrorMessage: null,
-    );
+    state = state.copyWith(isLoadingProfile: true, profileErrorMessage: null);
 
     try {
       final profile = await _service.getProfile();
@@ -186,10 +187,7 @@ class UserSettingsController extends StateNotifier<UserSettingsState> {
 
     final request = _buildUpdateProfileRequest(draft);
 
-    state = state.copyWith(
-      isSavingProfile: true,
-      profileErrorMessage: null,
-    );
+    state = state.copyWith(isSavingProfile: true, profileErrorMessage: null);
 
     try {
       final updated = await _service.updateProfile(request);
@@ -221,18 +219,17 @@ class UserSettingsController extends StateNotifier<UserSettingsState> {
       return false;
     }
 
-    state = state.copyWith(
-      isSavingCompany: true,
-      profileErrorMessage: null,
-    );
+    state = state.copyWith(isSavingCompany: true, profileErrorMessage: null);
 
     try {
       await _service.updateCompany(request);
       final refreshed = await _service.getProfile();
       if (!mounted) return true;
 
-      _applyRefreshedProfile(refreshed,
-          preserveDraftEdits: state.isProfileDirty);
+      _applyRefreshedProfile(
+        refreshed,
+        preserveDraftEdits: state.isProfileDirty,
+      );
       state = state.copyWith(isSavingCompany: false);
       return true;
     } catch (error) {
@@ -248,10 +245,7 @@ class UserSettingsController extends StateNotifier<UserSettingsState> {
   Future<bool> changePassword(UserChangePasswordRequest request) async {
     if (state.isChangingPassword) return false;
 
-    state = state.copyWith(
-      isChangingPassword: true,
-      profileErrorMessage: null,
-    );
+    state = state.copyWith(isChangingPassword: true, profileErrorMessage: null);
 
     try {
       await _service.changePassword(request);
@@ -286,8 +280,10 @@ class UserSettingsController extends StateNotifier<UserSettingsState> {
       );
       if (!mounted) return true;
 
-      _applyRefreshedProfile(refreshed,
-          preserveDraftEdits: state.isProfileDirty);
+      _applyRefreshedProfile(
+        refreshed,
+        preserveDraftEdits: state.isProfileDirty,
+      );
       state = state.copyWith(isUploadingProfilePhoto: false);
       return true;
     } catch (error) {
@@ -334,8 +330,10 @@ class UserSettingsController extends StateNotifier<UserSettingsState> {
       final refreshed = await _service.getProfile();
       if (!mounted) return true;
 
-      _applyRefreshedProfile(refreshed,
-          preserveDraftEdits: state.isProfileDirty);
+      _applyRefreshedProfile(
+        refreshed,
+        preserveDraftEdits: state.isProfileDirty,
+      );
       state = state.copyWith(isConfirmingEmailOtp: false);
       return true;
     } catch (error) {
@@ -380,8 +378,10 @@ class UserSettingsController extends StateNotifier<UserSettingsState> {
       final refreshed = await _service.getProfile();
       if (!mounted) return true;
 
-      _applyRefreshedProfile(refreshed,
-          preserveDraftEdits: state.isProfileDirty);
+      _applyRefreshedProfile(
+        refreshed,
+        preserveDraftEdits: state.isProfileDirty,
+      );
       state = state.copyWith(isConfirmingWhatsAppOtp: false);
       return true;
     } catch (error) {
@@ -418,15 +418,14 @@ class UserSettingsController extends StateNotifier<UserSettingsState> {
 
   Future<bool> subscribeEmail() async {
     if (state.isSubscribingEmail) return false;
-    state = state.copyWith(
-      isSubscribingEmail: true,
-      profileErrorMessage: null,
-    );
+    state = state.copyWith(isSubscribingEmail: true, profileErrorMessage: null);
     try {
       final status = await _service.subscribeEmail();
       if (!mounted) return true;
-      state =
-          state.copyWith(isSubscribingEmail: false, emailSubscription: status);
+      state = state.copyWith(
+        isSubscribingEmail: false,
+        emailSubscription: status,
+      );
       return true;
     } catch (error) {
       if (!mounted) return false;
@@ -452,8 +451,17 @@ class UserSettingsController extends StateNotifier<UserSettingsState> {
     );
 
     try {
-      final localization = await _service.getLocalization();
+      final remote = await _service.getLocalization();
       if (!mounted) return true;
+      final device = _languageOverride?.call();
+      final localization = device == null
+          ? remote
+          : remote.copyWith(
+              language: device.languageCode,
+              layoutDirection: device.isRtl
+                  ? UserLayoutDirection.rtl
+                  : UserLayoutDirection.ltr,
+            );
 
       final shouldKeepDraft = preserveDraftIfDirty && state.isLocalizationDirty;
 
@@ -461,13 +469,16 @@ class UserSettingsController extends StateNotifier<UserSettingsState> {
       final newEpoch = state.localizationHydrationEpoch + 1;
       state = state.copyWith(
         localization: localization,
-        draftLocalization:
-            shouldKeepDraft ? state.draftLocalization : localization,
+        draftLocalization: shouldKeepDraft
+            ? state.draftLocalization
+            : localization,
         isLoadingLocalization: false,
         localizationHydrationEpoch: newEpoch,
       );
-      _debugLog('loadLocalization #$_localizationLoadCount complete '
-          '(epoch=$newEpoch)');
+      _debugLog(
+        'loadLocalization #$_localizationLoadCount complete '
+        '(epoch=$newEpoch)',
+      );
       return true;
     } catch (error) {
       if (!mounted) return false;
@@ -600,7 +611,7 @@ class UserSettingsController extends StateNotifier<UserSettingsState> {
     final failedMessage = failedLabels.isEmpty
         ? null
         : 'Some reference lists could not be loaded '
-            '(${failedLabels.join(', ')}). You can continue and retry.';
+              '(${failedLabels.join(', ')}). You can continue and retry.';
 
     state = state.copyWith(
       languages: (results[0] as List<UserLanguageOption>?) ?? state.languages,
@@ -680,8 +691,10 @@ class UserSettingsController extends StateNotifier<UserSettingsState> {
         statesForCountryCode: normalized,
         isLoadingStates: false,
       );
-      _debugLog('loadStates gen=$thisGeneration applied country=$normalized '
-          'count=${states.length}');
+      _debugLog(
+        'loadStates gen=$thisGeneration applied country=$normalized '
+        'count=${states.length}',
+      );
     } catch (error) {
       if (!mounted) return;
       if (_statesGeneration != thisGeneration) return;
@@ -739,8 +752,10 @@ class UserSettingsController extends StateNotifier<UserSettingsState> {
     }
 
     try {
-      final cities =
-          await _service.getCities(normalizedCountry, normalizedState);
+      final cities = await _service.getCities(
+        normalizedCountry,
+        normalizedState,
+      );
       if (!mounted) return;
 
       if (_citiesGeneration != thisGeneration) {
@@ -754,8 +769,10 @@ class UserSettingsController extends StateNotifier<UserSettingsState> {
         citiesForCountryAndStateCode: cacheKey,
         isLoadingCities: false,
       );
-      _debugLog('loadCities gen=$thisGeneration applied key=$cacheKey '
-          'count=${cities.length}');
+      _debugLog(
+        'loadCities gen=$thisGeneration applied key=$cacheKey '
+        'count=${cities.length}',
+      );
     } catch (error) {
       if (!mounted) return;
       if (_citiesGeneration != thisGeneration) return;
@@ -839,7 +856,8 @@ class UserSettingsController extends StateNotifier<UserSettingsState> {
     double? defaultLon,
     int? mapZoom,
   }) {
-    final base = state.draftLocalization ??
+    final base =
+        state.draftLocalization ??
         state.localization ??
         UserLocalizationSettings.defaults;
 
@@ -863,6 +881,7 @@ class UserSettingsController extends StateNotifier<UserSettingsState> {
   // ── Refresh ───────────────────────────────────────────────────────────────
 
   Future<void> refreshCurrentTab({bool discardUnsaved = false}) async {
+    if (state.selectedTab == UserSettingsTab.security) return;
     if (state.selectedTab == UserSettingsTab.profile) {
       final profileLoaded = await loadProfile(
         preserveDraftIfDirty: !discardUnsaved,
@@ -915,7 +934,8 @@ class UserSettingsController extends StateNotifier<UserSettingsState> {
   }
 
   UserUpdateProfileRequest _buildUpdateProfileRequest(
-      UserSettingsProfile draft) {
+    UserSettingsProfile draft,
+  ) {
     final address = draft.address;
     return UserUpdateProfileRequest(
       name: (draft.name ?? '').trim(),
@@ -1035,8 +1055,8 @@ class UserSettingsController extends StateNotifier<UserSettingsState> {
 
     final candidate =
         normalized.startsWith('http://') || normalized.startsWith('https://')
-            ? normalized
-            : 'https://$normalized';
+        ? normalized
+        : 'https://$normalized';
 
     final uri = Uri.tryParse(candidate);
     return uri != null && uri.host.trim().isNotEmpty;
@@ -1049,19 +1069,15 @@ class UserSettingsController extends StateNotifier<UserSettingsState> {
     if (!mounted) return;
 
     if (!preserveDraftEdits || state.draftProfile == null) {
-      state = state.copyWith(
-        profile: refreshed,
-        draftProfile: refreshed,
-      );
+      state = state.copyWith(profile: refreshed, draftProfile: refreshed);
       return;
     }
 
-    final mergedDraft =
-        _mergeServerManagedFields(state.draftProfile!, refreshed);
-    state = state.copyWith(
-      profile: refreshed,
-      draftProfile: mergedDraft,
+    final mergedDraft = _mergeServerManagedFields(
+      state.draftProfile!,
+      refreshed,
     );
+    state = state.copyWith(profile: refreshed, draftProfile: mergedDraft);
   }
 
   UserSettingsProfile _mergeServerManagedFields(

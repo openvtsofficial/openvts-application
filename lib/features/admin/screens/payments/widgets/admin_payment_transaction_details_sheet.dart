@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/utils/date_time_formatter.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../models/admin_payments_model.dart';
 
@@ -27,31 +28,104 @@ class AdminPaymentTransactionDetailsSheet extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Transaction ID: ${item.id.isEmpty ? '-' : item.id}'),
-              Text('Amount: ${item.amountDisplay}'),
-              Text('Status: ${item.status.label}'),
-              Text('Created: ${date.trim().isEmpty ? '-' : date}'),
               Text(
-                  'Payment Type: ${item.paymentType.isEmpty ? '-' : item.paymentType}'),
-              Text('Payment Mode: ${item.paymentMode.label}'),
+                context.mobileText("Transaction ID: {value1}", {
+                  'value1': (item.id.isEmpty ? '-' : item.id).toString(),
+                }),
+              ),
               Text(
-                  'Reference: ${item.reference.isEmpty ? '-' : item.reference}'),
-              Text('Provider: ${item.provider.isEmpty ? '-' : item.provider}'),
+                context.mobileText("Amount: {value1}", {
+                  'value1': (item.amountDisplay).toString(),
+                }),
+              ),
               Text(
-                  'Provider Ref: ${item.providerRef.isEmpty ? '-' : item.providerRef}'),
-              Text('From: ${item.fromUser?.displayName ?? '-'}'),
-              Text('To: ${item.toUser?.displayName ?? '-'}'),
-              Text('Recorded By: ${item.recordedBy?.displayName ?? '-'}'),
+                context.mobileText("Status: {value1}", {
+                  'value1': (item.status.label).toString(),
+                }),
+              ),
               Text(
-                  'Vehicle: ${item.vehicleDisplayName.isEmpty ? '-' : item.vehicleDisplayName}'),
+                context.mobileText("Created: {value1}", {
+                  'value1': (date.trim().isEmpty ? '-' : date).toString(),
+                }),
+              ),
+              Text(
+                context.mobileText("Payment Type: {value1}", {
+                  'value1': (item.paymentType.isEmpty ? '-' : item.paymentType)
+                      .toString(),
+                }),
+              ),
+              Text(
+                context.mobileText("Payment Mode: {value1}", {
+                  'value1': (item.paymentMode.label).toString(),
+                }),
+              ),
+              Text(
+                context.mobileText("Reference: {value1}", {
+                  'value1': (item.reference.isEmpty ? '-' : item.reference)
+                      .toString(),
+                }),
+              ),
+              Text(
+                context.mobileText("Provider: {value1}", {
+                  'value1': (item.provider.isEmpty ? '-' : item.provider)
+                      .toString(),
+                }),
+              ),
+              Text(
+                context.mobileText("Provider Ref: {value1}", {
+                  'value1': (item.providerRef.isEmpty ? '-' : item.providerRef)
+                      .toString(),
+                }),
+              ),
+              Text(
+                context.mobileText("From: {value1}", {
+                  'value1': (item.fromUser?.displayName ?? '-').toString(),
+                }),
+              ),
+              Text(
+                context.mobileText("To: {value1}", {
+                  'value1': (item.toUser?.displayName ?? '-').toString(),
+                }),
+              ),
+              Text(
+                context.mobileText("Recorded By: {value1}", {
+                  'value1': (item.recordedBy?.displayName ?? '-').toString(),
+                }),
+              ),
+              Text(
+                context.mobileText("Vehicle: {value1}", {
+                  'value1':
+                      (item.vehicleDisplayName.isEmpty
+                              ? '-'
+                              : item.vehicleDisplayName)
+                          .toString(),
+                }),
+              ),
               if (item.vehicleImei.isNotEmpty)
-                Text('IMEI: ${item.vehicleImei}'),
+                Text(
+                  context.mobileText("IMEI: {value1}", {
+                    'value1': (item.vehicleImei).toString(),
+                  }),
+                ),
               if (item.planDisplayName.isNotEmpty)
-                Text('Plan: ${item.planDisplayName}'),
+                Text(
+                  context.mobileText("Plan: {value1}", {
+                    'value1': (item.planDisplayName).toString(),
+                  }),
+                ),
               Text(
-                  'Failure Code: ${item.failureCode.isEmpty ? '-' : item.failureCode}'),
+                context.mobileText("Failure Code: {value1}", {
+                  'value1': (item.failureCode.isEmpty ? '-' : item.failureCode)
+                      .toString(),
+                }),
+              ),
               Text(
-                  'Failure Message: ${item.failureMessage.isEmpty ? '-' : item.failureMessage}'),
+                context.mobileText("Failure Message: {value1}", {
+                  'value1':
+                      (item.failureMessage.isEmpty ? '-' : item.failureMessage)
+                          .toString(),
+                }),
+              ),
             ],
           ),
         ),
@@ -59,7 +133,8 @@ class AdminPaymentTransactionDetailsSheet extends StatelessWidget {
           const SizedBox(height: OpenVtsSpacing.sm),
           OpenVtsCard(
             child: SelectableText(
-                const JsonEncoder.withIndent('  ').convert(item.meta)),
+              const JsonEncoder.withIndent('  ').convert(item.meta),
+            ),
           ),
         ],
       ],

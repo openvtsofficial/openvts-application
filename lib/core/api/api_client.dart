@@ -1,4 +1,6 @@
 import 'package:dio/dio.dart';
+import '../../features/auth/models/current_user.dart';
+import '../../shared/models/user_role.dart';
 
 import '../demo/demo_api_policy.dart';
 import '../performance/open_vts_perf.dart';
@@ -9,10 +11,15 @@ class ApiClient {
   ApiClient(
     this._dio, {
     DemoApiPolicy? demoPolicy,
-  }) : _demoPolicy = demoPolicy;
+    CurrentUser? Function()? activeUser,
+  })  : _demoPolicy = demoPolicy,
+        _activeUser = activeUser;
 
   final Dio _dio;
   final DemoApiPolicy? _demoPolicy;
+  final CurrentUser? Function()? _activeUser;
+  CurrentUser? get activeUser => _activeUser?.call();
+  UserRole? get activeRole => activeUser?.role;
 
   bool get isDemoMode => _demoPolicy?.isEnabled == true;
 

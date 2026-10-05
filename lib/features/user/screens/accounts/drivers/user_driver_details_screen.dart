@@ -7,6 +7,7 @@ import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../../../shared/widgets/open_vts_error_view.dart';
 import '../../../../../shared/widgets/open_vts_loader.dart';
@@ -56,13 +57,13 @@ class _UserDriverDetailsScreenState
       title: _driverTitle(driver),
       padding: EdgeInsets.zero,
       leading: IconButton(
-        tooltip: 'Back',
+        tooltip: context.mobileText('Back'),
         onPressed: () => _close(context),
         icon: const Icon(Icons.arrow_back_rounded, size: 20),
       ),
       actions: [
         _HeaderIconButton(
-          tooltip: 'Refresh',
+          tooltip: context.mobileText('Refresh'),
           onPressed: _isRefreshingCurrentTab(state)
               ? null
               : () => _refreshCurrentTab(provider),
@@ -82,9 +83,11 @@ class _UserDriverDetailsScreenState
 
   Widget _buildBody(
     BuildContext context,
-    AutoDisposeStateNotifierProvider<UserDriverDetailsController,
-            UserDriverDetailsState>
-        provider,
+    AutoDisposeStateNotifierProvider<
+      UserDriverDetailsController,
+      UserDriverDetailsState
+    >
+    provider,
     UserDriverDetailsState state,
     UserDriverDetailsController controller,
     UserDriver? driver,
@@ -125,9 +128,11 @@ class _UserDriverDetailsScreenState
   }
 
   Future<void> _refreshCurrentTab(
-    AutoDisposeStateNotifierProvider<UserDriverDetailsController,
-            UserDriverDetailsState>
-        provider,
+    AutoDisposeStateNotifierProvider<
+      UserDriverDetailsController,
+      UserDriverDetailsState
+    >
+    provider,
   ) async {
     final controller = ref.read(provider.notifier);
     switch (_selectedTab) {
@@ -167,21 +172,22 @@ class _UserDriverDetailsScreenState
 }
 
 class _TabContent extends StatelessWidget {
-  const _TabContent({
-    required this.provider,
-    required this.selectedTab,
-  });
+  const _TabContent({required this.provider, required this.selectedTab});
 
-  final AutoDisposeStateNotifierProvider<UserDriverDetailsController,
-      UserDriverDetailsState> provider;
+  final AutoDisposeStateNotifierProvider<
+    UserDriverDetailsController,
+    UserDriverDetailsState
+  >
+  provider;
   final _UserDriverDetailsTab selectedTab;
 
   @override
   Widget build(BuildContext context) {
     return switch (selectedTab) {
       _UserDriverDetailsTab.profile => UserDriverProfileTab(provider: provider),
-      _UserDriverDetailsTab.documents =>
-        UserDriverDocumentsTab(provider: provider),
+      _UserDriverDetailsTab.documents => UserDriverDocumentsTab(
+        provider: provider,
+      ),
       _UserDriverDetailsTab.logs => UserDriverLogsTab(provider: provider),
     };
   }
@@ -234,8 +240,9 @@ class _DriverSummaryCard extends StatelessWidget {
                       _driverTitle(driver),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style:
-                          OpenVtsTypography.titleSmall.copyWith(fontSize: 16),
+                      style: OpenVtsTypography.titleSmall.copyWith(
+                        fontSize: 16,
+                      ),
                     ),
                     const SizedBox(height: 3),
                     Text(
@@ -258,7 +265,9 @@ class _DriverSummaryCard extends StatelessWidget {
             runSpacing: OpenVtsSpacing.xs,
             children: [
               _StatusPill(
-                label: (driver?.isActive ?? false) ? 'Active' : 'Inactive',
+                label: (driver?.isActive ?? false)
+                    ? context.mobileText('Active')
+                    : context.mobileText('Inactive'),
                 color: (driver?.isActive ?? false)
                     ? OpenVtsColors.success
                     : OpenVtsColors.textSecondary,
@@ -267,8 +276,9 @@ class _DriverSummaryCard extends StatelessWidget {
                     : Icons.pause_circle_outline_rounded,
               ),
               _StatusPill(
-                label:
-                    (driver?.isVerified ?? false) ? 'Verified' : 'Unverified',
+                label: (driver?.isVerified ?? false)
+                    ? context.mobileText('Verified')
+                    : context.mobileText('Unverified'),
                 color: (driver?.isVerified ?? false)
                     ? OpenVtsColors.brandInk
                     : OpenVtsColors.textSecondary,
@@ -302,30 +312,32 @@ class _TabChips extends StatelessWidget {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
-        children: _UserDriverDetailsTab.values.map((tab) {
-          final isSelected = tab == selectedTab;
-          return Padding(
-            padding: const EdgeInsets.only(right: OpenVtsSpacing.xs),
-            child: ChoiceChip(
-              selected: isSelected,
-              label: Text(_tabLabel(tab)),
-              onSelected: (_) => onSelect(tab),
-              showCheckmark: false,
-              labelStyle: OpenVtsTypography.meta.copyWith(
-                fontWeight: FontWeight.w800,
-                color: isSelected
-                    ? OpenVtsColors.white
-                    : OpenVtsColors.textPrimary,
-              ),
-              selectedColor: OpenVtsColors.brandInk,
-              backgroundColor: OpenVtsColors.white,
-              side: const BorderSide(color: OpenVtsColors.border),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
-              ),
-            ),
-          );
-        }).toList(growable: false),
+        children: _UserDriverDetailsTab.values
+            .map((tab) {
+              final isSelected = tab == selectedTab;
+              return Padding(
+                padding: const EdgeInsets.only(right: OpenVtsSpacing.xs),
+                child: ChoiceChip(
+                  selected: isSelected,
+                  label: Text(_tabLabel(tab)),
+                  onSelected: (_) => onSelect(tab),
+                  showCheckmark: false,
+                  labelStyle: OpenVtsTypography.meta.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: isSelected
+                        ? OpenVtsColors.white
+                        : OpenVtsColors.textPrimary,
+                  ),
+                  selectedColor: OpenVtsColors.brandInk,
+                  backgroundColor: OpenVtsColors.white,
+                  side: const BorderSide(color: OpenVtsColors.border),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
+                  ),
+                ),
+              );
+            })
+            .toList(growable: false),
       ),
     );
   }

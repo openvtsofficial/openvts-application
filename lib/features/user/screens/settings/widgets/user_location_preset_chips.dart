@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 
 class UserLocationPreset {
   const UserLocationPreset({
@@ -66,7 +66,7 @@ class UserLocationPresetChips extends StatelessWidget {
       children: presets
           .map(
             (preset) => _PresetChip(
-              label: preset.label,
+              label: context.mobileText(preset.label),
               isActive: _isActive(preset),
               onTap: () => onPresetSelected(preset),
             ),
@@ -105,7 +105,9 @@ class _PresetChip extends StatelessWidget {
     return Semantics(
       button: true,
       selected: isActive,
-      label: 'Apply preset $label',
+      label: context.mobileText("Apply preset {value1}", {
+        'value1': (label).toString(),
+      }),
       child: InkWell(
         borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
         onTap: onTap,

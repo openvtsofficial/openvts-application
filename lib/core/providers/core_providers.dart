@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+import '../../features/auth/controllers/auth_controller.dart';
 import '../api/api_client.dart';
 import '../api/interceptors/auth_interceptor.dart';
 import '../api/interceptors/error_interceptor.dart';
 import '../api/interceptors/logging_interceptor.dart';
 import '../api/interceptors/refresh_token_interceptor.dart';
+import '../api/interceptors/role_api_interceptor.dart';
 import '../config/app_config.dart';
 import '../demo/demo_api_policy.dart';
 import '../demo/demo_mode_store.dart';
@@ -23,9 +25,7 @@ import '../storage/token_storage.dart';
 
 final secureStorageProvider = Provider<FlutterSecureStorage>((ref) {
   return const FlutterSecureStorage(
-    aOptions: AndroidOptions(
-      encryptedSharedPreferences: true,
-    ),
+    aOptions: AndroidOptions(encryptedSharedPreferences: true),
   );
 });
 
@@ -42,13 +42,15 @@ final demoModeStoreProvider = Provider<DemoModeStore>((ref) {
   return DemoModeStore(ref.watch(localCacheProvider));
 });
 
-final themeModeProvider =
-    StateNotifierProvider<ThemeModeController, ThemeMode>((ref) {
-  return ThemeModeController(ref.watch(localCacheProvider));
-});
+final themeModeProvider = StateNotifierProvider<ThemeModeController, ThemeMode>(
+  (ref) {
+    return ThemeModeController(ref.watch(localCacheProvider));
+  },
+);
 
-final apiBaseUrlProvider =
-    StateNotifierProvider<ApiBaseUrlController, String>((ref) {
+final apiBaseUrlProvider = StateNotifierProvider<ApiBaseUrlController, String>((
+  ref,
+) {
   return ApiBaseUrlController(ref.watch(localCacheProvider));
 });
 
@@ -65,48 +67,20 @@ final dioProvider = Provider<Dio>((ref) {
       },
     ),
   );
-  // Cancel the old server's in-flight requests before a new server can use
-  // this account store. An old 401 must never retry with new credentials.
-  ref.onDispose(() => dio.close(force: true));
 
-  dio.interceptors.add(_ServerUrlPolicyInterceptor());
   dio.interceptors.add(_BodylessDeleteContentTypeInterceptor());
 
   final tokenStorage = ref.watch(tokenStorageProvider);
+  dio.interceptors.add(RoleApiInterceptor(tokenStorage));
   dio.interceptors.add(AuthInterceptor(tokenStorage));
   dio.interceptors.add(
-    RefreshTokenInterceptor(
-      dio: dio,
-      tokenStorage: tokenStorage,
-    ),
+    RefreshTokenInterceptor(dio: dio, tokenStorage: tokenStorage),
   );
   dio.interceptors.add(ApiErrorInterceptor());
   dio.interceptors.add(SafeLoggingInterceptor());
 
   return dio;
 });
-
-class _ServerUrlPolicyInterceptor extends Interceptor {
-  @override
-  void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
-    final error = AppConfig.validateApiBaseUrl(options.baseUrl);
-    // Validate the origin of absolute endpoints too, before attaching tokens.
-    final target = options.uri;
-    final targetError = AppConfig.validateApiBaseUrl(
-      target.replace(query: null, fragment: null).toString().split('?').first.split('#').first,
-    );
-    if (error != null || targetError != null) {
-      handler.reject(DioException(
-        requestOptions: options,
-        type: DioExceptionType.unknown,
-        message: error ?? targetError,
-        error: FormatException(error ?? targetError!),
-      ));
-      return;
-    }
-    handler.next(options);
-  }
-}
 
 class _BodylessDeleteContentTypeInterceptor extends Interceptor {
   @override
@@ -121,11 +95,18 @@ class _BodylessDeleteContentTypeInterceptor extends Interceptor {
   }
 }
 
-final apiClientProvider = Provider<ApiClient>((ref) {
+final Provider<ApiClient> apiClientProvider = Provider<ApiClient>((ref) {
   final demoModeStore = ref.watch(demoModeStoreProvider);
   return ApiClient(
     ref.watch(dioProvider),
     demoPolicy: DemoApiPolicy(isDemoMode: () => demoModeStore.isEnabled),
+    activeUser: () {
+      final stored = ref.read(tokenStorageProvider).cachedActiveSession?.user;
+      final current = ref.read(authControllerProvider).user;
+      return current?.id == stored?.id && current?.role == stored?.role
+          ? current
+          : stored;
+    },
   );
 });
 
@@ -146,20 +127,18 @@ final mobilePushServiceProvider = Provider<MobilePushService>((ref) {
 
 final mobilePushControllerProvider =
     StateNotifierProvider<MobilePushController, MobilePushState>((ref) {
-  return MobilePushController(
-    service: ref.watch(mobilePushServiceProvider),
-    localCache: ref.watch(localCacheProvider),
-    tokenStorage: ref.watch(tokenStorageProvider),
-  );
-});
+      return MobilePushController(
+        service: ref.watch(mobilePushServiceProvider),
+        localCache: ref.watch(localCacheProvider),
+        tokenStorage: ref.watch(tokenStorageProvider),
+      );
+    });
 
 final socketServiceProvider = Provider<SocketService>((ref) {
-  final service = SocketService(
+  return SocketService(
     ref.watch(tokenStorageProvider),
     apiBaseUrl: ref.watch(apiBaseUrlProvider),
   );
-  ref.onDispose(service.dispose);
-  return service;
 });
 
 class ThemeModeController extends StateNotifier<ThemeMode> {
@@ -219,11 +198,11 @@ class ApiBaseUrlController extends StateNotifier<String> {
   bool get isUsingDefault => state == defaultUrl;
 
   Future<void> saveCustomUrl(String value) async {
-    final error = AppConfig.validateApiBaseUrl(value);
-    if (error != null) throw FormatException(error);
     final normalizedValue = _normalizeUrl(value);
     await _localCache.setString(
-        StorageKeys.apiBaseUrlOverride, normalizedValue);
+      StorageKeys.apiBaseUrlOverride,
+      normalizedValue,
+    );
     state = normalizedValue;
   }
 

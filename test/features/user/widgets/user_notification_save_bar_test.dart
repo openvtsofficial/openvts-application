@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:open_vts/features/user/screens/notification_settings/widgets/user_notification_save_bar.dart';
+import 'package:open_vts/shared/widgets/open_vts_button.dart';
 
 Future<void> _pumpBar(
   WidgetTester tester, {
@@ -47,6 +48,21 @@ Future<void> _pumpBar(
   await tester.pump();
 }
 
+void _expectCompactAccessibleActions(WidgetTester tester) {
+  // A 48px minimum touch target replaces the former 44px visual button.
+  // Allow the row padding while retaining the compact mobile height contract.
+  expect(
+    tester.getSize(find.byType(UserNotificationSaveBar)).height,
+    lessThanOrEqualTo(80),
+  );
+  for (final button in find.byType(OpenVtsButton).evaluate()) {
+    expect(
+      tester.getSize(find.byWidget(button.widget)).height,
+      greaterThanOrEqualTo(48),
+    );
+  }
+}
+
 void main() {
   testWidgets('clean state does not reserve save-bar space', (tester) async {
     await _pumpBar(tester, isDirty: false);
@@ -69,8 +85,7 @@ void main() {
     expect(find.text('Unsaved'), findsOneWidget);
     expect(find.text('Reset'), findsOneWidget);
     expect(find.text('Save'), findsOneWidget);
-    expect(tester.getSize(find.byType(UserNotificationSaveBar)).height,
-        lessThanOrEqualTo(68));
+    _expectCompactAccessibleActions(tester);
 
     await tester.tap(find.text('Reset'));
     await tester.tap(find.text('Save'));
@@ -79,25 +94,20 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('saving state disables actions and stays compact',
-      (tester) async {
+  testWidgets('saving state disables actions and stays compact', (
+    tester,
+  ) async {
     await _pumpBar(tester, isDirty: true, isSaving: true);
 
     expect(find.text('Saving…'), findsWidgets);
-    expect(tester.getSize(find.byType(UserNotificationSaveBar)).height,
-        lessThanOrEqualTo(68));
+    _expectCompactAccessibleActions(tester);
     expect(tester.takeException(), isNull);
   });
 
   testWidgets('large text and longest desktop labels do not overflow', (
     tester,
   ) async {
-    await _pumpBar(
-      tester,
-      isDirty: true,
-      width: 480,
-      textScale: 2,
-    );
+    await _pumpBar(tester, isDirty: true, width: 480, textScale: 2);
 
     expect(find.text('You have unsaved changes.'), findsOneWidget);
     expect(find.text('Save Changes'), findsOneWidget);
@@ -107,14 +117,9 @@ void main() {
   testWidgets('keyboard inset does not add duplicate bar padding', (
     tester,
   ) async {
-    await _pumpBar(
-      tester,
-      isDirty: true,
-      keyboardInset: 300,
-    );
+    await _pumpBar(tester, isDirty: true, keyboardInset: 300);
 
-    expect(tester.getSize(find.byType(UserNotificationSaveBar)).height,
-        lessThanOrEqualTo(68));
+    _expectCompactAccessibleActions(tester);
     expect(tester.takeException(), isNull);
   });
 }

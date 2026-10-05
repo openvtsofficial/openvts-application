@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:open_vts/features/admin/controllers/admin_logs_controller.dart';
 import 'package:open_vts/features/admin/models/admin_logs_model.dart';
-import 'package:open_vts/features/admin/models/admin_logs_state.dart';
 import 'package:open_vts/features/admin/services/admin_logs_service.dart';
 
 // ---------------------------------------------------------------------------

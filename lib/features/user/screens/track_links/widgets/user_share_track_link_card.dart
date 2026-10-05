@@ -6,6 +6,7 @@ import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../core/utils/date_time_formatter.dart'; // For appDateFormatterProvider
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../models/user_share_track_link_model.dart';
 
@@ -81,7 +82,7 @@ class UserShareTrackLinkCard extends ConsumerWidget {
                     const SizedBox(height: 3),
                     Text(
                       link.uniqueCode.trim().isEmpty
-                          ? 'Code -'
+                          ? context.mobileText('Code -')
                           : 'Code ${link.uniqueCode.trim()}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -108,8 +109,8 @@ class UserShareTrackLinkCard extends ConsumerWidget {
                   ),
                   if (link.isExpired) ...[
                     const SizedBox(height: 4),
-                    const _StatusChip(
-                      label: 'Expired',
+                    _StatusChip(
+                      label: context.mobileText('Expired'),
                       color: OpenVtsColors.error,
                     ),
                   ],
@@ -135,18 +136,21 @@ class UserShareTrackLinkCard extends ConsumerWidget {
               if (link.createdAt != null)
                 _InfoPill(
                   icon: Icons.calendar_today_outlined,
-                  label:
-                      'Created ${dateFormatter.formatDate(link.createdAt!.toLocal())}',
+                  label: context.mobileText("Created {value1}", {
+                    'value1': (dateFormatter.formatDate(
+                      link.createdAt!.toLocal(),
+                    )).toString(),
+                  }),
                 ),
               if (link.isGeofence)
-                const _InfoPill(
+                _InfoPill(
                   icon: Icons.fence_outlined,
-                  label: 'Geofence',
+                  label: context.mobileText('Geofence'),
                 ),
               if (link.isHistory)
-                const _InfoPill(
+                _InfoPill(
                   icon: Icons.history_rounded,
-                  label: 'History',
+                  label: context.mobileText('History'),
                 ),
             ],
           ),
@@ -179,12 +183,12 @@ class UserShareTrackLinkCard extends ConsumerWidget {
               ],
               const Spacer(),
               _ActionIconButton(
-                tooltip: 'Copy',
+                tooltip: context.mobileText('Copy'),
                 icon: Icons.copy_rounded,
                 onPressed: isBusy ? null : onCopy,
               ),
               _ActionIconButton(
-                tooltip: 'Open',
+                tooltip: context.mobileText('Open'),
                 icon: Icons.open_in_new_rounded,
                 onPressed: isBusy ? null : onOpen,
               ),
@@ -194,12 +198,12 @@ class UserShareTrackLinkCard extends ConsumerWidget {
                 onPressed: isBusy ? null : onQr,
               ),
               _ActionIconButton(
-                tooltip: 'Edit',
+                tooltip: context.mobileText('Edit'),
                 icon: Icons.edit_outlined,
                 onPressed: isBusy ? null : onEdit,
               ),
               _ActionIconButton(
-                tooltip: 'Delete',
+                tooltip: context.mobileText('Delete'),
                 icon: Icons.delete_outline_rounded,
                 color: OpenVtsColors.error,
                 onPressed: isBusy ? null : onDelete,
@@ -237,7 +241,8 @@ class _ActionIconButton extends StatelessWidget {
         child: IconButton(
           onPressed: onPressed,
           icon: Icon(icon, size: 17),
-          color: color ??
+          color:
+              color ??
               (isDark ? OpenVtsColors.white : OpenVtsColors.textPrimary),
           disabledColor: OpenVtsColors.textTertiary.withValues(alpha: 0.58),
           padding: EdgeInsets.zero,
@@ -258,10 +263,7 @@ class _ActionIconButton extends StatelessWidget {
 }
 
 class _InfoPill extends StatelessWidget {
-  const _InfoPill({
-    required this.icon,
-    required this.label,
-  });
+  const _InfoPill({required this.icon, required this.label});
 
   final IconData icon;
   final String label;

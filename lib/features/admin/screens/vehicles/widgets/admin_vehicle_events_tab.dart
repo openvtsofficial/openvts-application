@@ -6,6 +6,7 @@ import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/widgets/open_vts_bottom_sheet.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
@@ -39,7 +40,8 @@ class AdminVehicleEventsTab extends StatefulWidget {
     DateTime? to,
     String? source,
     String? severity,
-  }) onApplyFilters;
+  })
+  onApplyFilters;
   final Future<void> Function() onClearFilters;
 
   @override
@@ -60,9 +62,9 @@ class _AdminVehicleEventsTabState extends State<AdminVehicleEventsTab> {
   @override
   Widget build(BuildContext context) {
     if (widget.imei.trim().isEmpty) {
-      return const OpenVtsEmptyState(
-        title: 'IMEI missing',
-        message: 'IMEI is required to load vehicle events.',
+      return OpenVtsEmptyState(
+        title: context.mobileText('IMEI missing'),
+        message: context.mobileText('IMEI is required to load vehicle events.'),
       );
     }
 
@@ -78,10 +80,10 @@ class _AdminVehicleEventsTabState extends State<AdminVehicleEventsTab> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Date Range',
+                context.mobileText('Date Range'),
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
               ),
               const SizedBox(height: OpenVtsSpacing.xs),
               GestureDetector(
@@ -93,10 +95,12 @@ class _AdminVehicleEventsTabState extends State<AdminVehicleEventsTab> {
                   ),
                   decoration: BoxDecoration(
                     border: Border.all(
-                        color: Theme.of(context).colorScheme.outlineVariant),
+                      color: Theme.of(context).colorScheme.outlineVariant,
+                    ),
                     borderRadius: BorderRadius.circular(OpenVtsRadius.md),
-                    color:
-                        Theme.of(context).colorScheme.surfaceContainerHighest,
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.surfaceContainerHighest,
                   ),
                   child: Row(
                     children: [
@@ -131,10 +135,10 @@ class _AdminVehicleEventsTabState extends State<AdminVehicleEventsTab> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Event Filters',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
+                context.mobileText('Event Filters'),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: OpenVtsSpacing.sm),
               Row(
@@ -142,35 +146,59 @@ class _AdminVehicleEventsTabState extends State<AdminVehicleEventsTab> {
                   Expanded(
                     child: DropdownButtonFormField<String>(
                       initialValue: _source.isEmpty ? null : _source,
-                      decoration: const InputDecoration(
-                        labelText: 'Source',
+                      decoration: InputDecoration(
+                        labelText: context.mobileText('Source'),
                         isDense: true,
-                        contentPadding: EdgeInsets.symmetric(
+                        contentPadding: const EdgeInsets.symmetric(
                           horizontal: OpenVtsSpacing.sm,
                           vertical: OpenVtsSpacing.xs,
                         ),
                       ),
-                      items: const [
-                        DropdownMenuItem(value: '', child: Text('All sources')),
+                      items: [
                         DropdownMenuItem(
-                            value: 'SYSTEM', child: Text('SYSTEM')),
-                        DropdownMenuItem(
-                            value: 'GEOFENCE', child: Text('GEOFENCE')),
-                        DropdownMenuItem(value: 'ROUTE', child: Text('ROUTE')),
-                        DropdownMenuItem(
-                            value: 'MOTION', child: Text('MOTION')),
-                        DropdownMenuItem(
-                            value: 'OVERSPEED', child: Text('OVERSPEED')),
-                        DropdownMenuItem(
-                            value: 'IGNITION', child: Text('IGNITION')),
-                        DropdownMenuItem(
-                            value: 'REMINDER', child: Text('REMINDER')),
-                        DropdownMenuItem(
-                            value: 'SENSOR', child: Text('SENSOR')),
-                        DropdownMenuItem(
-                            value: 'DRIVER', child: Text('DRIVER')),
-                        DropdownMenuItem(
-                            value: 'COMMAND', child: Text('COMMAND')),
+                          value: '',
+                          child: Text(context.mobileText('All sources')),
+                        ),
+                        const DropdownMenuItem(
+                          value: 'SYSTEM',
+                          child: Text('SYSTEM'),
+                        ),
+                        const DropdownMenuItem(
+                          value: 'GEOFENCE',
+                          child: Text('GEOFENCE'),
+                        ),
+                        const DropdownMenuItem(
+                          value: 'ROUTE',
+                          child: Text('ROUTE'),
+                        ),
+                        const DropdownMenuItem(
+                          value: 'MOTION',
+                          child: Text('MOTION'),
+                        ),
+                        const DropdownMenuItem(
+                          value: 'OVERSPEED',
+                          child: Text('OVERSPEED'),
+                        ),
+                        const DropdownMenuItem(
+                          value: 'IGNITION',
+                          child: Text('IGNITION'),
+                        ),
+                        const DropdownMenuItem(
+                          value: 'REMINDER',
+                          child: Text('REMINDER'),
+                        ),
+                        const DropdownMenuItem(
+                          value: 'SENSOR',
+                          child: Text('SENSOR'),
+                        ),
+                        const DropdownMenuItem(
+                          value: 'DRIVER',
+                          child: Text('DRIVER'),
+                        ),
+                        const DropdownMenuItem(
+                          value: 'COMMAND',
+                          child: Text('COMMAND'),
+                        ),
                       ],
                       onChanged: (value) =>
                           setState(() => _source = value ?? ''),
@@ -180,21 +208,31 @@ class _AdminVehicleEventsTabState extends State<AdminVehicleEventsTab> {
                   Expanded(
                     child: DropdownButtonFormField<String>(
                       initialValue: _severity.isEmpty ? null : _severity,
-                      decoration: const InputDecoration(
-                        labelText: 'Severity',
+                      decoration: InputDecoration(
+                        labelText: context.mobileText('Severity'),
                         isDense: true,
-                        contentPadding: EdgeInsets.symmetric(
+                        contentPadding: const EdgeInsets.symmetric(
                           horizontal: OpenVtsSpacing.sm,
                           vertical: OpenVtsSpacing.xs,
                         ),
                       ),
-                      items: const [
-                        DropdownMenuItem(value: '', child: Text('All')),
-                        DropdownMenuItem(value: 'INFO', child: Text('INFO')),
+                      items: [
                         DropdownMenuItem(
-                            value: 'WARNING', child: Text('WARNING')),
-                        DropdownMenuItem(
-                            value: 'CRITICAL', child: Text('CRITICAL')),
+                          value: '',
+                          child: Text(context.mobileText('All')),
+                        ),
+                        const DropdownMenuItem(
+                          value: 'INFO',
+                          child: Text('INFO'),
+                        ),
+                        const DropdownMenuItem(
+                          value: 'WARNING',
+                          child: Text('WARNING'),
+                        ),
+                        const DropdownMenuItem(
+                          value: 'CRITICAL',
+                          child: Text('CRITICAL'),
+                        ),
                       ],
                       onChanged: (value) =>
                           setState(() => _severity = value ?? ''),
@@ -207,7 +245,7 @@ class _AdminVehicleEventsTabState extends State<AdminVehicleEventsTab> {
                 children: [
                   Expanded(
                     child: OpenVtsButton(
-                      label: 'Apply',
+                      label: context.mobileText('Apply'),
                       height: 36,
                       isLoading: widget.isLoading,
                       onPressed: widget.isLoading ? null : _applyFilters,
@@ -216,7 +254,7 @@ class _AdminVehicleEventsTabState extends State<AdminVehicleEventsTab> {
                   const SizedBox(width: OpenVtsSpacing.xs),
                   Expanded(
                     child: OpenVtsButton(
-                      label: 'Clear',
+                      label: context.mobileText('Clear'),
                       height: 36,
                       onPressed: widget.isLoading ? null : _reset,
                       variant: OpenVtsButtonVariant.secondary,
@@ -231,23 +269,22 @@ class _AdminVehicleEventsTabState extends State<AdminVehicleEventsTab> {
         if (widget.isLoading)
           const OpenVtsLoader()
         else if (widget.events.isEmpty)
-          const OpenVtsEmptyState(
-            title: 'No events found',
-            message: 'No events exist for the selected date range and filters.',
+          OpenVtsEmptyState(
+            title: context.mobileText('No events found'),
+            message: context.mobileText(
+              'No events exist for the selected date range and filters.',
+            ),
           )
         else ...[
           ...widget.events.map(
             (event) => Padding(
               padding: const EdgeInsets.only(bottom: OpenVtsSpacing.sm),
-              child: _EventCard(
-                event: event,
-                onTap: () => _openDetails(event),
-              ),
+              child: _EventCard(event: event, onTap: () => _openDetails(event)),
             ),
           ),
           if ((widget.nextCursor ?? '').trim().isNotEmpty)
             OpenVtsButton(
-              label: 'Load older',
+              label: context.mobileText('Load older'),
               isLoading: widget.isLoadingMore,
               onPressed: widget.isLoadingMore ? null : widget.onLoadMore,
               variant: OpenVtsButtonVariant.secondary,
@@ -281,7 +318,14 @@ class _AdminVehicleEventsTabState extends State<AdminVehicleEventsTab> {
     DateTime? toInclusive;
     if (_rangeEnd != null) {
       toInclusive = DateTime(
-          _rangeEnd!.year, _rangeEnd!.month, _rangeEnd!.day, 23, 59, 59, 999);
+        _rangeEnd!.year,
+        _rangeEnd!.month,
+        _rangeEnd!.day,
+        23,
+        59,
+        59,
+        999,
+      );
     }
     return widget.onApplyFilters(
       from: _rangeStart,
@@ -304,7 +348,7 @@ class _AdminVehicleEventsTabState extends State<AdminVehicleEventsTab> {
   Future<void> _openDetails(AdminVehicleEventItem event) {
     return OpenVtsBottomSheet.show<void>(
       context: context,
-      title: 'Event Details',
+      title: context.mobileText('Event Details'),
       initialChildSize: 0.8,
       minChildSize: 0.5,
       maxChildSize: 0.95,
@@ -320,7 +364,10 @@ class _AdminVehicleEventsTabState extends State<AdminVehicleEventsTab> {
           _line('Vehicle IMEI', _safe(event.vehicleImei ?? '')),
           _line('Context', _safe(event.contextLabel ?? '')),
           const SizedBox(height: OpenVtsSpacing.sm),
-          Text('Metadata', style: Theme.of(context).textTheme.titleSmall),
+          Text(
+            context.mobileText('Metadata'),
+            style: Theme.of(context).textTheme.titleSmall,
+          ),
           const SizedBox(height: OpenVtsSpacing.xs),
           SelectableText(_json(event.metadata)),
         ],
@@ -329,9 +376,9 @@ class _AdminVehicleEventsTabState extends State<AdminVehicleEventsTab> {
   }
 
   Widget _line(String label, String value) => Padding(
-        padding: const EdgeInsets.only(bottom: 4),
-        child: Text('$label: ${_safe(value)}'),
-      );
+    padding: const EdgeInsets.only(bottom: 4),
+    child: Text('$label: ${_safe(value)}'),
+  );
 
   String _json(Map<String, dynamic> value) {
     if (value.isEmpty) return '{}';
@@ -372,7 +419,7 @@ class _AdminVehicleEventsTabState extends State<AdminVehicleEventsTab> {
       'Sep',
       'Oct',
       'Nov',
-      'Dec'
+      'Dec',
     ];
     return '${date.day.toString().padLeft(2, '0')} ${months[date.month - 1]} ${date.year}';
   }
@@ -423,11 +470,11 @@ class _DateRangePickerDialogState extends State<_DateRangePickerDialog> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'Select Date Range',
+                context.mobileText('Select Date Range'),
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: colorScheme.onSurface,
-                    ),
+                  fontWeight: FontWeight.w700,
+                  color: colorScheme.onSurface,
+                ),
               ),
               const SizedBox(height: OpenVtsSpacing.md),
               _buildCalendar(),
@@ -438,7 +485,7 @@ class _DateRangePickerDialogState extends State<_DateRangePickerDialog> {
                     child: TextButton(
                       onPressed: () => Navigator.of(context).pop(),
                       child: Text(
-                        'Cancel',
+                        context.mobileText('Cancel'),
                         style: TextStyle(color: colorScheme.onSurface),
                       ),
                     ),
@@ -448,7 +495,7 @@ class _DateRangePickerDialogState extends State<_DateRangePickerDialog> {
                     child: TextButton(
                       onPressed: _setToday,
                       child: Text(
-                        'Today',
+                        context.mobileText('Today'),
                         style: TextStyle(color: colorScheme.primary),
                       ),
                     ),
@@ -460,7 +507,7 @@ class _DateRangePickerDialogState extends State<_DateRangePickerDialog> {
                 children: [
                   Expanded(
                     child: OpenVtsButton(
-                      label: 'Cancel',
+                      label: context.mobileText('Cancel'),
                       height: 36,
                       variant: OpenVtsButtonVariant.secondary,
                       onPressed: () => Navigator.of(context).pop(),
@@ -469,7 +516,7 @@ class _DateRangePickerDialogState extends State<_DateRangePickerDialog> {
                   const SizedBox(width: OpenVtsSpacing.sm),
                   Expanded(
                     child: OpenVtsButton(
-                      label: 'Apply',
+                      label: context.mobileText('Apply'),
                       height: 36,
                       onPressed: () => widget.onApply(_start, _end),
                     ),
@@ -499,28 +546,38 @@ class _DateRangePickerDialogState extends State<_DateRangePickerDialog> {
             Text(
               _monthYear(_displayMonth),
               style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: colorScheme.onSurface,
-                  ),
+                fontWeight: FontWeight.w700,
+                color: colorScheme.onSurface,
+              ),
             ),
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(
-                  icon: Icon(Icons.chevron_left_rounded,
-                      size: 20, color: colorScheme.onSurface),
+                  icon: Icon(
+                    Icons.chevron_left_rounded,
+                    size: 20,
+                    color: colorScheme.onSurface,
+                  ),
                   onPressed: _previousMonth,
                   padding: EdgeInsets.zero,
-                  constraints:
-                      const BoxConstraints(minWidth: 32, minHeight: 32),
+                  constraints: const BoxConstraints(
+                    minWidth: 32,
+                    minHeight: 32,
+                  ),
                 ),
                 IconButton(
-                  icon: Icon(Icons.chevron_right_rounded,
-                      size: 20, color: colorScheme.onSurface),
+                  icon: Icon(
+                    Icons.chevron_right_rounded,
+                    size: 20,
+                    color: colorScheme.onSurface,
+                  ),
                   onPressed: _nextMonth,
                   padding: EdgeInsets.zero,
-                  constraints:
-                      const BoxConstraints(minWidth: 32, minHeight: 32),
+                  constraints: const BoxConstraints(
+                    minWidth: 32,
+                    minHeight: 32,
+                  ),
                 ),
               ],
             ),
@@ -698,8 +755,8 @@ class _DateCell extends StatelessWidget {
           color: isStart || isEnd
               ? colorScheme.primary
               : inRange
-                  ? colorScheme.primary.withValues(alpha: 0.15)
-                  : Colors.transparent,
+              ? colorScheme.primary.withValues(alpha: 0.15)
+              : Colors.transparent,
           border: Border.all(
             color: isToday && !isStart && !isEnd
                 ? colorScheme.primary.withValues(alpha: 0.5)
@@ -717,8 +774,8 @@ class _DateCell extends StatelessWidget {
             color: isStart || isEnd
                 ? colorScheme.onPrimary
                 : isToday
-                    ? colorScheme.primary
-                    : colorScheme.onSurface,
+                ? colorScheme.primary
+                : colorScheme.onSurface,
           ),
         ),
       ),
@@ -727,10 +784,7 @@ class _DateCell extends StatelessWidget {
 }
 
 class _EventCard extends StatelessWidget {
-  const _EventCard({
-    required this.event,
-    required this.onTap,
-  });
+  const _EventCard({required this.event, required this.onTap});
 
   final AdminVehicleEventItem event;
   final VoidCallback onTap;
@@ -751,9 +805,9 @@ class _EventCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: -0.2,
-                      ),
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.2,
+                  ),
                 ),
               ),
               if (event.severity != null) ...[
@@ -770,7 +824,7 @@ class _EventCard extends StatelessWidget {
               Expanded(
                 child: _InfoItem(
                   icon: Icons.access_time_rounded,
-                  label: 'Time',
+                  label: context.mobileText('Time'),
                   value: event.createdAt == null
                       ? '-'
                       : _formatDateTime(event.createdAt!),
@@ -781,7 +835,7 @@ class _EventCard extends StatelessWidget {
                 Expanded(
                   child: _InfoItem(
                     icon: Icons.category_rounded,
-                    label: 'Source',
+                    label: context.mobileText('Source'),
                     value: event.category!,
                   ),
                 ),

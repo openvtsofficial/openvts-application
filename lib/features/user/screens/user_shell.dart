@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../shared/helpers/mobile_text.dart';
 import '../../auth/controllers/auth_controller.dart';
 
 class UserShell extends ConsumerWidget {
@@ -38,13 +39,13 @@ class UserShell extends ConsumerWidget {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Demo workspace • Read-only',
+                        context.mobileText('Demo workspace • Read-only'),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                              color: scheme.onTertiaryContainer,
-                              fontWeight: FontWeight.w600,
-                            ),
+                          color: scheme.onTertiaryContainer,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                     TextButton.icon(
@@ -54,7 +55,7 @@ class UserShell extends ConsumerWidget {
                             .logoutActiveRole();
                       },
                       icon: const Icon(Icons.logout_rounded, size: 16),
-                      label: const Text('Exit Demo'),
+                      label: Text(context.mobileText('Exit Demo')),
                       style: TextButton.styleFrom(
                         foregroundColor: scheme.onTertiaryContainer,
                         minimumSize: const Size(44, 36),

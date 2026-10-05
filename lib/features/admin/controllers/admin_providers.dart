@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/access/workspace_scope_provider.dart';
 import '../../../core/providers/core_providers.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../notifications/controllers/notification_center_controller.dart';
@@ -49,216 +50,257 @@ import 'admin_vehicle_details_controller.dart';
 import 'admin_vehicles_controller.dart';
 
 final adminDashboardServiceProvider = Provider<AdminDashboardService>((ref) {
+  ref.watch(workspaceDataScopeProvider);
   return AdminDashboardService(ref.watch(apiClientProvider));
 });
 
 final adminCalendarServiceProvider = Provider<AdminCalendarService>((ref) {
+  ref.watch(workspaceDataScopeProvider);
   return AdminCalendarService(ref.watch(apiClientProvider));
 });
 
 final adminVehicleServiceProvider = Provider<AdminVehicleService>((ref) {
+  ref.watch(workspaceDataScopeProvider);
   return AdminVehicleService(ref.watch(apiClientProvider));
 });
 
 final adminUsersServiceProvider = Provider<AdminUsersService>((ref) {
+  ref.watch(workspaceDataScopeProvider);
   return AdminUsersService(ref.watch(apiClientProvider));
 });
 
 final adminDriversServiceProvider = Provider<AdminDriversService>((ref) {
+  ref.watch(workspaceDataScopeProvider);
   return AdminDriversService(ref.watch(apiClientProvider));
 });
 
 final adminTeamServiceProvider = Provider<AdminTeamService>((ref) {
+  ref.watch(workspaceDataScopeProvider);
   return AdminTeamService(ref.watch(apiClientProvider));
 });
 
 final adminInventoryServiceProvider = Provider<AdminInventoryService>((ref) {
+  ref.watch(workspaceDataScopeProvider);
   return AdminInventoryService(ref.watch(apiClientProvider));
 });
 
 final adminLogsServiceProvider = Provider<AdminLogsService>((ref) {
+  ref.watch(workspaceDataScopeProvider);
   return AdminLogsService(ref.watch(apiClientProvider));
 });
 
 final adminPaymentsServiceProvider = Provider<AdminPaymentsService>((ref) {
+  ref.watch(workspaceDataScopeProvider);
   return AdminPaymentsService(ref.watch(apiClientProvider));
 });
 
 final adminPlansServiceProvider = Provider<AdminPlansService>((ref) {
+  ref.watch(workspaceDataScopeProvider);
   return AdminPlansService(ref.watch(apiClientProvider));
 });
 
 final adminSettingsServiceProvider = Provider<AdminSettingsService>((ref) {
+  ref.watch(workspaceDataScopeProvider);
   return AdminSettingsService(ref.watch(apiClientProvider));
 });
 
 final adminSupportServiceProvider = Provider<AdminSupportService>((ref) {
+  ref.watch(workspaceDataScopeProvider);
   return AdminSupportService(ref.watch(apiClientProvider));
 });
 
 final adminUserDetailsServiceProvider = Provider<AdminUserDetailsService>((
   ref,
 ) {
+  ref.watch(workspaceDataScopeProvider);
   return AdminUserDetailsService(ref.watch(apiClientProvider));
 });
 
 final adminNotificationServiceProvider = Provider<AdminNotificationService>((
   ref,
 ) {
+  ref.watch(workspaceDataScopeProvider);
   return AdminNotificationService(ref.watch(apiClientProvider));
 });
 
-final adminDashboardControllerProvider = StateNotifierProvider.autoDispose<
-    AdminDashboardController, AdminDashboardState>((ref) {
-  final controller = AdminDashboardController(
-    service: ref.watch(adminDashboardServiceProvider),
-    localCache: ref.watch(localCacheProvider),
-  );
-  controller.load();
-  return controller;
-});
+final adminDashboardControllerProvider =
+    StateNotifierProvider.autoDispose<
+      AdminDashboardController,
+      AdminDashboardState
+    >((ref) {
+      final controller = AdminDashboardController(
+        service: ref.watch(adminDashboardServiceProvider),
+        localCache: ref.watch(localCacheProvider),
+      );
+      controller.load();
+      return controller;
+    });
 
-final adminVehiclesControllerProvider = StateNotifierProvider.autoDispose<
-    AdminVehiclesController, AdminVehiclesState>((ref) {
-  final controller = AdminVehiclesController(
-    service: ref.watch(adminVehicleServiceProvider),
-    onDashboardRefresh: () {
-      try {
-        ref.read(adminDashboardControllerProvider.notifier).refresh();
-        // ignore: empty_catches
-      } catch (_) {}
-    },
-  );
-  controller.load();
-  return controller;
-});
+final adminVehiclesControllerProvider =
+    StateNotifierProvider.autoDispose<
+      AdminVehiclesController,
+      AdminVehiclesState
+    >((ref) {
+      final controller = AdminVehiclesController(
+        service: ref.watch(adminVehicleServiceProvider),
+        onDashboardRefresh: () {
+          try {
+            ref.read(adminDashboardControllerProvider.notifier).refresh();
+            // ignore: empty_catches
+          } catch (_) {}
+        },
+      );
+      controller.load();
+      return controller;
+    });
 
 final adminUsersControllerProvider =
     StateNotifierProvider.autoDispose<AdminUsersController, AdminUsersState>((
-  ref,
-) {
-  final controller = AdminUsersController(
-    service: ref.watch(adminUsersServiceProvider),
-    authController: ref.read(authControllerProvider.notifier),
-    onDashboardRefresh: () {
-      try {
-        ref.read(adminDashboardControllerProvider.notifier).refresh();
-        // ignore: empty_catches
-      } catch (_) {}
-    },
-  );
-  controller.load();
-  return controller;
-});
+      ref,
+    ) {
+      final controller = AdminUsersController(
+        service: ref.watch(adminUsersServiceProvider),
+        authController: ref.read(authControllerProvider.notifier),
+        onDashboardRefresh: () {
+          try {
+            ref.read(adminDashboardControllerProvider.notifier).refresh();
+            // ignore: empty_catches
+          } catch (_) {}
+        },
+      );
+      controller.load();
+      return controller;
+    });
 
-final adminDriversControllerProvider = StateNotifierProvider.autoDispose<
-    AdminDriversController, AdminDriversState>((ref) {
-  final controller = AdminDriversController(
-    service: ref.watch(adminDriversServiceProvider),
-  );
-  controller.load();
-  return controller;
-});
+final adminDriversControllerProvider =
+    StateNotifierProvider.autoDispose<
+      AdminDriversController,
+      AdminDriversState
+    >((ref) {
+      final controller = AdminDriversController(
+        service: ref.watch(adminDriversServiceProvider),
+      );
+      controller.load();
+      return controller;
+    });
 
 final adminTeamControllerProvider =
     StateNotifierProvider.autoDispose<AdminTeamController, AdminTeamState>((
-  ref,
-) {
-  final controller = AdminTeamController(
-    service: ref.watch(adminTeamServiceProvider),
-  );
-  controller.load();
-  return controller;
-});
+      ref,
+    ) {
+      final controller = AdminTeamController(
+        service: ref.watch(adminTeamServiceProvider),
+      );
+      controller.load();
+      return controller;
+    });
 
-final adminInventoryControllerProvider = StateNotifierProvider.autoDispose<
-    AdminInventoryController, AdminInventoryState>((ref) {
-  final controller = AdminInventoryController(
-    service: ref.watch(adminInventoryServiceProvider),
-  );
-  controller.loadInitial();
-  return controller;
-});
+final adminInventoryControllerProvider =
+    StateNotifierProvider.autoDispose<
+      AdminInventoryController,
+      AdminInventoryState
+    >((ref) {
+      final controller = AdminInventoryController(
+        service: ref.watch(adminInventoryServiceProvider),
+      );
+      controller.loadInitial();
+      return controller;
+    });
 
 final adminLogsControllerProvider =
-    StateNotifierProvider.autoDispose<AdminLogsController, AdminLogsState>(
-        (ref) {
-  return AdminLogsController(service: ref.watch(adminLogsServiceProvider));
-});
+    StateNotifierProvider.autoDispose<AdminLogsController, AdminLogsState>((
+      ref,
+    ) {
+      return AdminLogsController(service: ref.watch(adminLogsServiceProvider));
+    });
 
-final adminPaymentsControllerProvider = StateNotifierProvider.autoDispose<
-    AdminPaymentsController, AdminPaymentsState>((ref) {
-  final controller = AdminPaymentsController(
-    service: ref.watch(adminPaymentsServiceProvider),
-  );
-  controller.load();
-  return controller;
-});
+final adminPaymentsControllerProvider =
+    StateNotifierProvider.autoDispose<
+      AdminPaymentsController,
+      AdminPaymentsState
+    >((ref) {
+      final controller = AdminPaymentsController(
+        service: ref.watch(adminPaymentsServiceProvider),
+      );
+      controller.load();
+      return controller;
+    });
 
 final adminPlansControllerProvider =
-    StateNotifierProvider.autoDispose<AdminPlansController, AdminPlansState>(
-        (ref) {
-  final controller = AdminPlansController(
-    service: ref.watch(adminPlansServiceProvider),
-  );
-  controller.load();
-  return controller;
-});
+    StateNotifierProvider.autoDispose<AdminPlansController, AdminPlansState>((
+      ref,
+    ) {
+      final controller = AdminPlansController(
+        service: ref.watch(adminPlansServiceProvider),
+      );
+      controller.load();
+      return controller;
+    });
 
-final adminSettingsControllerProvider = StateNotifierProvider.autoDispose<
-    AdminSettingsController, AdminSettingsState>((ref) {
-  return AdminSettingsController(ref.watch(adminSettingsServiceProvider));
-});
+final adminSettingsControllerProvider =
+    StateNotifierProvider.autoDispose<
+      AdminSettingsController,
+      AdminSettingsState
+    >((ref) {
+      return AdminSettingsController(ref.watch(adminSettingsServiceProvider));
+    });
 
-final adminSupportControllerProvider = StateNotifierProvider.autoDispose<
-    AdminSupportController, AdminSupportState>((ref) {
-  return AdminSupportController(ref.watch(adminSupportServiceProvider));
-});
+final adminSupportControllerProvider =
+    StateNotifierProvider.autoDispose<
+      AdminSupportController,
+      AdminSupportState
+    >((ref) {
+      return AdminSupportController(ref.watch(adminSupportServiceProvider));
+    });
 
 final adminDriverDetailsControllerProvider = StateNotifierProvider.autoDispose
     .family<AdminDriverDetailsController, AdminDriverDetailsState, String>((
-  ref,
-  driverId,
-) {
-  return AdminDriverDetailsController(
-    driverId: driverId,
-    service: ref.watch(adminDriversServiceProvider),
-  )..loadInitial();
-});
+      ref,
+      driverId,
+    ) {
+      return AdminDriverDetailsController(
+        driverId: driverId,
+        service: ref.watch(adminDriversServiceProvider),
+      )..loadInitial();
+    });
 
 final adminUserDetailsControllerProvider = StateNotifierProvider.autoDispose
     .family<AdminUserDetailsController, AdminUserDetailsState, String>((
-  ref,
-  userId,
-) {
-  return AdminUserDetailsController(
-    userId: userId,
-    service: ref.watch(adminUserDetailsServiceProvider),
-  )..loadInitial();
-});
+      ref,
+      userId,
+    ) {
+      return AdminUserDetailsController(
+        userId: userId,
+        service: ref.watch(adminUserDetailsServiceProvider),
+      )..loadInitial();
+    });
 
 final adminVehicleDetailsControllerProvider = StateNotifierProvider.autoDispose
     .family<AdminVehicleDetailsController, AdminVehicleDetailsState, String>((
+      ref,
+      vehicleId,
+    ) {
+      return AdminVehicleDetailsController(
+        vehicleId: vehicleId,
+        service: ref.watch(adminVehicleServiceProvider),
+      )..loadInitial();
+    });
+
+final adminNotificationCenterProvider =
+    StateNotifierProvider.autoDispose<
+      NotificationCenterController,
+      NotificationCenterState
+    >((ref) {
+      final controller = NotificationCenterController(
+        ref.watch(adminNotificationServiceProvider),
+      );
+      controller.load();
+      return controller;
+    });
+
+final adminNotificationUnreadBadgeProvider = FutureProvider.autoDispose<int>((
   ref,
-  vehicleId,
-) {
-  return AdminVehicleDetailsController(
-    vehicleId: vehicleId,
-    service: ref.watch(adminVehicleServiceProvider),
-  )..loadInitial();
-});
-
-final adminNotificationCenterProvider = StateNotifierProvider.autoDispose<
-    NotificationCenterController, NotificationCenterState>((ref) {
-  final controller = NotificationCenterController(
-    ref.watch(adminNotificationServiceProvider),
-  );
-  controller.load();
-  return controller;
-});
-
-final adminNotificationUnreadBadgeProvider =
-    FutureProvider.autoDispose<int>((ref) async {
+) async {
   final cacheLink = ref.keepAlive();
   final cacheTimer = Timer(const Duration(seconds: 30), cacheLink.close);
   ref.onDispose(cacheTimer.cancel);

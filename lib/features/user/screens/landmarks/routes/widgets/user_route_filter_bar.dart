@@ -4,6 +4,7 @@ import '../../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../../shared/helpers/mobile_text.dart';
 import '../../../../models/user_landmark_model.dart';
 
 /// Compact filter bar for the Routes list: search + status pills.
@@ -69,8 +70,9 @@ class _SearchField extends StatefulWidget {
 }
 
 class _SearchFieldState extends State<_SearchField> {
-  late final TextEditingController _controller =
-      TextEditingController(text: widget.value);
+  late final TextEditingController _controller = TextEditingController(
+    text: widget.value,
+  );
 
   @override
   void didUpdateWidget(covariant _SearchField oldWidget) {
@@ -100,7 +102,7 @@ class _SearchFieldState extends State<_SearchField> {
         textInputAction: TextInputAction.search,
         decoration: InputDecoration(
           isDense: true,
-          hintText: 'Search routes by name',
+          hintText: context.mobileText('Search routes by name'),
           hintStyle: OpenVtsTypography.body.copyWith(
             color: OpenVtsColors.textTertiary,
           ),

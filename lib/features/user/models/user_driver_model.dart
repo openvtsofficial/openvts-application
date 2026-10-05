@@ -122,7 +122,8 @@ class UserDriver {
     );
     final addressDetails = UserDriverAddress.fromSource(source);
     final vehicleAssignment = _parseDriverVehicleAssignment(source);
-    final status = _firstString(source, const [
+    final status =
+        _firstString(source, const [
           'status',
           'driverStatus',
           'driver_status',
@@ -137,7 +138,8 @@ class UserDriver {
       id: _firstString(source, const ['id', '_id', 'uid', 'driverId']) ?? '',
       name:
           _firstString(source, const ['name', 'fullName', 'displayName']) ?? '',
-      mobilePrefix: _firstString(source, const [
+      mobilePrefix:
+          _firstString(source, const [
             'mobilePrefix',
             'mobile_prefix',
             'mobileCode',
@@ -145,7 +147,8 @@ class UserDriver {
             'countryPrefix',
           ]) ??
           '',
-      mobile: _firstString(source, const [
+      mobile:
+          _firstString(source, const [
             'mobile',
             'mobileNumber',
             'mobile_number',
@@ -158,23 +161,27 @@ class UserDriver {
       username: _firstString(source, const ['username', 'userName']) ?? '',
       countryCode:
           _firstString(source, const ['countryCode', 'country_code']) ??
-              (addressDetails?.countryCode ?? ''),
-      stateCode: _firstString(source, const [
+          (addressDetails?.countryCode ?? ''),
+      stateCode:
+          _firstString(source, const [
             'stateCode',
             'state_code',
             'StateCode',
           ]) ??
           (addressDetails?.stateCode ?? ''),
-      city: _firstString(source, const ['city', 'cityId', 'cityName']) ??
+      city:
+          _firstString(source, const ['city', 'cityId', 'cityName']) ??
           (addressDetails?.city ?? ''),
-      address: _firstString(source, const [
+      address:
+          _firstString(source, const [
             'address',
             'addressLine',
             'address_line',
             'fullAddress',
           ]) ??
           (addressDetails?.address ?? ''),
-      pincode: _firstString(source, const [
+      pincode:
+          _firstString(source, const [
             'pincode',
             'postalCode',
             'postal_code',
@@ -182,22 +189,28 @@ class UserDriver {
           ]) ??
           (addressDetails?.pincode ?? ''),
       status: status,
-      isActive: _parseBool(_firstValue(source, const [
-            'isActive',
-            'is_active',
-            'isactive',
-            'active',
-            'status',
-          ])) ??
+      isActive:
+          _parseBool(
+            _firstValue(source, const [
+              'isActive',
+              'is_active',
+              'isactive',
+              'active',
+              'status',
+            ]),
+          ) ??
           isActiveFromStatus ??
           true,
-      isVerified: _parseBool(_firstValue(source, const [
-            'isVerified',
-            'is_verified',
-            'verified',
-            'isEmailVerified',
-            'isMobileVerified',
-          ])) ??
+      isVerified:
+          _parseBool(
+            _firstValue(source, const [
+              'isVerified',
+              'is_verified',
+              'verified',
+              'isEmailVerified',
+              'isMobileVerified',
+            ]),
+          ) ??
           isVerifiedFromStatus ??
           false,
       createdAt: _firstDate(source, const [
@@ -206,16 +219,16 @@ class UserDriver {
         'addedAt',
         'added_at',
       ]),
-      updatedAt: _firstDate(source, const [
-        'updatedAt',
-        'updated_at',
-      ]),
-      attributes: _parseAttributes(_firstValue(source, const [
-            'attributes',
-            'attribute',
-            'meta',
-            'metadata',
-          ])) ??
+      updatedAt: _firstDate(source, const ['updatedAt', 'updated_at']),
+      attributes:
+          _parseAttributes(
+            _firstValue(source, const [
+              'attributes',
+              'attribute',
+              'meta',
+              'metadata',
+            ]),
+          ) ??
           const <String, dynamic>{},
       addressDetails: addressDetails,
       vehicleAssignment: vehicleAssignment,
@@ -223,15 +236,15 @@ class UserDriver {
   }
 
   static List<UserDriver> listFromJson(dynamic json) {
-    return _extractList(json, preferredKeys: const [
-      'drivers',
-      'items',
-      'rows',
-      'records',
-      'data',
-    ]).map(UserDriver.fromJson).where((item) {
-      return item.id.trim().isNotEmpty;
-    }).toList(growable: false);
+    return _extractList(
+          json,
+          preferredKeys: const ['drivers', 'items', 'rows', 'records', 'data'],
+        )
+        .map(UserDriver.fromJson)
+        .where((item) {
+          return item.id.trim().isNotEmpty;
+        })
+        .toList(growable: false);
   }
 }
 
@@ -295,7 +308,8 @@ class UserDriverVehicleAssignment {
         : UserDriverVehicleMini.fromJson(vehicleMap);
 
     return UserDriverVehicleAssignment(
-      id: _firstString(source, const [
+      id:
+          _firstString(source, const [
             'id',
             '_id',
             'driverVehicleId',
@@ -303,7 +317,8 @@ class UserDriverVehicleAssignment {
           ]) ??
           '',
       driverId: _firstString(source, const ['driverId', 'driver_id']) ?? '',
-      vehicleId: _firstString(source, const ['vehicleId', 'vehicle_id']) ??
+      vehicleId:
+          _firstString(source, const ['vehicleId', 'vehicle_id']) ??
           (vehicle?.id ?? ''),
       vehicle: vehicle,
       createdAt: _firstDate(source, const ['createdAt', 'created_at']),
@@ -333,9 +348,14 @@ class UserDriverVehicleMini {
   final DateTime? createdAt;
 
   String get searchContent {
-    return <String>[id, name, plateNumber, imei, vin, vehicleType]
-        .join(' ')
-        .toLowerCase();
+    return <String>[
+      id,
+      name,
+      plateNumber,
+      imei,
+      vin,
+      vehicleType,
+    ].join(' ').toLowerCase();
   }
 
   UserDriverVehicleMini copyWith({
@@ -375,7 +395,8 @@ class UserDriverVehicleMini {
     return UserDriverVehicleMini(
       id: _firstString(source, const ['id', '_id', 'uid', 'vehicleId']) ?? '',
       name: _firstString(source, const ['name', 'vehicleName']) ?? '',
-      plateNumber: _firstString(source, const [
+      plateNumber:
+          _firstString(source, const [
             'plateNumber',
             'plate_number',
             'numberPlate',
@@ -383,11 +404,13 @@ class UserDriverVehicleMini {
             'vehicleNo',
           ]) ??
           '',
-      imei: _firstString(source, const ['imei', 'IMEI', 'deviceImei']) ??
+      imei:
+          _firstString(source, const ['imei', 'IMEI', 'deviceImei']) ??
           deviceImei ??
           '',
       vin: _firstString(source, const ['vin', 'VIN', 'chassisNo']) ?? '',
-      vehicleType: _firstString(source, const [
+      vehicleType:
+          _firstString(source, const [
             'vehicleType',
             'vehicle_type',
             'vehicleTypeName',
@@ -399,15 +422,15 @@ class UserDriverVehicleMini {
   }
 
   static List<UserDriverVehicleMini> listFromJson(dynamic json) {
-    return _extractList(json, preferredKeys: const [
-      'vehicles',
-      'items',
-      'rows',
-      'records',
-      'data',
-    ]).map(UserDriverVehicleMini.fromJson).where((item) {
-      return item.id.isNotEmpty;
-    }).toList(growable: false);
+    return _extractList(
+          json,
+          preferredKeys: const ['vehicles', 'items', 'rows', 'records', 'data'],
+        )
+        .map(UserDriverVehicleMini.fromJson)
+        .where((item) {
+          return item.id.isNotEmpty;
+        })
+        .toList(growable: false);
   }
 }
 
@@ -442,31 +465,30 @@ class UserDriverAddress {
     return UserDriverAddress(
       countryCode:
           _firstString(source, const ['countryCode', 'country_code']) ?? '',
-      stateCode: _firstString(source, const [
+      stateCode:
+          _firstString(source, const [
             'stateCode',
             'state_code',
             'StateCode',
           ]) ??
           '',
       city: _firstString(source, const ['city', 'cityId', 'cityName']) ?? '',
-      address: _firstString(source, const [
+      address:
+          _firstString(source, const [
             'address',
             'addressLine',
             'address_line',
           ]) ??
           '',
-      pincode: _firstString(source, const [
-            'pincode',
-            'postalCode',
-            'zip',
-          ]) ??
-          '',
+      pincode:
+          _firstString(source, const ['pincode', 'postalCode', 'zip']) ?? '',
       fullAddress: _firstString(source, const ['fullAddress']) ?? '',
     );
   }
 
   static UserDriverAddress? fromSource(Map<String, dynamic> source) {
-    final nested = _firstMap(source, const [
+    final nested =
+        _firstMap(source, const [
           'address',
           'addressInfo',
           'address_info',
@@ -479,19 +501,18 @@ class UserDriverAddress {
       ...nested,
       'countryCode':
           _firstValue(source, const ['countryCode', 'country_code']) ??
-              nested['countryCode'] ??
-              nested['country_code'],
-      'stateCode': _firstValue(source, const [
-            'stateCode',
-            'state_code',
-            'StateCode',
-          ]) ??
+          nested['countryCode'] ??
+          nested['country_code'],
+      'stateCode':
+          _firstValue(source, const ['stateCode', 'state_code', 'StateCode']) ??
           nested['stateCode'] ??
           nested['state_code'],
-      'city': _firstValue(source, const ['city', 'cityId', 'cityName']) ??
+      'city':
+          _firstValue(source, const ['city', 'cityId', 'cityName']) ??
           nested['city'] ??
           nested['cityId'],
-      'address': _firstValue(source, const [
+      'address':
+          _firstValue(source, const [
             'address',
             'addressLine',
             'address_line',
@@ -499,11 +520,8 @@ class UserDriverAddress {
           ]) ??
           nested['address'] ??
           nested['addressLine'],
-      'pincode': _firstValue(source, const [
-            'pincode',
-            'postalCode',
-            'zip',
-          ]) ??
+      'pincode':
+          _firstValue(source, const ['pincode', 'postalCode', 'zip']) ??
           nested['pincode'],
       'fullAddress':
           _firstValue(source, const ['fullAddress']) ?? nested['fullAddress'],
@@ -540,14 +558,11 @@ class UserDriverLog {
       json,
       preferredKeys: const ['log', 'item', 'record', 'data'],
     );
-    final activity = _firstString(source, const [
-          'activity',
-          'action',
-          'event',
-          'type',
-        ]) ??
+    final activity =
+        _firstString(source, const ['activity', 'action', 'event', 'type']) ??
         '';
-    final actor = _firstMap(source, const [
+    final actor =
+        _firstMap(source, const [
           'user',
           'actor',
           'performedBy',
@@ -565,7 +580,8 @@ class UserDriverLog {
     return UserDriverLog(
       id: _firstString(source, const ['id', '_id', 'historyId', 'logId']) ?? '',
       activity: activity,
-      message: _firstString(source, const ['message', 'description', 'note']) ??
+      message:
+          _firstString(source, const ['message', 'description', 'note']) ??
           activity,
       vehicle: vehicleMap == null
           ? null
@@ -579,13 +595,10 @@ class UserDriverLog {
   }
 
   static List<UserDriverLog> listFromJson(dynamic json) {
-    return _extractList(json, preferredKeys: const [
-      'logs',
-      'items',
-      'rows',
-      'records',
-      'data',
-    ]).map(UserDriverLog.fromJson).toList(growable: false);
+    return _extractList(
+      json,
+      preferredKeys: const ['logs', 'items', 'rows', 'records', 'data'],
+    ).map(UserDriverLog.fromJson).toList(growable: false);
   }
 }
 
@@ -631,7 +644,8 @@ class UserDriverDocument {
       json,
       preferredKeys: const ['document', 'doc', 'item', 'record', 'data'],
     );
-    final docType = _firstMap(source, const [
+    final docType =
+        _firstMap(source, const [
           'docType',
           'doc_type',
           'documentType',
@@ -639,25 +653,24 @@ class UserDriverDocument {
         ]) ??
         const <String, dynamic>{};
 
-    final filePath = _firstString(source, const [
-          'filePath',
-          'file_path',
-          'path',
-        ]) ??
-        '';
+    final filePath =
+        _firstString(source, const ['filePath', 'file_path', 'path']) ?? '';
 
     return UserDriverDocument(
-      id: _firstString(source, const ['id', '_id', 'docId', 'documentId']) ??
+      id:
+          _firstString(source, const ['id', '_id', 'docId', 'documentId']) ??
           '',
       title: _firstString(source, const ['title', 'name']) ?? '',
-      docTypeId: _firstString(source, const [
+      docTypeId:
+          _firstString(source, const [
             'docTypeId',
             'doc_type_id',
             'documentTypeId',
           ]) ??
           _firstString(docType, const ['id', '_id']) ??
           '',
-      docTypeName: _firstString(source, const [
+      docTypeName:
+          _firstString(source, const [
             'docTypeName',
             'doc_type_name',
             'documentTypeName',
@@ -670,24 +683,23 @@ class UserDriverDocument {
       fileType:
           _firstString(source, const ['fileType', 'file_type', 'mime']) ?? '',
       filePath: filePath,
-      fileUrl: _firstString(source, const [
-            'fileUrl',
-            'file_url',
-            'url',
-          ]) ??
+      fileUrl:
+          _firstString(source, const ['fileUrl', 'file_url', 'url']) ??
           filePath,
       expiryAt: _firstDate(source, const ['expiryAt', 'expiry_at', 'expiry']),
-      isVisible: _parseBool(_firstValue(source, const [
-            'isVisible',
-            'is_visible',
-            'visible',
-          ])) ??
+      isVisible:
+          _parseBool(
+            _firstValue(source, const ['isVisible', 'is_visible', 'visible']),
+          ) ??
           true,
-      isVisibleDriver: _parseBool(_firstValue(source, const [
-            'isVisibleDriver',
-            'is_visible_driver',
-            'visibleToDriver',
-          ])) ??
+      isVisibleDriver:
+          _parseBool(
+            _firstValue(source, const [
+              'isVisibleDriver',
+              'is_visible_driver',
+              'visibleToDriver',
+            ]),
+          ) ??
           false,
       createdAt: _firstDate(source, const ['createdAt', 'created_at']),
       updatedAt: _firstDate(source, const ['updatedAt', 'updated_at']),
@@ -696,13 +708,10 @@ class UserDriverDocument {
   }
 
   static List<UserDriverDocument> listFromJson(dynamic json) {
-    return _extractList(json, preferredKeys: const [
-      'documents',
-      'docs',
-      'items',
-      'rows',
-      'data',
-    ]).map(UserDriverDocument.fromJson).toList(growable: false);
+    return _extractList(
+      json,
+      preferredKeys: const ['documents', 'docs', 'items', 'rows', 'data'],
+    ).map(UserDriverDocument.fromJson).toList(growable: false);
   }
 }
 
@@ -730,24 +739,28 @@ class UserDriverDocumentType {
   }
 
   static List<UserDriverDocumentType> listFromJson(dynamic json) {
-    return _extractList(json, preferredKeys: const [
-      'documentTypes',
-      'docTypes',
-      'types',
-      'items',
-      'rows',
-      'data',
-    ]).map(UserDriverDocumentType.fromJson).where((item) {
-      return item.id.isNotEmpty && (item.docFor.isEmpty || item.isForDriver);
-    }).toList(growable: false);
+    return _extractList(
+          json,
+          preferredKeys: const [
+            'documentTypes',
+            'docTypes',
+            'types',
+            'items',
+            'rows',
+            'data',
+          ],
+        )
+        .map(UserDriverDocumentType.fromJson)
+        .where((item) {
+          return item.id.isNotEmpty &&
+              (item.docFor.isEmpty || item.isForDriver);
+        })
+        .toList(growable: false);
   }
 }
 
 class UserDriverCountryOption {
-  const UserDriverCountryOption({
-    required this.value,
-    required this.label,
-  });
+  const UserDriverCountryOption({required this.value, required this.label});
 
   final String value;
   final String label;
@@ -758,10 +771,7 @@ class UserDriverCountryOption {
           final primitive = _parseString(item);
           if (primitive != null) {
             final value = primitive.toUpperCase();
-            return UserDriverCountryOption(
-              value: value,
-              label: primitive,
-            );
+            return UserDriverCountryOption(value: value, label: primitive);
           }
 
           final itemMap = _asMap(item);
@@ -769,18 +779,20 @@ class UserDriverCountryOption {
             return const UserDriverCountryOption(value: '', label: '');
           }
 
-          final value = (_firstString(itemMap, const [
-                    'countryCode',
-                    'country_code',
-                    'code',
-                    'iso2',
-                    'isoCode',
-                    'iso_code',
-                    'country',
-                  ]) ??
-                  '')
-              .toUpperCase();
-          final label = _firstString(itemMap, const [
+          final value =
+              (_firstString(itemMap, const [
+                        'countryCode',
+                        'country_code',
+                        'code',
+                        'iso2',
+                        'isoCode',
+                        'iso_code',
+                        'country',
+                      ]) ??
+                      '')
+                  .toUpperCase();
+          final label =
+              _firstString(itemMap, const [
                 'name',
                 'countryName',
                 'country_name',
@@ -830,14 +842,15 @@ class UserDriverMobilePrefixOption {
             );
           }
 
-          final countryCode = (_firstString(itemMap, const [
-                    'countryCode',
-                    'country_code',
-                    'country',
-                    'iso2',
-                  ]) ??
-                  '')
-              .toUpperCase();
+          final countryCode =
+              (_firstString(itemMap, const [
+                        'countryCode',
+                        'country_code',
+                        'country',
+                        'iso2',
+                      ]) ??
+                      '')
+                  .toUpperCase();
           final value = _normalizeDialCode(
             _firstString(itemMap, const [
                   'mobilePrefix',
@@ -875,10 +888,7 @@ class UserDriverMobilePrefixOption {
 }
 
 class UserDriverStateOption {
-  const UserDriverStateOption({
-    required this.value,
-    required this.label,
-  });
+  const UserDriverStateOption({required this.value, required this.label});
 
   final String value;
   final String label;
@@ -897,24 +907,26 @@ class UserDriverStateOption {
             return const UserDriverStateOption(value: '', label: '');
           }
 
-          final value = (_firstString(itemMap, const [
-                    'stateCode',
-                    'state_code',
-                    'code',
-                    'iso2',
-                    'isoCode',
-                    'iso_code',
-                    'state',
-                    'value',
-                    'id',
-                    'provinceCode',
-                    'province_code',
-                    'regionCode',
-                    'region_code',
-                  ]) ??
-                  '')
-              .toUpperCase();
-          final label = _firstString(itemMap, const [
+          final value =
+              (_firstString(itemMap, const [
+                        'stateCode',
+                        'state_code',
+                        'code',
+                        'iso2',
+                        'isoCode',
+                        'iso_code',
+                        'state',
+                        'value',
+                        'id',
+                        'provinceCode',
+                        'province_code',
+                        'regionCode',
+                        'region_code',
+                      ]) ??
+                      '')
+                  .toUpperCase();
+          final label =
+              _firstString(itemMap, const [
                 'name',
                 'stateName',
                 'state_name',
@@ -936,10 +948,7 @@ class UserDriverStateOption {
 }
 
 class UserDriverCityOption {
-  const UserDriverCityOption({
-    required this.value,
-    required this.label,
-  });
+  const UserDriverCityOption({required this.value, required this.label});
 
   final String value;
   final String label;
@@ -957,7 +966,8 @@ class UserDriverCityOption {
             return const UserDriverCityOption(value: '', label: '');
           }
 
-          final value = _firstString(itemMap, const [
+          final value =
+              _firstString(itemMap, const [
                 'name',
                 'cityName',
                 'city_name',
@@ -969,7 +979,8 @@ class UserDriverCityOption {
                 'title',
               ]) ??
               '';
-          final label = _firstString(itemMap, const [
+          final label =
+              _firstString(itemMap, const [
                 'name',
                 'cityName',
                 'city_name',
@@ -1021,7 +1032,7 @@ class CreateUserDriverRequest {
       'mobilePrefix': _requiredString(mobilePrefix, 'mobilePrefix'),
       'mobile': _requiredString(mobile, 'mobile'),
       'username': _requiredString(username, 'username'),
-      'password': _requiredString(password, 'password'),
+      'password': password,
       'countryCode': _requiredString(countryCode, 'countryCode'),
     };
 
@@ -1073,13 +1084,14 @@ class UpdateUserDriverRequest {
     _putIfNotNull(payload, 'mobile', _optionalString(mobile));
     _putIfNotNull(payload, 'email', _optionalString(email));
     _putIfNotNull(payload, 'username', _optionalString(username));
-    _putIfNotNull(payload, 'password', _optionalString(password));
+    if (password != null && password!.isNotEmpty) {
+      payload['password'] = password;
+    }
     _putIfNotNull(payload, 'countryCode', _optionalString(countryCode));
     _putIfNotNull(payload, 'StateCode', _optionalString(stateCode));
     _putIfNotNull(payload, 'city', _optionalString(city));
     _putIfNotNull(payload, 'address', _optionalString(address));
     _putIfNotNull(payload, 'pincode', _optionalString(pincode));
-    if (isActive != null) payload['isactive'] = isActive.toString();
     if (attributes != null) {
       payload['attributes'] = Map<String, dynamic>.from(attributes!);
     }
@@ -1511,10 +1523,7 @@ String _normalizeDialCode(String value) {
   return '+$normalized';
 }
 
-List<T> _distinctByKey<T>(
-  List<T> items,
-  String Function(T item) keyBuilder,
-) {
+List<T> _distinctByKey<T>(List<T> items, String Function(T item) keyBuilder) {
   final seen = <String>{};
   final result = <T>[];
 

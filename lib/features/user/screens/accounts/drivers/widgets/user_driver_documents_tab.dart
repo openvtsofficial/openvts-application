@@ -8,6 +8,7 @@ import '../../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../../core/utils/date_time_formatter.dart';
+import '../../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../../shared/widgets/open_vts_bottom_sheet.dart';
 import '../../../../../../shared/widgets/open_vts_button.dart';
@@ -21,12 +22,15 @@ import 'user_driver_document_sheet.dart';
 class UserDriverDocumentsTab extends ConsumerWidget {
   const UserDriverDocumentsTab({required this.provider, super.key});
 
-  final AutoDisposeStateNotifierProvider<UserDriverDetailsController,
-      UserDriverDetailsState> provider;
+  final AutoDisposeStateNotifierProvider<
+    UserDriverDetailsController,
+    UserDriverDetailsState
+  >
+  provider;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final dateFormatter = ref.watch(appDateFormatterProvider);
+    ref.watch(appDateFormatterProvider);
     final state = ref.watch(provider);
     final controller = ref.read(provider.notifier);
     final baseUrl = ref.watch(apiBaseUrlProvider);
@@ -34,7 +38,7 @@ class UserDriverDocumentsTab extends ConsumerWidget {
         state.isLoadingDocuments && state.documents.isEmpty;
 
     if (isInitialLoading) {
-      return const _LoadingCard(label: 'Loading documents');
+      return _LoadingCard(label: context.mobileText('Loading documents'));
     }
 
     if (state.errorMessage != null && state.documents.isEmpty) {
@@ -87,14 +91,13 @@ class UserDriverDocumentsTab extends ConsumerWidget {
   ) {
     return OpenVtsBottomSheet.show<bool>(
       context: context,
-      title: document == null ? 'Upload Document' : 'Edit Document',
+      title: document == null
+          ? context.mobileText('Upload Document')
+          : context.mobileText('Edit Document'),
       initialChildSize: 0.88,
       minChildSize: 0.5,
       maxChildSize: 0.96,
-      child: UserDriverDocumentSheet(
-        provider: provider,
-        document: document,
-      ),
+      child: UserDriverDocumentSheet(provider: provider, document: document),
     );
   }
 
@@ -105,7 +108,10 @@ class UserDriverDocumentsTab extends ConsumerWidget {
   ) async {
     final url = _resolveDocumentUrl(document, baseUrl);
     if (url == null) {
-      ToastHelper.showError('File URL is not available.', context: context);
+      ToastHelper.showError(
+        context.mobileText('File URL is not available.'),
+        context: context,
+      );
       return;
     }
 
@@ -118,11 +124,17 @@ class UserDriverDocumentsTab extends ConsumerWidget {
         return;
       }
       if (!launched) {
-        ToastHelper.showError('Could not open file.', context: context);
+        ToastHelper.showError(
+          context.mobileText('Could not open file.'),
+          context: context,
+        );
       }
     } catch (_) {
       if (context.mounted) {
-        ToastHelper.showError('Could not open file.', context: context);
+        ToastHelper.showError(
+          context.mobileText('Could not open file.'),
+          context: context,
+        );
       }
     }
   }
@@ -135,17 +147,17 @@ class UserDriverDocumentsTab extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Delete document'),
-        content: const Text('Delete this document?'),
+        title: Text(context.mobileText('Delete document')),
+        content: Text(context.mobileText('Delete this document?')),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Cancel'),
+            child: Text(context.mobileText('Cancel')),
           ),
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
             style: TextButton.styleFrom(foregroundColor: OpenVtsColors.error),
-            child: const Text('Delete'),
+            child: Text(context.mobileText('Delete')),
           ),
         ],
       ),
@@ -161,7 +173,10 @@ class UserDriverDocumentsTab extends ConsumerWidget {
     }
 
     if (ok) {
-      ToastHelper.showSuccess('Document deleted.', context: context);
+      ToastHelper.showSuccess(
+        context.mobileText('Document deleted.'),
+        context: context,
+      );
       return;
     }
 
@@ -206,7 +221,7 @@ class _SummaryCard extends StatelessWidget {
                     ),
                     const SizedBox(width: OpenVtsSpacing.xs),
                     Text(
-                      'Documents',
+                      context.mobileText('Documents'),
                       style: OpenVtsTypography.label.copyWith(
                         color: Theme.of(context).brightness == Brightness.dark
                             ? Colors.white
@@ -226,7 +241,11 @@ class _SummaryCard extends StatelessWidget {
                 ),
                 const SizedBox(height: OpenVtsSpacing.xs),
                 Text(
-                  '$documentCount files - $typeCount document types',
+                  context
+                      .mobileText("{value1} files - {value2} document types", {
+                        'value1': (documentCount).toString(),
+                        'value2': (typeCount).toString(),
+                      }),
                   style: OpenVtsTypography.meta.copyWith(
                     color: OpenVtsColors.textSecondary,
                     fontWeight: FontWeight.w700,
@@ -240,7 +259,7 @@ class _SummaryCard extends StatelessWidget {
             width: 150,
             height: 34,
             child: OpenVtsButton(
-              label: 'Upload',
+              label: context.mobileText('Upload'),
               height: 34,
               isLoading: isUploading,
               trailingIcon: Icons.upload_file_rounded,
@@ -315,7 +334,7 @@ class _DocumentCard extends ConsumerWidget {
               ),
               const SizedBox(width: OpenVtsSpacing.xs),
               PopupMenuButton<_DocumentAction>(
-                tooltip: 'Document actions',
+                tooltip: context.mobileText('Document actions'),
                 enabled: !isBusy,
                 icon: isBusy
                     ? const SizedBox(
@@ -340,26 +359,29 @@ class _DocumentCard extends ConsumerWidget {
                       onDelete?.call();
                   }
                 },
-                itemBuilder: (context) => const [
+                itemBuilder: (context) => [
                   PopupMenuItem(
                     value: _DocumentAction.view,
                     height: 38,
                     child: _MenuRow(
                       icon: Icons.open_in_new_rounded,
-                      label: 'View',
+                      label: context.mobileText('View'),
                     ),
                   ),
                   PopupMenuItem(
                     value: _DocumentAction.edit,
                     height: 38,
-                    child: _MenuRow(icon: Icons.edit_outlined, label: 'Edit'),
+                    child: _MenuRow(
+                      icon: Icons.edit_outlined,
+                      label: context.mobileText('Edit'),
+                    ),
                   ),
                   PopupMenuItem(
                     value: _DocumentAction.delete,
                     height: 38,
                     child: _MenuRow(
                       icon: Icons.delete_outline_rounded,
-                      label: 'Delete',
+                      label: context.mobileText('Delete'),
                       isDestructive: true,
                     ),
                   ),
@@ -384,14 +406,16 @@ class _DocumentCard extends ConsumerWidget {
               _MetaPill(
                 icon: Icons.event_outlined,
                 label: document.expiryAt == null
-                    ? 'No expiry'
+                    ? context.mobileText('No expiry')
                     : 'Expiry ${_dateText(document.expiryAt, dateFormatter)}',
               ),
               _MetaPill(
                 icon: document.isVisible
                     ? Icons.visibility_outlined
                     : Icons.visibility_off_outlined,
-                label: document.isVisible ? 'Visible' : 'Hidden',
+                label: document.isVisible
+                    ? context.mobileText('Visible')
+                    : context.mobileText('Hidden'),
                 color: document.isVisible
                     ? OpenVtsColors.brandInk
                     : OpenVtsColors.textTertiary,
@@ -401,15 +425,20 @@ class _DocumentCard extends ConsumerWidget {
                     ? Icons.shield_outlined
                     : Icons.person_off_outlined,
                 label: document.isVisibleDriver
-                    ? 'Visible to Driver'
-                    : 'Hidden from Driver',
+                    ? context.mobileText('Visible to Driver')
+                    : context.mobileText('Hidden from Driver'),
                 color: document.isVisibleDriver
                     ? OpenVtsColors.brandInk
                     : OpenVtsColors.textTertiary,
               ),
               _MetaPill(
                 icon: Icons.calendar_today_outlined,
-                label: 'Added ${_dateText(document.createdAt, dateFormatter)}',
+                label: context.mobileText("Added {value1}", {
+                  'value1': (_dateText(
+                    document.createdAt,
+                    dateFormatter,
+                  )).toString(),
+                }),
               ),
               for (final tag in document.tags.take(4))
                 _MetaPill(icon: Icons.label_outline_rounded, label: tag),
@@ -433,13 +462,15 @@ class _EmptyDocumentsCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const OpenVtsEmptyState(
-            title: 'No documents uploaded',
-            message: 'Upload driver files like license or identity proofs.',
+          OpenVtsEmptyState(
+            title: context.mobileText('No documents uploaded'),
+            message: context.mobileText(
+              'Upload driver files like license or identity proofs.',
+            ),
           ),
           const SizedBox(height: OpenVtsSpacing.sm),
           OpenVtsButton(
-            label: 'Upload Document',
+            label: context.mobileText('Upload Document'),
             height: 38,
             trailingIcon: Icons.upload_file_rounded,
             onPressed: onUpload,
@@ -502,7 +533,7 @@ class _ErrorCard extends StatelessWidget {
           ),
           const SizedBox(height: OpenVtsSpacing.sm),
           OpenVtsButton(
-            label: 'Retry',
+            label: context.mobileText('Retry'),
             height: 36,
             variant: OpenVtsButtonVariant.secondary,
             onPressed: onRetry,
@@ -622,8 +653,9 @@ class _MetaPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final displayColor =
-        isDarkMode && color == OpenVtsColors.brandInk ? Colors.white : color;
+    final displayColor = isDarkMode && color == OpenVtsColors.brandInk
+        ? Colors.white
+        : color;
     return Container(
       constraints: const BoxConstraints(maxWidth: 260),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

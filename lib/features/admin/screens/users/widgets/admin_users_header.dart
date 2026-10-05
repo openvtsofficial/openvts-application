@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 
@@ -32,7 +33,7 @@ class AdminUsersHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Users',
+                  context.mobileText('Users'),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: OpenVtsTypography.titleSmall.copyWith(
@@ -41,7 +42,9 @@ class AdminUsersHeader extends StatelessWidget {
                 ),
                 const SizedBox(height: OpenVtsSpacing.xxs),
                 Text(
-                  'Manage users, login access, contacts, and assigned vehicles.',
+                  context.mobileText(
+                    'Manage users, login access, contacts, and assigned vehicles.',
+                  ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: OpenVtsTypography.meta.copyWith(
@@ -55,7 +58,7 @@ class AdminUsersHeader extends StatelessWidget {
           SizedBox(
             width: 122,
             child: OpenVtsButton(
-              label: 'New User',
+              label: context.mobileText('New User'),
               onPressed: onCreatePressed,
               isLoading: isCreating,
               height: 36,

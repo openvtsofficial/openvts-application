@@ -6,15 +6,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../../../core/providers/core_providers.dart';
-import '../../../../../core/widgets/app_legal_links.dart';
 import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../../../shared/widgets/open_vts_empty_state.dart';
 import '../../../../../shared/widgets/open_vts_role_home.dart';
 import '../../../../auth/controllers/auth_controller.dart';
-import '../../../../auth/widgets/account_closure_card.dart';
 import '../../../controllers/user_providers.dart';
 import '../../../controllers/user_settings_controller.dart';
 import '../../../models/user_settings_model.dart';
@@ -89,10 +88,12 @@ class _UserProfileSettingsTabState
   Widget build(BuildContext context) {
     final draft = widget.state.draftProfile ?? widget.state.profile;
     if (draft == null) {
-      return const OpenVtsCard(
+      return OpenVtsCard(
         child: OpenVtsEmptyState(
-          title: 'Profile settings unavailable',
-          message: 'Pull to refresh and try loading your profile again.',
+          title: context.mobileText('Profile settings unavailable'),
+          message: context.mobileText(
+            'Pull to refresh and try loading your profile again.',
+          ),
         ),
       );
     }
@@ -106,17 +107,20 @@ class _UserProfileSettingsTabState
 
     final hasReferenceError =
         widget.state.errorMessage?.trim().isNotEmpty == true;
-    final showReferenceWarning = !widget.state.isLoadingReferences &&
+    final showReferenceWarning =
+        !widget.state.isLoadingReferences &&
         hasReferenceError &&
         (widget.state.countries.isEmpty || widget.state.mobilePrefixes.isEmpty);
 
     // Resolve human-readable labels from reference catalogue for the address
     // card. The statesForCountryCode guard ensures we only use state options
     // that actually belong to the profile's current country.
-    final profileCountryCode =
-        (draft.address?.countryCode ?? '').trim().toUpperCase();
-    final profileStateCode =
-        (draft.address?.stateCode ?? '').trim().toUpperCase();
+    final profileCountryCode = (draft.address?.countryCode ?? '')
+        .trim()
+        .toUpperCase();
+    final profileStateCode = (draft.address?.stateCode ?? '')
+        .trim()
+        .toUpperCase();
 
     final countryLabel = widget.state.countries
         .where((c) => c.value == profileCountryCode)
@@ -125,12 +129,12 @@ class _UserProfileSettingsTabState
 
     final stateLabel =
         (widget.state.statesForCountryCode == profileCountryCode &&
-                profileCountryCode.isNotEmpty)
-            ? widget.state.states
-                .where((s) => s.value == profileStateCode)
-                .map((s) => s.label)
-                .firstOrNull
-            : null;
+            profileCountryCode.isNotEmpty)
+        ? widget.state.states
+              .where((s) => s.value == profileStateCode)
+              .map((s) => s.label)
+              .firstOrNull
+        : null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -183,8 +187,7 @@ class _UserProfileSettingsTabState
               : () => _openCompanyEditSheet(draft.company!),
         ),
         const SizedBox(height: OpenVtsSpacing.sm),
-        if (ref.watch(authControllerProvider).user?.isSubuser != true)
-          _PasswordActionCard(onPressed: _openPasswordSheet),
+        _PasswordActionCard(onPressed: _openPasswordSheet),
         const SizedBox(height: OpenVtsSpacing.sm),
         UserEmailSubscriptionCard(
           subscription: widget.state.emailSubscription,
@@ -197,10 +200,7 @@ class _UserProfileSettingsTabState
           onSubscribe: _subscribeEmail,
         ),
         const SizedBox(height: OpenVtsSpacing.sm),
-        const AccountClosureCard(),
-        const SizedBox(height: OpenVtsSpacing.sm),
         UserLogoutCard(onLogout: _handleLogout),
-        const AppLegalLinks(),
       ],
     );
   }
@@ -213,7 +213,11 @@ class _UserProfileSettingsTabState
     }
     final label = (loggedOut ?? activeRole)?.displayLabel;
     if (label != null) {
-      ToastHelper.showInfo('Logged out from $label');
+      ToastHelper.showInfo(
+        context.mobileText("Logged out from {value1}", {
+          'value1': (label).toString(),
+        }),
+      );
     }
   }
 
@@ -230,27 +234,31 @@ class _UserProfileSettingsTabState
         imageQuality: 90,
       );
     } catch (_) {
-      ToastHelper.showError('Unable to open image picker.');
+      if (!mounted) return;
+      ToastHelper.showError(context.mobileText('Unable to open image picker.'));
       return;
     }
 
-    if (picked == null) {
+    if (!mounted || picked == null) {
       return;
     }
 
     final ext = picked.name.split('.').last.toLowerCase();
     if (!_allowedImageExts.contains(ext)) {
-      ToastHelper.showError('Unsupported format. Use PNG, JPG, JPEG or WEBP.');
+      ToastHelper.showError(
+        context.mobileText('Unsupported format. Use PNG, JPG, JPEG or WEBP.'),
+      );
       return;
     }
 
     final bytes = await picked.readAsBytes();
+    if (!mounted) return;
     if (bytes.isEmpty) {
-      ToastHelper.showError('Selected file is empty.');
+      ToastHelper.showError(context.mobileText('Selected file is empty.'));
       return;
     }
     if (bytes.length > _maxImageBytes) {
-      ToastHelper.showError('Image too large. Max 5 MB.');
+      ToastHelper.showError(context.mobileText('Image too large. Max 5 MB.'));
       return;
     }
 
@@ -274,11 +282,11 @@ class _UserProfileSettingsTabState
         _photoCacheBust = DateTime.now().millisecondsSinceEpoch.toString();
         _localAvatarBytes = null;
       });
-      ToastHelper.showSuccess('Profile photo updated');
+      ToastHelper.showSuccess(context.mobileText('Profile photo updated'));
     } else {
       final message =
           ref.read(userSettingsControllerProvider).profileErrorMessage ??
-              'Unable to upload profile photo.';
+          'Unable to upload profile photo.';
       ToastHelper.showError(message);
     }
   }
@@ -295,14 +303,12 @@ class _UserProfileSettingsTabState
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => UserProfileEditSheet(
-        profile: profile,
-        controller: widget.controller,
-      ),
+      builder: (_) =>
+          UserProfileEditSheet(profile: profile, controller: widget.controller),
     );
 
-    if (ok == true) {
-      ToastHelper.showSuccess('Profile updated');
+    if (mounted && ok == true) {
+      ToastHelper.showSuccess(context.mobileText('Profile updated'));
     }
   }
 
@@ -317,8 +323,8 @@ class _UserProfileSettingsTabState
       ),
     );
 
-    if (ok == true) {
-      ToastHelper.showSuccess('Company updated');
+    if (mounted && ok == true) {
+      ToastHelper.showSuccess(context.mobileText('Company updated'));
     }
   }
 
@@ -332,9 +338,8 @@ class _UserProfileSettingsTabState
       ),
     );
 
-    if (ok == true && mounted) {
-      ToastHelper.showSuccess('Password changed. Please sign in again.');
-      await ref.read(authControllerProvider.notifier).logoutAllRoles();
+    if (mounted && ok == true) {
+      ToastHelper.showSuccess(context.mobileText('Password changed'));
     }
   }
 
@@ -350,13 +355,14 @@ class _UserProfileSettingsTabState
     if (!requested) {
       final message =
           ref.read(userSettingsControllerProvider).profileErrorMessage ??
-              'Unable to request OTP right now.';
+          'Unable to request OTP right now.';
       ToastHelper.showError(message);
       return;
     }
 
-    final sheetTitle =
-        channel == _OtpChannel.email ? 'Verify Email' : 'Verify WhatsApp';
+    final sheetTitle = channel == _OtpChannel.email
+        ? 'Verify Email'
+        : 'Verify WhatsApp';
 
     final ok = await showModalBottomSheet<bool>(
       context: context,
@@ -364,7 +370,9 @@ class _UserProfileSettingsTabState
       backgroundColor: Colors.transparent,
       builder: (_) => UserOtpVerificationSheet(
         title: sheetTitle,
-        subtitle: 'Enter the OTP sent to your registered contact.',
+        subtitle: context.mobileText(
+          'Enter the OTP sent to your registered contact.',
+        ),
         onConfirm: (otp) {
           if (channel == _OtpChannel.email) {
             return widget.controller.confirmEmailOtp(otp);
@@ -382,7 +390,9 @@ class _UserProfileSettingsTabState
 
     if (ok == true && mounted) {
       ToastHelper.showSuccess(
-        channel == _OtpChannel.email ? 'Email verified' : 'WhatsApp verified',
+        channel == _OtpChannel.email
+            ? context.mobileText('Email verified')
+            : context.mobileText('WhatsApp verified'),
       );
     }
   }
@@ -394,12 +404,14 @@ class _UserProfileSettingsTabState
     }
 
     if (ok) {
-      ToastHelper.showSuccess('Subscribed to email updates');
+      ToastHelper.showSuccess(
+        context.mobileText('Subscribed to email updates'),
+      );
       unawaited(widget.controller.loadEmailSubscription());
     } else {
       final message =
           ref.read(userSettingsControllerProvider).profileErrorMessage ??
-              'Unable to subscribe right now.';
+          'Unable to subscribe right now.';
       ToastHelper.showError(message);
     }
   }
@@ -418,27 +430,27 @@ class _PasswordActionCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Security',
+            context.mobileText('Security'),
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
+              fontWeight: FontWeight.w700,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
           ),
           const SizedBox(height: OpenVtsSpacing.xxs),
           Text(
-            'Change your password to secure account access.',
+            context.mobileText(
+              'Change your password to secure account access.',
+            ),
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
           ),
           const SizedBox(height: OpenVtsSpacing.xs),
           OutlinedButton.icon(
             onPressed: onPressed,
             icon: const Icon(Icons.lock_outline_rounded, size: 14),
-            label: const Text('Change Password'),
-            style: OutlinedButton.styleFrom(
-              minimumSize: const Size(0, 44),
-            ),
+            label: Text(context.mobileText('Change Password')),
+            style: OutlinedButton.styleFrom(minimumSize: const Size(0, 44)),
           ),
         ],
       ),
@@ -471,19 +483,19 @@ class _ProfileReferenceWarningCard extends StatelessWidget {
             child: Text(
               message?.trim().isNotEmpty == true
                   ? message!.trim()
-                  : 'Country and mobile prefix references are unavailable. You can still edit manually.',
+                  : context.mobileText(
+                      'Country and mobile prefix references are unavailable. You can still edit manually.',
+                    ),
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
           ),
           const SizedBox(width: OpenVtsSpacing.xs),
           OutlinedButton(
             onPressed: onRetry,
-            style: OutlinedButton.styleFrom(
-              minimumSize: const Size(0, 44),
-            ),
-            child: const Text('Retry'),
+            style: OutlinedButton.styleFrom(minimumSize: const Size(0, 44)),
+            child: Text(context.mobileText('Retry')),
           ),
         ],
       ),

@@ -4,11 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../core/utils/date_time_formatter.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../models/superadmin_payments_model.dart';
@@ -16,17 +16,15 @@ import '../../../models/superadmin_payments_model.dart';
 const DateTimeFormatter _detailsDateFormatter = DateTimeFormatter();
 
 class TransactionDetailsSheet extends StatelessWidget {
-  const TransactionDetailsSheet({
-    required this.transaction,
-    super.key,
-  });
+  const TransactionDetailsSheet({required this.transaction, super.key});
 
   final SuperadminTransaction transaction;
 
   @override
   Widget build(BuildContext context) {
     final headerAmount = _formatHeaderAmount(transaction);
-    final hasFailure = _hasValue(transaction.failureCode) ||
+    final hasFailure =
+        _hasValue(transaction.failureCode) ||
         _hasValue(transaction.failureMessage);
 
     return DraggableScrollableSheet(
@@ -38,7 +36,7 @@ class TransactionDetailsSheet extends StatelessWidget {
         return DecoratedBox(
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.vertical(
+            borderRadius: const BorderRadius.vertical(
               top: Radius.circular(OpenVtsRadius.xl),
             ),
           ),
@@ -57,13 +55,14 @@ class TransactionDetailsSheet extends StatelessWidget {
               ),
               const SizedBox(height: OpenVtsSpacing.xs),
               Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: OpenVtsSpacing.md),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: OpenVtsSpacing.md,
+                ),
                 child: Row(
                   children: [
                     Expanded(
                       child: Text(
-                        'Transaction Details',
+                        context.mobileText('Transaction Details'),
                         style: OpenVtsTypography.titleSmall.copyWith(
                           color: Theme.of(context).colorScheme.onSurface,
                         ),
@@ -109,65 +108,65 @@ class TransactionDetailsSheet extends StatelessWidget {
                     ),
                     const SizedBox(height: OpenVtsSpacing.sm),
                     _DetailsSection(
-                      title: 'Details',
+                      title: context.mobileText('Details'),
                       rows: [
                         _DetailRowData(
-                          label: 'Transaction ID',
+                          label: context.mobileText('Transaction ID'),
                           value: _valueOrDash(transaction.id),
                           onCopy: _hasValue(transaction.id)
                               ? () => _copyValue(
-                                    context,
-                                    label: 'Transaction ID',
-                                    value: transaction.id,
-                                  )
+                                  context,
+                                  label: context.mobileText('Transaction ID'),
+                                  value: transaction.id,
+                                )
                               : null,
                         ),
                         _DetailRowData(
-                          label: 'Date/Time',
+                          label: context.mobileText('Date/Time'),
                           value: _formattedDateTime(transaction),
                         ),
                         _DetailRowData(
-                          label: 'Payment Type',
+                          label: context.mobileText('Payment Type'),
                           value: _valueOrDash(transaction.paymentType),
                         ),
                         _DetailRowData(
-                          label: 'Payment Mode',
+                          label: context.mobileText('Payment Mode'),
                           value: _statusModeLabel(transaction.paymentMode),
                         ),
                         _DetailRowData(
-                          label: 'Reference',
+                          label: context.mobileText('Reference'),
                           value: _valueOrDash(transaction.reference),
                           onCopy: _hasValue(transaction.reference)
                               ? () => _copyValue(
-                                    context,
-                                    label: 'Reference',
-                                    value: transaction.reference,
-                                  )
+                                  context,
+                                  label: context.mobileText('Reference'),
+                                  value: transaction.reference,
+                                )
                               : null,
                         ),
                         _DetailRowData(
-                          label: 'Provider',
+                          label: context.mobileText('Provider'),
                           value: _valueOrDash(transaction.provider),
                         ),
                         _DetailRowData(
-                          label: 'Provider Ref',
+                          label: context.mobileText('Provider Ref'),
                           value: _valueOrDash(transaction.providerRef),
                           onCopy: _hasValue(transaction.providerRef)
                               ? () => _copyValue(
-                                    context,
-                                    label: 'Provider Ref',
-                                    value: transaction.providerRef,
-                                  )
+                                  context,
+                                  label: context.mobileText('Provider Ref'),
+                                  value: transaction.providerRef,
+                                )
                               : null,
                         ),
                       ],
                     ),
                     const SizedBox(height: OpenVtsSpacing.sm),
                     _DetailsSection(
-                      title: 'Parties',
+                      title: context.mobileText('Parties'),
                       rows: [
                         _DetailRowData(
-                          label: 'From Admin',
+                          label: context.mobileText('From Admin'),
                           value: _partyLabel(
                             transaction.fromUser,
                             fallbackId: transaction.fromUserId,
@@ -175,7 +174,7 @@ class TransactionDetailsSheet extends StatelessWidget {
                           ),
                         ),
                         _DetailRowData(
-                          label: 'To',
+                          label: context.mobileText('To'),
                           value: _partyLabel(
                             transaction.toUser,
                             fallbackId: transaction.toUserId,
@@ -183,7 +182,7 @@ class TransactionDetailsSheet extends StatelessWidget {
                           ),
                         ),
                         _DetailRowData(
-                          label: 'Recorded By',
+                          label: context.mobileText('Recorded By'),
                           value: _partyLabel(
                             transaction.recordedBy,
                             fallbackId: transaction.recordedById,
@@ -195,14 +194,14 @@ class TransactionDetailsSheet extends StatelessWidget {
                     if (hasFailure) ...[
                       const SizedBox(height: OpenVtsSpacing.sm),
                       _DetailsSection(
-                        title: 'Failure',
+                        title: context.mobileText('Failure'),
                         rows: [
                           _DetailRowData(
-                            label: 'Failure Code',
+                            label: context.mobileText('Failure Code'),
                             value: _valueOrDash(transaction.failureCode),
                           ),
                           _DetailRowData(
-                            label: 'Failure Message',
+                            label: context.mobileText('Failure Message'),
                             value: _valueOrDash(transaction.failureMessage),
                             multiline: true,
                           ),
@@ -234,7 +233,10 @@ class TransactionDetailsSheet extends StatelessWidget {
     }
 
     Clipboard.setData(ClipboardData(text: normalized));
-    ToastHelper.showSuccess('$label copied', context: context);
+    ToastHelper.showSuccess(
+      context.mobileText("{value1} copied", {'value1': (label).toString()}),
+      context: context,
+    );
   }
 
   String _formatHeaderAmount(SuperadminTransaction source) {
@@ -346,10 +348,7 @@ class _StatusChip extends StatelessWidget {
 }
 
 class _DetailsSection extends StatelessWidget {
-  const _DetailsSection({
-    required this.title,
-    required this.rows,
-  });
+  const _DetailsSection({required this.title, required this.rows});
 
   final String title;
   final List<_DetailRowData> rows;
@@ -402,7 +401,7 @@ class _MetaSection extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Metadata',
+            context.mobileText('Metadata'),
             style: OpenVtsTypography.label.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
@@ -415,7 +414,8 @@ class _MetaSection extends StatelessWidget {
               color: Theme.of(context).colorScheme.surfaceContainer,
               borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
               border: Border.all(
-                  color: Theme.of(context).colorScheme.outlineVariant),
+                color: Theme.of(context).colorScheme.outlineVariant,
+              ),
             ),
             child: Scrollbar(
               thumbVisibility: false,
@@ -457,8 +457,9 @@ class _DetailRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
-      crossAxisAlignment:
-          row.multiline ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+      crossAxisAlignment: row.multiline
+          ? CrossAxisAlignment.start
+          : CrossAxisAlignment.center,
       children: [
         SizedBox(
           width: 114,
@@ -474,8 +475,9 @@ class _DetailRow extends StatelessWidget {
           child: Text(
             row.value,
             maxLines: row.multiline ? null : 2,
-            overflow:
-                row.multiline ? TextOverflow.visible : TextOverflow.ellipsis,
+            overflow: row.multiline
+                ? TextOverflow.visible
+                : TextOverflow.ellipsis,
             style: OpenVtsTypography.body.copyWith(
               color: Theme.of(context).colorScheme.onSurface,
             ),
@@ -487,7 +489,7 @@ class _DetailRow extends StatelessWidget {
             onPressed: row.onCopy,
             icon: const Icon(Icons.content_copy_rounded, size: 18),
             color: Theme.of(context).colorScheme.onSurfaceVariant,
-            tooltip: 'Copy',
+            tooltip: context.mobileText('Copy'),
             constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
             padding: EdgeInsets.zero,
             visualDensity: VisualDensity.compact,

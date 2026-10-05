@@ -4,13 +4,11 @@ import '../../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../../shared/helpers/mobile_text.dart';
 import '../../../../models/user_drivers_state.dart';
 
 class UserDriversSummaryStrip extends StatelessWidget {
-  const UserDriversSummaryStrip({
-    required this.state,
-    super.key,
-  });
+  const UserDriversSummaryStrip({required this.state, super.key});
 
   final UserDriversState state;
 
@@ -21,25 +19,25 @@ class UserDriversSummaryStrip extends StatelessWidget {
       child: Row(
         children: [
           _SummaryPill(
-            label: 'Active',
+            label: context.mobileText('Active'),
             value: state.activeCount,
             color: OpenVtsColors.success,
           ),
           const SizedBox(width: OpenVtsSpacing.xs),
           _SummaryPill(
-            label: 'Inactive',
+            label: context.mobileText('Inactive'),
             value: state.inactiveCount,
             color: OpenVtsColors.textSecondary,
           ),
           const SizedBox(width: OpenVtsSpacing.xs),
           _SummaryPill(
-            label: 'Assigned',
+            label: context.mobileText('Assigned'),
             value: state.assignedCount,
             color: OpenVtsColors.info,
           ),
           const SizedBox(width: OpenVtsSpacing.xs),
           _SummaryPill(
-            label: 'Verified',
+            label: context.mobileText('Verified'),
             value: state.verifiedCount,
             color: OpenVtsColors.brandInk,
           ),

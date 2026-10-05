@@ -673,6 +673,8 @@ class AdminRenewPaymentRequest {
     required this.paymentMode,
     this.reference,
     this.amountOverride,
+    this.overrideReason,
+    this.idempotencyKey,
     this.vehicleHints = const <String, Map<String, dynamic>>{},
   });
 
@@ -681,6 +683,8 @@ class AdminRenewPaymentRequest {
   final AdminPaymentMode paymentMode;
   final String? reference;
   final String? amountOverride;
+  final String? overrideReason;
+  final String? idempotencyKey;
 
   /// Client-only: maps vehicle ID → display fields (name, plateNumber).
   /// Never sent to the server — used to populate the transaction card when
@@ -694,6 +698,9 @@ class AdminRenewPaymentRequest {
           .map((id) => int.tryParse(id) ?? id)
           .toList(growable: false),
       'paymentMode': paymentMode.apiValue,
+      if (idempotencyKey != null) 'idempotencyKey': idempotencyKey,
+      if ((overrideReason ?? '').trim().isNotEmpty)
+        'overrideReason': overrideReason!.trim(),
       if ((reference ?? '').trim().isNotEmpty) 'reference': reference!.trim(),
       if ((amountOverride ?? '').trim().isNotEmpty)
         'amountOverride': amountOverride!.trim(),

@@ -5,12 +5,14 @@ import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../../../shared/widgets/open_vts_error_view.dart';
 import '../../../../../shared/widgets/open_vts_search_field.dart';
 import '../../../models/admin_support_model.dart';
 import '../../../models/admin_support_state.dart';
+import '../../../widgets/admin_action_gate.dart';
 import 'admin_support_ticket_card.dart';
 
 class AdminSupportTicketListView extends StatelessWidget {
@@ -87,8 +89,8 @@ class AdminSupportTicketListView extends StatelessWidget {
               ),
               child: OpenVtsSearchField(
                 hintText: tab == AdminSupportTab.userTickets
-                    ? 'Search user tickets'
-                    : 'Search my tickets',
+                    ? context.mobileText('Search user tickets')
+                    : context.mobileText('Search my tickets'),
                 onChanged: onSearchChanged,
               ),
             ),
@@ -130,7 +132,7 @@ class AdminSupportTicketListView extends StatelessWidget {
                   return Center(
                     child: TextButton(
                       onPressed: onLoadMore,
-                      child: const Text('Show more'),
+                      child: Text(context.mobileText('Show more')),
                     ),
                   );
                 }
@@ -208,33 +210,36 @@ class _SupportHeader extends StatelessWidget {
           ),
         ),
         const SizedBox(width: OpenVtsSpacing.sm),
-        FilledButton.icon(
-          onPressed: isCreating ? null : onCreatePressed,
-          style: FilledButton.styleFrom(
-            minimumSize: const Size(0, 42),
-            backgroundColor: OpenVtsColors.brandInk,
-            foregroundColor: OpenVtsColors.white,
-            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            padding: const EdgeInsets.symmetric(
-              horizontal: OpenVtsSpacing.md,
-              vertical: OpenVtsSpacing.sm,
+        AdminActionGate(
+          capability: 'support.reply',
+          child: FilledButton.icon(
+            onPressed: isCreating ? null : onCreatePressed,
+            style: FilledButton.styleFrom(
+              minimumSize: const Size(0, 42),
+              backgroundColor: OpenVtsColors.brandInk,
+              foregroundColor: OpenVtsColors.white,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              padding: const EdgeInsets.symmetric(
+                horizontal: OpenVtsSpacing.md,
+                vertical: OpenVtsSpacing.sm,
+              ),
+              textStyle: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.1,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
+              ),
             ),
-            textStyle: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.1,
-            ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
-            ),
+            icon: isCreating
+                ? const SizedBox.square(
+                    dimension: 15,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.add_rounded, size: 18),
+            label: Text(context.mobileText('Create')),
           ),
-          icon: isCreating
-              ? const SizedBox.square(
-                  dimension: 15,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Icon(Icons.add_rounded, size: 18),
-          label: const Text('Create'),
         ),
       ],
     );
@@ -276,14 +281,14 @@ class _AdminTabChips extends StatelessWidget {
       child: Row(
         children: [
           OpenVtsSupportFilterChip(
-            label: 'User Tickets',
+            label: context.mobileText('User Tickets'),
             count: userCount,
             selected: selected == AdminSupportTab.userTickets,
             onSelected: () => onChanged(AdminSupportTab.userTickets),
           ),
           const SizedBox(width: OpenVtsSpacing.xs),
           OpenVtsSupportFilterChip(
-            label: 'My Tickets',
+            label: context.mobileText('My Tickets'),
             count: myCount,
             selected: selected == AdminSupportTab.myTickets,
             onSelected: () => onChanged(AdminSupportTab.myTickets),
@@ -317,7 +322,7 @@ class _StatusTabs extends StatelessWidget {
       child: Row(
         children: [
           OpenVtsSupportFilterChip(
-            label: 'All',
+            label: context.mobileText('All'),
             count: tickets.length,
             selected: selected == null,
             onSelected: () => onChanged(null),
@@ -372,15 +377,21 @@ class _SupportEmptyState extends StatelessWidget {
             ),
             const SizedBox(height: OpenVtsSpacing.sm),
             Text(
-              hasActiveFilters ? 'No matching tickets' : 'No tickets',
+              hasActiveFilters
+                  ? context.mobileText('No matching tickets')
+                  : context.mobileText('No tickets'),
               textAlign: TextAlign.center,
               style: OpenVtsTypography.titleSmall.copyWith(fontSize: 16),
             ),
             const SizedBox(height: OpenVtsSpacing.xs),
             Text(
               hasActiveFilters
-                  ? 'Try a different search or status filter.'
-                  : 'Create a ticket to start a support conversation.',
+                  ? context.mobileText(
+                      'Try a different search or status filter.',
+                    )
+                  : context.mobileText(
+                      'Create a ticket to start a support conversation.',
+                    ),
               textAlign: TextAlign.center,
               style: OpenVtsTypography.body.copyWith(
                 color: colorScheme.onSurfaceVariant,
@@ -390,11 +401,14 @@ class _SupportEmptyState extends StatelessWidget {
               const SizedBox(height: OpenVtsSpacing.md),
               SizedBox(
                 width: 172,
-                child: OpenVtsButton(
-                  label: 'Create ticket',
-                  onPressed: onCreatePressed,
-                  trailingIcon: Icons.add_rounded,
-                  height: 40,
+                child: AdminActionGate(
+                  capability: 'support.reply',
+                  child: OpenVtsButton(
+                    label: context.mobileText('Create ticket'),
+                    onPressed: onCreatePressed,
+                    trailingIcon: Icons.add_rounded,
+                    height: 40,
+                  ),
                 ),
               ),
             ],

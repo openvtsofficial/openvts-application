@@ -10,6 +10,7 @@ import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../core/utils/date_time_formatter.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../../../shared/widgets/open_vts_status_chip.dart';
@@ -46,7 +47,8 @@ class UserTransactionDetailsSheet extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final sheetDateFormatter = ref.watch(appDateFormatterProvider);
-    final hasFailure = transaction.status == UserTransactionStatus.failed ||
+    final hasFailure =
+        transaction.status == UserTransactionStatus.failed ||
         _hasReadable(transaction.failureCode) ||
         _hasReadable(transaction.failureMessage);
     final hasVehiclePlan = _hasVehicleOrPlanDetails(transaction);
@@ -58,15 +60,16 @@ class UserTransactionDetailsSheet extends ConsumerWidget {
       maxChildSize: 0.96,
       builder: (context, scrollController) {
         final isDark = Theme.of(context).brightness == Brightness.dark;
-        final sheetBgColor =
-            isDark ? Colors.black : OpenVtsColors.surfaceElevated;
+        final sheetBgColor = isDark
+            ? Colors.black
+            : OpenVtsColors.surfaceElevated;
         final dividerColor = isDark ? Colors.white10 : OpenVtsColors.divider;
         final titleColor = isDark ? Colors.white : OpenVtsColors.textPrimary;
 
         return DecoratedBox(
           decoration: BoxDecoration(
             color: sheetBgColor,
-            borderRadius: BorderRadius.vertical(
+            borderRadius: const BorderRadius.vertical(
               top: Radius.circular(OpenVtsRadius.lg),
             ),
           ),
@@ -85,13 +88,14 @@ class UserTransactionDetailsSheet extends ConsumerWidget {
               ),
               const SizedBox(height: OpenVtsSpacing.xs),
               Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: OpenVtsSpacing.md),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: OpenVtsSpacing.md,
+                ),
                 child: Row(
                   children: [
                     Expanded(
                       child: Text(
-                        'Transaction Details',
+                        context.mobileText('Transaction Details'),
                         style: OpenVtsTypography.label.copyWith(
                           color: titleColor,
                           fontWeight: FontWeight.w700,
@@ -99,7 +103,7 @@ class UserTransactionDetailsSheet extends ConsumerWidget {
                       ),
                     ),
                     IconButton(
-                      tooltip: 'Close',
+                      tooltip: context.mobileText('Close'),
                       constraints: const BoxConstraints(
                         minWidth: 44,
                         minHeight: 44,
@@ -128,49 +132,51 @@ class UserTransactionDetailsSheet extends ConsumerWidget {
                     _AmountSummaryCard(transaction: transaction),
                     const SizedBox(height: OpenVtsSpacing.sm),
                     _SectionCard(
-                      title: 'Details',
+                      title: context.mobileText('Details'),
                       rows: [
                         _SheetRow(
-                          label: 'Transaction ID',
+                          label: context.mobileText('Transaction ID'),
                           value: _safeValue(transaction.id),
                           onCopy: _copyAction(
                             context,
-                            label: 'Transaction ID',
+                            label: context.mobileText('Transaction ID'),
                             value: transaction.id,
                           ),
                         ),
                         _SheetRow(
-                          label: 'Date/Time',
-                          value:
-                              _dateTimeLabel(transaction, sheetDateFormatter),
+                          label: context.mobileText('Date/Time'),
+                          value: _dateTimeLabel(
+                            transaction,
+                            sheetDateFormatter,
+                          ),
                         ),
                         _SheetRow(
-                          label: 'Payment Type',
+                          label: context.mobileText('Payment Type'),
                           value: _paymentTypeLabel(transaction.paymentType),
                         ),
                         _SheetRow(
-                          label: 'Payment Mode',
+                          label: context.mobileText('Payment Mode'),
                           value: transaction.paymentMode.label,
                         ),
                         _SheetRow(
-                          label: 'Reference',
+                          label: context.mobileText('Reference'),
                           value: _safeValue(transaction.reference),
                           onCopy: _copyAction(
                             context,
-                            label: 'Reference',
+                            label: context.mobileText('Reference'),
                             value: transaction.reference,
                           ),
                         ),
                         _SheetRow(
-                          label: 'Provider',
+                          label: context.mobileText('Provider'),
                           value: _safeValue(transaction.provider),
                         ),
                         _SheetRow(
-                          label: 'Provider Ref',
+                          label: context.mobileText('Provider Ref'),
                           value: _safeValue(transaction.providerRef),
                           onCopy: _copyAction(
                             context,
-                            label: 'Provider Ref',
+                            label: context.mobileText('Provider Ref'),
                             value: transaction.providerRef,
                           ),
                         ),
@@ -178,24 +184,24 @@ class UserTransactionDetailsSheet extends ConsumerWidget {
                     ),
                     const SizedBox(height: OpenVtsSpacing.sm),
                     _SectionCard(
-                      title: 'Parties',
+                      title: context.mobileText('Parties'),
                       rows: [
                         _SheetRow(
-                          label: 'From',
+                          label: context.mobileText('From'),
                           value: _partyLabel(
                             transaction.fromUser,
                             fallbackPrimaryId: transaction.fromUserId,
                           ),
                         ),
                         _SheetRow(
-                          label: 'To',
+                          label: context.mobileText('To'),
                           value: _partyLabel(
                             transaction.toUser,
                             fallbackPrimaryId: transaction.toUserId,
                           ),
                         ),
                         _SheetRow(
-                          label: 'Recorded By',
+                          label: context.mobileText('Recorded By'),
                           value: _partyLabel(
                             transaction.recordedBy,
                             fallbackPrimaryId: transaction.recordedById,
@@ -206,21 +212,21 @@ class UserTransactionDetailsSheet extends ConsumerWidget {
                     if (hasVehiclePlan) ...[
                       const SizedBox(height: OpenVtsSpacing.sm),
                       _SectionCard(
-                        title: 'Vehicle and Plan',
-                        rows: _vehiclePlanRows(transaction),
+                        title: context.mobileText('Vehicle and Plan'),
+                        rows: _vehiclePlanRows(context, transaction),
                       ),
                     ],
                     if (hasFailure) ...[
                       const SizedBox(height: OpenVtsSpacing.sm),
                       _SectionCard(
-                        title: 'Failure',
+                        title: context.mobileText('Failure'),
                         rows: [
                           _SheetRow(
-                            label: 'Failure Code',
+                            label: context.mobileText('Failure Code'),
                             value: _safeValue(transaction.failureCode),
                           ),
                           _SheetRow(
-                            label: 'Failure Message',
+                            label: context.mobileText('Failure Message'),
                             value: _safeValue(transaction.failureMessage),
                             multiline: true,
                           ),
@@ -241,33 +247,34 @@ class UserTransactionDetailsSheet extends ConsumerWidget {
     );
   }
 
-  List<_SheetRow> _vehiclePlanRows(UserTransaction source) {
+  List<_SheetRow> _vehiclePlanRows(
+    BuildContext context,
+    UserTransaction source,
+  ) {
     final plan = source.plan ?? source.vehicle?.plan;
     final currency = source.currency.trim();
     final planPrice = _safeValue(plan?.price ?? '');
     final planDuration = plan?.durationDays;
-    final durationLabel =
-        planDuration == null || planDuration <= 0 ? '-' : '$planDuration days';
+    final durationLabel = planDuration == null || planDuration <= 0
+        ? '-'
+        : context.mobileText('{count} days', {'count': planDuration});
 
     return <_SheetRow>[
       _SheetRow(
-        label: 'Vehicle Name',
+        label: context.mobileText('Vehicle Name'),
         value: _safeValue(source.vehicle?.name ?? ''),
       ),
       _SheetRow(
-        label: 'Plate Number',
+        label: context.mobileText('Plate Number'),
         value: _safeValue(source.vehicle?.plateNumber ?? ''),
       ),
       _SheetRow(
-        label: 'Plan Name',
+        label: context.mobileText('Plan Name'),
         value: _safeValue(plan?.name ?? ''),
       ),
+      _SheetRow(label: context.mobileText('Duration'), value: durationLabel),
       _SheetRow(
-        label: 'Duration',
-        value: durationLabel,
-      ),
-      _SheetRow(
-        label: 'Plan Price',
+        label: context.mobileText('Plan Price'),
         value: planPrice == '-' || currency.isEmpty
             ? planPrice
             : '$currency $planPrice',
@@ -297,7 +304,10 @@ class UserTransactionDetailsSheet extends ConsumerWidget {
 
     return () {
       Clipboard.setData(ClipboardData(text: normalized));
-      ToastHelper.showSuccess('$label copied', context: context);
+      ToastHelper.showSuccess(
+        context.mobileText("{value1} copied", {'value1': (label).toString()}),
+        context: context,
+      );
     };
   }
 
@@ -401,7 +411,7 @@ class _AmountSummaryCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Amount',
+                  context.mobileText('Amount'),
                   style: OpenVtsTypography.meta.copyWith(
                     color: labelColor,
                     fontWeight: FontWeight.w700,
@@ -461,10 +471,7 @@ class _AmountSummaryCard extends StatelessWidget {
 }
 
 class _SectionCard extends StatelessWidget {
-  const _SectionCard({
-    required this.title,
-    required this.rows,
-  });
+  const _SectionCard({required this.title, required this.rows});
 
   final String title;
   final List<_SheetRow> rows;
@@ -493,11 +500,7 @@ class _SectionCard extends StatelessWidget {
             return Column(
               children: [
                 if (index > 0)
-                  Divider(
-                    height: 1,
-                    thickness: 0.5,
-                    color: dividerColor,
-                  ),
+                  Divider(height: 1, thickness: 0.5, color: dividerColor),
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 9),
                   child: UserTransactionDetailRow(
@@ -536,7 +539,7 @@ class _MetadataCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Metadata',
+            context.mobileText('Metadata'),
             style: OpenVtsTypography.meta.copyWith(
               color: titleColor,
               fontWeight: FontWeight.w700,
@@ -550,10 +553,7 @@ class _MetadataCard extends StatelessWidget {
             decoration: BoxDecoration(
               color: containerBgColor,
               borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-              border: Border.all(
-                color: borderColor,
-                width: isDark ? 1 : 1,
-              ),
+              border: Border.all(color: borderColor, width: isDark ? 1 : 1),
             ),
             child: Scrollbar(
               thumbVisibility: false,

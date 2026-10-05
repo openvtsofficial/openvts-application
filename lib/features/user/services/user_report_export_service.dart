@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:ui' show Rect;
 
 import 'package:excel/excel.dart';
 import 'package:flutter/foundation.dart';
@@ -18,10 +17,7 @@ import '../utils/user_report_format.dart';
 /// Shared report export service — CSV, XLSX, JSON, PDF, HTML.
 /// Exports ALL columns including those hidden in the compact view.
 class UserReportExportService {
-  const UserReportExportService({required this.sharePositionOrigin});
-
-  /// The visible source rectangle is required by the iPad share popover.
-  final Rect sharePositionOrigin;
+  const UserReportExportService();
 
   // ---------------------------------------------------------------------------
   // Public API
@@ -48,51 +44,56 @@ class UserReportExportService {
     switch (format) {
       case 'csv':
         await _exportCsv(
-            rows: exportRows,
-            allColumns: allColumns,
-            columnLabels: columnLabels,
-            baseName: baseName,
-            reportKey: reportKey,
-            filters: filters,
-            generatedAt: generatedAt,
-            warning: warning);
+          rows: exportRows,
+          allColumns: allColumns,
+          columnLabels: columnLabels,
+          baseName: baseName,
+          reportKey: reportKey,
+          filters: filters,
+          generatedAt: generatedAt,
+          warning: warning,
+        );
       case 'xlsx':
         await _exportXlsx(
-            rows: exportRows,
-            allColumns: allColumns,
-            columnLabels: columnLabels,
-            baseName: baseName,
-            reportKey: reportKey,
-            filters: filters,
-            generatedAt: generatedAt,
-            warning: warning);
+          rows: exportRows,
+          allColumns: allColumns,
+          columnLabels: columnLabels,
+          baseName: baseName,
+          reportKey: reportKey,
+          filters: filters,
+          generatedAt: generatedAt,
+          warning: warning,
+        );
       case 'json':
         await _exportJson(
-            rows: exportRows,
-            baseName: baseName,
-            reportKey: reportKey,
-            filters: filters,
-            generatedAt: generatedAt);
+          rows: exportRows,
+          baseName: baseName,
+          reportKey: reportKey,
+          filters: filters,
+          generatedAt: generatedAt,
+        );
       case 'pdf':
         await _exportPdf(
-            rows: exportRows,
-            allColumns: allColumns,
-            columnLabels: columnLabels,
-            baseName: baseName,
-            reportKey: reportKey,
-            filters: filters,
-            generatedAt: generatedAt,
-            warning: warning);
+          rows: exportRows,
+          allColumns: allColumns,
+          columnLabels: columnLabels,
+          baseName: baseName,
+          reportKey: reportKey,
+          filters: filters,
+          generatedAt: generatedAt,
+          warning: warning,
+        );
       case 'html':
         await _exportHtml(
-            rows: exportRows,
-            allColumns: allColumns,
-            columnLabels: columnLabels,
-            baseName: baseName,
-            reportKey: reportKey,
-            filters: filters,
-            generatedAt: generatedAt,
-            warning: warning);
+          rows: exportRows,
+          allColumns: allColumns,
+          columnLabels: columnLabels,
+          baseName: baseName,
+          reportKey: reportKey,
+          filters: filters,
+          generatedAt: generatedAt,
+          warning: warning,
+        );
       default:
         throw ArgumentError('Unknown export format: $format');
     }
@@ -116,24 +117,30 @@ class UserReportExportService {
 
     // Metadata header
     buffer.writeln(_csvQuote('OpenVTS Report: ${reportKey.label}'));
-    if (generatedAt != null)
+    if (generatedAt != null) {
       buffer.writeln(
-          _csvQuote('Generated: ${generatedAt.toLocal().toIso8601String()}'));
-    if (filters != null && filters.isNotEmpty)
+        _csvQuote('Generated: ${generatedAt.toLocal().toIso8601String()}'),
+      );
+    }
+    if (filters != null && filters.isNotEmpty) {
       buffer.writeln(_csvQuote('Filters: $filters'));
-    if (warning != null && warning.isNotEmpty)
+    }
+    if (warning != null && warning.isNotEmpty) {
       buffer.writeln(_csvQuote('Warning: $warning'));
+    }
     buffer.writeln(_csvQuote('Rows: ${rows.length}'));
     buffer.writeln();
 
     // Header row
     buffer.writeln(
-        allColumns.map((k) => _csvQuote(columnLabels[k] ?? k)).join(','));
+      allColumns.map((k) => _csvQuote(columnLabels[k] ?? k)).join(','),
+    );
 
     // Data rows
     for (final row in rows) {
       buffer.writeln(
-          allColumns.map((k) => _csvQuote(_cellValue(row[k]))).join(','));
+        allColumns.map((k) => _csvQuote(_cellValue(row[k]))).join(','),
+      );
     }
 
     await _shareText(buffer.toString(), '$baseName.csv', 'text/csv');
@@ -167,32 +174,46 @@ class UserReportExportService {
 
     // Metadata rows
     int metaRow = 0;
-    sheet.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: metaRow++))
-      ..value = TextCellValue('OpenVTS Report: ${reportKey.label}');
+    sheet
+        .cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: metaRow++))
+        .value = TextCellValue(
+      'OpenVTS Report: ${reportKey.label}',
+    );
     if (generatedAt != null) {
       sheet
           .cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: metaRow++))
-        ..value = TextCellValue(
-            'Generated: ${generatedAt.toLocal().toIso8601String()}');
+          .value = TextCellValue(
+        'Generated: ${generatedAt.toLocal().toIso8601String()}',
+      );
     }
     if (filters != null && filters.isNotEmpty) {
       sheet
           .cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: metaRow++))
-        ..value = TextCellValue('Filters: $filters');
+          .value = TextCellValue(
+        'Filters: $filters',
+      );
     }
     if (warning != null && warning.isNotEmpty) {
       sheet
           .cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: metaRow++))
-        ..value = TextCellValue('Warning: $warning');
+          .value = TextCellValue(
+        'Warning: $warning',
+      );
     }
-    sheet.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: metaRow++))
-      ..value = TextCellValue('Rows: ${rows.length}');
+    sheet
+        .cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: metaRow++))
+        .value = TextCellValue(
+      'Rows: ${rows.length}',
+    );
     metaRow++; // blank row
 
     // Header
     for (var c = 0; c < allColumns.length; c++) {
-      sheet.cell(CellIndex.indexByColumnRow(columnIndex: c, rowIndex: metaRow))
-        ..value = TextCellValue(columnLabels[allColumns[c]] ?? allColumns[c]);
+      sheet
+          .cell(CellIndex.indexByColumnRow(columnIndex: c, rowIndex: metaRow))
+          .value = TextCellValue(
+        columnLabels[allColumns[c]] ?? allColumns[c],
+      );
     }
     metaRow++;
 
@@ -201,7 +222,8 @@ class UserReportExportService {
       for (var c = 0; c < allColumns.length; c++) {
         final raw = row[allColumns[c]];
         final cell = sheet.cell(
-            CellIndex.indexByColumnRow(columnIndex: c, rowIndex: metaRow));
+          CellIndex.indexByColumnRow(columnIndex: c, rowIndex: metaRow),
+        );
         if (raw is num) {
           cell.value = DoubleCellValue(raw.toDouble());
         } else if (raw is bool) {
@@ -215,8 +237,11 @@ class UserReportExportService {
 
     final bytes = excel.save();
     if (bytes == null) throw StateError('XLSX generation failed');
-    await _shareBytes(Uint8List.fromList(bytes), '$baseName.xlsx',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    await _shareBytes(
+      Uint8List.fromList(bytes),
+      '$baseName.xlsx',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
   }
 
   // ---------------------------------------------------------------------------
@@ -284,36 +309,50 @@ class UserReportExportService {
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
                 if (chunkIdx == 0) ...[
-                  pw.Text('OpenVTS — ${reportKey.label}',
-                      style: pw.TextStyle(font: fontBold, fontSize: 16)),
+                  pw.Text(
+                    'OpenVTS — ${reportKey.label}',
+                    style: pw.TextStyle(font: fontBold, fontSize: 16),
+                  ),
                   pw.SizedBox(height: 4),
                   if (generatedAt != null)
                     pw.Text(
-                        'Generated: ${generatedAt.toLocal().toIso8601String()}',
-                        style: pw.TextStyle(font: font, fontSize: 9)),
+                      'Generated: ${generatedAt.toLocal().toIso8601String()}',
+                      style: pw.TextStyle(font: font, fontSize: 9),
+                    ),
                   if (filters != null && filters.isNotEmpty)
-                    pw.Text('Filters: $filters',
-                        style: pw.TextStyle(font: font, fontSize: 9)),
+                    pw.Text(
+                      'Filters: $filters',
+                      style: pw.TextStyle(font: font, fontSize: 9),
+                    ),
                   if (warning != null && warning.isNotEmpty)
-                    pw.Text('Warning: $warning',
-                        style: pw.TextStyle(font: font, fontSize: 9)),
-                  pw.Text('Rows: ${rows.length}',
-                      style: pw.TextStyle(font: font, fontSize: 9)),
+                    pw.Text(
+                      'Warning: $warning',
+                      style: pw.TextStyle(font: font, fontSize: 9),
+                    ),
+                  pw.Text(
+                    'Rows: ${rows.length}',
+                    style: pw.TextStyle(font: font, fontSize: 9),
+                  ),
                   pw.SizedBox(height: 12),
                 ],
                 pw.TableHelper.fromTextArray(
                   headers: allColumns.map((k) => columnLabels[k] ?? k).toList(),
                   data: chunk
-                      .map((row) =>
-                          allColumns.map((k) => _cellValue(row[k])).toList())
+                      .map(
+                        (row) =>
+                            allColumns.map((k) => _cellValue(row[k])).toList(),
+                      )
                       .toList(),
                   headerStyle: pw.TextStyle(font: fontBold, fontSize: 8),
                   cellStyle: pw.TextStyle(font: font, fontSize: 7),
                   cellAlignment: pw.Alignment.centerLeft,
-                  headerDecoration:
-                      const pw.BoxDecoration(color: PdfColors.grey200),
-                  border:
-                      pw.TableBorder.all(color: PdfColors.grey400, width: 0.5),
+                  headerDecoration: const pw.BoxDecoration(
+                    color: PdfColors.grey200,
+                  ),
+                  border: pw.TableBorder.all(
+                    color: PdfColors.grey400,
+                    width: 0.5,
+                  ),
                   cellHeight: 16,
                 ),
               ],
@@ -361,13 +400,17 @@ tr:nth-child(even)td{background:#fafafa}
 <h1>OpenVTS — ${_esc(reportKey.label)}</h1>
 <div class="meta">
 ''');
-    if (generatedAt != null)
+    if (generatedAt != null) {
       buf.write(
-          'Generated: ${_esc(generatedAt.toLocal().toIso8601String())}<br>');
-    if (filters != null && filters.isNotEmpty)
+        'Generated: ${_esc(generatedAt.toLocal().toIso8601String())}<br>',
+      );
+    }
+    if (filters != null && filters.isNotEmpty) {
       buf.write('Filters: ${_esc(filters)}<br>');
-    if (warning != null && warning.isNotEmpty)
+    }
+    if (warning != null && warning.isNotEmpty) {
       buf.write('Warning: ${_esc(warning)}<br>');
+    }
     buf.write('Rows: ${rows.length}');
     buf.write('</div><table><thead><tr>');
     for (final k in allColumns) {
@@ -402,19 +445,23 @@ tr:nth-child(even)td{background:#fafafa}
   }
 
   Future<void> _shareBytes(
-      Uint8List bytes, String fileName, String mimeType) async {
+    Uint8List bytes,
+    String fileName,
+    String mimeType,
+  ) async {
     if (kIsWeb) {
       // Web: use share_plus which handles download
-      await Share.shareXFiles(
-          [XFile.fromData(bytes, name: fileName, mimeType: mimeType)],
-          subject: fileName, sharePositionOrigin: sharePositionOrigin);
+      await Share.shareXFiles([
+        XFile.fromData(bytes, name: fileName, mimeType: mimeType),
+      ], subject: fileName);
       return;
     }
     final dir = await getTemporaryDirectory();
     final file = File('${dir.path}/$fileName');
     await file.writeAsBytes(bytes);
-    await Share.shareXFiles([XFile(file.path, mimeType: mimeType)],
-        subject: fileName, sharePositionOrigin: sharePositionOrigin);
+    await Share.shareXFiles([
+      XFile(file.path, mimeType: mimeType),
+    ], subject: fileName);
   }
 
   // ---------------------------------------------------------------------------
@@ -436,11 +483,13 @@ List<Map<String, dynamic>> normalizeUserReportRowsForExport(
 ) {
   if (reportKey != UserReportKey.overspeed) return rows;
 
-  return rows.map((raw) {
-    final row = OverspeedRow.fromMap(raw);
-    return <String, dynamic>{
-      ...raw,
-      'address': resolveOverspeedLocation(row.address, row.lat, row.lon),
-    };
-  }).toList(growable: false);
+  return rows
+      .map((raw) {
+        final row = OverspeedRow.fromMap(raw);
+        return <String, dynamic>{
+          ...raw,
+          'address': resolveOverspeedLocation(row.address, row.lat, row.lon),
+        };
+      })
+      .toList(growable: false);
 }

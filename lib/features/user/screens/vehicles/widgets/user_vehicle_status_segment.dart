@@ -20,22 +20,23 @@ class UserVehicleStatusSegment extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 32,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: UserVehicleStatusFilter.values.length,
-        separatorBuilder: (context, index) =>
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          for (final filter in UserVehicleStatusFilter.values) ...[
+            ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 48),
+              child: _TabChip(
+                filter: filter,
+                isSelected: filter == current,
+                count: counts?[filter],
+                onTap: () => onChanged(filter),
+              ),
+            ),
             const SizedBox(width: OpenVtsSpacing.xs),
-        itemBuilder: (context, index) {
-          final filter = UserVehicleStatusFilter.values[index];
-          return _TabChip(
-            filter: filter,
-            isSelected: filter == current,
-            count: counts?[filter],
-            onTap: () => onChanged(filter),
-          );
-        },
+          ],
+        ],
       ),
     );
   }

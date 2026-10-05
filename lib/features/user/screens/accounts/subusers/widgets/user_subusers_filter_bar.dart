@@ -4,6 +4,7 @@ import '../../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../../shared/widgets/open_vts_card.dart';
 
 enum UserSubUsersStatusFilter { all, active, inactive }
@@ -82,7 +83,14 @@ class _UserSubUsersFilterBarState extends State<UserSubUsersFilterBar> {
             children: [
               Expanded(
                 child: Text(
-                  '${widget.visibleCount} visible • ${widget.loadedCount}/${widget.totalCount} loaded',
+                  context.mobileText(
+                    "{value1} visible • {value2}/{value3} loaded",
+                    {
+                      'value1': (widget.visibleCount).toString(),
+                      'value2': (widget.loadedCount).toString(),
+                      'value3': (widget.totalCount).toString(),
+                    },
+                  ),
                   style: OpenVtsTypography.label.copyWith(
                     color: Theme.of(context).brightness == Brightness.dark
                         ? Colors.white
@@ -96,7 +104,7 @@ class _UserSubUsersFilterBarState extends State<UserSubUsersFilterBar> {
                   onPressed: widget.onClearFilters,
                   icon: const Icon(Icons.filter_alt_off_outlined, size: 15),
                   label: Text(
-                    'Clear',
+                    context.mobileText('Clear'),
                     style: OpenVtsTypography.meta.copyWith(
                       fontWeight: FontWeight.w800,
                     ),
@@ -112,12 +120,14 @@ class _UserSubUsersFilterBarState extends State<UserSubUsersFilterBar> {
               widget.onSearchChanged(value);
             },
             decoration: InputDecoration(
-              hintText: 'Search name, username, email, mobile...',
+              hintText: context.mobileText(
+                'Search name, username, email, mobile...',
+              ),
               prefixIcon: const Icon(Icons.search, size: 20),
               suffixIcon: _searchController.text.trim().isEmpty
                   ? null
                   : IconButton(
-                      tooltip: 'Clear search',
+                      tooltip: context.mobileText('Clear search'),
                       onPressed: () {
                         _searchController.clear();
                         setState(() {});
@@ -133,22 +143,24 @@ class _UserSubUsersFilterBarState extends State<UserSubUsersFilterBar> {
             runSpacing: OpenVtsSpacing.xs,
             children: [
               _StatusChip(
-                label: 'All',
+                label: context.mobileText('All'),
                 selected:
                     widget.selectedStatusFilter == UserSubUsersStatusFilter.all,
                 onTap: () =>
                     widget.onStatusChanged(UserSubUsersStatusFilter.all),
               ),
               _StatusChip(
-                label: 'Active',
-                selected: widget.selectedStatusFilter ==
+                label: context.mobileText('Active'),
+                selected:
+                    widget.selectedStatusFilter ==
                     UserSubUsersStatusFilter.active,
                 onTap: () =>
                     widget.onStatusChanged(UserSubUsersStatusFilter.active),
               ),
               _StatusChip(
-                label: 'Inactive',
-                selected: widget.selectedStatusFilter ==
+                label: context.mobileText('Inactive'),
+                selected:
+                    widget.selectedStatusFilter ==
                     UserSubUsersStatusFilter.inactive,
                 onTap: () =>
                     widget.onStatusChanged(UserSubUsersStatusFilter.inactive),
@@ -200,8 +212,8 @@ class _StatusChip extends StatelessWidget {
               color: selected
                   ? (isDarkMode ? OpenVtsColors.brandInk : OpenVtsColors.white)
                   : (isDarkMode
-                      ? OpenVtsColors.white
-                      : OpenVtsColors.textSecondary),
+                        ? OpenVtsColors.white
+                        : OpenVtsColors.textSecondary),
               fontWeight: FontWeight.w800,
             ),
           ),

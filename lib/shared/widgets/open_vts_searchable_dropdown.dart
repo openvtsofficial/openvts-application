@@ -4,6 +4,8 @@ import '../../core/theme/open_vts_colors.dart';
 import '../../core/theme/open_vts_radius.dart';
 import '../../core/theme/open_vts_spacing.dart';
 import '../../core/theme/open_vts_typography.dart';
+import '../../shared/helpers/validation_localizations.dart';
+import '../helpers/widget_localizations.dart';
 
 /// A single option rendered inside an [OpenVtsSearchableDropdown].
 ///
@@ -30,11 +32,7 @@ class OpenVtsDropdownOption<T> {
   final String? searchText;
 
   String _matchHaystack() {
-    return [
-      label,
-      subtitle ?? '',
-      searchText ?? '',
-    ].join(' ').toLowerCase();
+    return [label, subtitle ?? '', searchText ?? ''].join(' ').toLowerCase();
   }
 }
 
@@ -139,7 +137,8 @@ class _OpenVtsSearchableDropdownState<T>
       key: _fieldKey,
       initialValue: widget.value,
       enabled: widget.enabled,
-      validator: widget.validator,
+      validator:
+          context.localizedValidator(widget.validator ?? (value) => widget.required && value == null ? context.widgetL10n.fieldRequired(widget.label) : null),
       builder: (field) => _buildField(context, field),
     );
   }
@@ -161,8 +160,8 @@ class _OpenVtsSearchableDropdownState<T>
         : (isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border);
     final triggerBackground = !widget.enabled
         ? (isDark
-            ? OpenVtsColors.darkSurface.withValues(alpha: 0.5)
-            : OpenVtsColors.surface)
+              ? OpenVtsColors.darkSurface.withValues(alpha: 0.5)
+              : OpenVtsColors.surface)
         : (isDark ? OpenVtsColors.darkSurface : OpenVtsColors.white);
 
     final labelColor = !widget.enabled
@@ -180,8 +179,10 @@ class _OpenVtsSearchableDropdownState<T>
         const SizedBox(height: OpenVtsSpacing.xs),
         Semantics(
           button: true,
-          enabled: widget.enabled,
-          label: '${widget.label} dropdown',
+          enabled: widget.enabled && !widget.isLoading,
+          value: selectedOption?.label,
+          excludeSemantics: true,
+          label: widget.label,
           child: InkWell(
             borderRadius: BorderRadius.circular(OpenVtsRadius.md),
             onTap: widget.enabled && !widget.isLoading
@@ -214,7 +215,9 @@ class _OpenVtsSearchableDropdownState<T>
                   Expanded(
                     child: _ValueDisplay<T>(
                       option: selectedOption,
-                      hintText: widget.hintText ?? 'Select ${widget.label}',
+                      hintText:
+                          widget.hintText ??
+                          context.widgetL10n.selectField(widget.label),
                       hintColor: hintColor,
                     ),
                   ),
@@ -275,30 +278,30 @@ class _OpenVtsSearchableDropdownState<T>
     BuildContext context,
     FormFieldState<T> field,
   ) async {
-    final selected = await showModalBottomSheet<_PickerResult<T>>(
+    final previousValue = widget.value;
+    final selected = await showOpenVtsDropdownPicker<T>(
       context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(OpenVtsRadius.xl),
-        ),
-      ),
-      builder: (sheetContext) {
-        return _SearchableDropdownSheet<T>(
-          title: widget.sheetTitle ?? widget.label,
-          options: widget.options,
-          selectedValue: widget.value,
-          searchHintText:
-              widget.searchHintText ?? 'Search ${widget.label.toLowerCase()}',
-          emptyMessage: widget.emptyMessage ??
-              'No matching ${widget.label.toLowerCase()}',
-        );
-      },
+      title: widget.sheetTitle ?? widget.label,
+      options: widget.options,
+      selectedValue: widget.value,
+      searchHintText:
+          widget.searchHintText ?? context.widgetL10n.searchField(widget.label),
+      emptyMessage:
+          widget.emptyMessage ??
+          context.widgetL10n.noMatchingField(widget.label),
     );
-
-    if (selected == null) {
+    if (!mounted ||
+        !field.mounted ||
+        selected == null ||
+        !widget.enabled ||
+        widget.isLoading ||
+        widget.value != previousValue) {
+      return;
+    }
+    if (!selected.cleared &&
+        !widget.options.any(
+          (option) => option.value == selected.option?.value,
+        )) {
       return;
     }
 
@@ -330,11 +333,13 @@ class _Label extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          label,
-          style: OpenVtsTypography.label.copyWith(
-            color: color,
-            fontWeight: FontWeight.w600,
+        Flexible(
+          child: Text(
+            label,
+            style: OpenVtsTypography.label.copyWith(
+              color: color,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
         if (required) ...[
@@ -366,13 +371,14 @@ class _ValueDisplay<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor =
-        isDark ? OpenVtsColors.darkTextPrimary : OpenVtsColors.textPrimary;
+    final textColor = isDark
+        ? OpenVtsColors.darkTextPrimary
+        : OpenVtsColors.textPrimary;
 
     if (option == null) {
       return Text(
         hintText,
-        maxLines: 1,
+        maxLines: 2,
         overflow: TextOverflow.ellipsis,
         style: OpenVtsTypography.body.copyWith(color: hintColor),
       );
@@ -393,7 +399,7 @@ class _ValueDisplay<T> extends StatelessWidget {
             children: [
               Text(
                 option!.label,
-                maxLines: 1,
+                maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: OpenVtsTypography.body.copyWith(
                   color: textColor,
@@ -405,7 +411,7 @@ class _ValueDisplay<T> extends StatelessWidget {
                   padding: const EdgeInsets.only(top: 1),
                   child: Text(
                     option!.subtitle!,
-                    maxLines: 1,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: OpenVtsTypography.meta.copyWith(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -424,11 +430,37 @@ class _ValueDisplay<T> extends StatelessWidget {
 // Picker sheet
 // ---------------------------------------------------------------------------
 
-class _PickerResult<T> {
-  const _PickerResult.selected(this.option) : cleared = false;
-  const _PickerResult.cleared()
-      : option = null,
-        cleared = true;
+/// A null result dismisses the picker; [OpenVtsDropdownSelection.cleared]
+/// explicitly clears a selection. Shared by both dropdown field facades.
+Future<OpenVtsDropdownSelection<T>?> showOpenVtsDropdownPicker<T>({
+  required BuildContext context,
+  required String title,
+  required List<OpenVtsDropdownOption<T>> options,
+  T? selectedValue,
+  String? searchHintText,
+  String? emptyMessage,
+}) => showModalBottomSheet<OpenVtsDropdownSelection<T>>(
+  context: context,
+  isScrollControlled: true,
+  useSafeArea: true,
+  clipBehavior: Clip.antiAlias,
+  constraints: const BoxConstraints(maxWidth: 640),
+  backgroundColor: Theme.of(context).colorScheme.surface,
+  shape: const RoundedRectangleBorder(
+    borderRadius: BorderRadius.vertical(top: Radius.circular(OpenVtsRadius.xl)),
+  ),
+  builder: (sheetContext) => _SearchableDropdownSheet<T>(
+    title: title,
+    options: options,
+    selectedValue: selectedValue,
+    searchHintText: searchHintText ?? context.widgetL10n.searchField(title),
+    emptyMessage: emptyMessage ?? context.widgetL10n.noResults,
+  ),
+);
+
+class OpenVtsDropdownSelection<T> {
+  const OpenVtsDropdownSelection.selected(this.option) : cleared = false;
+  const OpenVtsDropdownSelection.cleared() : option = null, cleared = true;
 
   final OpenVtsDropdownOption<T>? option;
   final bool cleared;
@@ -480,105 +512,110 @@ class _SearchableDropdownSheetState<T>
   @override
   Widget build(BuildContext context) {
     final mediaQuery = MediaQuery.of(context);
-    final maxHeight = mediaQuery.size.height * 0.85;
     final bottomInset = mediaQuery.viewInsets.bottom;
+    final maxHeight =
+        (mediaQuery.size.height - bottomInset - mediaQuery.padding.top) * 0.85;
     final filtered = _filtered;
 
     return Padding(
       padding: EdgeInsets.only(bottom: bottomInset),
-      child: ConstrainedBox(
-        constraints: BoxConstraints(maxHeight: maxHeight),
+      child: SizedBox(
+        height: maxHeight,
         child: SafeArea(
           top: false,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const SizedBox(height: OpenVtsSpacing.sm),
-              Center(
-                child: Container(
-                  height: 4,
-                  width: 40,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.outlineVariant,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: OpenVtsSpacing.md),
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: OpenVtsSpacing.md,
-                ),
-                child: Row(
+          child: CustomScrollView(
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            slivers: [
+              SliverToBoxAdapter(
+                child: Column(
                   children: [
-                    Expanded(
-                      child: Text(
-                        widget.title,
-                        style:
-                            Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                ),
+                    const SizedBox(height: OpenVtsSpacing.sm),
+                    Center(
+                      child: Container(
+                        height: 4,
+                        width: 40,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.outlineVariant,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsetsDirectional.only(
+                        start: 16,
+                        end: 8,
+                        top: 8,
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              widget.title,
+                              style: Theme.of(context).textTheme.titleMedium
+                                  ?.copyWith(fontWeight: FontWeight.w700),
+                            ),
+                          ),
+                          IconButton(
+                            tooltip: context.widgetL10n.close,
+                            onPressed: () => Navigator.of(context).maybePop(),
+                            icon: const Icon(Icons.close_rounded, size: 20),
+                          ),
+                        ],
                       ),
                     ),
                     if (widget.selectedValue != null)
-                      TextButton(
-                        onPressed: () => Navigator.of(context)
-                            .pop<_PickerResult<T>>(_PickerResult.cleared()),
-                        style: TextButton.styleFrom(
-                          foregroundColor:
-                              Theme.of(context).colorScheme.onSurfaceVariant,
-                          visualDensity: VisualDensity.compact,
+                      Align(
+                        alignment: AlignmentDirectional.centerEnd,
+                        child: Padding(
+                          padding: const EdgeInsetsDirectional.only(end: 8),
+                          child: TextButton(
+                            onPressed: () => Navigator.of(context)
+                                .pop<OpenVtsDropdownSelection<T>>(
+                                  OpenVtsDropdownSelection<T>.cleared(),
+                                ),
+                            child: Text(context.widgetL10n.clearSelection),
+                          ),
                         ),
-                        child: const Text('Clear'),
                       ),
-                    IconButton(
-                      tooltip: 'Close',
-                      onPressed: () => Navigator.of(context).maybePop(),
-                      icon: const Icon(Icons.close_rounded, size: 20),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: OpenVtsSpacing.md,
+                      ),
+                      child: _SheetSearchField(
+                        controller: _searchController,
+                        focusNode: _searchFocus,
+                        hintText: widget.searchHintText,
+                        onChanged: (value) => setState(() => _query = value),
+                      ),
                     ),
+                    const SizedBox(height: OpenVtsSpacing.sm),
+                    const Divider(height: 1),
                   ],
                 ),
               ),
-              const SizedBox(height: OpenVtsSpacing.xs),
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: OpenVtsSpacing.md,
+              if (filtered.isEmpty)
+                SliverToBoxAdapter(
+                  child: _EmptyResults(message: widget.emptyMessage),
+                )
+              else
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: OpenVtsSpacing.xs,
+                  ),
+                  sliver: SliverList.builder(
+                    itemCount: filtered.length,
+                    itemBuilder: (context, index) {
+                      final option = filtered[index];
+                      return _OptionRow<T>(
+                        option: option,
+                        isSelected: widget.selectedValue == option.value,
+                        onTap: () => Navigator.of(
+                          context,
+                        ).pop(OpenVtsDropdownSelection<T>.selected(option)),
+                      );
+                    },
+                  ),
                 ),
-                child: _SheetSearchField(
-                  controller: _searchController,
-                  focusNode: _searchFocus,
-                  hintText: widget.searchHintText,
-                  onChanged: (value) => setState(() => _query = value),
-                ),
-              ),
-              const SizedBox(height: OpenVtsSpacing.sm),
-              Divider(
-                height: 1,
-                color: Theme.of(context).colorScheme.outlineVariant,
-              ),
-              Flexible(
-                child: filtered.isEmpty
-                    ? _EmptyResults(message: widget.emptyMessage)
-                    : ListView.separated(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: OpenVtsSpacing.xs,
-                        ),
-                        itemCount: filtered.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 2),
-                        itemBuilder: (context, index) {
-                          final option = filtered[index];
-                          final isSelected =
-                              widget.selectedValue == option.value;
-                          return _OptionRow<T>(
-                            option: option,
-                            isSelected: isSelected,
-                            onTap: () => Navigator.of(context).pop(
-                              _PickerResult<T>.selected(option),
-                            ),
-                          );
-                        },
-                      ),
-              ),
             ],
           ),
         ),
@@ -603,13 +640,15 @@ class _SheetSearchField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final fillColor =
-        isDark ? OpenVtsColors.darkSurface : OpenVtsColors.background;
-    final borderColor =
-        isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border;
+    final fillColor = isDark
+        ? OpenVtsColors.darkSurface
+        : OpenVtsColors.background;
+    final borderColor = isDark
+        ? OpenVtsColors.darkBorder
+        : OpenVtsColors.border;
 
-    return SizedBox(
-      height: 44,
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 48),
       child: ValueListenableBuilder<TextEditingValue>(
         valueListenable: controller,
         builder: (context, value, _) {
@@ -617,7 +656,7 @@ class _SheetSearchField extends StatelessWidget {
           return TextField(
             controller: controller,
             focusNode: focusNode,
-            autofocus: true,
+            autofocus: false,
             textAlignVertical: TextAlignVertical.center,
             onChanged: onChanged,
             style: TextStyle(
@@ -656,15 +695,15 @@ class _SheetSearchField extends StatelessWidget {
                   : Padding(
                       padding: const EdgeInsetsDirectional.only(end: 4),
                       child: IconButton(
-                        tooltip: 'Clear search',
+                        tooltip: context.widgetL10n.clearSearch,
                         onPressed: () {
                           controller.clear();
                           onChanged('');
                         },
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(
-                          minWidth: 28,
-                          minHeight: 28,
+                          minWidth: 48,
+                          minHeight: 48,
                         ),
                         splashRadius: 16,
                         icon: Icon(
@@ -678,7 +717,11 @@ class _SheetSearchField extends StatelessWidget {
                 minWidth: 0,
                 minHeight: 44,
               ),
-              contentPadding: const EdgeInsetsDirectional.only(end: 12),
+              contentPadding: const EdgeInsetsDirectional.only(
+                end: 12,
+                top: 12,
+                bottom: 12,
+              ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(OpenVtsRadius.md),
                 borderSide: BorderSide(color: borderColor),
@@ -720,64 +763,72 @@ class _OptionRow<T> extends StatelessWidget {
     final hasSubtitle = (option.subtitle ?? '').trim().isNotEmpty;
     final background = isSelected ? OpenVtsColors.surface : Colors.transparent;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final selectedBackground =
-        isDark ? OpenVtsColors.darkSurface : OpenVtsColors.surface;
+    final selectedBackground = isDark
+        ? OpenVtsColors.darkSurface
+        : OpenVtsColors.surface;
 
-    return Material(
-      color: isSelected ? selectedBackground : background,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: OpenVtsSpacing.md,
-            vertical: OpenVtsSpacing.sm + 2,
-          ),
-          child: Row(
-            children: [
-              if (option.leading != null) ...[
-                option.leading!,
-                const SizedBox(width: OpenVtsSpacing.sm),
-              ],
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      option.label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: OpenVtsTypography.body.copyWith(
-                        fontWeight:
-                            isSelected ? FontWeight.w700 : FontWeight.w500,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                    ),
-                    if (hasSubtitle) ...[
-                      const SizedBox(height: 2),
+    return Semantics(
+      selected: isSelected,
+      button: true,
+      child: Material(
+        color: isSelected ? selectedBackground : background,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: OpenVtsSpacing.md,
+              vertical: OpenVtsSpacing.sm + 2,
+            ),
+            child: Row(
+              children: [
+                if (option.leading != null) ...[
+                  option.leading!,
+                  const SizedBox(width: OpenVtsSpacing.sm),
+                ],
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
                       Text(
-                        option.subtitle!,
+                        option.label,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: OpenVtsTypography.meta.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        style: OpenVtsTypography.body.copyWith(
+                          fontWeight: isSelected
+                              ? FontWeight.w700
+                              : FontWeight.w500,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
+                      if (hasSubtitle) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          option.subtitle!,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: OpenVtsTypography.meta.copyWith(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
-              ),
-              const SizedBox(width: OpenVtsSpacing.sm),
-              Icon(
-                isSelected
-                    ? Icons.check_circle_rounded
-                    : Icons.radio_button_off_rounded,
-                size: 18,
-                color: isSelected
-                    ? OpenVtsColors.brandInk
-                    : Theme.of(context).colorScheme.outline,
-              ),
-            ],
+                const SizedBox(width: OpenVtsSpacing.sm),
+                Icon(
+                  isSelected
+                      ? Icons.check_circle_rounded
+                      : Icons.radio_button_off_rounded,
+                  size: 18,
+                  color: isSelected
+                      ? Theme.of(context).colorScheme.primary
+                      : Theme.of(context).colorScheme.outline,
+                ),
+              ],
+            ),
           ),
         ),
       ),

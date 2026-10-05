@@ -6,6 +6,7 @@ import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../l10n/app_localizations.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
@@ -135,7 +136,9 @@ class _SmtpSettingsSectionState extends ConsumerState<SmtpSettingsSection> {
   Future<void> _openTestSheet() async {
     final form = _formKey.currentState;
     if (form != null && !form.validate()) {
-      ToastHelper.showInfo('Fix validation issues before testing');
+      ToastHelper.showInfo(
+        context.mobileText('Fix validation issues before testing'),
+      );
       return;
     }
     final fallback = _emailCtrl.text.trim().isNotEmpty
@@ -157,7 +160,11 @@ class _SmtpSettingsSectionState extends ConsumerState<SmtpSettingsSection> {
     final ok = await _controller.testSmtp(email.trim());
     if (!mounted) return;
     if (ok) {
-      ToastHelper.showSuccess('Test email sent to ${email.trim()}');
+      ToastHelper.showSuccess(
+        context.mobileText("Test email sent to {value1}", {
+          'value1': (email.trim()).toString(),
+        }),
+      );
     } else {
       ToastHelper.showError(
         ref.read(adminSettingsControllerProvider).sectionErrorMessage ??
@@ -215,7 +222,7 @@ class _SmtpSettingsSectionState extends ConsumerState<SmtpSettingsSection> {
         children: [
           _SectionHeader(
             title: l10n.smtp,
-            subtitle: 'Configure outgoing mail delivery.',
+            subtitle: context.mobileText('Configure outgoing mail delivery.'),
             icon: Icons.mail_outline_rounded,
             trailing: IconButton(
               tooltip: l10n.refresh,
@@ -233,13 +240,13 @@ class _SmtpSettingsSectionState extends ConsumerState<SmtpSettingsSection> {
           const SizedBox(height: OpenVtsSpacing.sm),
           _GroupedCard(
             icon: Icons.person_outline_rounded,
-            title: 'Sender',
-            subtitle: 'Who recipients see in the inbox.',
+            title: context.mobileText('Sender'),
+            subtitle: context.mobileText('Who recipients see in the inbox.'),
             children: [
               OpenVtsTextField(
-                label: 'Sender Name',
+                label: context.mobileText('Sender Name'),
                 controller: _senderNameCtrl,
-                hintText: 'OpenVTS Notifications',
+                hintText: context.mobileText('OpenVTS Notifications'),
                 validator: (v) {
                   final s = (v ?? '').trim();
                   if (s.isEmpty) return 'Required';
@@ -249,10 +256,10 @@ class _SmtpSettingsSectionState extends ConsumerState<SmtpSettingsSection> {
               ),
               const SizedBox(height: OpenVtsSpacing.sm),
               OpenVtsTextField(
-                label: 'From Email',
+                label: context.mobileText('From Email'),
                 controller: _emailCtrl,
                 keyboardType: TextInputType.emailAddress,
-                hintText: 'noreply@example.com',
+                hintText: context.mobileText('noreply@example.com'),
                 validator: (v) {
                   final s = (v ?? '').trim();
                   if (s.isEmpty) return 'Required';
@@ -262,10 +269,10 @@ class _SmtpSettingsSectionState extends ConsumerState<SmtpSettingsSection> {
               ),
               const SizedBox(height: OpenVtsSpacing.sm),
               OpenVtsTextField(
-                label: 'Reply-To (optional)',
+                label: context.mobileText('Reply-To (optional)'),
                 controller: _replyToCtrl,
                 keyboardType: TextInputType.emailAddress,
-                hintText: 'support@example.com',
+                hintText: context.mobileText('support@example.com'),
                 validator: (v) {
                   final s = (v ?? '').trim();
                   if (s.isEmpty) return null;
@@ -278,11 +285,11 @@ class _SmtpSettingsSectionState extends ConsumerState<SmtpSettingsSection> {
           const SizedBox(height: OpenVtsSpacing.sm),
           _GroupedCard(
             icon: Icons.dns_outlined,
-            title: 'Server',
-            subtitle: 'Host, port and encryption.',
+            title: context.mobileText('Server'),
+            subtitle: context.mobileText('Host, port and encryption.'),
             children: [
               OpenVtsTextField(
-                label: 'Host',
+                label: context.mobileText('Host'),
                 controller: _hostCtrl,
                 hintText: 'smtp.example.com',
                 validator: (v) {
@@ -298,7 +305,7 @@ class _SmtpSettingsSectionState extends ConsumerState<SmtpSettingsSection> {
                 children: [
                   Expanded(
                     child: OpenVtsTextField(
-                      label: 'Port',
+                      label: context.mobileText('Port'),
                       controller: _portCtrl,
                       keyboardType: TextInputType.number,
                       hintText: '587',
@@ -329,13 +336,13 @@ class _SmtpSettingsSectionState extends ConsumerState<SmtpSettingsSection> {
           const SizedBox(height: OpenVtsSpacing.sm),
           _GroupedCard(
             icon: Icons.lock_outline_rounded,
-            title: 'Credentials',
-            subtitle: 'SMTP account login.',
+            title: context.mobileText('Credentials'),
+            subtitle: context.mobileText('SMTP account login.'),
             children: [
               OpenVtsTextField(
-                label: 'Username',
+                label: context.mobileText('Username'),
                 controller: _usernameCtrl,
-                hintText: 'apikey or username',
+                hintText: context.mobileText('apikey or username'),
                 validator: (v) {
                   final s = (v ?? '').trim();
                   if (s.isEmpty) return 'Required';
@@ -345,15 +352,16 @@ class _SmtpSettingsSectionState extends ConsumerState<SmtpSettingsSection> {
               ),
               const SizedBox(height: OpenVtsSpacing.sm),
               OpenVtsTextField(
-                label: 'Password',
+                label: context.mobileText('Password'),
                 controller: _passwordCtrl,
                 obscureText: _obscurePassword,
                 hintText: '••••••••',
                 suffixIcon: IconButton(
-                  tooltip: _obscurePassword ? 'Show password' : 'Hide password',
-                  onPressed: () => setState(
-                    () => _obscurePassword = !_obscurePassword,
-                  ),
+                  tooltip: _obscurePassword
+                      ? context.mobileText('Show password')
+                      : context.mobileText('Hide password'),
+                  onPressed: () =>
+                      setState(() => _obscurePassword = !_obscurePassword),
                   iconSize: 18,
                   icon: Icon(
                     _obscurePassword
@@ -384,7 +392,7 @@ class _SmtpSettingsSectionState extends ConsumerState<SmtpSettingsSection> {
               const SizedBox(width: OpenVtsSpacing.sm),
               Expanded(
                 child: OpenVtsButton(
-                  label: 'Send test email',
+                  label: context.mobileText('Send test email'),
                   variant: OpenVtsButtonVariant.secondary,
                   isLoading: state.isTestingSmtp,
                   height: 44,
@@ -427,7 +435,8 @@ class _StatusCard extends StatelessWidget {
               color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
               border: Border.all(
-                  color: Theme.of(context).colorScheme.outlineVariant),
+                color: Theme.of(context).colorScheme.outlineVariant,
+              ),
             ),
             child: Icon(
               isActive
@@ -446,7 +455,7 @@ class _StatusCard extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Enable SMTP',
+                  context.mobileText('Enable SMTP'),
                   style: TextStyle(
                     fontFamily: OpenVtsTypography.primaryFontFamily,
                     fontSize: 13.5,
@@ -456,7 +465,9 @@ class _StatusCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 1),
                 Text(
-                  'Outgoing mail uses this server when active.',
+                  context.mobileText(
+                    'Outgoing mail uses this server when active.',
+                  ),
                   style: TextStyle(
                     fontFamily: OpenVtsTypography.primaryFontFamily,
                     fontSize: 11,
@@ -467,10 +478,7 @@ class _StatusCard extends StatelessWidget {
               ],
             ),
           ),
-          Switch.adaptive(
-            value: isActive,
-            onChanged: onChanged,
-          ),
+          Switch.adaptive(value: isActive, onChanged: onChanged),
         ],
       ),
     );
@@ -482,10 +490,7 @@ class _StatusCard extends StatelessWidget {
 // =====================================================================
 
 class _EncryptionDropdown extends StatelessWidget {
-  const _EncryptionDropdown({
-    required this.value,
-    required this.onChanged,
-  });
+  const _EncryptionDropdown({required this.value, required this.onChanged});
 
   final AdminSmtpType value;
   final ValueChanged<AdminSmtpType?> onChanged;
@@ -495,7 +500,7 @@ class _EncryptionDropdown extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Encryption', style: OpenVtsTypography.label),
+        Text(context.mobileText('Encryption'), style: OpenVtsTypography.label),
         const SizedBox(height: OpenVtsSpacing.xs),
         InputDecorator(
           decoration: const InputDecoration(isDense: true),
@@ -514,16 +519,16 @@ class _EncryptionDropdown extends StatelessWidget {
                 fontWeight: FontWeight.w500,
                 color: Theme.of(context).colorScheme.onSurface,
               ),
-              items: const [
+              items: [
                 DropdownMenuItem(
                   value: AdminSmtpType.none,
-                  child: Text('None'),
+                  child: Text(context.mobileText('None')),
                 ),
-                DropdownMenuItem(
+                const DropdownMenuItem(
                   value: AdminSmtpType.ssl,
                   child: Text('SSL'),
                 ),
-                DropdownMenuItem(
+                const DropdownMenuItem(
                   value: AdminSmtpType.tls,
                   child: Text('TLS'),
                 ),
@@ -602,7 +607,7 @@ class _TestEmailSheetState extends State<_TestEmailSheet> {
                   ),
                 ),
                 Text(
-                  'Send test email',
+                  context.mobileText('Send test email'),
                   style: TextStyle(
                     fontFamily: OpenVtsTypography.primaryFontFamily,
                     fontSize: 14,
@@ -612,7 +617,9 @@ class _TestEmailSheetState extends State<_TestEmailSheet> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'A short message will be sent using the current SMTP config.',
+                  context.mobileText(
+                    'A short message will be sent using the current SMTP config.',
+                  ),
                   style: TextStyle(
                     fontFamily: OpenVtsTypography.primaryFontFamily,
                     fontSize: 11.5,
@@ -622,11 +629,11 @@ class _TestEmailSheetState extends State<_TestEmailSheet> {
                 ),
                 const SizedBox(height: OpenVtsSpacing.sm),
                 OpenVtsTextField(
-                  label: 'Recipient email',
+                  label: context.mobileText('Recipient email'),
                   controller: _ctrl,
                   keyboardType: TextInputType.emailAddress,
                   textInputAction: TextInputAction.send,
-                  hintText: 'recipient@example.com',
+                  hintText: context.mobileText('recipient@example.com'),
                   onFieldSubmitted: (_) => _submit(),
                   validator: (v) {
                     final s = (v ?? '').trim();
@@ -640,7 +647,7 @@ class _TestEmailSheetState extends State<_TestEmailSheet> {
                   children: [
                     Expanded(
                       child: OpenVtsButton(
-                        label: 'Cancel',
+                        label: context.mobileText('Cancel'),
                         variant: OpenVtsButtonVariant.secondary,
                         height: 42,
                         onPressed: () => Navigator.of(context).pop(),
@@ -649,7 +656,7 @@ class _TestEmailSheetState extends State<_TestEmailSheet> {
                     const SizedBox(width: OpenVtsSpacing.sm),
                     Expanded(
                       child: OpenVtsButton(
-                        label: 'Send',
+                        label: context.mobileText('Send'),
                         height: 42,
                         onPressed: _submit,
                       ),
@@ -695,10 +702,14 @@ class _SectionHeader extends StatelessWidget {
               color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
               border: Border.all(
-                  color: Theme.of(context).colorScheme.outlineVariant),
+                color: Theme.of(context).colorScheme.outlineVariant,
+              ),
             ),
-            child: Icon(icon,
-                size: 16, color: Theme.of(context).colorScheme.onSurface),
+            child: Icon(
+              icon,
+              size: 16,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
           ),
           const SizedBox(width: OpenVtsSpacing.xs),
           Expanded(

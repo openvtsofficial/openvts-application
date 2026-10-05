@@ -7,6 +7,7 @@ import '../../../../core/theme/open_vts_radius.dart';
 import '../../../../core/theme/open_vts_spacing.dart';
 import '../../../../core/theme/open_vts_typography.dart';
 import '../../../../core/utils/validators.dart';
+import '../../../../shared/helpers/mobile_text.dart';
 import '../../../../shared/helpers/toast_helper.dart';
 import '../../../../shared/widgets/open_vts_bottom_sheet.dart';
 import '../../../../shared/widgets/open_vts_button.dart';
@@ -117,31 +118,32 @@ class _AdminCreateVehicleScreenState
     );
 
     return OpenVtsPageScaffold(
-      title: 'Create Vehicle',
+      title: context.mobileText('Create Vehicle'),
       headerMode: OpenVtsPageHeaderMode.closeable,
       onClose: () => _handleClose(context),
       padding: EdgeInsets.zero,
       body: SafeArea(
         top: false,
-        child: _isCatalogLoading &&
+        child:
+            _isCatalogLoading &&
                 _users.isEmpty &&
                 _devices.isEmpty &&
                 _vehicleTypes.isEmpty &&
                 _plans.isEmpty
             ? const Center(child: OpenVtsLoader())
             : _catalogError != null &&
-                    _users.isEmpty &&
-                    _devices.isEmpty &&
-                    _vehicleTypes.isEmpty &&
-                    _plans.isEmpty
-                ? OpenVtsErrorView(
-                    message: _catalogError!,
-                    onRetry: () {
-                      _catalogPrepared = false;
-                      _prepareCatalog();
-                    },
-                  )
-                : _buildForm(context, isSubmitting),
+                  _users.isEmpty &&
+                  _devices.isEmpty &&
+                  _vehicleTypes.isEmpty &&
+                  _plans.isEmpty
+            ? OpenVtsErrorView(
+                message: _catalogError!,
+                onRetry: () {
+                  _catalogPrepared = false;
+                  _prepareCatalog();
+                },
+              )
+            : _buildForm(context, isSubmitting),
       ),
     );
   }
@@ -189,36 +191,38 @@ class _AdminCreateVehicleScreenState
   Widget _vehicleDetailsSection() {
     return _FormSection(
       icon: Icons.local_shipping_outlined,
-      title: 'Vehicle details',
-      description: 'Basic identification for the new vehicle.',
+      title: context.mobileText('Vehicle details'),
+      description: context.mobileText(
+        'Basic identification for the new vehicle.',
+      ),
       children: [
         OpenVtsTextField(
-          label: 'Vehicle name',
+          label: context.mobileText('Vehicle name'),
           hintText: 'RV215',
           controller: _nameController,
           textInputAction: TextInputAction.next,
           validator: Validators.vehicleName,
         ),
         OpenVtsTextField(
-          label: 'VIN (optional)',
-          hintText: 'Vehicle identification number',
+          label: context.mobileText('VIN (optional)'),
+          hintText: context.mobileText('Vehicle identification number'),
           controller: _vinController,
           textInputAction: TextInputAction.next,
           validator: Validators.vinOptional,
         ),
         OpenVtsTextField(
-          label: 'Plate number (optional)',
+          label: context.mobileText('Plate number (optional)'),
           hintText: 'MH85FR5664',
           controller: _plateController,
           textInputAction: TextInputAction.next,
           validator: Validators.plateNumberOptional,
         ),
         OpenVtsSearchableDropdown<String>(
-          label: 'Vehicle type',
+          label: context.mobileText('Vehicle type'),
           required: true,
           hintText: _vehicleTypes.isEmpty
-              ? 'No vehicle types available'
-              : 'Select vehicle type',
+              ? context.mobileText('No vehicle types available')
+              : context.mobileText('Select vehicle type'),
           searchHintText: 'Search vehicle type',
           sheetTitle: 'Select vehicle type',
           leadingIcon: Icons.category_outlined,
@@ -245,36 +249,42 @@ class _AdminCreateVehicleScreenState
 
   Widget _assignmentSection() {
     final userOptions = [
-      const OpenVtsDropdownOption<String>(
+      OpenVtsDropdownOption<String>(
         value: _createUserValue,
-        label: '+ Create new user',
-        subtitle: 'Create user without leaving this vehicle form',
-        leading: Icon(Icons.add_circle_outline_rounded,
-            size: 20, color: OpenVtsColors.brandInk),
+        label: context.mobileText('+ Create new user'),
+        subtitle: context.mobileText(
+          'Create user without leaving this vehicle form',
+        ),
+        leading: const Icon(
+          Icons.add_circle_outline_rounded,
+          size: 20,
+          color: OpenVtsColors.brandInk,
+        ),
         searchText: 'add create new user',
       ),
-      ..._users
-          .map(
-            (item) => OpenVtsDropdownOption<String>(
-              value: item.id,
-              label: item.name.trim().isEmpty ? item.mobileDisplay : item.name,
-              subtitle: item.mobileDisplay.trim().isEmpty
-                  ? item.email
-                  : item.mobileDisplay,
-              searchText:
-                  '${item.name} ${item.email} ${item.mobileDisplay} ${item.username}',
-            ),
-          )
-          .toList(growable: false),
+      ..._users.map(
+        (item) => OpenVtsDropdownOption<String>(
+          value: item.id,
+          label: item.name.trim().isEmpty ? item.mobileDisplay : item.name,
+          subtitle: item.mobileDisplay.trim().isEmpty
+              ? item.email
+              : item.mobileDisplay,
+          searchText:
+              '${item.name} ${item.email} ${item.mobileDisplay} ${item.username}',
+        ),
+      ),
     ];
 
     final deviceOptions = [
-      const OpenVtsDropdownOption<String>(
+      OpenVtsDropdownOption<String>(
         value: _createDeviceValue,
-        label: '+ Add new device',
-        subtitle: 'Create device without leaving this form',
-        leading: Icon(Icons.add_circle_outline,
-            size: 20, color: OpenVtsColors.brandInk),
+        label: context.mobileText('+ Add new device'),
+        subtitle: context.mobileText('Create device without leaving this form'),
+        leading: const Icon(
+          Icons.add_circle_outline,
+          size: 20,
+          color: OpenVtsColors.brandInk,
+        ),
         searchText: 'add new create device',
       ),
       ..._devices.map(
@@ -288,12 +298,17 @@ class _AdminCreateVehicleScreenState
     ];
 
     final planOptions = [
-      const OpenVtsDropdownOption<String>(
+      OpenVtsDropdownOption<String>(
         value: _createPlanValue,
-        label: '+ Create new plan',
-        subtitle: 'Create pricing plan without leaving this form',
-        leading: Icon(Icons.add_circle_outline,
-            size: 20, color: OpenVtsColors.brandInk),
+        label: context.mobileText('+ Create new plan'),
+        subtitle: context.mobileText(
+          'Create pricing plan without leaving this form',
+        ),
+        leading: const Icon(
+          Icons.add_circle_outline,
+          size: 20,
+          color: OpenVtsColors.brandInk,
+        ),
         searchText: 'create new pricing plan',
       ),
       ..._plans.map(
@@ -310,20 +325,21 @@ class _AdminCreateVehicleScreenState
 
     return _FormSection(
       icon: Icons.link_rounded,
-      title: 'Assignment',
-      description:
-          'Link the vehicle to a primary user, GPS device, and pricing plan.',
+      title: context.mobileText('Assignment'),
+      description: context.mobileText(
+        'Link the vehicle to a primary user, GPS device, and pricing plan.',
+      ),
       children: [
         OpenVtsSearchableDropdown<String>(
-          label: 'Primary user',
+          label: context.mobileText('Primary user'),
           required: true,
           hintText: _isCatalogLoading
-              ? 'Loading users...'
+              ? context.mobileText('Loading users...')
               : _catalogError != null
-                  ? 'Failed to load users'
-                  : _users.isEmpty
-                      ? 'Create or select primary user'
-                      : 'Select primary user',
+              ? context.mobileText('Failed to load users')
+              : _users.isEmpty
+              ? context.mobileText('Create or select primary user')
+              : context.mobileText('Select primary user'),
           searchHintText: 'Search user name, email, or mobile',
           sheetTitle: 'Select primary user',
           leadingIcon: Icons.person_outline_rounded,
@@ -332,8 +348,8 @@ class _AdminCreateVehicleScreenState
           value: _userId,
           validator: (value) =>
               value == null || value.trim().isEmpty || value == _createUserValue
-                  ? 'Primary user is required'
-                  : null,
+              ? 'Primary user is required'
+              : null,
           onChanged: (value) async {
             if (value == _createUserValue) {
               await _handleCreateUser();
@@ -343,11 +359,11 @@ class _AdminCreateVehicleScreenState
           },
         ),
         OpenVtsSearchableDropdown<String>(
-          label: 'Device',
+          label: context.mobileText('Device'),
           required: true,
           hintText: _devices.isEmpty && !_isCatalogLoading
-              ? 'No devices available'
-              : 'Select GPS device',
+              ? context.mobileText('No devices available')
+              : context.mobileText('Select GPS device'),
           searchHintText: 'Search IMEI or SIM number',
           sheetTitle: 'Select device',
           leadingIcon: Icons.router_outlined,
@@ -366,11 +382,11 @@ class _AdminCreateVehicleScreenState
           },
         ),
         OpenVtsSearchableDropdown<String>(
-          label: 'Pricing plan',
+          label: context.mobileText('Pricing plan'),
           required: true,
           hintText: _plans.isEmpty && !_isCatalogLoading
-              ? 'No plans available'
-              : 'Select pricing plan',
+              ? context.mobileText('No plans available')
+              : context.mobileText('Select pricing plan'),
           searchHintText: 'Search plan name',
           sheetTitle: 'Select pricing plan',
           leadingIcon: Icons.payments_outlined,
@@ -396,7 +412,9 @@ class _AdminCreateVehicleScreenState
     final formState = _formKey.currentState;
     if (formState == null || !formState.validate()) {
       ToastHelper.showError(
-        'Please fix the highlighted fields before continuing.',
+        context.mobileText(
+          'Please fix the highlighted fields before continuing.',
+        ),
         context: context,
       );
       return;
@@ -410,14 +428,18 @@ class _AdminCreateVehicleScreenState
         _planId == null ||
         _planId == _createPlanValue) {
       ToastHelper.showError(
-        'Primary user, device, vehicle type, and pricing plan are required.',
+        context.mobileText(
+          'Primary user, device, vehicle type, and pricing plan are required.',
+        ),
         context: context,
       );
       return;
     }
 
     try {
-      await ref.read(adminVehiclesControllerProvider.notifier).createVehicle(
+      await ref
+          .read(adminVehiclesControllerProvider.notifier)
+          .createVehicle(
             AdminCreateVehicleRequest(
               name: _nameController.text.trim(),
               vin: _vinController.text.trim(),
@@ -434,7 +456,9 @@ class _AdminCreateVehicleScreenState
       }
 
       ToastHelper.showSuccess(
-        'Vehicle "${_nameController.text.trim()}" created.',
+        context.mobileText("Vehicle \"{value1}\" created.", {
+          'value1': (_nameController.text.trim()).toString(),
+        }),
         context: context,
       );
       if (context.canPop()) {
@@ -455,7 +479,7 @@ class _AdminCreateVehicleScreenState
   Future<void> _handleCreateDevice() async {
     final createdDevice = await OpenVtsBottomSheet.show<AdminInventoryDevice?>(
       context: context,
-      title: 'Add Device or SIM',
+      title: context.mobileText('Add Device or SIM'),
       initialChildSize: 0.80,
       minChildSize: 0.60,
       maxChildSize: 0.80,
@@ -467,15 +491,19 @@ class _AdminCreateVehicleScreenState
 
     if (createdDevice != null) {
       await _refreshDevices();
+      if (!mounted) return;
       setState(() => _deviceId = createdDevice.id);
-      ToastHelper.showSuccess('Device created and selected', context: context);
+      ToastHelper.showSuccess(
+        context.mobileText('Device created and selected'),
+        context: context,
+      );
     }
   }
 
   Future<void> _handleCreatePlan() async {
     final createdPlan = await OpenVtsBottomSheet.show<AdminPlan?>(
       context: context,
-      title: 'Create Pricing Plan',
+      title: context.mobileText('Create Pricing Plan'),
       initialChildSize: 0.80,
       minChildSize: 0.60,
       maxChildSize: 0.80,
@@ -487,8 +515,12 @@ class _AdminCreateVehicleScreenState
 
     if (createdPlan != null) {
       await _refreshPlans();
+      if (!mounted) return;
       setState(() => _planId = createdPlan.id);
-      ToastHelper.showSuccess('Plan created and selected', context: context);
+      ToastHelper.showSuccess(
+        context.mobileText('Plan created and selected'),
+        context: context,
+      );
     }
   }
 
@@ -519,7 +551,7 @@ class _AdminCreateVehicleScreenState
   Future<void> _handleCreateUser() async {
     final createdUser = await OpenVtsBottomSheet.show<AdminUserListItem?>(
       context: context,
-      title: 'Create User',
+      title: context.mobileText('Create User'),
       initialChildSize: 0.80,
       minChildSize: 0.60,
       maxChildSize: 0.80,
@@ -533,24 +565,32 @@ class _AdminCreateVehicleScreenState
       await _refreshUsers();
       if (!mounted) return;
       setState(() => _userId = createdUser.id);
-      ToastHelper.showSuccess('User created and selected', context: context);
+      ToastHelper.showSuccess(
+        context.mobileText('User created and selected'),
+        context: context,
+      );
     }
   }
 
   Future<void> _refreshUsers() async {
     try {
-      final users =
-          await ref.read(adminVehiclesControllerProvider.notifier).getUsers();
+      final users = await ref
+          .read(adminVehiclesControllerProvider.notifier)
+          .getUsers();
       if (!mounted) return;
       setState(() => _users = users);
     } catch (error) {
       if (!mounted) return;
-      ToastHelper.showError('Unable to refresh users.', context: context);
+      ToastHelper.showError(
+        context.mobileText('Unable to refresh users.'),
+        context: context,
+      );
     }
   }
 
   void _handleClose(BuildContext context) {
-    final hasUnsavedInput = _nameController.text.trim().isNotEmpty ||
+    final hasUnsavedInput =
+        _nameController.text.trim().isNotEmpty ||
         _vinController.text.trim().isNotEmpty ||
         _plateController.text.trim().isNotEmpty ||
         _userId != null ||
@@ -568,14 +608,16 @@ class _AdminCreateVehicleScreenState
     showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Discard new vehicle?'),
-        content: const Text(
-          'Your changes will be lost. This action cannot be undone.',
+        title: Text(context.mobileText('Discard new vehicle?')),
+        content: Text(
+          context.mobileText(
+            'Your changes will be lost. This action cannot be undone.',
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => dialogContext.pop(),
-            child: const Text('Keep editing'),
+            child: Text(context.mobileText('Keep editing')),
           ),
           TextButton(
             style: TextButton.styleFrom(foregroundColor: OpenVtsColors.error),
@@ -585,7 +627,7 @@ class _AdminCreateVehicleScreenState
                 context.pop();
               }
             },
-            child: const Text('Discard'),
+            child: Text(context.mobileText('Discard')),
           ),
         ],
       ),
@@ -633,14 +675,16 @@ class _IntroBanner extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Add a new vehicle',
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+                  context.mobileText('Add a new vehicle'),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Complete the sections below. Required fields are marked with an asterisk (*).',
+                  context.mobileText(
+                    'Complete the sections below. Required fields are marked with an asterisk (*).',
+                  ),
                   style: OpenVtsTypography.label.copyWith(
                     color: OpenVtsColors.textSecondary,
                   ),
@@ -683,11 +727,7 @@ class _FormSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _SectionHeader(
-            icon: icon,
-            title: title,
-            description: description,
-          ),
+          _SectionHeader(icon: icon, title: title, description: description),
           const SizedBox(height: OpenVtsSpacing.md),
           for (var i = 0; i < children.length; i++) ...[
             if (i > 0) const SizedBox(height: OpenVtsSpacing.md),
@@ -721,15 +761,17 @@ class _SectionHeader extends StatelessWidget {
           width: 36,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color:
-                isDark ? OpenVtsColors.darkBackground : OpenVtsColors.surface,
+            color: isDark
+                ? OpenVtsColors.darkBackground
+                : OpenVtsColors.surface,
             shape: BoxShape.circle,
           ),
           child: Icon(
             icon,
             size: 18,
-            color:
-                isDark ? OpenVtsColors.darkTextPrimary : OpenVtsColors.brandInk,
+            color: isDark
+                ? OpenVtsColors.darkTextPrimary
+                : OpenVtsColors.brandInk,
           ),
         ),
         const SizedBox(width: OpenVtsSpacing.sm),
@@ -740,9 +782,9 @@ class _SectionHeader extends StatelessWidget {
               Text(
                 title,
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: -0.2,
-                    ),
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -0.2,
+                ),
               ),
               const SizedBox(height: 2),
               Text(
@@ -794,7 +836,7 @@ class _StickyActionBar extends StatelessWidget {
           children: [
             Expanded(
               child: OpenVtsButton(
-                label: 'Cancel',
+                label: context.mobileText('Cancel'),
                 variant: OpenVtsButtonVariant.secondary,
                 onPressed: isSubmitting ? null : onCancel,
               ),
@@ -803,7 +845,7 @@ class _StickyActionBar extends StatelessWidget {
             Expanded(
               flex: 2,
               child: OpenVtsButton(
-                label: 'Create vehicle',
+                label: context.mobileText('Create vehicle'),
                 isLoading: isSubmitting,
                 onPressed: onSubmit,
               ),

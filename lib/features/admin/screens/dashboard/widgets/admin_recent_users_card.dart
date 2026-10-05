@@ -5,6 +5,7 @@ import '../../../../../core/router/route_paths.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../core/utils/date_time_formatter.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../models/admin_dashboard_model.dart';
 import 'admin_dashboard_list_card.dart';
 
@@ -18,11 +19,11 @@ class AdminRecentUsersCard extends ConsumerWidget {
     final formatter = ref.watch(appDateFormatterProvider);
 
     return AdminDashboardListCard(
-      title: 'Recent Users',
+      title: context.mobileText('Recent Users'),
       icon: Icons.people_outline_rounded,
       viewAllRoute: RoutePaths.adminUsers,
       emptyTitle: 'No recent users',
-      emptyMessage: 'New users will appear here.',
+      emptyMessage: context.mobileText('New users will appear here.'),
       itemCount: users.length,
       itemBuilder: (context, index) {
         return _RecentUserRow(user: users[index], formatter: formatter);
@@ -98,8 +99,10 @@ class _RecentUserRow extends StatelessWidget {
                   ),
                 const SizedBox(height: 2),
                 Text(
-                  adminDashboardRelativeDate(user.createdAt,
-                      formatter: formatter),
+                  adminDashboardRelativeDate(
+                    user.createdAt,
+                    formatter: formatter,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.end,

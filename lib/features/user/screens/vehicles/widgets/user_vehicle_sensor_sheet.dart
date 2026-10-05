@@ -5,6 +5,7 @@ import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../shared/widgets/open_vts_text_field.dart';
@@ -19,8 +20,11 @@ class UserVehicleSensorSheet extends ConsumerStatefulWidget {
     super.key,
   });
 
-  final AutoDisposeStateNotifierProvider<UserVehicleDetailsController,
-      UserVehicleDetailsState> provider;
+  final AutoDisposeStateNotifierProvider<
+    UserVehicleDetailsController,
+    UserVehicleDetailsState
+  >
+  provider;
   final UserVehicleSensor? sensor;
 
   @override
@@ -77,13 +81,15 @@ class _UserVehicleSensorSheetState
         ),
         children: [
           _SectionLabel(
-            title: isEditing ? 'Sensor Settings' : 'New Sensor',
-            subtitle: 'Name and code are required.',
+            title: isEditing
+                ? context.mobileText('Sensor Settings')
+                : context.mobileText('New Sensor'),
+            subtitle: context.mobileText('Name and code are required.'),
           ),
           const SizedBox(height: OpenVtsSpacing.sm),
           OpenVtsTextField(
             controller: _nameController,
-            label: 'Name',
+            label: context.mobileText('Name'),
             textInputAction: TextInputAction.next,
             validator: (value) {
               final normalized = value?.trim() ?? '';
@@ -99,8 +105,8 @@ class _UserVehicleSensorSheetState
               Expanded(
                 child: OpenVtsTextField(
                   controller: _unitController,
-                  label: 'Unit',
-                  hintText: 'km/h, C, V',
+                  label: context.mobileText('Unit'),
+                  hintText: context.mobileText('km/h, C, V'),
                   textInputAction: TextInputAction.next,
                 ),
               ),
@@ -108,8 +114,8 @@ class _UserVehicleSensorSheetState
               Expanded(
                 child: OpenVtsTextField(
                   controller: _iconController,
-                  label: 'Icon',
-                  hintText: 'speed, fuel',
+                  label: context.mobileText('Icon'),
+                  hintText: context.mobileText('speed, fuel'),
                   textInputAction: TextInputAction.next,
                 ),
               ),
@@ -118,7 +124,7 @@ class _UserVehicleSensorSheetState
           const SizedBox(height: OpenVtsSpacing.sm),
           OpenVtsTextField(
             controller: _codeController,
-            label: 'Code',
+            label: context.mobileText('Code'),
             maxLines: 7,
             keyboardType: TextInputType.multiline,
             textInputAction: TextInputAction.newline,
@@ -136,10 +142,10 @@ class _UserVehicleSensorSheetState
               Expanded(
                 child: OpenVtsButton(
                   label: isSaving
-                      ? 'Saving...'
+                      ? context.mobileText('Saving...')
                       : isEditing
-                          ? 'Save Changes'
-                          : 'Create Sensor',
+                      ? context.mobileText('Save Changes')
+                      : context.mobileText('Create Sensor'),
                   height: 40,
                   onPressed: isSaving ? null : _submit,
                 ),
@@ -147,7 +153,9 @@ class _UserVehicleSensorSheetState
               const SizedBox(width: OpenVtsSpacing.sm),
               Expanded(
                 child: OpenVtsButton(
-                  label: isRunning ? 'Running...' : 'Run',
+                  label: isRunning
+                      ? context.mobileText('Running...')
+                      : context.mobileText('Run'),
                   height: 40,
                   variant: OpenVtsButtonVariant.secondary,
                   trailingIcon: Icons.play_arrow_rounded,
@@ -212,7 +220,9 @@ class _UserVehicleSensorSheetState
 
     if (ok) {
       ToastHelper.showSuccess(
-        widget.sensor == null ? 'Sensor created.' : 'Sensor updated.',
+        widget.sensor == null
+            ? context.mobileText('Sensor created.')
+            : context.mobileText('Sensor updated.'),
         context: context,
       );
       Navigator.of(context).pop();
@@ -259,7 +269,8 @@ class _UserVehicleSensorSheetState
 
     if (result == null) {
       setState(() {
-        _runError = ref.read(widget.provider).sectionErrorMessage ??
+        _runError =
+            ref.read(widget.provider).sectionErrorMessage ??
             'Unable to run this sensor.';
       });
       return;
@@ -321,19 +332,28 @@ class _RunResultCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Run Result',
+            context.mobileText('Run Result'),
             style: OpenVtsTypography.meta.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
               fontWeight: FontWeight.w800,
             ),
           ),
           const SizedBox(height: OpenVtsSpacing.xs),
-          _ResultRow(label: 'Value', value: _formatValue(result.value)),
+          _ResultRow(
+            label: context.mobileText('Value'),
+            value: _formatValue(result.value),
+          ),
           if ((result.output ?? '').trim().isNotEmpty)
-            _ResultRow(label: 'Output', value: result.output!.trim()),
+            _ResultRow(
+              label: context.mobileText('Output'),
+              value: result.output!.trim(),
+            ),
           if ((result.error ?? '').trim().isNotEmpty)
             _ResultRow(
-                label: 'Error', value: result.error!.trim(), isError: true),
+              label: context.mobileText('Error'),
+              value: result.error!.trim(),
+              isError: true,
+            ),
         ],
       ),
     );

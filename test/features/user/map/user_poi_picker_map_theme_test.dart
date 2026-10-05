@@ -79,26 +79,26 @@ TextField _fieldWithLabel(WidgetTester tester, String label) {
 }
 
 TextField _toleranceField(WidgetTester tester) {
-  return tester.widgetList<TextField>(find.byType(TextField)).firstWhere(
-        (f) => f.decoration?.hintText == '0',
-      );
+  return tester
+      .widgetList<TextField>(find.byType(TextField))
+      .firstWhere((f) => f.decoration?.hintText == '0');
 }
 
 // Reproduce the app's global InputDecorationTheme so that the fill-
 // inheritance bug can be observed when filled: false is absent.
 ThemeData _appLikeLight() => ThemeData.light().copyWith(
-      inputDecorationTheme: const InputDecorationTheme(
-        filled: true,
-        fillColor: Colors.white,
-      ),
-    );
+  inputDecorationTheme: const InputDecorationTheme(
+    filled: true,
+    fillColor: Colors.white,
+  ),
+);
 
 ThemeData _appLikeDark() => ThemeData.dark().copyWith(
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: OpenVtsColors.darkSurface,
-      ),
-    );
+  inputDecorationTheme: const InputDecorationTheme(
+    filled: true,
+    fillColor: OpenVtsColors.darkSurface,
+  ),
+);
 
 Future<void> _pumpPickerWithTheme(
   WidgetTester tester, {
@@ -129,75 +129,80 @@ void main() {
       tester,
     ) async {
       final dio = Dio()..httpClientAdapter = _DeferredSearchAdapter();
-      await _pumpPicker(
-        tester,
-        themeMode: themeMode,
-        searchClient: dio,
-      );
+      await _pumpPicker(tester, themeMode: themeMode, searchClient: dio);
 
       final search = tester.widget<TextField>(
         find.widgetWithText(TextField, 'Search place...'),
       );
       expect(search.style?.color, OpenVtsColors.white);
-      expect(_fieldWithLabel(tester, 'Latitude').style?.color,
-          OpenVtsColors.white);
-      expect(_fieldWithLabel(tester, 'Longitude').style?.color,
-          OpenVtsColors.white);
+      expect(
+        _fieldWithLabel(tester, 'Latitude').style?.color,
+        OpenVtsColors.white,
+      );
+      expect(
+        _fieldWithLabel(tester, 'Longitude').style?.color,
+        OpenVtsColors.white,
+      );
       expect(find.text('Tap map to place POI'), findsOneWidget);
       expect(find.text('Tolerance'), findsOneWidget);
       expect(find.text('0'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('$themeName loading, results and selected values are readable',
-        (
-      tester,
-    ) async {
-      final adapter = _DeferredSearchAdapter();
-      final dio = Dio()..httpClientAdapter = adapter;
-      await _pumpPicker(
-        tester,
-        themeMode: themeMode,
-        searchClient: dio,
-        initialPoint: const LatLng(12.100001, 77.050001),
-        initialTolerance: 75,
-      );
+    testWidgets(
+      '$themeName loading, results and selected values are readable',
+      (tester) async {
+        final adapter = _DeferredSearchAdapter();
+        final dio = Dio()..httpClientAdapter = adapter;
+        await _pumpPicker(
+          tester,
+          themeMode: themeMode,
+          searchClient: dio,
+          initialPoint: const LatLng(12.100001, 77.050001),
+          initialTolerance: 75,
+        );
 
-      await tester.enterText(
-        find.widgetWithText(TextField, 'Search place...'),
-        'New Delhi',
-      );
-      await tester.pump();
+        await tester.enterText(
+          find.widgetWithText(TextField, 'Search place...'),
+          'New Delhi',
+        );
+        await tester.pump();
 
-      final spinner = tester.widget<CircularProgressIndicator>(
-        find.byType(CircularProgressIndicator),
-      );
-      expect(
-        spinner.valueColor?.value,
-        OpenVtsColors.white.withValues(alpha: 0.85),
-      );
+        final spinner = tester.widget<CircularProgressIndicator>(
+          find.byType(CircularProgressIndicator),
+        );
+        expect(
+          spinner.valueColor?.value,
+          OpenVtsColors.white.withValues(alpha: 0.85),
+        );
 
-      await tester.runAsync(() async {
-        adapter.completeWithResult();
-        await Future<void>.delayed(Duration.zero);
-      });
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 100));
+        await tester.runAsync(() async {
+          adapter.completeWithResult();
+          await Future<void>.delayed(Duration.zero);
+        });
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
 
-      final result = tester.widget<Text>(find.text('New Delhi, Delhi, India'));
-      expect(result.style?.color, OpenVtsColors.white);
-      await tester.tap(find.text('New Delhi, Delhi, India'));
-      await tester.pump();
+        final result = tester.widget<Text>(
+          find.text('New Delhi, Delhi, India'),
+        );
+        expect(result.style?.color, OpenVtsColors.white);
+        await tester.tap(find.text('New Delhi, Delhi, India'));
+        await tester.pump();
 
-      expect(_fieldWithLabel(tester, 'Latitude').controller?.text, '28.613900');
-      expect(
-        _fieldWithLabel(tester, 'Longitude').controller?.text,
-        '77.209000',
-      );
-      expect(find.text('75'), findsOneWidget);
-      expect(find.text('Use this location'), findsOneWidget);
-      expect(tester.takeException(), isNull);
-    });
+        expect(
+          _fieldWithLabel(tester, 'Latitude').controller?.text,
+          '28.613900',
+        );
+        expect(
+          _fieldWithLabel(tester, 'Longitude').controller?.text,
+          '77.209000',
+        );
+        expect(find.text('75'), findsOneWidget);
+        expect(find.text('Use this location'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
+    );
   }
 
   // ---------------------------------------------------------------
@@ -214,40 +219,43 @@ void main() {
       final themeName = entry['name'] as String;
       final theme = entry['theme'] as ThemeData;
 
-      testWidgets('$themeName: search field has filled:false and white cursor',
-          (tester) async {
-        await _pumpPickerWithTheme(tester, theme: theme);
-        final field = tester.widget<TextField>(
-          find.widgetWithText(TextField, 'Search place...'),
-        );
-        expect(
-          field.decoration?.filled,
-          isFalse,
-          reason: 'search field must override inherited white fill',
-        );
-        expect(field.cursorColor, OpenVtsColors.white);
-        expect(field.style?.color, OpenVtsColors.white);
-        expect(tester.takeException(), isNull);
-      });
+      testWidgets(
+        '$themeName: search field has filled:false and white cursor',
+        (tester) async {
+          await _pumpPickerWithTheme(tester, theme: theme);
+          final field = tester.widget<TextField>(
+            find.widgetWithText(TextField, 'Search place...'),
+          );
+          expect(
+            field.decoration?.filled,
+            isFalse,
+            reason: 'search field must override inherited white fill',
+          );
+          expect(field.cursorColor, OpenVtsColors.white);
+          expect(field.style?.color, OpenVtsColors.white);
+          expect(tester.takeException(), isNull);
+        },
+      );
 
       testWidgets(
-          '$themeName: typed search text stays white (no white-on-white)',
-          (tester) async {
-        final adapter = _DeferredSearchAdapter();
-        final dio = Dio()..httpClientAdapter = adapter;
-        await _pumpPickerWithTheme(tester, theme: theme, searchClient: dio);
-        await tester.enterText(
-          find.widgetWithText(TextField, 'Search place...'),
-          'Delhi',
-        );
-        await tester.pump();
-        final field = tester.widget<TextField>(
-          find.widgetWithText(TextField, 'Delhi'),
-        );
-        expect(field.decoration?.filled, isFalse);
-        expect(field.style?.color, OpenVtsColors.white);
-        expect(tester.takeException(), isNull);
-      });
+        '$themeName: typed search text stays white (no white-on-white)',
+        (tester) async {
+          final adapter = _DeferredSearchAdapter();
+          final dio = Dio()..httpClientAdapter = adapter;
+          await _pumpPickerWithTheme(tester, theme: theme, searchClient: dio);
+          await tester.enterText(
+            find.widgetWithText(TextField, 'Search place...'),
+            'Delhi',
+          );
+          await tester.pump();
+          final field = tester.widget<TextField>(
+            find.widgetWithText(TextField, 'Delhi'),
+          );
+          expect(field.decoration?.filled, isFalse);
+          expect(field.style?.color, OpenVtsColors.white);
+          expect(tester.takeException(), isNull);
+        },
+      );
 
       testWidgets('$themeName: loading spinner is visible', (tester) async {
         final adapter = _DeferredSearchAdapter();
@@ -268,52 +276,57 @@ void main() {
         expect(tester.takeException(), isNull);
       });
 
-      testWidgets('$themeName: latitude field has filled:false and white cursor',
-          (tester) async {
-        await _pumpPickerWithTheme(tester, theme: theme);
-        final field = _fieldWithLabel(tester, 'Latitude');
-        expect(
-          field.decoration?.filled,
-          isFalse,
-          reason: 'latitude field must override inherited white fill',
-        );
-        expect(field.cursorColor, OpenVtsColors.white);
-        expect(field.style?.color, OpenVtsColors.white);
-        expect(tester.takeException(), isNull);
-      });
+      testWidgets(
+        '$themeName: latitude field has filled:false and white cursor',
+        (tester) async {
+          await _pumpPickerWithTheme(tester, theme: theme);
+          final field = _fieldWithLabel(tester, 'Latitude');
+          expect(
+            field.decoration?.filled,
+            isFalse,
+            reason: 'latitude field must override inherited white fill',
+          );
+          expect(field.cursorColor, OpenVtsColors.white);
+          expect(field.style?.color, OpenVtsColors.white);
+          expect(tester.takeException(), isNull);
+        },
+      );
 
       testWidgets(
-          '$themeName: longitude field has filled:false and white cursor',
-          (tester) async {
-        await _pumpPickerWithTheme(tester, theme: theme);
-        final field = _fieldWithLabel(tester, 'Longitude');
-        expect(
-          field.decoration?.filled,
-          isFalse,
-          reason: 'longitude field must override inherited white fill',
-        );
-        expect(field.cursorColor, OpenVtsColors.white);
-        expect(field.style?.color, OpenVtsColors.white);
-        expect(tester.takeException(), isNull);
-      });
+        '$themeName: longitude field has filled:false and white cursor',
+        (tester) async {
+          await _pumpPickerWithTheme(tester, theme: theme);
+          final field = _fieldWithLabel(tester, 'Longitude');
+          expect(
+            field.decoration?.filled,
+            isFalse,
+            reason: 'longitude field must override inherited white fill',
+          );
+          expect(field.cursorColor, OpenVtsColors.white);
+          expect(field.style?.color, OpenVtsColors.white);
+          expect(tester.takeException(), isNull);
+        },
+      );
 
       testWidgets(
-          '$themeName: tolerance field has filled:false and white cursor',
-          (tester) async {
-        await _pumpPickerWithTheme(tester, theme: theme);
-        final field = _toleranceField(tester);
-        expect(
-          field.decoration?.filled,
-          isFalse,
-          reason: 'tolerance field must override inherited white fill',
-        );
-        expect(field.cursorColor, OpenVtsColors.white);
-        expect(field.style?.color, OpenVtsColors.white);
-        expect(tester.takeException(), isNull);
-      });
+        '$themeName: tolerance field has filled:false and white cursor',
+        (tester) async {
+          await _pumpPickerWithTheme(tester, theme: theme);
+          final field = _toleranceField(tester);
+          expect(
+            field.decoration?.filled,
+            isFalse,
+            reason: 'tolerance field must override inherited white fill',
+          );
+          expect(field.cursorColor, OpenVtsColors.white);
+          expect(field.style?.color, OpenVtsColors.white);
+          expect(tester.takeException(), isNull);
+        },
+      );
 
-      testWidgets('$themeName: focused coord field border uses white outline',
-          (tester) async {
+      testWidgets('$themeName: focused coord field border uses white outline', (
+        tester,
+      ) async {
         await _pumpPickerWithTheme(tester, theme: theme);
         final field = _fieldWithLabel(tester, 'Latitude');
         final focused = field.decoration?.focusedBorder as OutlineInputBorder?;

@@ -6,6 +6,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/open_vts_colors.dart';
 import '../../../../core/theme/open_vts_spacing.dart';
 import '../../../../core/theme/open_vts_typography.dart';
+import '../../../../core/utils/permission_helper.dart';
+import '../../../../shared/helpers/mobile_text.dart';
+import '../../../../shared/models/user_role.dart';
 import '../../../../shared/widgets/open_vts_bottom_sheet.dart';
 import '../../../../shared/widgets/open_vts_card.dart';
 import '../../../../shared/widgets/open_vts_empty_state.dart';
@@ -13,14 +16,15 @@ import '../../../../shared/widgets/open_vts_error_view.dart';
 import '../../../../shared/widgets/open_vts_loader.dart';
 import '../../../../shared/widgets/open_vts_page_scaffold.dart';
 import '../../../../shared/widgets/open_vts_search_field.dart';
+import '../../../auth/controllers/auth_controller.dart';
 import '../../controllers/admin_providers.dart';
 import '../../models/admin_payments_model.dart';
-import '../../models/admin_subscription_policy.dart';
 import 'widgets/admin_payment_transaction_card.dart';
 import 'widgets/admin_payment_transaction_details_sheet.dart';
 import 'widgets/admin_payments_analytics_section.dart';
 import 'widgets/admin_payments_filters_card.dart';
 import 'widgets/admin_renew_vehicle_sheet.dart';
+import 'widgets/admin_renewal_requests_sheet.dart';
 
 class AdminPaymentsScreen extends ConsumerStatefulWidget {
   const AdminPaymentsScreen({super.key});
@@ -45,7 +49,7 @@ class _AdminPaymentsScreenState extends ConsumerState<AdminPaymentsScreen> {
     final controller = ref.read(adminPaymentsControllerProvider.notifier);
 
     return OpenVtsPageScaffold(
-      title: 'Payments',
+      title: context.mobileText('Payments'),
       headerMode: OpenVtsPageHeaderMode.closeable,
       padding: EdgeInsets.zero,
       body: RefreshIndicator(
@@ -62,17 +66,44 @@ class _AdminPaymentsScreenState extends ConsumerState<AdminPaymentsScreen> {
               ),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
-                  _header(state.transactions.length, state.total,
-                      () => _showRenewSheet(context), controller.refresh),
+                  _header(
+                    state.transactions.length,
+                    state.total,
+                    () => _showRenewSheet(context),
+                    controller.refresh,
+                  ),
+                  if (ref.watch(authControllerProvider).user?.role ==
+                      UserRole.admin)
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton.icon(
+                        icon: const Icon(Icons.pending_actions),
+                        label: Text(
+                          context.mobileText('Customer renewal requests'),
+                        ),
+                        onPressed: () => OpenVtsBottomSheet.show<void>(
+                          context: context,
+                          title: context.mobileText('Renewal requests'),
+                          initialChildSize: .9,
+                          minChildSize: .5,
+                          maxChildSize: .96,
+                          child: const AdminRenewalRequestsSheet(),
+                        ),
+                      ),
+                    ),
                   const SizedBox(height: OpenVtsSpacing.sm),
                   OpenVtsSearchField(
-                    hintText: 'Search reference, provider, counterparty...',
+                    hintText: context.mobileText(
+                      'Search reference, provider, counterparty...',
+                    ),
                     onChanged: (value) {
                       _searchDebounce?.cancel();
-                      _searchDebounce =
-                          Timer(const Duration(milliseconds: 300), () {
-                        unawaited(controller.setSearchQuery(value));
-                      });
+                      _searchDebounce = Timer(
+                        const Duration(milliseconds: 300),
+                        () {
+                          unawaited(controller.setSearchQuery(value));
+                        },
+                      );
                     },
                   ),
                   const SizedBox(height: OpenVtsSpacing.sm),
@@ -100,7 +131,8 @@ class _AdminPaymentsScreenState extends ConsumerState<AdminPaymentsScreen> {
             ),
             _content(state),
             const SliverToBoxAdapter(
-                child: SizedBox(height: OpenVtsSpacing.lg)),
+              child: SizedBox(height: OpenVtsSpacing.lg),
+            ),
           ],
         ),
       ),
@@ -111,23 +143,28 @@ class _AdminPaymentsScreenState extends ConsumerState<AdminPaymentsScreen> {
     final controller = ref.read(adminPaymentsControllerProvider.notifier);
     if (state.isLoading && !state.hasTransactions) {
       return const SliverFillRemaining(
-          hasScrollBody: false, child: OpenVtsLoader());
+        hasScrollBody: false,
+        child: OpenVtsLoader(),
+      );
     }
 
     if (state.errorMessage != null && !state.hasTransactions) {
       return SliverFillRemaining(
         hasScrollBody: false,
         child: OpenVtsErrorView(
-            message: state.errorMessage!, onRetry: controller.load),
+          message: state.errorMessage!,
+          onRetry: controller.load,
+        ),
       );
     }
 
     if (!state.hasTransactions) {
-      return const SliverFillRemaining(
+      return SliverFillRemaining(
         hasScrollBody: false,
         child: OpenVtsEmptyState(
-            title: 'No transactions found',
-            message: 'Try changing search or filters.'),
+          title: context.mobileText('No transactions found'),
+          message: context.mobileText('Try changing search or filters.'),
+        ),
       );
     }
 
@@ -147,8 +184,9 @@ class _AdminPaymentsScreenState extends ConsumerState<AdminPaymentsScreen> {
                     ? const SizedBox(
                         width: 16,
                         height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Text('Load More'),
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Text(context.mobileText('Load More')),
               ),
             );
           }
@@ -167,80 +205,99 @@ class _AdminPaymentsScreenState extends ConsumerState<AdminPaymentsScreen> {
   }
 
   Widget _header(
-      int loaded, int total, VoidCallback onRenew, VoidCallback onRefresh) {
-    return Builder(builder: (context) {
-      final isDark = Theme.of(context).brightness == Brightness.dark;
-      final headingColor = isDark ? Colors.white : OpenVtsColors.textPrimary;
-      final subheadingColor =
-          isDark ? Colors.grey[300] : OpenVtsColors.textSecondary;
+    int loaded,
+    int total,
+    VoidCallback onRenew,
+    VoidCallback onRefresh,
+  ) {
+    return Builder(
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        final headingColor = isDark ? Colors.white : OpenVtsColors.textPrimary;
+        final subheadingColor = isDark
+            ? Colors.grey[300]
+            : OpenVtsColors.textSecondary;
 
-      return OpenVtsCard(
-        padding: const EdgeInsets.all(OpenVtsSpacing.sm),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Payments',
-                      style: OpenVtsTypography.titleSmall
-                          .copyWith(color: headingColor)),
-                  const SizedBox(height: OpenVtsSpacing.xxs),
-                  Text(
-                    AdminSubscriptionPolicy.allowsRenewals
-                        ? 'Manage transactions and renew vehicle subscriptions'
-                        : 'View transaction history',
-                    style:
-                        OpenVtsTypography.meta.copyWith(color: subheadingColor),
-                  ),
-                  const SizedBox(height: OpenVtsSpacing.xxs),
-                  Text(
-                    '$loaded of $total transactions',
-                    style: OpenVtsTypography.meta.copyWith(
-                      color: subheadingColor,
-                      fontWeight: FontWeight.w600,
+        return OpenVtsCard(
+          padding: const EdgeInsets.all(OpenVtsSpacing.sm),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      context.mobileText('Payments'),
+                      style: OpenVtsTypography.titleSmall.copyWith(
+                        color: headingColor,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ),
-            IconButton(
-                onPressed: onRefresh,
-                icon: const Icon(Icons.refresh_rounded, size: 18)),
-            if (AdminSubscriptionPolicy.allowsRenewals)
-              FilledButton.icon(
-                onPressed: onRenew,
-                icon: Icon(
-                  Icons.autorenew_rounded,
-                  size: 16,
-                  color: isDark ? Colors.white : Colors.white,
+                    const SizedBox(height: OpenVtsSpacing.xxs),
+                    Text(
+                      context.mobileText(
+                        'Manage transactions and renew vehicle subscriptions',
+                      ),
+                      style: OpenVtsTypography.meta.copyWith(
+                        color: subheadingColor,
+                      ),
+                    ),
+                    const SizedBox(height: OpenVtsSpacing.xxs),
+                    Text(
+                      context.mobileText("{value1} of {value2} transactions", {
+                        'value1': (loaded).toString(),
+                        'value2': (total).toString(),
+                      }),
+                      style: OpenVtsTypography.meta.copyWith(
+                        color: subheadingColor,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ),
-                label: Text(
-                  'Renew Vehicle',
-                  style: TextStyle(
+              ),
+              IconButton(
+                onPressed: onRefresh,
+                icon: const Icon(Icons.refresh_rounded, size: 18),
+              ),
+              if (PermissionHelper.canPerform(
+                ref.watch(authControllerProvider).user,
+                'payments.edit',
+              ))
+                FilledButton.icon(
+                  onPressed: onRenew,
+                  icon: Icon(
+                    Icons.autorenew_rounded,
+                    size: 16,
                     color: isDark ? Colors.white : Colors.white,
                   ),
-                ),
-                style: FilledButton.styleFrom(
-                  backgroundColor: isDark ? Colors.black : OpenVtsColors.brandInk,
-                  side: BorderSide(
-                    color: isDark ? Colors.white : Colors.transparent,
-                    width: isDark ? 1 : 0,
+                  label: Text(
+                    context.mobileText('Renew Vehicle'),
+                    style: TextStyle(
+                      color: isDark ? Colors.white : Colors.white,
+                    ),
                   ),
-                  foregroundColor: isDark ? Colors.white : Colors.white,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: isDark
+                        ? Colors.black
+                        : OpenVtsColors.brandInk,
+                    side: BorderSide(
+                      color: isDark ? Colors.white : Colors.transparent,
+                      width: isDark ? 1 : 0,
+                    ),
+                    foregroundColor: isDark ? Colors.white : Colors.white,
+                  ),
                 ),
-              ),
-          ],
-        ),
-      );
-    });
+            ],
+          ),
+        );
+      },
+    );
   }
 
   Future<void> _showRenewSheet(BuildContext context) {
-    if (!AdminSubscriptionPolicy.allowsRenewals) return Future<void>.value();
     return OpenVtsBottomSheet.show<void>(
       context: context,
-      title: 'Renew Vehicle',
+      title: context.mobileText('Renew Vehicle'),
       initialChildSize: 0.9,
       minChildSize: 0.5,
       maxChildSize: 0.96,
@@ -249,10 +306,12 @@ class _AdminPaymentsScreenState extends ConsumerState<AdminPaymentsScreen> {
   }
 
   Future<void> _showDetails(
-      BuildContext context, AdminPaymentTransaction item) {
+    BuildContext context,
+    AdminPaymentTransaction item,
+  ) {
     return OpenVtsBottomSheet.show<void>(
       context: context,
-      title: 'Transaction Details',
+      title: context.mobileText('Transaction Details'),
       initialChildSize: 0.8,
       minChildSize: 0.45,
       maxChildSize: 0.96,

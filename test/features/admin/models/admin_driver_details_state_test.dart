@@ -57,9 +57,8 @@ void main() {
   group('effective updated-at fallback logic', () {
     test('server timestamp is preferred over session-local value', () {
       final serverTs = DateTime.utc(2026, 8, 7, 9, 0);
-      final localTs = DateTime.utc(2026, 8, 7, 8, 0);
-      // Simulate: driver.updatedAt is available → prefer it.
-      final effective = serverTs ?? localTs;
+      // A present server timestamp is preferred over the session-local value.
+      final effective = serverTs;
       expect(effective, serverTs);
     });
 
@@ -128,7 +127,7 @@ void main() {
       final withLocal = base.copyWith(profileUpdatedAt: localTs);
 
       final afterRefresh = withLocal.copyWith(
-        profileUpdatedAt: serverTs ?? withLocal.profileUpdatedAt,
+        profileUpdatedAt: serverTs,
       );
       expect(afterRefresh.profileUpdatedAt, serverTs);
     });

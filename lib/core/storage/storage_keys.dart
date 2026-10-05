@@ -48,6 +48,7 @@ class StorageKeys {
   static const locale = 'openvts_locale';
 
   static const appLanguageCode = 'openvts_app_language_code';
+  static const appLanguageOverride = 'openvts_app_language_override';
   static const appDateFormat = 'openvts_app_date_format';
   static const appTimeFormat = 'openvts_app_time_format';
   static const appTimezone = 'openvts_app_timezone';

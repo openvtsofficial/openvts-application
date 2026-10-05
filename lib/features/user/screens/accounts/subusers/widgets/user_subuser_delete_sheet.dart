@@ -4,14 +4,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../controllers/user_subuser_details_controller.dart';
 import '../../../../models/user_subuser_model.dart';
 import '../../../../models/user_subusers_state.dart';
 
-typedef UserSubUserDetailsProvider = AutoDisposeStateNotifierProvider<
-    UserSubUserDetailsController, UserSubUserDetailsState>;
+typedef UserSubUserDetailsProvider =
+    AutoDisposeStateNotifierProvider<
+      UserSubUserDetailsController,
+      UserSubUserDetailsState
+    >;
 
 class UserSubUserDeleteSheet extends ConsumerWidget {
   const UserSubUserDeleteSheet({
@@ -43,7 +47,9 @@ class UserSubUserDeleteSheet extends ConsumerWidget {
           ),
           const SizedBox(height: OpenVtsSpacing.xs),
           Text(
-            'This action permanently removes the sub user and revokes vehicle access. This cannot be undone.',
+            context.mobileText(
+              'This action permanently removes the sub user and revokes vehicle access. This cannot be undone.',
+            ),
             style: OpenVtsTypography.body.copyWith(
               color: OpenVtsColors.textSecondary,
             ),
@@ -53,22 +59,24 @@ class UserSubUserDeleteSheet extends ConsumerWidget {
             children: [
               Expanded(
                 child: OpenVtsButton(
-                  label: 'Cancel',
+                  label: context.mobileText('Cancel'),
                   height: 40,
                   variant: OpenVtsButtonVariant.secondary,
-                  onPressed:
-                      isDeleting ? null : () => Navigator.of(context).pop(),
+                  onPressed: isDeleting
+                      ? null
+                      : () => Navigator.of(context).pop(),
                 ),
               ),
               const SizedBox(width: OpenVtsSpacing.sm),
               Expanded(
                 child: OpenVtsButton(
-                  label: 'Delete',
+                  label: context.mobileText('Delete'),
                   height: 40,
                   trailingIcon: Icons.delete_outline_rounded,
                   isLoading: isDeleting,
-                  onPressed:
-                      isDeleting ? null : () => _confirmDelete(context, ref),
+                  onPressed: isDeleting
+                      ? null
+                      : () => _confirmDelete(context, ref),
                 ),
               ),
             ],

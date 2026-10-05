@@ -4,6 +4,7 @@ import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../shared/widgets/open_vts_loader.dart';
 import '../../../models/user_report_model.dart';
@@ -47,21 +48,30 @@ class UserReportResultToolbar extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('$rowCount result${rowCount == 1 ? '' : 's'}',
-                      style: OpenVtsTypography.label
-                          .copyWith(fontWeight: FontWeight.w700)),
+                  Text(
+                    context.mobileText("{value1} result{value2}", {
+                      'value1': (rowCount).toString(),
+                      'value2': (rowCount == 1 ? '' : 's').toString(),
+                    }),
+                    style: OpenVtsTypography.label.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                   if (generatedAt != null)
                     Text(
-                      'Generated at ${_formatTime(generatedAt!)}',
-                      style: OpenVtsTypography.meta
-                          .copyWith(color: OpenVtsColors.textSecondary),
+                      context.mobileText("Generated at {value1}", {
+                        'value1': (_formatTime(generatedAt!)).toString(),
+                      }),
+                      style: OpenVtsTypography.meta.copyWith(
+                        color: OpenVtsColors.textSecondary,
+                      ),
                     ),
                 ],
               ),
             ),
             if (onExport != null)
               IconButton(
-                tooltip: 'Export',
+                tooltip: context.mobileText('Export'),
                 icon: const Icon(Icons.download_rounded, size: 20),
                 onPressed: () => ReportExportSheet.show(
                   context,
@@ -88,11 +98,15 @@ class UserReportResultToolbar extends StatelessWidget {
           isLoadingMore
               ? const Center(
                   child: Padding(
-                      padding: EdgeInsets.all(8), child: OpenVtsLoader()))
+                    padding: EdgeInsets.all(8),
+                    child: OpenVtsLoader(),
+                  ),
+                )
               : OpenVtsButton(
-                  label: 'Load more',
+                  label: context.mobileText('Load more'),
                   onPressed: onLoadMore,
-                  variant: OpenVtsButtonVariant.secondary),
+                  variant: OpenVtsButtonVariant.secondary,
+                ),
         ],
       ],
     );
@@ -113,16 +127,22 @@ class _MetaChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(
-          horizontal: OpenVtsSpacing.xs, vertical: 3),
+        horizontal: OpenVtsSpacing.xs,
+        vertical: 3,
+      ),
       decoration: BoxDecoration(
         color: isDark ? OpenVtsColors.darkSurface : OpenVtsColors.surface,
         borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
         border: Border.all(
-            color: isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border),
+          color: isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border,
+        ),
       ),
-      child: Text(label,
-          style: OpenVtsTypography.meta
-              .copyWith(color: OpenVtsColors.textSecondary)),
+      child: Text(
+        label,
+        style: OpenVtsTypography.meta.copyWith(
+          color: OpenVtsColors.textSecondary,
+        ),
+      ),
     );
   }
 }
@@ -139,18 +159,26 @@ class _WarningBanner extends StatelessWidget {
       decoration: BoxDecoration(
         color: OpenVtsColors.warning.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(OpenVtsRadius.md),
-        border:
-            Border.all(color: OpenVtsColors.warning.withValues(alpha: 0.35)),
+        border: Border.all(
+          color: OpenVtsColors.warning.withValues(alpha: 0.35),
+        ),
       ),
       child: Row(
         children: [
-          Icon(Icons.warning_amber_rounded,
-              size: 16, color: OpenVtsColors.warning),
+          const Icon(
+            Icons.warning_amber_rounded,
+            size: 16,
+            color: OpenVtsColors.warning,
+          ),
           const SizedBox(width: OpenVtsSpacing.xs),
           Expanded(
-              child: Text(message,
-                  style: OpenVtsTypography.meta
-                      .copyWith(color: OpenVtsColors.warning))),
+            child: Text(
+              message,
+              style: OpenVtsTypography.meta.copyWith(
+                color: OpenVtsColors.warning,
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -173,13 +201,20 @@ class _ErrorBanner extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(Icons.error_outline_rounded,
-              size: 16, color: OpenVtsColors.error),
+          const Icon(
+            Icons.error_outline_rounded,
+            size: 16,
+            color: OpenVtsColors.error,
+          ),
           const SizedBox(width: OpenVtsSpacing.xs),
           Expanded(
-              child: Text(message,
-                  style: OpenVtsTypography.meta
-                      .copyWith(color: OpenVtsColors.error))),
+            child: Text(
+              message,
+              style: OpenVtsTypography.meta.copyWith(
+                color: OpenVtsColors.error,
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -188,22 +223,29 @@ class _ErrorBanner extends StatelessWidget {
 
 /// Export format picker bottom sheet
 class ReportExportSheet extends StatelessWidget {
-  const ReportExportSheet(
-      {required this.reportKey, required this.onFormat, super.key});
+  const ReportExportSheet({
+    required this.reportKey,
+    required this.onFormat,
+    super.key,
+  });
 
   final UserReportKey reportKey;
   final ValueChanged<String> onFormat;
 
-  static Future<void> show(BuildContext context,
-      {required UserReportKey reportKey,
-      required ValueChanged<String> onFormat}) {
+  static Future<void> show(
+    BuildContext context, {
+    required UserReportKey reportKey,
+    required ValueChanged<String> onFormat,
+  }) {
     return showModalBottomSheet(
       context: context,
       isScrollControlled: false,
       backgroundColor: Theme.of(context).colorScheme.surface,
       shape: const RoundedRectangleBorder(
-          borderRadius:
-              BorderRadius.vertical(top: Radius.circular(OpenVtsRadius.xl))),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(OpenVtsRadius.xl),
+        ),
+      ),
       builder: (_) =>
           ReportExportSheet(reportKey: reportKey, onFormat: onFormat),
     );
@@ -225,35 +267,46 @@ class ReportExportSheet extends StatelessWidget {
         children: [
           const SizedBox(height: OpenVtsSpacing.sm),
           Center(
-              child: Container(
-                  height: 4,
-                  width: 40,
-                  decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.outlineVariant,
-                      borderRadius: BorderRadius.circular(2)))),
+            child: Container(
+              height: 4,
+              width: 40,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.outlineVariant,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
           const SizedBox(height: OpenVtsSpacing.md),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: OpenVtsSpacing.md),
             child: Row(
               children: [
                 Expanded(
-                    child: Text('Export ${reportKey.label} Report',
-                        style: OpenVtsTypography.titleSmall)),
+                  child: Text(
+                    context.mobileText("Export {value1} Report", {
+                      'value1': (reportKey.label).toString(),
+                    }),
+                    style: OpenVtsTypography.titleSmall,
+                  ),
+                ),
                 IconButton(
-                    icon: const Icon(Icons.close_rounded, size: 20),
-                    onPressed: () => Navigator.of(context).maybePop()),
+                  icon: const Icon(Icons.close_rounded, size: 20),
+                  onPressed: () => Navigator.of(context).maybePop(),
+                ),
               ],
             ),
           ),
           const Divider(height: 1),
-          ...formats.map((f) => ListTile(
-                leading: Icon(f.$2),
-                title: Text(f.$3, style: OpenVtsTypography.body),
-                onTap: () {
-                  Navigator.of(context).maybePop();
-                  onFormat(f.$1);
-                },
-              )),
+          ...formats.map(
+            (f) => ListTile(
+              leading: Icon(f.$2),
+              title: Text(f.$3, style: OpenVtsTypography.body),
+              onTap: () {
+                Navigator.of(context).maybePop();
+                onFormat(f.$1);
+              },
+            ),
+          ),
           const SizedBox(height: OpenVtsSpacing.sm),
         ],
       ),

@@ -7,6 +7,7 @@ import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../shared/widgets/open_vts_bottom_sheet.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
@@ -14,10 +15,7 @@ import '../../../controllers/user_providers.dart';
 import '../../../models/user_share_track_link_model.dart';
 
 class UserShareTrackLinkDeleteSheet extends ConsumerWidget {
-  const UserShareTrackLinkDeleteSheet({
-    required this.link,
-    super.key,
-  });
+  const UserShareTrackLinkDeleteSheet({required this.link, super.key});
 
   final UserShareTrackLink link;
 
@@ -27,7 +25,7 @@ class UserShareTrackLinkDeleteSheet extends ConsumerWidget {
   }) {
     return OpenVtsBottomSheet.show<T>(
       context: context,
-      title: 'Delete track link',
+      title: context.mobileText('Delete track link'),
       initialChildSize: 0.42,
       minChildSize: 0.32,
       maxChildSize: 0.64,
@@ -41,8 +39,9 @@ class UserShareTrackLinkDeleteSheet extends ConsumerWidget {
     final endpointId = link.endpointId;
     final isDeleting = state.isDeleting(endpointId);
     final canDelete = endpointId.trim().isNotEmpty && !isDeleting;
-    final uniqueCode =
-        link.uniqueCode.trim().isEmpty ? '-' : link.uniqueCode.trim();
+    final uniqueCode = link.uniqueCode.trim().isEmpty
+        ? '-'
+        : link.uniqueCode.trim();
     final vehicleCount = link.vehicleCount;
 
     return ListView(
@@ -74,7 +73,9 @@ class UserShareTrackLinkDeleteSheet extends ConsumerWidget {
               const SizedBox(width: OpenVtsSpacing.xs),
               Expanded(
                 child: Text(
-                  'This public tracking link will stop working immediately. This action cannot be undone.',
+                  context.mobileText(
+                    'This public tracking link will stop working immediately. This action cannot be undone.',
+                  ),
                   style: OpenVtsTypography.body.copyWith(
                     color: OpenVtsColors.error,
                     fontSize: 13,
@@ -87,20 +88,22 @@ class UserShareTrackLinkDeleteSheet extends ConsumerWidget {
         ),
         const SizedBox(height: OpenVtsSpacing.md),
         _DetailRow(
-          label: 'Unique code',
+          label: context.mobileText('Unique code'),
           value: uniqueCode,
           icon: Icons.tag_rounded,
         ),
         const SizedBox(height: OpenVtsSpacing.xs),
         _DetailRow(
-          label: 'Affected vehicles',
+          label: context.mobileText('Affected vehicles'),
           value: '$vehicleCount ${vehicleCount == 1 ? 'vehicle' : 'vehicles'}',
           icon: Icons.directions_car_outlined,
         ),
         if (endpointId.trim().isEmpty) ...[
           const SizedBox(height: OpenVtsSpacing.sm),
           Text(
-            'This link cannot be deleted because its id is missing.',
+            context.mobileText(
+              'This link cannot be deleted because its id is missing.',
+            ),
             style: OpenVtsTypography.meta.copyWith(
               color: OpenVtsColors.error,
               fontWeight: FontWeight.w700,
@@ -112,11 +115,12 @@ class UserShareTrackLinkDeleteSheet extends ConsumerWidget {
           children: [
             Expanded(
               child: OpenVtsButton(
-                label: 'Cancel',
+                label: context.mobileText('Cancel'),
                 height: 40,
                 variant: OpenVtsButtonVariant.secondary,
-                onPressed:
-                    isDeleting ? null : () => Navigator.of(context).pop(),
+                onPressed: isDeleting
+                    ? null
+                    : () => Navigator.of(context).pop(),
               ),
             ),
             const SizedBox(width: OpenVtsSpacing.sm),
@@ -191,7 +195,9 @@ class _DetailRow extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: OpenVtsTypography.label.copyWith(
                     color: OpenVtsColors.textPrimary,
-                    fontFamily: label == 'Unique code' ? 'monospace' : null,
+                    fontFamily: label == context.mobileText('Unique code')
+                        ? 'monospace'
+                        : null,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -232,13 +238,16 @@ class _DeleteButton extends StatelessWidget {
                 width: 18,
                 child: CircularProgressIndicator(strokeWidth: 2),
               )
-            : const Row(
+            : Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.delete_outline_rounded, size: 18),
-                  SizedBox(width: 6),
-                  Text('Delete', style: OpenVtsTypography.label),
+                  const Icon(Icons.delete_outline_rounded, size: 18),
+                  const SizedBox(width: 6),
+                  Text(
+                    context.mobileText('Delete'),
+                    style: OpenVtsTypography.label,
+                  ),
                 ],
               ),
       ),

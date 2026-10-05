@@ -7,6 +7,7 @@ import '../../../../core/theme/open_vts_radius.dart';
 import '../../../../core/theme/open_vts_spacing.dart';
 import '../../../../core/theme/open_vts_typography.dart';
 import '../../../../core/utils/validators.dart';
+import '../../../../shared/helpers/mobile_text.dart';
 import '../../../../shared/helpers/toast_helper.dart';
 import '../../../../shared/widgets/open_vts_button.dart';
 import '../../../../shared/widgets/open_vts_error_view.dart';
@@ -123,7 +124,7 @@ class _AdminCreateUserScreenState extends ConsumerState<AdminCreateUserScreen> {
     final usersState = ref.watch(adminUsersControllerProvider);
 
     return OpenVtsPageScaffold(
-      title: 'Create User',
+      title: context.mobileText('Create User'),
       headerMode: OpenVtsPageHeaderMode.closeable,
       onClose: () => _handleClose(context),
       padding: EdgeInsets.zero,
@@ -132,14 +133,14 @@ class _AdminCreateUserScreenState extends ConsumerState<AdminCreateUserScreen> {
         child: _isCatalogLoading && _countries.isEmpty
             ? const Center(child: OpenVtsLoader())
             : _catalogError != null && _countries.isEmpty
-                ? OpenVtsErrorView(
-                    message: _catalogError!,
-                    onRetry: () {
-                      _catalogPrepared = false;
-                      _prepareCatalog();
-                    },
-                  )
-                : _buildForm(context, usersState.isCreating),
+            ? OpenVtsErrorView(
+                message: _catalogError!,
+                onRetry: () {
+                  _catalogPrepared = false;
+                  _prepareCatalog();
+                },
+              )
+            : _buildForm(context, usersState.isCreating),
       ),
     );
   }
@@ -202,25 +203,27 @@ class _AdminCreateUserScreenState extends ConsumerState<AdminCreateUserScreen> {
 
     return _FormSection(
       icon: Icons.person_outline_rounded,
-      title: 'Personal information',
-      description: 'How the user will be identified on the platform.',
+      title: context.mobileText('Personal information'),
+      description: context.mobileText(
+        'How the user will be identified on the platform.',
+      ),
       children: [
         OpenVtsTextField(
-          label: 'Full name',
-          hintText: 'Jane Smith',
+          label: context.mobileText('Full name'),
+          hintText: context.mobileText('Jane Smith'),
           controller: _nameController,
           textInputAction: TextInputAction.next,
           maxLength: Validators.maxNameLength,
           validator: Validators.adminName,
         ),
         OpenVtsTextField(
-          label: 'Email (optional)',
-          hintText: 'jane@company.com',
+          label: context.mobileText('Email'),
+          hintText: context.mobileText('jane@company.com'),
           controller: _emailController,
           keyboardType: TextInputType.emailAddress,
           textInputAction: TextInputAction.next,
           maxLength: Validators.maxEmailLength,
-          validator: Validators.adminEmailOptional,
+          validator: Validators.email,
         ),
         LayoutBuilder(
           builder: (context, constraints) {
@@ -229,7 +232,7 @@ class _AdminCreateUserScreenState extends ConsumerState<AdminCreateUserScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   OpenVtsSearchableDropdown<String>(
-                    label: 'Mobile prefix',
+                    label: context.mobileText('Mobile prefix'),
                     hintText: '+91',
                     sheetTitle: 'Select mobile prefix',
                     searchHintText: 'Search dial code or country',
@@ -241,7 +244,7 @@ class _AdminCreateUserScreenState extends ConsumerState<AdminCreateUserScreen> {
                   ),
                   const SizedBox(height: OpenVtsSpacing.md),
                   OpenVtsTextField(
-                    label: 'Mobile number',
+                    label: context.mobileText('Mobile number'),
                     hintText: '7856565655',
                     controller: _mobileNumberController,
                     keyboardType: TextInputType.phone,
@@ -258,7 +261,7 @@ class _AdminCreateUserScreenState extends ConsumerState<AdminCreateUserScreen> {
               children: [
                 Expanded(
                   child: OpenVtsSearchableDropdown<String>(
-                    label: 'Mobile prefix',
+                    label: context.mobileText('Mobile prefix'),
                     hintText: '+91',
                     sheetTitle: 'Select mobile prefix',
                     searchHintText: 'Search dial code or country',
@@ -273,7 +276,7 @@ class _AdminCreateUserScreenState extends ConsumerState<AdminCreateUserScreen> {
                 Expanded(
                   flex: 2,
                   child: OpenVtsTextField(
-                    label: 'Mobile number',
+                    label: context.mobileText('Mobile number'),
                     hintText: '7856565655',
                     controller: _mobileNumberController,
                     keyboardType: TextInputType.phone,
@@ -293,11 +296,13 @@ class _AdminCreateUserScreenState extends ConsumerState<AdminCreateUserScreen> {
   Widget _accountSection() {
     return _FormSection(
       icon: Icons.lock_outline_rounded,
-      title: 'Account access',
-      description: 'Credentials the user will use to sign into OpenVTS.',
+      title: context.mobileText('Account access'),
+      description: context.mobileText(
+        'Credentials the user will use to sign into OpenVTS.',
+      ),
       children: [
         OpenVtsTextField(
-          label: 'Username',
+          label: context.mobileText('Username'),
           hintText: 'janesmith',
           controller: _usernameController,
           textInputAction: TextInputAction.next,
@@ -305,14 +310,18 @@ class _AdminCreateUserScreenState extends ConsumerState<AdminCreateUserScreen> {
           validator: Validators.adminUsername,
         ),
         OpenVtsTextField(
-          label: 'Password',
-          hintText: 'Minimum ${Validators.minPasswordLength} characters',
+          label: context.mobileText('Password'),
+          hintText: context.mobileText("Minimum {value1} characters", {
+            'value1': (Validators.minPasswordLength).toString(),
+          }),
           controller: _passwordController,
           obscureText: _obscurePassword,
           textInputAction: TextInputAction.next,
           maxLength: Validators.maxPasswordLength,
           suffixIcon: IconButton(
-            tooltip: _obscurePassword ? 'Show password' : 'Hide password',
+            tooltip: _obscurePassword
+                ? context.mobileText('Show password')
+                : context.mobileText('Hide password'),
             onPressed: () =>
                 setState(() => _obscurePassword = !_obscurePassword),
             icon: Icon(
@@ -326,15 +335,16 @@ class _AdminCreateUserScreenState extends ConsumerState<AdminCreateUserScreen> {
           validator: Validators.adminPassword,
         ),
         OpenVtsTextField(
-          label: 'Confirm password',
-          hintText: 'Re-enter the password',
+          label: context.mobileText('Confirm password'),
+          hintText: context.mobileText('Re-enter the password'),
           controller: _confirmPasswordController,
           obscureText: _obscureConfirmPassword,
           textInputAction: TextInputAction.next,
           maxLength: Validators.maxPasswordLength,
           suffixIcon: IconButton(
-            tooltip:
-                _obscureConfirmPassword ? 'Show password' : 'Hide password',
+            tooltip: _obscureConfirmPassword
+                ? context.mobileText('Show password')
+                : context.mobileText('Hide password'),
             onPressed: () => setState(
               () => _obscureConfirmPassword = !_obscureConfirmPassword,
             ),
@@ -356,20 +366,22 @@ class _AdminCreateUserScreenState extends ConsumerState<AdminCreateUserScreen> {
   Widget _companySection() {
     return _FormSection(
       icon: Icons.business_outlined,
-      title: 'Company',
-      description: 'The organisation this user belongs to within OpenVTS.',
+      title: context.mobileText('Company'),
+      description: context.mobileText(
+        'The organisation this user belongs to within OpenVTS.',
+      ),
       children: [
         OpenVtsTextField(
-          label: 'Company name',
-          hintText: 'Acme Logistics Pvt. Ltd.',
+          label: context.mobileText('Company name'),
+          hintText: context.mobileText('Acme Logistics Pvt. Ltd.'),
           controller: _companyController,
           textInputAction: TextInputAction.next,
           maxLength: Validators.maxCompanyNameLength,
           validator: Validators.companyName,
         ),
         OpenVtsTextField(
-          label: 'Address',
-          hintText: 'Street, building, area\u2026',
+          label: context.mobileText('Address'),
+          hintText: context.mobileText('Street, building, area\u2026'),
           controller: _addressController,
           maxLines: 3,
           textInputAction: TextInputAction.newline,
@@ -414,14 +426,15 @@ class _AdminCreateUserScreenState extends ConsumerState<AdminCreateUserScreen> {
 
     return _FormSection(
       icon: Icons.location_on_outlined,
-      title: 'Location',
-      description:
-          'Used for regional defaults like currency, timezone, and routing.',
+      title: context.mobileText('Location'),
+      description: context.mobileText(
+        'Used for regional defaults like currency, timezone, and routing.',
+      ),
       children: [
         OpenVtsSearchableDropdown<String>(
-          label: 'Country',
+          label: context.mobileText('Country'),
           required: true,
-          hintText: 'Select a country',
+          hintText: context.mobileText('Select a country'),
           searchHintText: 'Search country or ISO code',
           sheetTitle: 'Select country',
           leadingIcon: Icons.public_rounded,
@@ -453,22 +466,29 @@ class _AdminCreateUserScreenState extends ConsumerState<AdminCreateUserScreen> {
           },
         ),
         OpenVtsSearchableDropdown<String>(
-          label: 'State (optional)',
-          required: false,
-          enabled: _selectedCountryCode != null &&
+          label: context.mobileText('State'),
+          required: _statesLoaded && _states.isNotEmpty,
+          enabled:
+              _selectedCountryCode != null &&
               _statesLoaded &&
               _states.isNotEmpty,
           hintText: _selectedCountryCode == null
-              ? 'Select a country first'
+              ? context.mobileText('Select a country first')
               : (_statesLoaded && _states.isEmpty)
-                  ? 'No states available'
-                  : 'Select a state',
+              ? context.mobileText('No states available')
+              : context.mobileText('Select a state'),
           searchHintText: 'Search state',
           sheetTitle: 'Select state',
           leadingIcon: Icons.map_outlined,
           options: stateOptions,
           value: _selectedStateCode,
           isLoading: _isLoadingStates,
+          validator: (value) {
+            if (!_statesLoaded || _states.isEmpty) return null;
+            return value == null || value.trim().isEmpty
+                ? 'State is required'
+                : null;
+          },
           onChanged: (value) async {
             setState(() {
               _selectedStateCode = value;
@@ -483,26 +503,32 @@ class _AdminCreateUserScreenState extends ConsumerState<AdminCreateUserScreen> {
           },
         ),
         OpenVtsSearchableDropdown<String>(
-          label: 'City (optional)',
-          required: false,
+          label: context.mobileText('City'),
+          required: _citiesLoaded && _cities.isNotEmpty,
           enabled:
               _selectedStateCode != null && _citiesLoaded && _cities.isNotEmpty,
           hintText: _selectedStateCode == null
-              ? 'Select a state first'
+              ? context.mobileText('Select a state first')
               : (_citiesLoaded && _cities.isEmpty)
-                  ? 'No cities available'
-                  : 'Select a city',
+              ? context.mobileText('No cities available')
+              : context.mobileText('Select a city'),
           searchHintText: 'Search city',
           sheetTitle: 'Select city',
           leadingIcon: Icons.location_city_outlined,
           options: cityOptions,
           value: _selectedCityName,
           isLoading: _isLoadingCities,
+          validator: (value) {
+            if (!_citiesLoaded || _cities.isEmpty) return null;
+            return value == null || value.trim().isEmpty
+                ? 'City is required'
+                : null;
+          },
           onChanged: (value) => setState(() => _selectedCityName = value),
         ),
         OpenVtsTextField(
-          label: 'Pincode',
-          hintText: 'Postal / ZIP code',
+          label: context.mobileText('Pincode'),
+          hintText: context.mobileText('Postal / ZIP code'),
           controller: _pincodeController,
           keyboardType: TextInputType.number,
           textInputAction: TextInputAction.done,
@@ -581,7 +607,9 @@ class _AdminCreateUserScreenState extends ConsumerState<AdminCreateUserScreen> {
     final formState = _formKey.currentState;
     if (formState == null || !formState.validate()) {
       ToastHelper.showError(
-        'Please fix the highlighted fields before continuing.',
+        context.mobileText(
+          'Please fix the highlighted fields before continuing.',
+        ),
         context: context,
       );
       return;
@@ -589,14 +617,32 @@ class _AdminCreateUserScreenState extends ConsumerState<AdminCreateUserScreen> {
 
     if (_selectedCountryCode == null) {
       ToastHelper.showError(
-        'Country is required.',
+        context.mobileText('Country is required.'),
+        context: context,
+      );
+      return;
+    }
+
+    if (_statesLoaded && _states.isNotEmpty && _selectedStateCode == null) {
+      ToastHelper.showError(
+        context.mobileText('State is required.'),
+        context: context,
+      );
+      return;
+    }
+
+    if (_citiesLoaded && _cities.isNotEmpty && _selectedCityName == null) {
+      ToastHelper.showError(
+        context.mobileText('City is required.'),
         context: context,
       );
       return;
     }
 
     try {
-      await ref.read(adminUsersControllerProvider.notifier).createUser(
+      await ref
+          .read(adminUsersControllerProvider.notifier)
+          .createUser(
             AdminCreateUserRequest(
               name: _nameController.text,
               email: _emailController.text,
@@ -618,7 +664,9 @@ class _AdminCreateUserScreenState extends ConsumerState<AdminCreateUserScreen> {
       }
 
       ToastHelper.showSuccess(
-        'User "${_nameController.text.trim()}" created.',
+        context.mobileText("User \"{value1}\" created.", {
+          'value1': (_nameController.text.trim()).toString(),
+        }),
         context: context,
       );
       if (context.canPop()) {
@@ -636,7 +684,8 @@ class _AdminCreateUserScreenState extends ConsumerState<AdminCreateUserScreen> {
   }
 
   void _handleClose(BuildContext context) {
-    final hasUnsavedInput = _nameController.text.trim().isNotEmpty ||
+    final hasUnsavedInput =
+        _nameController.text.trim().isNotEmpty ||
         _emailController.text.trim().isNotEmpty ||
         _usernameController.text.trim().isNotEmpty ||
         _passwordController.text.trim().isNotEmpty ||
@@ -656,14 +705,16 @@ class _AdminCreateUserScreenState extends ConsumerState<AdminCreateUserScreen> {
     showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Discard new user?'),
-        content: const Text(
-          'Your changes will be lost. This action cannot be undone.',
+        title: Text(context.mobileText('Discard new user?')),
+        content: Text(
+          context.mobileText(
+            'Your changes will be lost. This action cannot be undone.',
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => dialogContext.pop(),
-            child: const Text('Keep editing'),
+            child: Text(context.mobileText('Keep editing')),
           ),
           TextButton(
             style: TextButton.styleFrom(foregroundColor: OpenVtsColors.error),
@@ -673,7 +724,7 @@ class _AdminCreateUserScreenState extends ConsumerState<AdminCreateUserScreen> {
                 context.pop();
               }
             },
-            child: const Text('Discard'),
+            child: Text(context.mobileText('Discard')),
           ),
         ],
       ),
@@ -725,14 +776,16 @@ class _IntroBanner extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Add a new user',
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+                  context.mobileText('Add a new user'),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Complete the sections below. Required fields are marked with an asterisk (*).',
+                  context.mobileText(
+                    'Complete the sections below. Required fields are marked with an asterisk (*).',
+                  ),
                   style: OpenVtsTypography.label.copyWith(
                     color: OpenVtsColors.textSecondary,
                   ),
@@ -775,11 +828,7 @@ class _FormSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _SectionHeader(
-            icon: icon,
-            title: title,
-            description: description,
-          ),
+          _SectionHeader(icon: icon, title: title, description: description),
           const SizedBox(height: OpenVtsSpacing.md),
           for (var i = 0; i < children.length; i++) ...[
             if (i > 0) const SizedBox(height: OpenVtsSpacing.md),
@@ -813,15 +862,17 @@ class _SectionHeader extends StatelessWidget {
           width: 36,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color:
-                isDark ? OpenVtsColors.darkBackground : OpenVtsColors.surface,
+            color: isDark
+                ? OpenVtsColors.darkBackground
+                : OpenVtsColors.surface,
             shape: BoxShape.circle,
           ),
           child: Icon(
             icon,
             size: 18,
-            color:
-                isDark ? OpenVtsColors.darkTextPrimary : OpenVtsColors.brandInk,
+            color: isDark
+                ? OpenVtsColors.darkTextPrimary
+                : OpenVtsColors.brandInk,
           ),
         ),
         const SizedBox(width: OpenVtsSpacing.sm),
@@ -832,9 +883,9 @@ class _SectionHeader extends StatelessWidget {
               Text(
                 title,
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: -0.2,
-                    ),
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -0.2,
+                ),
               ),
               const SizedBox(height: 2),
               Text(
@@ -886,7 +937,7 @@ class _StickyActionBar extends StatelessWidget {
           children: [
             Expanded(
               child: OpenVtsButton(
-                label: 'Cancel',
+                label: context.mobileText('Cancel'),
                 variant: OpenVtsButtonVariant.secondary,
                 onPressed: isSubmitting ? null : onCancel,
               ),
@@ -895,7 +946,7 @@ class _StickyActionBar extends StatelessWidget {
             Expanded(
               flex: 2,
               child: OpenVtsButton(
-                label: 'Create user',
+                label: context.mobileText('Create user'),
                 isLoading: isSubmitting,
                 onPressed: onSubmit,
               ),

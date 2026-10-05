@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/theme/open_vts_spacing.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/widgets/open_vts_bottom_sheet.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../shared/widgets/open_vts_date_time_range_selector.dart';
@@ -41,7 +42,7 @@ class _AdminTelemetryLogsPanelState
     final state = ref.watch(adminLogsControllerProvider);
     final controller = ref.read(adminLogsControllerProvider.notifier);
     final vehicleMap = {
-      for (final v in state.options.vehicles) v.imei: v.displayName
+      for (final v in state.options.vehicles) v.imei: v.displayName,
     };
 
     if (state.isLoadingTelemetry && state.telemetryLogs.isEmpty) {
@@ -55,7 +56,9 @@ class _AdminTelemetryLogsPanelState
     }
 
     final filteredLogs = _applyTelemetryReadFilter(
-        state.telemetryLogs, state.telemetryReadFilter);
+      state.telemetryLogs,
+      state.telemetryReadFilter,
+    );
 
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
@@ -75,7 +78,7 @@ class _AdminTelemetryLogsPanelState
         const SizedBox(height: OpenVtsSpacing.sm),
         if ((state.telemetryVehicleId ?? '').isEmpty)
           OpenVtsSearchField(
-            hintText: 'Search by IMEI...',
+            hintText: context.mobileText('Search by IMEI...'),
             onChanged: (v) {
               controller.setTelemetryFilters(imeiSearch: v);
               _debounce?.cancel();
@@ -129,31 +132,45 @@ class _AdminTelemetryLogsPanelState
           spacing: OpenVtsSpacing.xs,
           runSpacing: OpenVtsSpacing.xs,
           children: [
-            _chip('All read states',
-                state.telemetryReadFilter == AdminReadFilter.all, () {
-              controller.setTelemetryFilters(readFilter: AdminReadFilter.all);
-              unawaited(controller.loadTelemetryLogs());
-            }),
-            _chip('Read', state.telemetryReadFilter == AdminReadFilter.read,
-                () {
-              controller.setTelemetryFilters(readFilter: AdminReadFilter.read);
-              unawaited(controller.loadTelemetryLogs());
-            }),
-            _chip('Unread', state.telemetryReadFilter == AdminReadFilter.unread,
-                () {
-              controller.setTelemetryFilters(
-                  readFilter: AdminReadFilter.unread);
-              unawaited(controller.loadTelemetryLogs());
-            }),
+            _chip(
+              'All read states',
+              state.telemetryReadFilter == AdminReadFilter.all,
+              () {
+                controller.setTelemetryFilters(readFilter: AdminReadFilter.all);
+                unawaited(controller.loadTelemetryLogs());
+              },
+            ),
+            _chip(
+              'Read',
+              state.telemetryReadFilter == AdminReadFilter.read,
+              () {
+                controller.setTelemetryFilters(
+                  readFilter: AdminReadFilter.read,
+                );
+                unawaited(controller.loadTelemetryLogs());
+              },
+            ),
+            _chip(
+              'Unread',
+              state.telemetryReadFilter == AdminReadFilter.unread,
+              () {
+                controller.setTelemetryFilters(
+                  readFilter: AdminReadFilter.unread,
+                );
+                unawaited(controller.loadTelemetryLogs());
+              },
+            ),
           ],
         ),
         const SizedBox(height: OpenVtsSpacing.sm),
         OpenVtsDateTimeRangeField(
-          label: 'Date range',
-          title: 'Telemetry date range',
+          label: context.mobileText('Date range'),
+          title: context.mobileText('Telemetry date range'),
           dateTimeEnabled: true,
           value: OpenVtsDateTimeRange(
-              start: state.telemetryFrom, end: state.telemetryTo),
+            start: state.telemetryFrom,
+            end: state.telemetryTo,
+          ),
           onChanged: (range) {
             controller.setTelemetryFilters(
               from: range.start,
@@ -166,9 +183,9 @@ class _AdminTelemetryLogsPanelState
         ),
         const SizedBox(height: OpenVtsSpacing.sm),
         if (filteredLogs.isEmpty)
-          const OpenVtsEmptyState(
-            title: 'No telemetry logs found',
-            message: 'Try changing filters.',
+          OpenVtsEmptyState(
+            title: context.mobileText('No telemetry logs found'),
+            message: context.mobileText('Try changing filters.'),
           )
         else ...[
           for (final item in filteredLogs) ...[
@@ -177,7 +194,7 @@ class _AdminTelemetryLogsPanelState
               vehicleLabel: vehicleMap[item.imei] ?? '',
               onTap: () => OpenVtsBottomSheet.show<void>(
                 context: context,
-                title: 'Telemetry Detail',
+                title: context.mobileText('Telemetry Detail'),
                 initialChildSize: 0.88,
                 minChildSize: 0.5,
                 maxChildSize: 0.96,
@@ -190,7 +207,7 @@ class _AdminTelemetryLogsPanelState
           if ((state.telemetryNextCursor ?? '').isNotEmpty) ...[
             const SizedBox(height: OpenVtsSpacing.sm),
             OpenVtsButton(
-              label: 'Load More',
+              label: context.mobileText('Load More'),
               height: 38,
               variant: OpenVtsButtonVariant.secondary,
               isLoading: state.isLoadingMoreTelemetry,
@@ -199,7 +216,7 @@ class _AdminTelemetryLogsPanelState
                   : controller.loadMoreTelemetryLogs,
             ),
           ],
-        ]
+        ],
       ],
     );
   }
@@ -242,9 +259,9 @@ class AdminTelemetryVehicleDropdown extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return OpenVtsSearchableDropdown<String>(
-      label: 'Vehicle',
+      label: context.mobileText('Vehicle'),
       value: value,
-      hintText: 'All vehicles',
+      hintText: context.mobileText('All vehicles'),
       searchHintText: 'Search vehicles...',
       options: vehicles
           .map(

@@ -6,6 +6,7 @@ import '../../core/theme/open_vts_colors.dart';
 import '../../core/theme/open_vts_radius.dart';
 import '../../core/theme/open_vts_spacing.dart';
 import '../../features/auth/controllers/auth_controller.dart';
+import '../helpers/widget_localizations.dart';
 
 enum OpenVtsPageHeaderMode { standard, closeable }
 
@@ -31,8 +32,9 @@ class OpenVtsPageScaffold extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final role =
-        ref.watch(authControllerProvider.select((state) => state.role));
+    final role = ref.watch(
+      authControllerProvider.select((state) => state.role),
+    );
 
     return Scaffold(
       appBar: headerMode == OpenVtsPageHeaderMode.closeable
@@ -45,14 +47,11 @@ class OpenVtsPageScaffold extends ConsumerWidget {
             )
           : AppBar(
               leading: leading,
-              title: Text(title),
+              title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
               actions: actions,
             ),
       body: SafeArea(
-        child: Padding(
-          padding: padding,
-          child: body,
-        ),
+        child: Padding(padding: padding, child: body),
       ),
     );
   }
@@ -84,42 +83,48 @@ class _CloseablePageHeader extends StatelessWidget
     final titleStyle =
         (theme.appBarTheme.titleTextStyle ?? theme.textTheme.titleSmall)
             ?.copyWith(
-      color: isDark ? OpenVtsColors.darkTextPrimary : OpenVtsColors.textPrimary,
-      fontWeight: FontWeight.w600,
-    );
+              color: isDark
+                  ? OpenVtsColors.darkTextPrimary
+                  : OpenVtsColors.textPrimary,
+              fontWeight: FontWeight.w600,
+            );
 
     return AppBar(
       automaticallyImplyLeading: false,
       toolbarHeight: preferredSize.height,
-      backgroundColor:
-          isDark ? OpenVtsColors.darkSurface : OpenVtsColors.surfaceElevated,
+      backgroundColor: isDark
+          ? OpenVtsColors.darkSurface
+          : OpenVtsColors.surfaceElevated,
       surfaceTintColor: Colors.transparent,
       shadowColor: Colors.black.withValues(alpha: isDark ? 0.22 : 0.12),
-      elevation: 6,
-      scrolledUnderElevation: 6,
+      elevation: 0,
+      scrolledUnderElevation: 0,
       leading: leading,
       leadingWidth: leading == null ? null : 60,
       titleSpacing: leading == null ? OpenVtsSpacing.sm : OpenVtsSpacing.xs,
       title: Text(
         title,
         style: titleStyle,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
       ),
       actions: [
         ...?actions,
         Padding(
-          padding: const EdgeInsets.only(right: OpenVtsSpacing.xs),
+          padding: const EdgeInsetsDirectional.only(end: OpenVtsSpacing.xs),
           child: IconButton(
-            tooltip: 'Close page',
+            tooltip: context.widgetL10n.close,
             onPressed: onClose ?? () => _handleClose(context),
             style: IconButton.styleFrom(
               backgroundColor: isDark
                   ? OpenVtsColors.surfaceElevated
                   : OpenVtsColors.brandInk,
-              foregroundColor:
-                  isDark ? OpenVtsColors.brandInk : OpenVtsColors.white,
-              minimumSize: const Size.square(36),
+              foregroundColor: isDark
+                  ? OpenVtsColors.brandInk
+                  : OpenVtsColors.white,
+              minimumSize: const Size.square(48),
               padding: EdgeInsets.zero,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              tapTargetSize: MaterialTapTargetSize.padded,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
               ),

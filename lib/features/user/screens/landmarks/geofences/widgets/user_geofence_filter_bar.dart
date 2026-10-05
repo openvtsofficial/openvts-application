@@ -4,6 +4,7 @@ import '../../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../../shared/helpers/mobile_text.dart';
 import '../../../../models/user_landmark_model.dart';
 
 /// Compact filter row for the geofence list. Owns no business state — emits
@@ -52,7 +53,7 @@ class UserGeofenceFilterBar extends StatelessWidget {
               _FilterGroup(
                 children: [
                   _FilterChip(
-                    label: 'All types',
+                    label: context.mobileText('All types'),
                     selected: typeFilter == null,
                     onTap: () => onTypeChanged(null),
                   ),
@@ -94,8 +95,9 @@ class _SearchField extends StatefulWidget {
 }
 
 class _SearchFieldState extends State<_SearchField> {
-  late final TextEditingController _controller =
-      TextEditingController(text: widget.value);
+  late final TextEditingController _controller = TextEditingController(
+    text: widget.value,
+  );
 
   @override
   void didUpdateWidget(covariant _SearchField oldWidget) {
@@ -125,7 +127,7 @@ class _SearchFieldState extends State<_SearchField> {
         textInputAction: TextInputAction.search,
         decoration: InputDecoration(
           isDense: true,
-          hintText: 'Search by name',
+          hintText: context.mobileText('Search by name'),
           hintStyle: OpenVtsTypography.body.copyWith(
             color: OpenVtsColors.textTertiary,
           ),

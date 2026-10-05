@@ -229,19 +229,21 @@ class CreateUserSubUserRequest {
   final bool isActive;
 
   Map<String, dynamic> toJson() {
-    if (password.trim().isEmpty || password.length < 6 || password.length > 100) {
-      throw ArgumentError('Password must be between 6 and 100 characters.');
-    }
     final payload = <String, dynamic>{
       'name': _requiredString(name, 'name'),
       'isActive': isActive,
-      'password': password,
     };
 
     _putIfNotNull(payload, 'username', _optionalString(username));
     _putIfNotNull(payload, 'email', _optionalString(email));
     _putIfNotNull(payload, 'mobilePrefix', _optionalString(mobilePrefix));
     _putIfNotNull(payload, 'mobileNumber', _optionalString(mobileNumber));
+    if (password.length < 6 ||
+        password.length > 100 ||
+        !RegExp(r'^[\x20-\x7E]+$').hasMatch(password)) {
+      throw ArgumentError('Password must be 6–100 ASCII characters.');
+    }
+    payload['password'] = password;
 
     return payload;
   }
@@ -274,7 +276,14 @@ class UpdateUserSubUserRequest {
     _putIfNotNull(payload, 'email', _optionalString(email));
     _putIfNotNull(payload, 'mobilePrefix', _optionalString(mobilePrefix));
     _putIfNotNull(payload, 'mobileNumber', _optionalString(mobileNumber));
-    _putIfNotNull(payload, 'password', _optionalString(password));
+    if (password != null && password!.isNotEmpty) {
+      if (password!.length < 6 ||
+          password!.length > 100 ||
+          !RegExp(r'^[\x20-\x7E]+$').hasMatch(password!)) {
+        throw ArgumentError('Password must be 6–100 ASCII characters.');
+      }
+      payload['password'] = password;
+    }
 
     if (isActive != null) {
       payload['isActive'] = isActive;

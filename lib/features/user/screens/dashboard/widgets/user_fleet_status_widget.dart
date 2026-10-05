@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../controllers/user_providers.dart';
 import '../../../models/user_dashboard_model.dart';
 import 'user_dashboard_widget_card.dart';
@@ -77,7 +78,10 @@ class _UserFleetStatusWidgetState extends ConsumerState<UserFleetStatusWidget> {
     final bucketTotal = math.max(data.buckets.total, 1);
     final segments = [
       _FleetSegment(
-          'Connected', data.buckets.connected, const Color(0xFF17141B)),
+        'Connected',
+        data.buckets.connected,
+        const Color(0xFF17141B),
+      ),
       _FleetSegment('Running', data.buckets.running, const Color(0xFF3B3740)),
       _FleetSegment('Idle', data.buckets.idle, const Color(0xFF635D69)),
       _FleetSegment('Stopped', data.buckets.stopped, const Color(0xFF8A8490)),
@@ -92,7 +96,7 @@ class _UserFleetStatusWidgetState extends ConsumerState<UserFleetStatusWidget> {
           children: [
             Expanded(
               child: UserDashboardMetricTile(
-                label: 'Total',
+                label: context.mobileText('Total'),
                 value: userDashboardFormatNumber(totalVehicles),
                 subtitle: 'vehicles',
               ),
@@ -100,7 +104,7 @@ class _UserFleetStatusWidgetState extends ConsumerState<UserFleetStatusWidget> {
             const SizedBox(width: OpenVtsSpacing.xs),
             Expanded(
               child: UserDashboardMetricTile(
-                label: 'With device',
+                label: context.mobileText('With device'),
                 value: userDashboardFormatNumber(data.withDevice),
                 subtitle: _percentText(data.withDevice, totalVehicles),
               ),
@@ -108,7 +112,7 @@ class _UserFleetStatusWidgetState extends ConsumerState<UserFleetStatusWidget> {
             const SizedBox(width: OpenVtsSpacing.xs),
             Expanded(
               child: UserDashboardMetricTile(
-                label: 'No device',
+                label: context.mobileText('No device'),
                 value: userDashboardFormatNumber(data.noDevice),
                 subtitle: _percentText(data.noDevice, totalVehicles),
               ),
@@ -151,8 +155,9 @@ class _FleetSegmentedBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final activeSegments =
-        segments.where((segment) => segment.value > 0).toList();
+    final activeSegments = segments
+        .where((segment) => segment.value > 0)
+        .toList();
 
     if (activeSegments.isEmpty) {
       return Container(
@@ -160,8 +165,9 @@ class _FleetSegmentedBar extends StatelessWidget {
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
-          border:
-              Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+          border: Border.all(
+            color: Theme.of(context).colorScheme.outlineVariant,
+          ),
         ),
       );
     }

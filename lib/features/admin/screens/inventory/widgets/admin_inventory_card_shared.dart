@@ -7,6 +7,8 @@ import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../core/utils/date_time_formatter.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
+import '../../../widgets/admin_action_gate.dart';
 
 class AdminInventoryRoundedSurface extends StatelessWidget {
   const AdminInventoryRoundedSurface({required this.child, super.key});
@@ -60,11 +62,7 @@ class AdminInventoryCardHeader extends StatelessWidget {
             border: Border.all(color: inventorySoftBorderColor(context)),
           ),
           alignment: Alignment.center,
-          child: Icon(
-            icon,
-            size: 22,
-            color: inventoryPrimaryInkColor(context),
-          ),
+          child: Icon(icon, size: 22, color: inventoryPrimaryInkColor(context)),
         ),
         const SizedBox(width: OpenVtsSpacing.sm),
         Expanded(
@@ -73,20 +71,25 @@ class AdminInventoryCardHeader extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -0.2,
-                  color: inventoryPrimaryInkColor(context),
-                ),
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.2,
+              color: inventoryPrimaryInkColor(context),
+            ),
           ),
         ),
-        AdminInventoryEditButton(
-          onPressed: isEditing ? null : onEdit,
-          isLoading: isEditing,
+        AdminActionGate(
+          capability: 'inventory.update',
+          child: AdminInventoryEditButton(
+            onPressed: isEditing ? null : onEdit,
+            isLoading: isEditing,
+          ),
         ),
         if (showActiveBadge) ...[
           const SizedBox(width: OpenVtsSpacing.xxs),
           AdminInventoryStatusBadge(
-            label: isActive ? 'Active' : 'Inactive',
+            label: isActive
+                ? context.mobileText('Active')
+                : context.mobileText('Inactive'),
           ),
         ],
       ],
@@ -111,7 +114,7 @@ class AdminInventoryEditButton extends StatelessWidget {
       height: 36,
       child: IconButton(
         onPressed: onPressed,
-        tooltip: 'Edit',
+        tooltip: context.mobileText('Edit'),
         padding: EdgeInsets.zero,
         visualDensity: VisualDensity.compact,
         icon: isLoading
@@ -289,14 +292,13 @@ class AdminInventoryCardFooter extends ConsumerWidget {
       use24Hour: prefs.use24Hour,
       timezone: prefs.timezone,
     );
-    final createdValue =
-        createdAt != null ? formatter.formatDateTime(createdAt) : '-';
+    final createdValue = createdAt != null
+        ? formatter.formatDateTime(createdAt)
+        : '-';
 
     return Row(
       children: [
-        Expanded(
-          child: _CreatedPill(createdValue: createdValue),
-        ),
+        Expanded(child: _CreatedPill(createdValue: createdValue)),
         const SizedBox(width: OpenVtsSpacing.sm),
         _StockStatusPill(label: statusLabel),
       ],
@@ -340,9 +342,9 @@ class _CreatedPill extends StatelessWidget {
                   fontSize: 12,
                 ),
                 children: [
-                  const TextSpan(
-                    text: 'Created : ',
-                    style: TextStyle(fontWeight: FontWeight.w700),
+                  TextSpan(
+                    text: context.mobileText('Created : '),
+                    style: const TextStyle(fontWeight: FontWeight.w700),
                   ),
                   TextSpan(
                     text: createdValue,
@@ -372,9 +374,7 @@ class AdminInventorySimCardFooter extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Expanded(
-          child: _ActivePill(isActive: isActive),
-        ),
+        Expanded(child: _ActivePill(isActive: isActive)),
         const SizedBox(width: OpenVtsSpacing.sm),
         _StockStatusPill(label: statusLabel),
       ],
@@ -421,9 +421,9 @@ class _ActivePill extends StatelessWidget {
                   fontSize: 12,
                 ),
                 children: [
-                  const TextSpan(
-                    text: 'Status : ',
-                    style: TextStyle(fontWeight: FontWeight.w700),
+                  TextSpan(
+                    text: context.mobileText('Status : '),
+                    style: const TextStyle(fontWeight: FontWeight.w700),
                   ),
                   TextSpan(
                     text: label,

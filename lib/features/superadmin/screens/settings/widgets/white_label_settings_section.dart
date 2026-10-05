@@ -9,6 +9,7 @@ import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
@@ -39,31 +40,15 @@ class _ThemeColorOption {
 }
 
 const List<_ThemeColorOption> _kThemeColors = [
-  _ThemeColorOption(
-    name: 'Black',
-    lightValue: '#0F172A',
-    darkValue: '#F8FAFC',
-  ),
-  _ThemeColorOption(
-    name: 'Blue',
-    lightValue: '#2563EB',
-    darkValue: '#60A5FA',
-  ),
-  _ThemeColorOption(
-    name: 'Green',
-    lightValue: '#16A34A',
-    darkValue: '#4ADE80',
-  ),
+  _ThemeColorOption(name: 'Black', lightValue: '#0F172A', darkValue: '#F8FAFC'),
+  _ThemeColorOption(name: 'Blue', lightValue: '#2563EB', darkValue: '#60A5FA'),
+  _ThemeColorOption(name: 'Green', lightValue: '#16A34A', darkValue: '#4ADE80'),
   _ThemeColorOption(
     name: 'Purple',
     lightValue: '#9333EA',
     darkValue: '#C084FC',
   ),
-  _ThemeColorOption(
-    name: 'Pink',
-    lightValue: '#DB2777',
-    darkValue: '#F472B6',
-  ),
+  _ThemeColorOption(name: 'Pink', lightValue: '#DB2777', darkValue: '#F472B6'),
   _ThemeColorOption(
     name: 'Orange',
     lightValue: '#EA580C',
@@ -144,9 +129,10 @@ class _WhiteLabelSettingsSectionState
     return _kThemeColors.first.id;
   }
 
-  _ThemeColorOption get _selectedColor =>
-      _kThemeColors.firstWhere((c) => c.id == _selectedColorId,
-          orElse: () => _kThemeColors.first);
+  _ThemeColorOption get _selectedColor => _kThemeColors.firstWhere(
+    (c) => c.id == _selectedColorId,
+    orElse: () => _kThemeColors.first,
+  );
 
   @override
   void dispose() {
@@ -185,7 +171,9 @@ class _WhiteLabelSettingsSectionState
     if (ok) {
       await _controller.loadWhiteLabel();
       if (!mounted) return;
-      ToastHelper.showSuccess('Domain and brand color saved');
+      ToastHelper.showSuccess(
+        context.mobileText('Domain and brand color saved'),
+      );
     } else {
       final latest = ref.read(superadminSettingsControllerProvider);
       ToastHelper.showError(
@@ -208,29 +196,37 @@ class _WhiteLabelSettingsSectionState
         allowedExtensions: allowedExtensions,
         withData: true,
       );
-      if (result == null || result.files.isEmpty) return null;
+      if (!mounted || result == null || result.files.isEmpty) return null;
       final file = result.files.single;
       final bytes = file.bytes;
       if (bytes == null) {
-        ToastHelper.showError('Could not read selected file');
+        ToastHelper.showError(
+          context.mobileText('Could not read selected file'),
+        );
         return null;
       }
       if (bytes.length > maxBytes) {
         final mb = (maxBytes / (1024 * 1024)).toStringAsFixed(0);
-        ToastHelper.showError('File exceeds $mb MB limit');
+        ToastHelper.showError(
+          context.mobileText("File exceeds {value1} MB limit", {
+            'value1': (mb).toString(),
+          }),
+        );
         return null;
       }
       final ext = _extensionOf(file.name);
       if (!allowedExtensions.contains(ext)) {
         ToastHelper.showError(
-          'Unsupported format. Allowed: ${allowedExtensions.join(", ")}',
+          context.mobileText("Unsupported format. Allowed: {value1}", {
+            'value1': (allowedExtensions.join(", ")).toString(),
+          }),
         );
         return null;
       }
       return _PickedAsset(bytes: bytes, fileName: file.name);
     } catch (_) {
       if (mounted) {
-        ToastHelper.showError('Could not pick file');
+        ToastHelper.showError(context.mobileText('Could not pick file'));
       }
       return null;
     }
@@ -259,7 +255,7 @@ class _WhiteLabelSettingsSectionState
       }
     });
     if (ok) {
-      ToastHelper.showSuccess('Favicon updated');
+      ToastHelper.showSuccess(context.mobileText('Favicon updated'));
     } else {
       ToastHelper.showError(
         ref.read(superadminSettingsControllerProvider).sectionErrorMessage ??
@@ -291,7 +287,7 @@ class _WhiteLabelSettingsSectionState
       }
     });
     if (ok) {
-      ToastHelper.showSuccess('Light logo updated');
+      ToastHelper.showSuccess(context.mobileText('Light logo updated'));
     } else {
       ToastHelper.showError(
         ref.read(superadminSettingsControllerProvider).sectionErrorMessage ??
@@ -323,7 +319,7 @@ class _WhiteLabelSettingsSectionState
       }
     });
     if (ok) {
-      ToastHelper.showSuccess('Dark logo updated');
+      ToastHelper.showSuccess(context.mobileText('Dark logo updated'));
     } else {
       ToastHelper.showError(
         ref.read(superadminSettingsControllerProvider).sectionErrorMessage ??
@@ -364,7 +360,7 @@ class _WhiteLabelSettingsSectionState
             ),
             const SizedBox(height: OpenVtsSpacing.sm),
             OpenVtsButton(
-              label: 'Retry',
+              label: context.mobileText('Retry'),
               variant: OpenVtsButtonVariant.secondary,
               height: 40,
               onPressed: controller.loadWhiteLabel,
@@ -381,13 +377,16 @@ class _WhiteLabelSettingsSectionState
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _SectionHeader(
-          title: 'White Label',
-          subtitle: 'Domain, logos, favicon, and brand color.',
+          title: context.mobileText('White Label'),
+          subtitle: context.mobileText(
+            'Domain, logos, favicon, and brand color.',
+          ),
           icon: Icons.palette_outlined,
           trailing: IconButton(
-            tooltip: 'Refresh',
-            onPressed:
-                state.isLoadingWhiteLabel ? null : controller.loadWhiteLabel,
+            tooltip: context.mobileText('Refresh'),
+            onPressed: state.isLoadingWhiteLabel
+                ? null
+                : controller.loadWhiteLabel,
             iconSize: 18,
             visualDensity: VisualDensity.compact,
             icon: const Icon(Icons.refresh_rounded),
@@ -407,8 +406,10 @@ class _WhiteLabelSettingsSectionState
         ),
         const SizedBox(height: OpenVtsSpacing.sm),
         _AssetCard(
-          title: 'Favicon',
-          subtitle: 'Browser tab icon. ICO, PNG or SVG. Max 2 MB.',
+          title: context.mobileText('Favicon'),
+          subtitle: context.mobileText(
+            'Browser tab icon. ICO, PNG or SVG. Max 2 MB.',
+          ),
           icon: Icons.tab_outlined,
           currentUrl: wl.faviconUrl,
           baseUrl: baseUrl,
@@ -437,9 +438,10 @@ class _WhiteLabelSettingsSectionState
         ),
         const SizedBox(height: OpenVtsSpacing.sm),
         _AssetCard(
-          title: 'Light Logo',
-          subtitle:
-              'Shown on light backgrounds. PNG, JPG, SVG, WEBP. Max 5 MB.',
+          title: context.mobileText('Light Logo'),
+          subtitle: context.mobileText(
+            'Shown on light backgrounds. PNG, JPG, SVG, WEBP. Max 5 MB.',
+          ),
           icon: Icons.wb_sunny_outlined,
           currentUrl: wl.logoLightUrl,
           baseUrl: baseUrl,
@@ -469,8 +471,10 @@ class _WhiteLabelSettingsSectionState
         ),
         const SizedBox(height: OpenVtsSpacing.sm),
         _AssetCard(
-          title: 'Dark Logo',
-          subtitle: 'Shown on dark backgrounds. PNG, JPG, SVG, WEBP. Max 5 MB.',
+          title: context.mobileText('Dark Logo'),
+          subtitle: context.mobileText(
+            'Shown on dark backgrounds. PNG, JPG, SVG, WEBP. Max 5 MB.',
+          ),
           icon: Icons.nightlight_outlined,
           currentUrl: wl.logoDarkUrl,
           baseUrl: baseUrl,
@@ -543,10 +547,14 @@ class _SectionHeader extends StatelessWidget {
               color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
               border: Border.all(
-                  color: Theme.of(context).colorScheme.outlineVariant),
+                color: Theme.of(context).colorScheme.outlineVariant,
+              ),
             ),
-            child: Icon(icon,
-                size: 16, color: Theme.of(context).colorScheme.onSurface),
+            child: Icon(
+              icon,
+              size: 16,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
           ),
           const SizedBox(width: OpenVtsSpacing.xs),
           Expanded(
@@ -618,14 +626,14 @@ class _DomainAndColorCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const _CardTitle(
+            _CardTitle(
               icon: Icons.domain_outlined,
-              title: 'Domain & Color',
-              subtitle: 'Custom domain and brand color.',
+              title: context.mobileText('Domain & Color'),
+              subtitle: context.mobileText('Custom domain and brand color.'),
             ),
             const SizedBox(height: OpenVtsSpacing.sm),
             OpenVtsTextField(
-              label: 'Custom Domain',
+              label: context.mobileText('Custom domain'),
               controller: domainController,
               keyboardType: TextInputType.url,
               hintText: 'track.example.com',
@@ -642,7 +650,10 @@ class _DomainAndColorCard extends StatelessWidget {
               },
             ),
             const SizedBox(height: OpenVtsSpacing.sm),
-            const Text('Primary Color', style: OpenVtsTypography.label),
+            Text(
+              context.mobileText('Primary color'),
+              style: OpenVtsTypography.label,
+            ),
             const SizedBox(height: OpenVtsSpacing.xs),
             InkWell(
               borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
@@ -651,18 +662,18 @@ class _DomainAndColorCard extends StatelessWidget {
                   : () async {
                       final result =
                           await showModalBottomSheet<_ThemeColorOption>(
-                        context: context,
-                        backgroundColor:
-                            Theme.of(context).colorScheme.surfaceContainer,
-                        shape: const RoundedRectangleBorder(
-                          borderRadius: BorderRadius.vertical(
-                            top: Radius.circular(OpenVtsRadius.lg),
-                          ),
-                        ),
-                        builder: (ctx) => _ColorPickerSheet(
-                          selectedId: selectedColor.id,
-                        ),
-                      );
+                            context: context,
+                            backgroundColor: Theme.of(
+                              context,
+                            ).colorScheme.surfaceContainer,
+                            shape: const RoundedRectangleBorder(
+                              borderRadius: BorderRadius.vertical(
+                                top: Radius.circular(OpenVtsRadius.lg),
+                              ),
+                            ),
+                            builder: (ctx) =>
+                                _ColorPickerSheet(selectedId: selectedColor.id),
+                          );
                       if (result != null) onColorChanged(result);
                     },
               child: Container(
@@ -674,7 +685,8 @@ class _DomainAndColorCard extends StatelessWidget {
                   color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
                   border: Border.all(
-                      color: Theme.of(context).colorScheme.outlineVariant),
+                    color: Theme.of(context).colorScheme.outlineVariant,
+                  ),
                 ),
                 child: Row(
                   children: [
@@ -702,7 +714,7 @@ class _DomainAndColorCard extends StatelessWidget {
             ),
             const SizedBox(height: OpenVtsSpacing.md),
             OpenVtsButton(
-              label: 'Save changes',
+              label: context.mobileText('Save Changes'),
               isLoading: isSaving,
               height: 42,
               onPressed: canSave && !isSaving ? () => onSave() : null,
@@ -749,7 +761,7 @@ class _ColorPickerSheet extends StatelessWidget {
               ),
             ),
             Text(
-              'Brand color',
+              context.mobileText('Brand color'),
               style: TextStyle(
                 fontFamily: OpenVtsTypography.primaryFontFamily,
                 fontSize: 14,
@@ -859,19 +871,16 @@ class _AssetCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final resolvedUrl =
-        _hasExistingUrl ? resolveProfileImageUrl(baseUrl, currentUrl) : null;
+    final resolvedUrl = _hasExistingUrl
+        ? resolveProfileImageUrl(baseUrl, currentUrl)
+        : null;
 
     return OpenVtsCard(
       padding: const EdgeInsets.all(OpenVtsSpacing.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _CardTitle(
-            icon: icon,
-            title: title,
-            subtitle: subtitle,
-          ),
+          _CardTitle(icon: icon, title: title, subtitle: subtitle),
           const SizedBox(height: OpenVtsSpacing.sm),
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -919,7 +928,7 @@ class _AssetCard extends StatelessWidget {
               Expanded(
                 child: OpenVtsButton(
                   label: picked != null
-                      ? 'Replace'
+                      ? context.mobileText('Replace')
                       : (_hasExistingUrl ? 'Replace' : 'Select file'),
                   variant: OpenVtsButtonVariant.secondary,
                   height: 38,
@@ -931,7 +940,7 @@ class _AssetCard extends StatelessWidget {
                 width: 40,
                 height: 38,
                 child: IconButton(
-                  tooltip: 'Remove',
+                  tooltip: context.mobileText('Remove'),
                   onPressed: isSaving || !_canClear ? null : onClear,
                   iconSize: 18,
                   icon: const Icon(Icons.delete_outline_rounded),
@@ -940,7 +949,8 @@ class _AssetCard extends StatelessWidget {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
                       side: BorderSide(
-                          color: Theme.of(context).colorScheme.outlineVariant),
+                        color: Theme.of(context).colorScheme.outlineVariant,
+                      ),
                     ),
                   ),
                 ),
@@ -949,7 +959,7 @@ class _AssetCard extends StatelessWidget {
           ),
           const SizedBox(height: OpenVtsSpacing.xs),
           OpenVtsButton(
-            label: 'Save',
+            label: context.mobileText('Save'),
             height: 38,
             isLoading: isSaving,
             onPressed: _canSave && !isSaving ? () => onSave() : null,
@@ -1085,8 +1095,11 @@ class _CardTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon,
-            size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
+        Icon(
+          icon,
+          size: 16,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
         const SizedBox(width: 8),
         Expanded(
           child: Column(

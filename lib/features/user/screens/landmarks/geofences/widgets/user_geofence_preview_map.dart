@@ -5,6 +5,7 @@ import '../../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../../shared/helpers/mobile_text.dart';
 import '../../../../models/user_landmark_model.dart';
 import '../../widgets/user_landmark_map_view.dart';
 
@@ -73,7 +74,7 @@ class _EmptyMap extends StatelessWidget {
               ),
               const SizedBox(height: 6),
               Text(
-                'No geofences to preview',
+                context.mobileText('No geofences to preview'),
                 style: OpenVtsTypography.meta.copyWith(
                   color: OpenVtsColors.textSecondary,
                 ),

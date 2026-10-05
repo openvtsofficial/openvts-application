@@ -4,6 +4,7 @@ import '../../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../../shared/helpers/mobile_text.dart';
 import '../user_poi_constants.dart';
 
 /// Category picker showing preset chips plus a free-text "Custom" entry that
@@ -83,7 +84,7 @@ class _UserPoiCategoryPickerState extends State<UserPoiCategoryPicker> {
             for (final option in kUserPoiCategories)
               _CategoryChip(
                 icon: option.icon,
-                label: option.label,
+                label: context.mobileText(option.label),
                 selected: !_customMode && option.value == selected,
                 onTap: () {
                   setState(() {
@@ -95,7 +96,7 @@ class _UserPoiCategoryPickerState extends State<UserPoiCategoryPicker> {
               ),
             _CategoryChip(
               icon: Icons.edit_outlined,
-              label: 'Custom',
+              label: context.mobileText('Custom'),
               selected: _customMode,
               onTap: () {
                 setState(() => _customMode = true);
@@ -111,7 +112,7 @@ class _UserPoiCategoryPickerState extends State<UserPoiCategoryPicker> {
             style: OpenVtsTypography.body,
             decoration: InputDecoration(
               isDense: true,
-              hintText: 'Custom category (e.g. "vendor")',
+              hintText: context.mobileText('Custom category (e.g. "vendor")'),
               hintStyle: OpenVtsTypography.body.copyWith(
                 color: Theme.of(context).colorScheme.outline,
               ),
@@ -174,11 +175,7 @@ class _CategoryChip extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              icon,
-              size: 13,
-              color: OpenVtsColors.white,
-            ),
+            Icon(icon, size: 13, color: OpenVtsColors.white),
             const SizedBox(width: 4),
             Text(
               label,

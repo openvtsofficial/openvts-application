@@ -4,6 +4,7 @@ import '../../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../../shared/helpers/mobile_text.dart';
 import '../../../../models/user_report_model.dart';
 import '../../../../models/user_report_state.dart';
 
@@ -35,21 +36,26 @@ class UserReportVehicleScopeSelector extends StatelessWidget {
       children: [
         if (!forceSingle) ...[
           _ScopeModeRow(
-              scope: scope, onChanged: onScopeChanged, disabled: disabled),
+            scope: scope,
+            onChanged: onScopeChanged,
+            disabled: disabled,
+          ),
           const SizedBox(height: OpenVtsSpacing.sm),
         ],
         _ScopeDetailWidget(
-            scope: scope,
-            options: options,
-            onScopeChanged: onScopeChanged,
-            forceSingle: forceSingle,
-            disabled: disabled,
-            isDark: isDark),
+          scope: scope,
+          options: options,
+          onScopeChanged: onScopeChanged,
+          forceSingle: forceSingle,
+          disabled: disabled,
+          isDark: isDark,
+        ),
         if (error != null) ...[
           const SizedBox(height: 4),
-          Text(error!,
-              style:
-                  OpenVtsTypography.meta.copyWith(color: OpenVtsColors.error)),
+          Text(
+            error!,
+            style: OpenVtsTypography.meta.copyWith(color: OpenVtsColors.error),
+          ),
         ],
       ],
     );
@@ -57,8 +63,11 @@ class UserReportVehicleScopeSelector extends StatelessWidget {
 }
 
 class _ScopeModeRow extends StatelessWidget {
-  const _ScopeModeRow(
-      {required this.scope, required this.onChanged, required this.disabled});
+  const _ScopeModeRow({
+    required this.scope,
+    required this.onChanged,
+    required this.disabled,
+  });
   final ReportVehicleScope scope;
   final ValueChanged<ReportVehicleScope> onChanged;
   final bool disabled;
@@ -79,22 +88,23 @@ class _ScopeModeRow extends StatelessWidget {
           return Padding(
             padding: const EdgeInsets.only(right: OpenVtsSpacing.xs),
             child: _ModeChip(
-                label: m.$2,
-                selected: isSelected,
-                onTap: disabled
-                    ? null
-                    : () {
-                        switch (m.$1) {
-                          case ReportScopeMode.all:
-                            onChanged(const ReportVehicleScope.all());
-                          case ReportScopeMode.single:
-                            onChanged(const ReportVehicleScope.single(''));
-                          case ReportScopeMode.multiple:
-                            onChanged(const ReportVehicleScope.multiple([]));
-                          case ReportScopeMode.group:
-                            onChanged(const ReportVehicleScope.group(''));
-                        }
-                      }),
+              label: m.$2,
+              selected: isSelected,
+              onTap: disabled
+                  ? null
+                  : () {
+                      switch (m.$1) {
+                        case ReportScopeMode.all:
+                          onChanged(const ReportVehicleScope.all());
+                        case ReportScopeMode.single:
+                          onChanged(const ReportVehicleScope.single(''));
+                        case ReportScopeMode.multiple:
+                          onChanged(const ReportVehicleScope.multiple([]));
+                        case ReportScopeMode.group:
+                          onChanged(const ReportVehicleScope.group(''));
+                      }
+                    },
+            ),
           );
         }).toList(),
       ),
@@ -103,8 +113,11 @@ class _ScopeModeRow extends StatelessWidget {
 }
 
 class _ModeChip extends StatelessWidget {
-  const _ModeChip(
-      {required this.label, required this.selected, required this.onTap});
+  const _ModeChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
   final String label;
   final bool selected;
   final VoidCallback? onTap;
@@ -119,12 +132,13 @@ class _ModeChip extends StatelessWidget {
         decoration: BoxDecoration(
           color: selected
               ? (isDark
-                  ? OpenVtsColors.darkTextPrimary
-                  : OpenVtsColors.brandInk)
+                    ? OpenVtsColors.darkTextPrimary
+                    : OpenVtsColors.brandInk)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
           border: Border.all(
-              color: isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border),
+            color: isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border,
+          ),
         ),
         child: Text(
           label,
@@ -132,8 +146,8 @@ class _ModeChip extends StatelessWidget {
             color: selected
                 ? (isDark ? OpenVtsColors.brandInk : OpenVtsColors.white)
                 : (isDark
-                    ? OpenVtsColors.darkTextSecondary
-                    : OpenVtsColors.textSecondary),
+                      ? OpenVtsColors.darkTextSecondary
+                      : OpenVtsColors.textSecondary),
             fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
           ),
         ),
@@ -143,13 +157,14 @@ class _ModeChip extends StatelessWidget {
 }
 
 class _ScopeDetailWidget extends StatelessWidget {
-  const _ScopeDetailWidget(
-      {required this.scope,
-      required this.options,
-      required this.onScopeChanged,
-      required this.forceSingle,
-      required this.disabled,
-      required this.isDark});
+  const _ScopeDetailWidget({
+    required this.scope,
+    required this.options,
+    required this.onScopeChanged,
+    required this.forceSingle,
+    required this.disabled,
+    required this.isDark,
+  });
   final ReportVehicleScope scope;
   final UserReportOptions options;
   final ValueChanged<ReportVehicleScope> onScopeChanged;
@@ -161,24 +176,28 @@ class _ScopeDetailWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final mode = forceSingle ? ReportScopeMode.single : scope.mode;
     return switch (mode) {
-      ReportScopeMode.all =>
-        _AllDescription(count: options.vehicles.length, isDark: isDark),
+      ReportScopeMode.all => _AllDescription(
+        count: options.vehicles.length,
+        isDark: isDark,
+      ),
       ReportScopeMode.single => _SingleVehiclePicker(
-          selected: scope.vehicleId,
-          vehicles: options.vehicles,
-          onChanged: (id) =>
-              onScopeChanged(ReportVehicleScope.single(id ?? '')),
-          disabled: disabled),
+        selected: scope.vehicleId,
+        vehicles: options.vehicles,
+        onChanged: (id) => onScopeChanged(ReportVehicleScope.single(id ?? '')),
+        disabled: disabled,
+      ),
       ReportScopeMode.multiple => _MultiVehiclePicker(
-          selected: scope.vehicleIds,
-          vehicles: options.vehicles,
-          onChanged: (ids) => onScopeChanged(ReportVehicleScope.multiple(ids)),
-          disabled: disabled),
+        selected: scope.vehicleIds,
+        vehicles: options.vehicles,
+        onChanged: (ids) => onScopeChanged(ReportVehicleScope.multiple(ids)),
+        disabled: disabled,
+      ),
       ReportScopeMode.group => _GroupPicker(
-          selected: scope.groupId,
-          groups: options.groups,
-          onChanged: (id) => onScopeChanged(ReportVehicleScope.group(id ?? '')),
-          disabled: disabled),
+        selected: scope.groupId,
+        groups: options.groups,
+        onChanged: (id) => onScopeChanged(ReportVehicleScope.group(id ?? '')),
+        disabled: disabled,
+      ),
     };
   }
 }
@@ -196,14 +215,19 @@ class _AllDescription extends StatelessWidget {
         color: isDark ? OpenVtsColors.darkSurface : OpenVtsColors.surface,
         borderRadius: BorderRadius.circular(OpenVtsRadius.md),
         border: Border.all(
-            color: isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border),
+          color: isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border,
+        ),
       ),
       child: Row(
         children: [
           const Icon(Icons.directions_car_rounded, size: 16),
           const SizedBox(width: OpenVtsSpacing.xs),
-          Text('All $count vehicles will be included',
-              style: OpenVtsTypography.body),
+          Text(
+            context.mobileText("All {value1} vehicles will be included", {
+              'value1': (count).toString(),
+            }),
+            style: OpenVtsTypography.body,
+          ),
         ],
       ),
     );
@@ -211,11 +235,12 @@ class _AllDescription extends StatelessWidget {
 }
 
 class _SingleVehiclePicker extends StatelessWidget {
-  const _SingleVehiclePicker(
-      {required this.selected,
-      required this.vehicles,
-      required this.onChanged,
-      required this.disabled});
+  const _SingleVehiclePicker({
+    required this.selected,
+    required this.vehicles,
+    required this.onChanged,
+    required this.disabled,
+  });
   final String? selected;
   final List<UserReportVehicleOption> vehicles;
   final ValueChanged<String?> onChanged;
@@ -223,8 +248,8 @@ class _SingleVehiclePicker extends StatelessWidget {
 
   UserReportVehicleOption? get _selectedVehicle =>
       selected == null || selected!.isEmpty
-          ? null
-          : vehicles.firstWhereOrNull((v) => v.id == selected);
+      ? null
+      : vehicles.firstWhereOrNull((v) => v.id == selected);
 
   @override
   Widget build(BuildContext context) {
@@ -238,20 +263,25 @@ class _SingleVehiclePicker extends StatelessWidget {
           color: isDark ? OpenVtsColors.darkSurface : OpenVtsColors.white,
           borderRadius: BorderRadius.circular(OpenVtsRadius.md),
           border: Border.all(
-              color: isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border),
+            color: isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border,
+          ),
         ),
         child: Row(
           children: [
             const Icon(Icons.directions_car_outlined, size: 16),
             const SizedBox(width: OpenVtsSpacing.xs),
             Expanded(
-                child: Text(vehicle?.displayName ?? 'Select a vehicle',
-                    style: OpenVtsTypography.body.copyWith(
-                        color: vehicle == null
-                            ? (isDark
-                                ? OpenVtsColors.darkTextSecondary
-                                : OpenVtsColors.textSecondary)
-                            : null))),
+              child: Text(
+                vehicle?.displayName ?? 'Select a vehicle',
+                style: OpenVtsTypography.body.copyWith(
+                  color: vehicle == null
+                      ? (isDark
+                            ? OpenVtsColors.darkTextSecondary
+                            : OpenVtsColors.textSecondary)
+                      : null,
+                ),
+              ),
+            ),
             const Icon(Icons.unfold_more_rounded, size: 18),
           ],
         ),
@@ -260,21 +290,23 @@ class _SingleVehiclePicker extends StatelessWidget {
   }
 
   Future<void> _openPicker(BuildContext context) async {
-    final id = await _VehiclePickerSheet.show(context,
-        vehicles: vehicles,
-        selectedIds:
-            selected != null && selected!.isNotEmpty ? {selected!} : {},
-        multi: false);
+    final id = await _VehiclePickerSheet.show(
+      context,
+      vehicles: vehicles,
+      selectedIds: selected != null && selected!.isNotEmpty ? {selected!} : {},
+      multi: false,
+    );
     if (id != null && id.isNotEmpty) onChanged(id.first);
   }
 }
 
 class _MultiVehiclePicker extends StatelessWidget {
-  const _MultiVehiclePicker(
-      {required this.selected,
-      required this.vehicles,
-      required this.onChanged,
-      required this.disabled});
+  const _MultiVehiclePicker({
+    required this.selected,
+    required this.vehicles,
+    required this.onChanged,
+    required this.disabled,
+  });
   final List<String> selected;
   final List<UserReportVehicleOption> vehicles;
   final ValueChanged<List<String>> onChanged;
@@ -291,22 +323,26 @@ class _MultiVehiclePicker extends StatelessWidget {
           color: isDark ? OpenVtsColors.darkSurface : OpenVtsColors.white,
           borderRadius: BorderRadius.circular(OpenVtsRadius.md),
           border: Border.all(
-              color: isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border),
+            color: isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border,
+          ),
         ),
         child: Row(
           children: [
             const Icon(Icons.checklist_rounded, size: 16),
             const SizedBox(width: OpenVtsSpacing.xs),
             Expanded(
-                child: Text(
-                    selected.isEmpty
-                        ? 'Select vehicles'
-                        : '${selected.length} vehicle${selected.length == 1 ? '' : 's'} selected',
-                    style: OpenVtsTypography.body)),
+              child: Text(
+                selected.isEmpty
+                    ? context.mobileText('Select vehicles')
+                    : '${selected.length} vehicle${selected.length == 1 ? '' : 's'} selected',
+                style: OpenVtsTypography.body,
+              ),
+            ),
             if (selected.isNotEmpty) ...[
               GestureDetector(
-                  onTap: () => onChanged([]),
-                  child: const Icon(Icons.close_rounded, size: 16)),
+                onTap: () => onChanged([]),
+                child: const Icon(Icons.close_rounded, size: 16),
+              ),
               const SizedBox(width: 4),
             ],
             const Icon(Icons.unfold_more_rounded, size: 18),
@@ -317,20 +353,23 @@ class _MultiVehiclePicker extends StatelessWidget {
   }
 
   Future<void> _openPicker(BuildContext context) async {
-    final ids = await _VehiclePickerSheet.show(context,
-        vehicles: vehicles,
-        selectedIds: Set<String>.from(selected),
-        multi: true);
+    final ids = await _VehiclePickerSheet.show(
+      context,
+      vehicles: vehicles,
+      selectedIds: Set<String>.from(selected),
+      multi: true,
+    );
     if (ids != null) onChanged(ids.toList());
   }
 }
 
 class _GroupPicker extends StatelessWidget {
-  const _GroupPicker(
-      {required this.selected,
-      required this.groups,
-      required this.onChanged,
-      required this.disabled});
+  const _GroupPicker({
+    required this.selected,
+    required this.groups,
+    required this.onChanged,
+    required this.disabled,
+  });
   final String? selected;
   final List<UserReportGroupOption> groups;
   final ValueChanged<String?> onChanged;
@@ -338,8 +377,8 @@ class _GroupPicker extends StatelessWidget {
 
   UserReportGroupOption? get _selectedGroup =>
       selected == null || selected!.isEmpty
-          ? null
-          : groups.firstWhereOrNull((g) => g.id == selected);
+      ? null
+      : groups.firstWhereOrNull((g) => g.id == selected);
 
   @override
   Widget build(BuildContext context) {
@@ -353,23 +392,27 @@ class _GroupPicker extends StatelessWidget {
           color: isDark ? OpenVtsColors.darkSurface : OpenVtsColors.white,
           borderRadius: BorderRadius.circular(OpenVtsRadius.md),
           border: Border.all(
-              color: isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border),
+            color: isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border,
+          ),
         ),
         child: Row(
           children: [
             const Icon(Icons.folder_outlined, size: 16),
             const SizedBox(width: OpenVtsSpacing.xs),
             Expanded(
-                child: Text(
-                    group != null
-                        ? '${group.name} (${group.vehicleCount})'
-                        : 'Select a vehicle group',
-                    style: OpenVtsTypography.body.copyWith(
-                        color: group == null
-                            ? (isDark
-                                ? OpenVtsColors.darkTextSecondary
-                                : OpenVtsColors.textSecondary)
-                            : null))),
+              child: Text(
+                group != null
+                    ? '${group.name} (${group.vehicleCount})'
+                    : context.mobileText('Select a vehicle group'),
+                style: OpenVtsTypography.body.copyWith(
+                  color: group == null
+                      ? (isDark
+                            ? OpenVtsColors.darkTextSecondary
+                            : OpenVtsColors.textSecondary)
+                      : null,
+                ),
+              ),
+            ),
             const Icon(Icons.unfold_more_rounded, size: 18),
           ],
         ),
@@ -384,10 +427,15 @@ class _GroupPicker extends StatelessWidget {
       useSafeArea: true,
       backgroundColor: Theme.of(context).colorScheme.surface,
       shape: const RoundedRectangleBorder(
-          borderRadius:
-              BorderRadius.vertical(top: Radius.circular(OpenVtsRadius.xl))),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(OpenVtsRadius.xl),
+        ),
+      ),
       builder: (_) => _GroupPickerSheet(
-          groups: groups, selectedId: selected, onChanged: onChanged),
+        groups: groups,
+        selectedId: selected,
+        onChanged: onChanged,
+      ),
     );
   }
 }
@@ -397,26 +445,36 @@ class _GroupPicker extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _VehiclePickerSheet extends StatefulWidget {
-  const _VehiclePickerSheet(
-      {required this.vehicles, required this.selectedIds, required this.multi});
+  const _VehiclePickerSheet({
+    required this.vehicles,
+    required this.selectedIds,
+    required this.multi,
+  });
   final List<UserReportVehicleOption> vehicles;
   final Set<String> selectedIds;
   final bool multi;
 
-  static Future<Set<String>?> show(BuildContext context,
-      {required List<UserReportVehicleOption> vehicles,
-      required Set<String> selectedIds,
-      required bool multi}) {
+  static Future<Set<String>?> show(
+    BuildContext context, {
+    required List<UserReportVehicleOption> vehicles,
+    required Set<String> selectedIds,
+    required bool multi,
+  }) {
     return showModalBottomSheet<Set<String>>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: Theme.of(context).colorScheme.surface,
       shape: const RoundedRectangleBorder(
-          borderRadius:
-              BorderRadius.vertical(top: Radius.circular(OpenVtsRadius.xl))),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(OpenVtsRadius.xl),
+        ),
+      ),
       builder: (_) => _VehiclePickerSheet(
-          vehicles: vehicles, selectedIds: Set.from(selectedIds), multi: multi),
+        vehicles: vehicles,
+        selectedIds: Set.from(selectedIds),
+        multi: multi,
+      ),
     );
   }
 
@@ -464,64 +522,89 @@ class _VehiclePickerSheetState extends State<_VehiclePickerSheet> {
         children: [
           const SizedBox(height: OpenVtsSpacing.sm),
           Center(
-              child: Container(
-                  height: 4,
-                  width: 40,
-                  decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.outlineVariant,
-                      borderRadius: BorderRadius.circular(2)))),
+            child: Container(
+              height: 4,
+              width: 40,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.outlineVariant,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
           const SizedBox(height: OpenVtsSpacing.sm),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: OpenVtsSpacing.md),
             child: Row(
               children: [
                 Expanded(
-                    child: Text(
-                        widget.multi ? 'Select Vehicles' : 'Select Vehicle',
-                        style: OpenVtsTypography.titleSmall)),
+                  child: Text(
+                    widget.multi
+                        ? context.mobileText('Select Vehicles')
+                        : context.mobileText('Select Vehicle'),
+                    style: OpenVtsTypography.titleSmall,
+                  ),
+                ),
                 if (widget.multi && _selected.isNotEmpty)
                   TextButton(
-                      onPressed: () => setState(() => _selected.clear()),
-                      child: Text('Clear', style: OpenVtsTypography.meta)),
+                    onPressed: () => setState(() => _selected.clear()),
+                    child: Text(
+                      context.mobileText('Clear'),
+                      style: OpenVtsTypography.meta,
+                    ),
+                  ),
                 if (widget.multi)
                   TextButton(
                     onPressed: () => Navigator.of(context).pop(_selected),
-                    child: Text('Done (${_selected.length})',
-                        style: OpenVtsTypography.label
-                            .copyWith(fontWeight: FontWeight.w700)),
+                    child: Text(
+                      context.mobileText("Done ({value1})", {
+                        'value1': (_selected.length).toString(),
+                      }),
+                      style: OpenVtsTypography.label.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   )
                 else
                   IconButton(
-                      icon: const Icon(Icons.close_rounded, size: 20),
-                      onPressed: () => Navigator.of(context).maybePop()),
+                    icon: const Icon(Icons.close_rounded, size: 20),
+                    onPressed: () => Navigator.of(context).maybePop(),
+                  ),
               ],
             ),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: OpenVtsSpacing.md),
             child: _SearchField(
-                controller: _controller,
-                onChanged: (q) => setState(() => _query = q)),
+              controller: _controller,
+              onChanged: (q) => setState(() => _query = q),
+            ),
           ),
           const SizedBox(height: OpenVtsSpacing.xs),
           Divider(
-              height: 1, color: Theme.of(context).colorScheme.outlineVariant),
+            height: 1,
+            color: Theme.of(context).colorScheme.outlineVariant,
+          ),
           if (widget.multi) ...[
             ListTile(
               dense: true,
               leading: Checkbox(
-                  value: _selected.length == filtered.length &&
-                      filtered.isNotEmpty,
-                  onChanged: (v) => setState(() {
-                        if (v == true) {
-                          _selected.addAll(filtered.map((v) => v.id));
-                        } else {
-                          _selected.removeAll(filtered.map((v) => v.id));
-                        }
-                      }),
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap),
-              title: Text('Select all visible (${filtered.length})',
-                  style: OpenVtsTypography.body),
+                value:
+                    _selected.length == filtered.length && filtered.isNotEmpty,
+                onChanged: (v) => setState(() {
+                  if (v == true) {
+                    _selected.addAll(filtered.map((v) => v.id));
+                  } else {
+                    _selected.removeAll(filtered.map((v) => v.id));
+                  }
+                }),
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              title: Text(
+                context.mobileText("Select all visible ({value1})", {
+                  'value1': (filtered.length).toString(),
+                }),
+                style: OpenVtsTypography.body,
+              ),
               onTap: () => setState(() {
                 if (_selected.length == filtered.length) {
                   _selected.clear();
@@ -531,15 +614,21 @@ class _VehiclePickerSheetState extends State<_VehiclePickerSheet> {
               }),
             ),
             Divider(
-                height: 1, color: Theme.of(context).colorScheme.outlineVariant),
+              height: 1,
+              color: Theme.of(context).colorScheme.outlineVariant,
+            ),
           ],
           Expanded(
             child: filtered.isEmpty
-                ? const Center(
+                ? Center(
                     child: Padding(
-                        padding: EdgeInsets.all(24),
-                        child: Text('No vehicles found',
-                            style: OpenVtsTypography.body)))
+                      padding: const EdgeInsets.all(24),
+                      child: Text(
+                        context.mobileText('No vehicles found'),
+                        style: OpenVtsTypography.body,
+                      ),
+                    ),
+                  )
                 : ListView.builder(
                     controller: scrollCtrl,
                     itemCount: filtered.length,
@@ -552,7 +641,8 @@ class _VehiclePickerSheetState extends State<_VehiclePickerSheet> {
                                 value: isSelected,
                                 onChanged: (_) => _toggle(v.id),
                                 materialTapTargetSize:
-                                    MaterialTapTargetSize.shrinkWrap)
+                                    MaterialTapTargetSize.shrinkWrap,
+                              )
                             : Icon(
                                 isSelected
                                     ? Icons.check_circle_rounded
@@ -560,18 +650,25 @@ class _VehiclePickerSheetState extends State<_VehiclePickerSheet> {
                                 size: 20,
                                 color: isSelected
                                     ? (isDark
-                                        ? OpenVtsColors.darkTextPrimary
-                                        : OpenVtsColors.brandInk)
-                                    : Theme.of(context).colorScheme.outline),
-                        title: Text(v.displayName,
-                            style: OpenVtsTypography.body.copyWith(
-                                fontWeight: isSelected
-                                    ? FontWeight.w700
-                                    : FontWeight.w400)),
+                                          ? OpenVtsColors.darkTextPrimary
+                                          : OpenVtsColors.brandInk)
+                                    : Theme.of(context).colorScheme.outline,
+                              ),
+                        title: Text(
+                          v.displayName,
+                          style: OpenVtsTypography.body.copyWith(
+                            fontWeight: isSelected
+                                ? FontWeight.w700
+                                : FontWeight.w400,
+                          ),
+                        ),
                         subtitle: v.imei.isNotEmpty
-                            ? Text(v.imei,
+                            ? Text(
+                                v.imei,
                                 style: OpenVtsTypography.meta.copyWith(
-                                    color: OpenVtsColors.textSecondary))
+                                  color: OpenVtsColors.textSecondary,
+                                ),
+                              )
                             : null,
                         onTap: () {
                           if (widget.multi) {
@@ -590,19 +687,20 @@ class _VehiclePickerSheetState extends State<_VehiclePickerSheet> {
   }
 
   void _toggle(String id) => setState(() {
-        if (_selected.contains(id)) {
-          _selected.remove(id);
-        } else {
-          _selected.add(id);
-        }
-      });
+    if (_selected.contains(id)) {
+      _selected.remove(id);
+    } else {
+      _selected.add(id);
+    }
+  });
 }
 
 class _GroupPickerSheet extends StatefulWidget {
-  const _GroupPickerSheet(
-      {required this.groups,
-      required this.selectedId,
-      required this.onChanged});
+  const _GroupPickerSheet({
+    required this.groups,
+    required this.selectedId,
+    required this.onChanged,
+  });
   final List<UserReportGroupOption> groups;
   final String? selectedId;
   final ValueChanged<String?> onChanged;
@@ -642,40 +740,53 @@ class _GroupPickerSheetState extends State<_GroupPickerSheet> {
         children: [
           const SizedBox(height: OpenVtsSpacing.sm),
           Center(
-              child: Container(
-                  height: 4,
-                  width: 40,
-                  decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.outlineVariant,
-                      borderRadius: BorderRadius.circular(2)))),
+            child: Container(
+              height: 4,
+              width: 40,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.outlineVariant,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
           const SizedBox(height: OpenVtsSpacing.sm),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: OpenVtsSpacing.md),
             child: Row(
               children: [
-                const Expanded(
-                    child: Text('Select Group',
-                        style: OpenVtsTypography.titleSmall)),
+                Expanded(
+                  child: Text(
+                    context.mobileText('Select Group'),
+                    style: OpenVtsTypography.titleSmall,
+                  ),
+                ),
                 IconButton(
-                    icon: const Icon(Icons.close_rounded, size: 20),
-                    onPressed: () => Navigator.of(context).maybePop()),
+                  icon: const Icon(Icons.close_rounded, size: 20),
+                  onPressed: () => Navigator.of(context).maybePop(),
+                ),
               ],
             ),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: OpenVtsSpacing.md),
             child: _SearchField(
-                controller: _controller,
-                onChanged: (q) => setState(() => _query = q)),
+              controller: _controller,
+              onChanged: (q) => setState(() => _query = q),
+            ),
           ),
           const SizedBox(height: OpenVtsSpacing.xs),
           Divider(
-              height: 1, color: Theme.of(context).colorScheme.outlineVariant),
+            height: 1,
+            color: Theme.of(context).colorScheme.outlineVariant,
+          ),
           Expanded(
             child: filtered.isEmpty
-                ? const Center(
-                    child:
-                        Text('No groups found', style: OpenVtsTypography.body))
+                ? Center(
+                    child: Text(
+                      context.mobileText('No groups found'),
+                      style: OpenVtsTypography.body,
+                    ),
+                  )
                 : ListView.builder(
                     controller: ctrl,
                     itemCount: filtered.length,
@@ -684,24 +795,34 @@ class _GroupPickerSheetState extends State<_GroupPickerSheet> {
                       final isSelected = widget.selectedId == g.id;
                       return ListTile(
                         leading: Icon(
-                            isSelected
-                                ? Icons.check_circle_rounded
-                                : Icons.folder_outlined,
-                            size: 20,
-                            color: isSelected
-                                ? (isDark
+                          isSelected
+                              ? Icons.check_circle_rounded
+                              : Icons.folder_outlined,
+                          size: 20,
+                          color: isSelected
+                              ? (isDark
                                     ? OpenVtsColors.darkTextPrimary
                                     : OpenVtsColors.brandInk)
-                                : null),
-                        title: Text(g.name,
-                            style: OpenVtsTypography.body.copyWith(
-                                fontWeight: isSelected
-                                    ? FontWeight.w700
-                                    : FontWeight.w400)),
+                              : null,
+                        ),
+                        title: Text(
+                          g.name,
+                          style: OpenVtsTypography.body.copyWith(
+                            fontWeight: isSelected
+                                ? FontWeight.w700
+                                : FontWeight.w400,
+                          ),
+                        ),
                         subtitle: Text(
-                            '${g.vehicleCount} vehicle${g.vehicleCount == 1 ? '' : 's'}',
-                            style: OpenVtsTypography.meta
-                                .copyWith(color: OpenVtsColors.textSecondary)),
+                          context.mobileText("{value1} vehicle{value2}", {
+                            'value1': (g.vehicleCount).toString(),
+                            'value2': (g.vehicleCount == 1 ? '' : 's')
+                                .toString(),
+                          }),
+                          style: OpenVtsTypography.meta.copyWith(
+                            color: OpenVtsColors.textSecondary,
+                          ),
+                        ),
                         onTap: () {
                           widget.onChanged(g.id);
                           Navigator.of(context).maybePop();
@@ -732,24 +853,25 @@ class _SearchField extends StatelessWidget {
         autofocus: false,
         decoration: InputDecoration(
           prefixIcon: const Icon(Icons.search_rounded, size: 16),
-          hintText: 'Search…',
+          hintText: context.mobileText('Search…'),
           hintStyle: OpenVtsTypography.body.copyWith(
-              color: isDark
-                  ? OpenVtsColors.darkTextSecondary
-                  : OpenVtsColors.textSecondary),
+            color: isDark
+                ? OpenVtsColors.darkTextSecondary
+                : OpenVtsColors.textSecondary,
+          ),
           isDense: true,
           border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(OpenVtsRadius.md),
-              borderSide: BorderSide(
-                  color: isDark
-                      ? OpenVtsColors.darkBorder
-                      : OpenVtsColors.border)),
+            borderRadius: BorderRadius.circular(OpenVtsRadius.md),
+            borderSide: BorderSide(
+              color: isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border,
+            ),
+          ),
           enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(OpenVtsRadius.md),
-              borderSide: BorderSide(
-                  color: isDark
-                      ? OpenVtsColors.darkBorder
-                      : OpenVtsColors.border)),
+            borderRadius: BorderRadius.circular(OpenVtsRadius.md),
+            borderSide: BorderSide(
+              color: isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border,
+            ),
+          ),
           contentPadding: const EdgeInsets.symmetric(vertical: 8),
         ),
       ),

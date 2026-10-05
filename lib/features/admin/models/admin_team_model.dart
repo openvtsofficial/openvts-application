@@ -191,7 +191,7 @@ class AdminCreateTeamRequest {
       'mobilePrefix': mobilePrefix.trim(),
       'mobileNumber': mobileNumber.trim(),
       'username': username.trim(),
-      'password': password.trim(),
+      'password': password,
     };
   }
 }

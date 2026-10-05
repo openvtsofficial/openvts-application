@@ -6,14 +6,46 @@
 //   - same-type commands show distinct labels so each is selectable
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:open_vts/core/access/mobile_access.dart';
 import 'package:open_vts/features/admin/models/admin_vehicle_model.dart';
 import 'package:open_vts/features/admin/screens/vehicles/widgets/admin_vehicle_commands_tab.dart';
+import 'package:open_vts/features/auth/controllers/auth_controller.dart';
+import 'package:open_vts/features/auth/controllers/auth_state.dart';
+import 'package:open_vts/features/auth/models/current_user.dart';
 import 'package:open_vts/features/superadmin/models/superadmin_vehicle_model.dart';
+import 'package:open_vts/shared/models/user_role.dart';
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+class _TestAuthController extends StateNotifier<AuthState>
+    implements AuthController {
+  _TestAuthController()
+    : super(
+        const AuthState.authenticated(
+          CurrentUser(
+            id: 'admin-1',
+            name: 'Administrator',
+            email: '',
+            role: UserRole.admin,
+            access: MobileAccess.account(),
+          ),
+        ),
+      );
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+Widget _asAdmin(Widget child) => ProviderScope(
+  overrides: [
+    authControllerProvider.overrideWith((ref) => _TestAuthController()),
+  ],
+  child: child,
+);
 
 AdminCustomCommand _cmd({
   required String id,
@@ -65,7 +97,12 @@ Widget _buildTab({
           isLoading: false,
           isSending: false,
           onRefresh: () async {},
-          onSend: ({required String command, String? note}) async {},
+          onSend:
+              ({
+                required String command,
+                String? note,
+                String? commandId,
+              }) async {},
           onPollStatus: (_) async => null,
           onFetchCommandLog: (_) async => null,
         ),
@@ -108,7 +145,12 @@ class _HarnessState extends State<_Harness> {
             isLoading: false,
             isSending: false,
             onRefresh: () async {},
-            onSend: ({required String command, String? note}) async {},
+            onSend:
+                ({
+                  required String command,
+                  String? note,
+                  String? commandId,
+                }) async {},
             onPollStatus: (_) async => null,
             onFetchCommandLog: (_) async => null,
           ),
@@ -125,20 +167,23 @@ class _HarnessState extends State<_Harness> {
 void main() {
   group('AdminVehicleCommandsTab — no IMEI', () {
     testWidgets('shows unavailable state when IMEI is empty', (tester) async {
-      await tester.pumpWidget(_buildTab(commands: const [], imei: ''));
+      await tester.pumpWidget(
+        _asAdmin(_buildTab(commands: const [], imei: '')),
+      );
       expect(find.text('Command unavailable'), findsOneWidget);
     });
   });
 
   group('AdminVehicleCommandsTab — normal command selection', () {
-    testWidgets('selecting a template fills the command text field',
-        (tester) async {
+    testWidgets('selecting a template fills the command text field', (
+      tester,
+    ) async {
       final commands = [
         _cmd(id: 'cmd-1', command: 'AT+TRACK=1', commandTypeName: 'Tracking'),
         _cmd(id: 'cmd-2', command: 'AT+LOCK=0', commandTypeName: 'Engine Lock'),
       ];
 
-      await tester.pumpWidget(_buildTab(commands: commands));
+      await tester.pumpWidget(_asAdmin(_buildTab(commands: commands)));
       await tester.pump();
 
       // Hint visible before any selection.
@@ -157,8 +202,9 @@ void main() {
       await tester.pumpAndSettle();
 
       // The command text field should now contain the payload.
-      final editableTexts =
-          tester.widgetList<EditableText>(find.byType(EditableText)).toList();
+      final editableTexts = tester
+          .widgetList<EditableText>(find.byType(EditableText))
+          .toList();
       expect(
         editableTexts.any((e) => e.controller.text == 'AT+LOCK=0'),
         isTrue,
@@ -167,39 +213,50 @@ void main() {
     });
 
     testWidgets(
-        'selecting second of two same-type templates fills different payload',
-        (tester) async {
-      final commands = [
-        _cmd(id: 'cmd-1', command: 'AT+LOCK=1', commandTypeName: 'Engine Lock'),
-        _cmd(id: 'cmd-2', command: 'AT+LOCK=0', commandTypeName: 'Engine Lock'),
-      ];
+      'selecting second of two same-type templates fills different payload',
+      (tester) async {
+        final commands = [
+          _cmd(
+            id: 'cmd-1',
+            command: 'AT+LOCK=1',
+            commandTypeName: 'Engine Lock',
+          ),
+          _cmd(
+            id: 'cmd-2',
+            command: 'AT+LOCK=0',
+            commandTypeName: 'Engine Lock',
+          ),
+        ];
 
-      await tester.pumpWidget(_buildTab(commands: commands));
-      await tester.pump();
+        await tester.pumpWidget(_asAdmin(_buildTab(commands: commands)));
+        await tester.pump();
 
-      await tester.tap(find.text('Select command template'));
-      await tester.pumpAndSettle();
+        await tester.tap(find.text('Select command template'));
+        await tester.pumpAndSettle();
 
-      // Both items must have distinct labels.
-      expect(find.text('Engine Lock — AT+LOCK=1'), findsWidgets);
-      expect(find.text('Engine Lock — AT+LOCK=0'), findsWidgets);
+        // Both items must have distinct labels.
+        expect(find.text('Engine Lock — AT+LOCK=1'), findsWidgets);
+        expect(find.text('Engine Lock — AT+LOCK=0'), findsWidgets);
 
-      // Select the second one.
-      await tester.tap(find.text('Engine Lock — AT+LOCK=0').last);
-      await tester.pumpAndSettle();
+        // Select the second one.
+        await tester.tap(find.text('Engine Lock — AT+LOCK=0').last);
+        await tester.pumpAndSettle();
 
-      final editableTexts =
-          tester.widgetList<EditableText>(find.byType(EditableText)).toList();
-      expect(
-        editableTexts.any((e) => e.controller.text == 'AT+LOCK=0'),
-        isTrue,
-      );
-    });
+        final editableTexts = tester
+            .widgetList<EditableText>(find.byType(EditableText))
+            .toList();
+        expect(
+          editableTexts.any((e) => e.controller.text == 'AT+LOCK=0'),
+          isTrue,
+        );
+      },
+    );
   });
 
   group('AdminVehicleCommandsTab — stale selection cleared on reload', () {
-    testWidgets('hint is restored when selected ID disappears after reload',
-        (tester) async {
+    testWidgets('hint is restored when selected ID disappears after reload', (
+      tester,
+    ) async {
       final harnessKey = GlobalKey<_HarnessState>();
 
       final initial = [
@@ -207,7 +264,9 @@ void main() {
         _cmd(id: 'cmd-2', command: 'AT+LOCK=0', commandTypeName: 'Engine Lock'),
       ];
 
-      await tester.pumpWidget(_Harness(key: harnessKey, initial: initial));
+      await tester.pumpWidget(
+        _asAdmin(_Harness(key: harnessKey, initial: initial)),
+      );
       await tester.pump();
 
       // Select cmd-2.

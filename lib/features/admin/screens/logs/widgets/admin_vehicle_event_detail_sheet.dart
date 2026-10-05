@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../core/utils/date_time_formatter.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/widgets/open_vts_error_view.dart';
 import '../../../../../shared/widgets/open_vts_loader.dart';
 import '../../../controllers/admin_providers.dart';
@@ -39,7 +40,9 @@ class AdminVehicleEventDetailSheet extends ConsumerWidget {
 
         final detail = snapshot.data;
         if (detail == null) {
-          return const OpenVtsErrorView(message: 'No event detail found');
+          return OpenVtsErrorView(
+            message: context.mobileText('No event detail found'),
+          );
         }
 
         return ListView(
@@ -48,40 +51,78 @@ class AdminVehicleEventDetailSheet extends ConsumerWidget {
           children: [
             _row('Title', detail.title.isEmpty ? '-' : detail.title),
             _row(
-                'Created',
-                detail.createdAt == null
-                    ? '-'
-                    : _fmt.formatDateTime(detail.createdAt!.toLocal())),
+              'Created',
+              detail.createdAt == null
+                  ? '-'
+                  : _fmt.formatDateTime(detail.createdAt!.toLocal()),
+            ),
             _row('Severity', fallback.severity),
             _row('Read', detail.isRead ? 'Read' : 'Unread'),
             _row('Source', detail.source.isEmpty ? '-' : detail.source),
-            _row('Vehicle',
-                detail.vehicleName.isEmpty ? '-' : detail.vehicleName),
             _row(
-                'Plate', detail.plateNumber.isEmpty ? '-' : detail.plateNumber),
+              'Vehicle',
+              detail.vehicleName.isEmpty ? '-' : detail.vehicleName,
+            ),
+            _row(
+              'Plate',
+              detail.plateNumber.isEmpty ? '-' : detail.plateNumber,
+            ),
             _row('IMEI', detail.imei.isEmpty ? '-' : detail.imei),
             _row('User', detail.userName.isEmpty ? '-' : detail.userName),
-            _row('Username',
-                detail.userUsername.isEmpty ? '-' : detail.userUsername),
+            _row(
+              'Username',
+              detail.userUsername.isEmpty ? '-' : detail.userUsername,
+            ),
             const SizedBox(height: OpenVtsSpacing.sm),
-            const Text('Message', style: OpenVtsTypography.label),
+            Text(context.mobileText('Message'), style: OpenVtsTypography.label),
             const SizedBox(height: OpenVtsSpacing.xs),
-            Text(detail.message.isEmpty ? '-' : detail.message,
-                style: OpenVtsTypography.body.copyWith(fontSize: 13)),
+            Text(
+              detail.message.isEmpty ? '-' : detail.message,
+              style: OpenVtsTypography.body.copyWith(fontSize: 13),
+            ),
             const SizedBox(height: OpenVtsSpacing.sm),
-            const Text('Meta', style: OpenVtsTypography.label),
+            Text(context.mobileText('Meta'), style: OpenVtsTypography.label),
             const SizedBox(height: OpenVtsSpacing.xs),
-            SelectableText(prettyJson(detail.meta),
-                style: const TextStyle(fontFamily: 'monospace', fontSize: 12)),
+            SelectableText(
+              prettyJson(detail.meta),
+              style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+            ),
             if (detail.deliveries.isNotEmpty) ...[
               const SizedBox(height: OpenVtsSpacing.sm),
-              const Text('Deliveries', style: OpenVtsTypography.label),
+              Text(
+                context.mobileText('Deliveries'),
+                style: OpenVtsTypography.label,
+              ),
               const SizedBox(height: OpenVtsSpacing.xs),
               for (final d in detail.deliveries)
                 Padding(
                   padding: const EdgeInsets.only(bottom: OpenVtsSpacing.xs),
                   child: Text(
-                    '${d.channel} • ${d.status} • sent ${d.sentAt == null ? '-' : _fmt.formatDateTime(d.sentAt!.toLocal())} • delivered ${d.deliveredAt == null ? '-' : _fmt.formatDateTime(d.deliveredAt!.toLocal())} • retry ${d.retryCount}${d.failureReason.isEmpty ? '' : ' • ${d.failureReason}'}',
+                    context.mobileText(
+                      "{value1} • {value2} • sent {value3} • delivered {value4} • retry {value5}{value6}",
+                      {
+                        'value1': (d.channel).toString(),
+                        'value2': (d.status).toString(),
+                        'value3':
+                            (d.sentAt == null
+                                    ? '-'
+                                    : _fmt.formatDateTime(d.sentAt!.toLocal()))
+                                .toString(),
+                        'value4':
+                            (d.deliveredAt == null
+                                    ? '-'
+                                    : _fmt.formatDateTime(
+                                        d.deliveredAt!.toLocal(),
+                                      ))
+                                .toString(),
+                        'value5': (d.retryCount).toString(),
+                        'value6':
+                            (d.failureReason.isEmpty
+                                    ? ''
+                                    : ' • ${d.failureReason}')
+                                .toString(),
+                      },
+                    ),
                     style: OpenVtsTypography.meta,
                   ),
                 ),

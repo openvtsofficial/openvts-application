@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../../core/utils/validators.dart';
+import '../../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../../shared/widgets/open_vts_text_field.dart';
@@ -11,8 +13,11 @@ import '../../../../controllers/user_subuser_details_controller.dart';
 import '../../../../models/user_subuser_model.dart';
 import '../../../../models/user_subusers_state.dart';
 
-typedef UserSubUserDetailsProvider = AutoDisposeStateNotifierProvider<
-    UserSubUserDetailsController, UserSubUserDetailsState>;
+typedef UserSubUserDetailsProvider =
+    AutoDisposeStateNotifierProvider<
+      UserSubUserDetailsController,
+      UserSubUserDetailsState
+    >;
 
 class UserSubUserEditSheet extends ConsumerStatefulWidget {
   const UserSubUserEditSheet({
@@ -82,27 +87,27 @@ class _UserSubUserEditSheetState extends ConsumerState<UserSubUserEditSheet> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   OpenVtsTextField(
-                    label: 'Name',
+                    label: context.mobileText('Name'),
                     controller: _nameController,
-                    hintText: 'Sub user name',
+                    hintText: context.mobileText('Sub user name'),
                     textInputAction: TextInputAction.next,
                     prefixIcon: Icons.person_outline_rounded,
                     validator: _nameValidator,
                   ),
                   const SizedBox(height: OpenVtsSpacing.sm),
                   OpenVtsTextField(
-                    label: 'Username',
+                    label: context.mobileText('Username'),
                     controller: _usernameController,
-                    hintText: 'Optional username',
+                    hintText: context.mobileText('Optional username'),
                     textInputAction: TextInputAction.next,
                     prefixIcon: Icons.alternate_email_rounded,
                     validator: _optionalUsernameValidator,
                   ),
                   const SizedBox(height: OpenVtsSpacing.sm),
                   OpenVtsTextField(
-                    label: 'Email',
+                    label: context.mobileText('Email'),
                     controller: _emailController,
-                    hintText: 'Optional email',
+                    hintText: context.mobileText('Optional email'),
                     keyboardType: TextInputType.emailAddress,
                     textInputAction: TextInputAction.next,
                     prefixIcon: Icons.mail_outline_rounded,
@@ -114,7 +119,7 @@ class _UserSubUserEditSheetState extends ConsumerState<UserSubUserEditSheet> {
                       SizedBox(
                         width: 124,
                         child: OpenVtsTextField(
-                          label: 'Prefix',
+                          label: context.mobileText('Prefix'),
                           controller: _mobilePrefixController,
                           hintText: '+91',
                           textInputAction: TextInputAction.next,
@@ -124,9 +129,9 @@ class _UserSubUserEditSheetState extends ConsumerState<UserSubUserEditSheet> {
                       const SizedBox(width: OpenVtsSpacing.sm),
                       Expanded(
                         child: OpenVtsTextField(
-                          label: 'Mobile',
+                          label: context.mobileText('Mobile'),
                           controller: _mobileNumberController,
-                          hintText: 'Optional mobile',
+                          hintText: context.mobileText('Optional mobile'),
                           keyboardType: TextInputType.phone,
                           textInputAction: TextInputAction.next,
                           prefixIcon: Icons.phone_rounded,
@@ -137,15 +142,18 @@ class _UserSubUserEditSheetState extends ConsumerState<UserSubUserEditSheet> {
                   ),
                   const SizedBox(height: OpenVtsSpacing.sm),
                   OpenVtsTextField(
-                    label: 'Password (optional)',
+                    label: context.mobileText('Password (optional)'),
                     controller: _passwordController,
-                    hintText: 'Leave blank to keep current password',
+                    hintText: context.mobileText(
+                      'Leave blank to keep current password',
+                    ),
                     obscureText: _obscurePassword,
                     textInputAction: TextInputAction.done,
                     prefixIcon: Icons.lock_outline_rounded,
                     suffixIcon: IconButton(
-                      tooltip:
-                          _obscurePassword ? 'Show password' : 'Hide password',
+                      tooltip: _obscurePassword
+                          ? context.mobileText('Show password')
+                          : context.mobileText('Hide password'),
                       onPressed: () {
                         setState(() => _obscurePassword = !_obscurePassword);
                       },
@@ -176,15 +184,19 @@ class _UserSubUserEditSheetState extends ConsumerState<UserSubUserEditSheet> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Active account',
+                                context.mobileText('Active account'),
                                 style: OpenVtsTypography.label.copyWith(
                                   color: OpenVtsColors.textPrimary,
                                 ),
                               ),
                               Text(
                                 _isActive
-                                    ? 'Sub user can access assigned vehicles'
-                                    : 'Sub user is disabled',
+                                    ? context.mobileText(
+                                        'Sub user can access assigned vehicles',
+                                      )
+                                    : context.mobileText(
+                                        'Sub user is disabled',
+                                      ),
                                 style: OpenVtsTypography.meta.copyWith(
                                   color: OpenVtsColors.textSecondary,
                                 ),
@@ -195,8 +207,9 @@ class _UserSubUserEditSheetState extends ConsumerState<UserSubUserEditSheet> {
                         Switch.adaptive(
                           value: _isActive,
                           activeThumbColor: OpenVtsColors.brandInk,
-                          activeTrackColor:
-                              OpenVtsColors.brandInk.withValues(alpha: 0.35),
+                          activeTrackColor: OpenVtsColors.brandInk.withValues(
+                            alpha: 0.35,
+                          ),
                           materialTapTargetSize:
                               MaterialTapTargetSize.shrinkWrap,
                           onChanged: isSubmitting
@@ -222,17 +235,18 @@ class _UserSubUserEditSheetState extends ConsumerState<UserSubUserEditSheet> {
               children: [
                 Expanded(
                   child: OpenVtsButton(
-                    label: 'Cancel',
+                    label: context.mobileText('Cancel'),
                     height: 40,
                     variant: OpenVtsButtonVariant.secondary,
-                    onPressed:
-                        isSubmitting ? null : () => Navigator.of(context).pop(),
+                    onPressed: isSubmitting
+                        ? null
+                        : () => Navigator.of(context).pop(),
                   ),
                 ),
                 const SizedBox(width: OpenVtsSpacing.sm),
                 Expanded(
                   child: OpenVtsButton(
-                    label: 'Save Changes',
+                    label: context.mobileText('Save Changes'),
                     height: 40,
                     trailingIcon: Icons.check_rounded,
                     isLoading: isSubmitting,
@@ -258,7 +272,9 @@ class _UserSubUserEditSheetState extends ConsumerState<UserSubUserEditSheet> {
       email: _optionalValue(_emailController.text),
       mobilePrefix: _optionalValue(_mobilePrefixController.text),
       mobileNumber: _optionalValue(_mobileNumberController.text),
-      password: _optionalValue(_passwordController.text),
+      password: _passwordController.text.isEmpty
+          ? null
+          : _passwordController.text,
       isActive: _isActive,
     );
 
@@ -268,7 +284,10 @@ class _UserSubUserEditSheetState extends ConsumerState<UserSubUserEditSheet> {
     }
 
     if (ok) {
-      ToastHelper.showSuccess('Sub user updated.', context: context);
+      ToastHelper.showSuccess(
+        context.mobileText('Sub user updated.'),
+        context: context,
+      );
       Navigator.of(context).pop(true);
       return;
     }
@@ -292,6 +311,9 @@ class _UserSubUserEditSheetState extends ConsumerState<UserSubUserEditSheet> {
 
   String? _optionalUsernameValidator(String? value) {
     final normalized = value?.trim() ?? '';
+    if (!Validators.isPrintableAscii(normalized)) {
+      return 'Username must contain ASCII characters only';
+    }
     if (normalized.isEmpty) {
       return null;
     }
@@ -303,6 +325,12 @@ class _UserSubUserEditSheetState extends ConsumerState<UserSubUserEditSheet> {
 
   String? _optionalPasswordValidator(String? value) {
     final normalized = value ?? '';
+    if (!Validators.isPrintableAscii(normalized)) {
+      return 'Password must contain ASCII characters only';
+    }
+    if (normalized.length > 100) {
+      return 'Password must be 100 characters or fewer';
+    }
     if (normalized.trim().isEmpty) {
       return null;
     }
@@ -328,6 +356,9 @@ class _UserSubUserEditSheetState extends ConsumerState<UserSubUserEditSheet> {
 
   String? _optionalEmailValidator(String? value) {
     final normalized = value?.trim() ?? '';
+    if (!Validators.isPrintableAscii(normalized)) {
+      return 'Email must contain ASCII characters only';
+    }
     if (normalized.isEmpty) {
       return null;
     }

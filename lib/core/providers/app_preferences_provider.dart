@@ -7,10 +7,10 @@ import '../storage/storage_keys.dart';
 import '../utils/date_time_formatter.dart';
 import 'core_providers.dart';
 
-Set<String> get flutterSupportedLanguageCodes =>
-    AppLocalizations.supportedLocales
-        .map((locale) => locale.languageCode)
-        .toSet();
+Set<String> get flutterSupportedLanguageCodes => AppLocalizations
+    .supportedLocales
+    .map((locale) => locale.languageCode)
+    .toSet();
 
 String flutterLanguageCodeFor(String? value) {
   if (value == null || value.trim().isEmpty) return 'en';
@@ -55,34 +55,6 @@ class _LocalizationNormalizers {
     if (upper.contains('RTL') || upper.contains('RIGHT')) return 'RTL';
     if (upper.contains('LTR') || upper.contains('LEFT')) return 'LTR';
     return 'LTR';
-  }
-
-  /// Normalize theme mode
-  static ThemeMode normalizeTheme(dynamic value) {
-    if (value is ThemeMode) return value;
-    if (value is String) {
-      final upper = value.toUpperCase();
-      if (upper.contains('DARK')) return ThemeMode.dark;
-      if (upper.contains('SYSTEM')) return ThemeMode.system;
-      return ThemeMode.light;
-    }
-    return ThemeMode.light;
-  }
-
-  /// Parse multiple possible field names for a single value
-  static String? parseMultipleFields(
-    dynamic json,
-    List<String> fieldNames, {
-    String Function(String)? normalize,
-  }) {
-    if (json is! Map) return null;
-    for (final field in fieldNames) {
-      final value = json[field];
-      if (value is String && value.isNotEmpty) {
-        return normalize != null ? normalize(value) : value;
-      }
-    }
-    return null;
   }
 }
 
@@ -142,16 +114,22 @@ class AppLocalizationPreferences {
 class AppLocalizationPreferencesController
     extends StateNotifier<AppLocalizationPreferences> {
   AppLocalizationPreferencesController(this._localCache, this._themeModeCtrl)
-      : super(const AppLocalizationPreferences()) {
+    : super(const AppLocalizationPreferences()) {
     hydrate();
   }
 
   final LocalCache _localCache;
   final ThemeModeController _themeModeCtrl;
+  String? _languageOverride;
+
+  /// Explicit device language selection, independent of account defaults.
+  AppLocalizationPreferences? get languageOverride =>
+      _languageOverride == null ? null : state;
 
   void hydrate() {
+    _languageOverride = _localCache.getString(StorageKeys.appLanguageOverride);
     final languageCode = _LocalizationNormalizers.normalizeLanguage(
-      _localCache.getString(StorageKeys.appLanguageCode),
+      _languageOverride ?? _localCache.getString(StorageKeys.appLanguageCode),
     );
     final dateFormat =
         _localCache.getString(StorageKeys.appDateFormat) ?? 'DD MMM YYYY';
@@ -176,6 +154,7 @@ class AppLocalizationPreferencesController
     updateGlobalDateFormatConfig(
       datePattern: dateFormat,
       use24Hour: state.use24Hour,
+      locale: state.languageCode,
     );
   }
 
@@ -187,7 +166,15 @@ class AppLocalizationPreferencesController
     ThemeMode? themeMode,
     String? layoutDirection,
     String? units,
+    bool preserveAppLanguage = false,
   }) async {
+    if (preserveAppLanguage && _languageOverride != null) {
+      languageCode = _languageOverride;
+      layoutDirection = state.layoutDirection;
+    }
+    if (languageCode != null) {
+      languageCode = flutterLanguageCodeFor(languageCode);
+    }
     // Update state immediately so the UI (locale, theme, direction) reacts
     // before the async cache writes complete — especially important on mobile
     // where SharedPreferences writes can take a few frames.
@@ -204,11 +191,19 @@ class AppLocalizationPreferencesController
     updateGlobalDateFormatConfig(
       datePattern: state.dateFormat,
       use24Hour: state.use24Hour,
+      locale: state.languageCode,
     );
 
     // Persist in the background after the state has already been applied.
     if (languageCode != null) {
       await _localCache.setString(StorageKeys.appLanguageCode, languageCode);
+      if (_languageOverride != null) {
+        _languageOverride = languageCode;
+        await _localCache.setString(
+          StorageKeys.appLanguageOverride,
+          languageCode,
+        );
+      }
     }
     if (dateFormat != null) {
       await _localCache.setString(StorageKeys.appDateFormat, dateFormat);
@@ -229,10 +224,7 @@ class AppLocalizationPreferencesController
       );
     }
     if (units != null) {
-      await _localCache.setString(
-        StorageKeys.appUnits,
-        units.toUpperCase(),
-      );
+      await _localCache.setString(StorageKeys.appUnits, units.toUpperCase());
     }
   }
 
@@ -244,6 +236,7 @@ class AppLocalizationPreferencesController
     required String timezoneOffset,
     String layoutDirection = 'LTR',
     String units = 'KM',
+    bool preserveAppLanguage = false,
   }) async {
     await apply(
       languageCode: _LocalizationNormalizers.normalizeLanguage(language),
@@ -251,9 +244,11 @@ class AppLocalizationPreferencesController
       timeFormat: use24Hour ? '24h' : '12h',
       timezone: timezoneOffset,
       themeMode: _parseThemeString(theme),
-      layoutDirection:
-          _LocalizationNormalizers.normalizeDirection(layoutDirection),
+      layoutDirection: _LocalizationNormalizers.normalizeDirection(
+        layoutDirection,
+      ),
       units: _LocalizationNormalizers.normalizeUnits(units),
+      preserveAppLanguage: preserveAppLanguage,
     );
   }
 
@@ -265,6 +260,7 @@ class AppLocalizationPreferencesController
     required String timezoneOffset,
     String layoutDirection = 'LTR',
     String units = 'KM',
+    bool preserveAppLanguage = false,
   }) async {
     await apply(
       languageCode: _LocalizationNormalizers.normalizeLanguage(language),
@@ -272,9 +268,11 @@ class AppLocalizationPreferencesController
       timeFormat: use24Hour ? '24h' : '12h',
       timezone: timezoneOffset,
       themeMode: _parseThemeString(theme),
-      layoutDirection:
-          _LocalizationNormalizers.normalizeDirection(layoutDirection),
+      layoutDirection: _LocalizationNormalizers.normalizeDirection(
+        layoutDirection,
+      ),
       units: _LocalizationNormalizers.normalizeUnits(units),
+      preserveAppLanguage: preserveAppLanguage,
     );
   }
 
@@ -286,6 +284,7 @@ class AppLocalizationPreferencesController
     required String timezone,
     String layoutDirection = 'LTR',
     String units = 'KM',
+    bool preserveAppLanguage = false,
   }) async {
     await apply(
       languageCode: _LocalizationNormalizers.normalizeLanguage(languageCode),
@@ -293,13 +292,31 @@ class AppLocalizationPreferencesController
       timeFormat: timeFormat.toUpperCase() == '24H' ? '24h' : '12h',
       timezone: timezone,
       themeMode: _parseThemeString(theme),
-      layoutDirection:
-          _LocalizationNormalizers.normalizeDirection(layoutDirection),
+      layoutDirection: _LocalizationNormalizers.normalizeDirection(
+        layoutDirection,
+      ),
       units: _LocalizationNormalizers.normalizeUnits(units),
+      preserveAppLanguage: preserveAppLanguage,
+    );
+  }
+
+  /// This device preference works for every role and while offline. Server
+  /// settings hydration must not overwrite an explicitly selected app language.
+  Future<void> selectLanguage(String value) async {
+    if (!isFlutterLanguageSupported(value)) {
+      throw ArgumentError.value(value, 'value', 'Unsupported app language');
+    }
+    final code = flutterLanguageCodeFor(value);
+    _languageOverride = code;
+    await apply(
+      languageCode: code,
+      layoutDirection: code == 'ar' ? 'RTL' : 'LTR',
     );
   }
 
   Future<void> resetToDefaults() async {
+    _languageOverride = null;
+    await _localCache.remove(StorageKeys.appLanguageOverride);
     await _localCache.remove(StorageKeys.appLanguageCode);
     await _localCache.remove(StorageKeys.appDateFormat);
     await _localCache.remove(StorageKeys.appTimeFormat);
@@ -313,6 +330,7 @@ class AppLocalizationPreferencesController
     updateGlobalDateFormatConfig(
       datePattern: state.dateFormat,
       use24Hour: state.use24Hour,
+      locale: state.languageCode,
     );
   }
 
@@ -346,9 +364,12 @@ class AppLocalizationPreferencesController
   }
 }
 
-final appLocalizationPreferencesProvider = StateNotifierProvider<
-    AppLocalizationPreferencesController, AppLocalizationPreferences>((ref) {
-  final localCache = ref.watch(localCacheProvider);
-  final themeModeCtrl = ref.watch(themeModeProvider.notifier);
-  return AppLocalizationPreferencesController(localCache, themeModeCtrl);
-});
+final appLocalizationPreferencesProvider =
+    StateNotifierProvider<
+      AppLocalizationPreferencesController,
+      AppLocalizationPreferences
+    >((ref) {
+      final localCache = ref.watch(localCacheProvider);
+      final themeModeCtrl = ref.watch(themeModeProvider.notifier);
+      return AppLocalizationPreferencesController(localCache, themeModeCtrl);
+    });

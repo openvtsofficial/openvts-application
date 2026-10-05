@@ -7,6 +7,7 @@ import '../../../../core/theme/open_vts_colors.dart';
 import '../../../../core/theme/open_vts_radius.dart';
 import '../../../../core/theme/open_vts_spacing.dart';
 import '../../../../core/theme/open_vts_typography.dart';
+import '../../../../shared/helpers/mobile_text.dart';
 import '../../../../shared/widgets/open_vts_card.dart';
 import '../../../../shared/widgets/open_vts_error_view.dart';
 import '../../../../shared/widgets/open_vts_loader.dart';
@@ -47,13 +48,13 @@ class UserVehicleDetailsScreen extends ConsumerWidget {
       title: title,
       padding: EdgeInsets.zero,
       leading: IconButton(
-        tooltip: 'Back',
+        tooltip: context.mobileText('Back'),
         onPressed: () => _close(context),
         icon: const Icon(Icons.arrow_back_rounded, size: 20),
       ),
       actions: [
         _HeaderIconButton(
-          tooltip: 'Refresh',
+          tooltip: context.mobileText('Refresh'),
           onPressed: state.isRefreshingCurrentTab
               ? null
               : () => controller.refreshCurrentTab(),
@@ -134,8 +135,11 @@ class UserVehicleDetailsScreen extends ConsumerWidget {
 class _TabContent extends ConsumerWidget {
   const _TabContent({required this.provider});
 
-  final AutoDisposeStateNotifierProvider<UserVehicleDetailsController,
-      UserVehicleDetailsState> provider;
+  final AutoDisposeStateNotifierProvider<
+    UserVehicleDetailsController,
+    UserVehicleDetailsState
+  >
+  provider;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -143,24 +147,26 @@ class _TabContent extends ConsumerWidget {
 
     return switch (state.selectedTab) {
       UserVehicleDetailsTab.details => UserVehicleDetailsTabView(
-          provider: provider,
-        ),
+        provider: provider,
+      ),
       UserVehicleDetailsTab.sensors => UserVehicleSensorsTabView(
-          provider: provider,
-        ),
+        provider: provider,
+      ),
       UserVehicleDetailsTab.documents => UserVehicleDocumentsTabView(
-          provider: provider,
-        ),
+        provider: provider,
+      ),
       UserVehicleDetailsTab.config => UserVehicleConfigTabView(
-          provider: provider,
-        ),
+        provider: provider,
+      ),
     };
   }
 }
 
 class _VehicleSummaryCard extends StatelessWidget {
-  const _VehicleSummaryCard(
-      {required this.vehicle, required this.initialVehicle});
+  const _VehicleSummaryCard({
+    required this.vehicle,
+    required this.initialVehicle,
+  });
 
   final UserVehicleDetails? vehicle;
   final UserVehicleListItem? initialVehicle;
@@ -190,10 +196,9 @@ class _VehicleSummaryCard extends StatelessWidget {
                 width: 38,
                 height: 38,
                 decoration: BoxDecoration(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onSurface
-                      .withValues(alpha: 0.04),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.04),
                   borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
                   border: Border.all(color: _softBorderColor(context)),
                 ),
@@ -212,8 +217,9 @@ class _VehicleSummaryCard extends StatelessWidget {
                       title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style:
-                          OpenVtsTypography.titleSmall.copyWith(fontSize: 16),
+                      style: OpenVtsTypography.titleSmall.copyWith(
+                        fontSize: 16,
+                      ),
                     ),
                     const SizedBox(height: 3),
                     Text(
@@ -230,7 +236,9 @@ class _VehicleSummaryCard extends StatelessWidget {
               ),
               const SizedBox(width: OpenVtsSpacing.xs),
               _Pill(
-                label: isActive ? 'Active' : 'Inactive',
+                label: isActive
+                    ? context.mobileText('Active')
+                    : context.mobileText('Inactive'),
                 icon: isActive
                     ? Icons.check_circle_outline_rounded
                     : Icons.pause_circle_outline_rounded,
@@ -247,20 +255,33 @@ class _VehicleSummaryCard extends StatelessWidget {
             children: [
               if (plate.trim().isNotEmpty)
                 _MetaPill(
-                    icon: Icons.confirmation_number_outlined, label: plate),
+                  icon: Icons.confirmation_number_outlined,
+                  label: plate,
+                ),
               if (vin.trim().isNotEmpty)
-                _MetaPill(icon: Icons.tag_outlined, label: 'VIN ${vin.trim()}'),
+                _MetaPill(
+                  icon: Icons.tag_outlined,
+                  label: context.mobileText("VIN {value1}", {
+                    'value1': (vin.trim()).toString(),
+                  }),
+                ),
               _MetaPill(
-                  icon: Icons.memory_outlined, label: 'IMEI ${_display(imei)}'),
+                icon: Icons.memory_outlined,
+                label: context.mobileText("IMEI {value1}", {
+                  'value1': (_display(imei)).toString(),
+                }),
+              ),
               _MetaPill(
                 icon: Icons.sim_card_outlined,
-                label: 'SIM ${_display(simNumber)}',
+                label: context.mobileText("SIM {value1}", {
+                  'value1': (_display(simNumber)).toString(),
+                }),
               ),
               if (type.trim().isNotEmpty)
                 _MetaPill(icon: Icons.category_outlined, label: type.trim()),
               if (isLicenseBlocked)
-                const _Pill(
-                  label: 'License Blocked',
+                _Pill(
+                  label: context.mobileText('License Blocked'),
                   icon: Icons.block_rounded,
                   color: OpenVtsColors.error,
                 ),
@@ -283,30 +304,32 @@ class _TabChips extends StatelessWidget {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
-        children: UserVehicleDetailsTab.values.map((tab) {
-          final isSelected = tab == selected;
-          return Padding(
-            padding: const EdgeInsets.only(right: OpenVtsSpacing.xs),
-            child: ChoiceChip(
-              selected: isSelected,
-              label: Text(_tabLabel(tab)),
-              onSelected: (_) => onSelect(tab),
-              showCheckmark: false,
-              labelStyle: OpenVtsTypography.meta.copyWith(
-                fontWeight: FontWeight.w800,
-                color: isSelected
-                    ? OpenVtsColors.brandInk
-                    : Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-              selectedColor: OpenVtsColors.white,
-              backgroundColor: _softSurfaceColor(context),
-              side: BorderSide(color: _softBorderColor(context)),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
-              ),
-            ),
-          );
-        }).toList(growable: false),
+        children: UserVehicleDetailsTab.values
+            .map((tab) {
+              final isSelected = tab == selected;
+              return Padding(
+                padding: const EdgeInsets.only(right: OpenVtsSpacing.xs),
+                child: ChoiceChip(
+                  selected: isSelected,
+                  label: Text(_tabLabel(tab)),
+                  onSelected: (_) => onSelect(tab),
+                  showCheckmark: false,
+                  labelStyle: OpenVtsTypography.meta.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: isSelected
+                        ? OpenVtsColors.brandInk
+                        : Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                  selectedColor: OpenVtsColors.white,
+                  backgroundColor: _softSurfaceColor(context),
+                  side: BorderSide(color: _softBorderColor(context)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
+                  ),
+                ),
+              );
+            })
+            .toList(growable: false),
       ),
     );
   }
@@ -406,8 +429,11 @@ class _InlineError extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.error_outline_rounded,
-              size: 16, color: OpenVtsColors.error),
+          const Icon(
+            Icons.error_outline_rounded,
+            size: 16,
+            color: OpenVtsColors.error,
+          ),
           const SizedBox(width: OpenVtsSpacing.xs),
           Expanded(
             child: Text(

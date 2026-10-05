@@ -1,4 +1,3 @@
-import '../../../core/api/api_exception.dart';
 import 'current_user.dart';
 
 class LoginResponse {
@@ -6,23 +5,17 @@ class LoginResponse {
     required this.accessToken,
     required this.refreshToken,
     required this.user,
+    this.settings = const <String, dynamic>{},
   });
 
   final String accessToken;
   final String refreshToken;
   final CurrentUser user;
+  final Map<String, dynamic> settings;
 
   factory LoginResponse.fromJson(Map<String, dynamic> json) {
     final userJson =
         (json['user'] as Map<String, dynamic>?) ?? <String, dynamic>{};
-
-    final serverRole = userJson['role']?.toString().trim().toUpperCase();
-    if (!const {'SUPERADMIN', 'ADMIN', 'USER', 'SUBUSER'}.contains(serverRole)) {
-      throw const ApiException(
-        message: 'This account role is not supported by this mobile app. '
-            'Please use your organization’s web application.',
-      );
-    }
 
     return LoginResponse(
       accessToken: json['token']?.toString() ??
@@ -33,6 +26,9 @@ class LoginResponse {
           json['refreshToken']?.toString() ??
           '',
       user: CurrentUser.fromJson(userJson),
+      settings: json['settings'] is Map
+          ? Map<String, dynamic>.from(json['settings'] as Map)
+          : const {},
     );
   }
 }

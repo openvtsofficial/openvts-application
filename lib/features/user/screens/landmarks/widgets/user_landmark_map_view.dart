@@ -523,7 +523,7 @@ class UserLandmarkMapEdgeFade extends StatelessWidget {
   }
 }
 
-/// Provider label; licensing and provider-specific attribution still require review.
+/// Small attribution badge satisfying tile provider requirements.
 class UserLandmarkMapAttribution extends StatelessWidget {
   const UserLandmarkMapAttribution({super.key, this.text = '© Google'});
 

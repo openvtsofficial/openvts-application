@@ -4,6 +4,7 @@ import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 
 /// A row of KPI cards. Lays 2 per row on narrow screens, 4 on wide.
 class UserReportKpiRow extends StatelessWidget {
@@ -46,34 +47,45 @@ class _KpiCard extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.symmetric(
-          horizontal: OpenVtsSpacing.sm, vertical: OpenVtsSpacing.xs),
+        horizontal: OpenVtsSpacing.sm,
+        vertical: OpenVtsSpacing.xs,
+      ),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(OpenVtsRadius.lg),
         border: Border.all(
-            color: isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border),
+          color: isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(kpi.label,
-              style: OpenVtsTypography.meta
-                  .copyWith(color: OpenVtsColors.textSecondary),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis),
+          Text(
+            context.mobileText(kpi.label),
+            style: OpenVtsTypography.meta.copyWith(
+              color: OpenVtsColors.textSecondary,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
           const SizedBox(height: 2),
-          Text(kpi.value,
-              style: OpenVtsTypography.titleSmall,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis),
+          Text(
+            kpi.value,
+            style: OpenVtsTypography.titleSmall,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
           if (kpi.caption != null) ...[
             const SizedBox(height: 2),
-            Text(kpi.caption!,
-                style: OpenVtsTypography.meta
-                    .copyWith(color: OpenVtsColors.textTertiary),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis),
+            Text(
+              kpi.caption!,
+              style: OpenVtsTypography.meta.copyWith(
+                color: OpenVtsColors.textTertiary,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ],
         ],
       ),

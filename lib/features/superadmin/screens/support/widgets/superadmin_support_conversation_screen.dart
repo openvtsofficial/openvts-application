@@ -1,8 +1,8 @@
 import 'dart:async';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 import 'package:open_vts/core/providers/core_providers.dart';
 import 'package:open_vts/core/theme/open_vts_colors.dart';
 import 'package:open_vts/core/theme/open_vts_radius.dart';
@@ -21,6 +21,8 @@ import 'package:open_vts/shared/widgets/open_vts_loader.dart';
 import 'package:open_vts/shared/widgets/open_vts_page_scaffold.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../../../shared/helpers/mobile_text.dart';
+
 const DateTimeFormatter _dateFormatter = DateTimeFormatter();
 const int _supportMaxAttachmentCount = 5;
 const int _supportMaxAttachmentBytes = 5 * 1024 * 1024;
@@ -38,15 +40,17 @@ const List<String> _supportAllowedAttachmentExtensions = <String>[
 ];
 
 class SuperadminSupportConversationScreen extends StatelessWidget {
-  const SuperadminSupportConversationScreen(
-      {required this.ticketId, super.key});
+  const SuperadminSupportConversationScreen({
+    required this.ticketId,
+    super.key,
+  });
 
   final int ticketId;
 
   @override
   Widget build(BuildContext context) {
     return OpenVtsPageScaffold(
-      title: 'Ticket Conversation',
+      title: context.mobileText('Ticket Conversation'),
       headerMode: OpenVtsPageHeaderMode.standard,
       padding: EdgeInsets.zero,
       body: SuperadminSupportConversationPane(ticketId: ticketId),
@@ -157,13 +161,18 @@ class _SuperadminSupportConversationPaneState
   Future<void> _sendReply(SuperadminSupportTicketDetails ticket) async {
     final message = _replyController.text.trim();
     if (message.isEmpty) {
-      ToastHelper.showError('Reply message is required.', context: context);
+      ToastHelper.showError(
+        context.mobileText('Reply message is required.'),
+        context: context,
+      );
       return;
     }
 
     if (message.length > _supportMaxMessageLength) {
       ToastHelper.showError(
-        'Reply must be $_supportMaxMessageLength characters or less.',
+        context.mobileText("Reply must be {value1} characters or less.", {
+          'value1': (_supportMaxMessageLength).toString(),
+        }),
         context: context,
       );
       return;
@@ -171,23 +180,28 @@ class _SuperadminSupportConversationPaneState
 
     if (_replyAttachments.length > _supportMaxAttachmentCount) {
       ToastHelper.showError(
-        'You can upload up to $_supportMaxAttachmentCount files.',
+        context.mobileText("You can upload up to {value1} files.", {
+          'value1': (_supportMaxAttachmentCount).toString(),
+        }),
         context: context,
       );
       return;
     }
 
-    if (_replyAttachments
-        .any((file) => file.size > _supportMaxAttachmentBytes)) {
+    if (_replyAttachments.any(
+      (file) => file.size > _supportMaxAttachmentBytes,
+    )) {
       ToastHelper.showError(
-        'Each attachment must be 5MB or smaller.',
+        context.mobileText('Each attachment must be 5MB or smaller.'),
         context: context,
       );
       return;
     }
 
     try {
-      await ref.read(superadminSupportControllerProvider.notifier).sendReply(
+      await ref
+          .read(superadminSupportControllerProvider.notifier)
+          .sendReply(
             ticketId: ticket.id,
             message: message,
             attachments: _replyAttachments,
@@ -201,22 +215,31 @@ class _SuperadminSupportConversationPaneState
         _replyAttachments = <PlatformFile>[];
       });
       _scheduleScrollToBottom();
-      ToastHelper.showSuccess('Reply sent successfully.', context: context);
+      ToastHelper.showSuccess(
+        context.mobileText('Reply sent successfully.'),
+        context: context,
+      );
     } catch (_) {
       if (!mounted) {
         return;
       }
       final error =
           ref.read(superadminSupportControllerProvider).detailsErrorMessage ??
-              'Unable to send reply right now.';
+          'Unable to send reply right now.';
       ToastHelper.showError(error, context: context);
     }
   }
 
-  Future<void> _updateStatus(SuperadminSupportTicketDetails details,
-      SuperadminSupportTicketStatus status) async {
+  Future<void> _updateStatus(
+    SuperadminSupportTicketDetails details,
+    SuperadminSupportTicketStatus status,
+  ) async {
     if (status == details.status) {
-      ToastHelper.showInfo('Ticket status is already ${status.label}.');
+      ToastHelper.showInfo(
+        context.mobileText("Ticket status is already {value1}.", {
+          'value1': (status.label).toString(),
+        }),
+      );
       return;
     }
 
@@ -227,14 +250,17 @@ class _SuperadminSupportConversationPaneState
       if (!mounted) {
         return;
       }
-      ToastHelper.showSuccess('Ticket status updated.', context: context);
+      ToastHelper.showSuccess(
+        context.mobileText('Ticket status updated.'),
+        context: context,
+      );
     } catch (_) {
       if (!mounted) {
         return;
       }
       final error =
           ref.read(superadminSupportControllerProvider).detailsErrorMessage ??
-              'Unable to update ticket status right now.';
+          'Unable to update ticket status right now.';
       ToastHelper.showError(error, context: context);
     }
   }
@@ -271,7 +297,8 @@ class _SuperadminSupportConversationPaneState
   }
 
   SuperadminSupportTicketDetails? _selectedDetail(
-      SuperadminSupportState state) {
+    SuperadminSupportState state,
+  ) {
     final selected = state.selectedTicketDetails;
     if (selected == null || selected.id != widget.ticketId) {
       return null;
@@ -285,8 +312,9 @@ class _SuperadminSupportConversationPaneState
     final detail = _selectedDetail(state);
     final baseUrl = ref.watch(apiBaseUrlProvider);
     final currentUserId = ref.watch(
-      authControllerProvider
-          .select((authState) => authState.user?.id.toString() ?? ''),
+      authControllerProvider.select(
+        (authState) => authState.user?.id.toString() ?? '',
+      ),
     );
 
     if (detail != null) {
@@ -323,8 +351,9 @@ class _SuperadminSupportConversationPaneState
               OpenVtsSpacing.md,
               OpenVtsSpacing.xs,
             ),
-            child:
-                _InlineConversationError(message: state.detailsErrorMessage!),
+            child: _InlineConversationError(
+              message: state.detailsErrorMessage!,
+            ),
           ),
         Expanded(
           child: _MessageTimeline(
@@ -381,7 +410,8 @@ class _ConversationHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fromName = ticket.fromUser?.displayName ??
+    final fromName =
+        ticket.fromUser?.displayName ??
         (ticket.fromUserId != null ? 'Admin #${ticket.fromUserId}' : 'Admin');
     final fromEmail = ticket.fromUser?.email.trim() ?? '';
     final colorScheme = Theme.of(context).colorScheme;
@@ -406,7 +436,7 @@ class _ConversationHeader extends StatelessWidget {
             children: [
               if (onBack != null) ...[
                 IconButton(
-                  tooltip: 'Back',
+                  tooltip: context.mobileText('Back'),
                   onPressed: onBack,
                   icon: const Icon(Icons.arrow_back_rounded),
                   constraints: const BoxConstraints(
@@ -445,7 +475,7 @@ class _ConversationHeader extends StatelessWidget {
               ),
               const SizedBox(width: OpenVtsSpacing.sm),
               IconButton(
-                tooltip: 'Refresh',
+                tooltip: context.mobileText('Refresh'),
                 onPressed: isRefreshing ? null : onRefresh,
                 icon: isRefreshing
                     ? const SizedBox.square(
@@ -463,8 +493,9 @@ class _ConversationHeader extends StatelessWidget {
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               _MetaChip(
-                  label: ticket.status.label,
-                  color: _statusColor(context, ticket.status)),
+                label: ticket.status.label,
+                color: _statusColor(context, ticket.status),
+              ),
               _SupportStatusActionButton(
                 status: ticket.status,
                 isLoading: state.isUpdatingStatus,
@@ -472,29 +503,43 @@ class _ConversationHeader extends StatelessWidget {
               ),
               _MetaChip(label: ticket.category.label),
               _MetaChip(
-                  label: ticket.priority.label,
-                  color: _priorityColor(context, ticket.priority)),
+                label: ticket.priority.label,
+                color: _priorityColor(context, ticket.priority),
+              ),
               _MetaChip(
-                  label:
-                      'From: $fromName${fromEmail.isNotEmpty ? ' ($fromEmail)' : ''}'),
+                label: context.mobileText("From: {value1}{value2}", {
+                  'value1': (fromName).toString(),
+                  'value2': (fromEmail.isNotEmpty ? ' ($fromEmail)' : '')
+                      .toString(),
+                }),
+              ),
               _MetaChip(
                 label:
                     '${ticket.messages.length} ${ticket.messages.length == 1 ? 'message' : 'messages'}',
               ),
               if (ticket.createdAt != null)
                 _MetaChip(
-                  label:
-                      'Created ${_dateFormatter.formatDate(ticket.createdAt!)}',
+                  label: context.mobileText("Created {value1}", {
+                    'value1': (_dateFormatter.formatDate(
+                      ticket.createdAt!,
+                    )).toString(),
+                  }),
                 ),
               if (ticket.updatedAt != null)
                 _MetaChip(
-                  label:
-                      'Updated ${_dateFormatter.formatDate(ticket.updatedAt!)}',
+                  label: context.mobileText("Updated {value1}", {
+                    'value1': (_dateFormatter.formatDate(
+                      ticket.updatedAt!,
+                    )).toString(),
+                  }),
                 ),
               if (ticket.closedAt != null)
                 _MetaChip(
-                  label:
-                      'Closed ${_dateFormatter.formatDate(ticket.closedAt!)}',
+                  label: context.mobileText("Closed {value1}", {
+                    'value1': (_dateFormatter.formatDate(
+                      ticket.closedAt!,
+                    )).toString(),
+                  }),
                 ),
             ],
           ),
@@ -520,7 +565,7 @@ class _SupportStatusActionButton extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return PopupMenuButton<SuperadminSupportTicketStatus>(
       enabled: !isLoading,
-      tooltip: 'Change status',
+      tooltip: context.mobileText('Change status'),
       onSelected: onSelected,
       itemBuilder: (context) {
         return SuperadminSupportTicketStatus.values
@@ -533,11 +578,13 @@ class _SupportStatusActionButton extends StatelessWidget {
             .toList(growable: false);
       },
       child: _MetaChip(
-        label: isLoading ? 'Updating' : 'Update status',
+        label: isLoading
+            ? context.mobileText('Updating')
+            : context.mobileText('Update status'),
         color: isLoading
             ? (isDark
-                ? OpenVtsColors.darkTextSecondary
-                : OpenVtsColors.textSecondary)
+                  ? OpenVtsColors.darkTextSecondary
+                  : OpenVtsColors.textSecondary)
             : (isDark ? OpenVtsColors.darkTextPrimary : OpenVtsColors.brandInk),
         trailing: isLoading
             ? const SizedBox.square(
@@ -575,11 +622,13 @@ class _MessageTimeline extends StatelessWidget {
           controller: scrollController,
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.all(OpenVtsSpacing.lg),
-          children: const [
-            SizedBox(height: OpenVtsSpacing.xl),
+          children: [
+            const SizedBox(height: OpenVtsSpacing.xl),
             OpenVtsEmptyState(
-              title: 'No conversation yet',
-              message: 'Replies will appear here once the conversation starts.',
+              title: context.mobileText('No conversation yet'),
+              message: context.mobileText(
+                'Replies will appear here once the conversation starts.',
+              ),
             ),
           ],
         ),
@@ -655,13 +704,13 @@ class SuperadminSupportMessageBubble extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final borderColor = isMine
         ? (isDark
-            ? OpenVtsColors.darkTextPrimary.withValues(alpha: 0.22)
-            : OpenVtsColors.brandInk.withValues(alpha: 0.18))
+              ? OpenVtsColors.darkTextPrimary.withValues(alpha: 0.22)
+              : OpenVtsColors.brandInk.withValues(alpha: 0.18))
         : colorScheme.outline;
     final backgroundColor = isMine
         ? (isDark
-            ? OpenVtsColors.white.withValues(alpha: 0.08)
-            : OpenVtsColors.brandInk.withValues(alpha: 0.045))
+              ? OpenVtsColors.white.withValues(alpha: 0.08)
+              : OpenVtsColors.brandInk.withValues(alpha: 0.045))
         : colorScheme.surface;
 
     final senderLabel = message.sender?.displayName.trim().isNotEmpty == true
@@ -700,8 +749,9 @@ class SuperadminSupportMessageBubble extends StatelessWidget {
                   if (message.createdAt != null) ...[
                     const SizedBox(width: OpenVtsSpacing.xs),
                     Text(
-                      _dateFormatter
-                          .formatDateTime(message.createdAt!.toLocal()),
+                      _dateFormatter.formatDateTime(
+                        message.createdAt!.toLocal(),
+                      ),
                       style: OpenVtsTypography.meta.copyWith(
                         color: colorScheme.onSurfaceVariant,
                       ),
@@ -778,7 +828,7 @@ class _MessageAttachmentChip extends StatelessWidget {
         final path = attachment.filePath.trim();
         if (path.isEmpty) {
           ToastHelper.showError(
-            'Attachment path is not available.',
+            context.mobileText('Attachment path is not available.'),
             context: context,
           );
           return;
@@ -787,15 +837,22 @@ class _MessageAttachmentChip extends StatelessWidget {
         final resolved = _resolveAttachmentUrl(baseUrl, path);
         final uri = Uri.tryParse(resolved);
         if (uri == null) {
-          ToastHelper.showError('Unable to open this attachment.',
-              context: context);
+          ToastHelper.showError(
+            context.mobileText('Unable to open this attachment.'),
+            context: context,
+          );
           return;
         }
 
-        final launched =
-            await launchUrl(uri, mode: LaunchMode.externalApplication);
+        final launched = await launchUrl(
+          uri,
+          mode: LaunchMode.externalApplication,
+        );
         if (!launched && context.mounted) {
-          ToastHelper.showError('Could not open attachment.', context: context);
+          ToastHelper.showError(
+            context.mobileText('Could not open attachment.'),
+            context: context,
+          );
         }
       },
       child: Container(
@@ -874,12 +931,14 @@ class SuperadminSupportDraftAttachmentWrap extends StatelessWidget {
               ),
               decoration: BoxDecoration(
                 border: Border.all(
-                  color:
-                      isDark ? OpenVtsColors.darkBorder : OpenVtsColors.border,
+                  color: isDark
+                      ? OpenVtsColors.darkBorder
+                      : OpenVtsColors.border,
                 ),
                 borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
-                color:
-                    isDark ? OpenVtsColors.darkSurface : OpenVtsColors.surface,
+                color: isDark
+                    ? OpenVtsColors.darkSurface
+                    : OpenVtsColors.surface,
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -903,7 +962,7 @@ class SuperadminSupportDraftAttachmentWrap extends StatelessWidget {
                   ),
                   const SizedBox(width: OpenVtsSpacing.xxs),
                   IconButton(
-                    tooltip: 'Remove attachment',
+                    tooltip: context.mobileText('Remove attachment'),
                     constraints: const BoxConstraints(
                       minWidth: 36,
                       minHeight: 36,
@@ -968,7 +1027,7 @@ class _ReplyComposer extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 IconButton(
-                  tooltip: 'Attach file',
+                  tooltip: context.mobileText('Attach file'),
                   onPressed: onAttach,
                   constraints: const BoxConstraints(
                     minWidth: 40,
@@ -985,11 +1044,11 @@ class _ReplyComposer extends StatelessWidget {
                     maxLines: 4,
                     maxLength: _supportMaxMessageLength,
                     textInputAction: TextInputAction.newline,
-                    decoration: const InputDecoration(
-                      hintText: 'Write a reply...',
+                    decoration: InputDecoration(
+                      hintText: context.mobileText('Write a reply...'),
                       counterText: '',
                       isDense: true,
-                      contentPadding: EdgeInsets.symmetric(
+                      contentPadding: const EdgeInsets.symmetric(
                         horizontal: OpenVtsSpacing.sm,
                         vertical: OpenVtsSpacing.sm,
                       ),
@@ -998,7 +1057,7 @@ class _ReplyComposer extends StatelessWidget {
                 ),
                 const SizedBox(width: OpenVtsSpacing.xs),
                 OpenVtsButton(
-                  label: 'Send',
+                  label: context.mobileText('Send'),
                   isLoading: isSending,
                   trailingIcon: isSending ? null : Icons.send_rounded,
                   onPressed: canSend ? onSend : null,
@@ -1039,7 +1098,9 @@ class _ClosedTicketNotice extends StatelessWidget {
             borderRadius: BorderRadius.circular(OpenVtsRadius.md),
           ),
           child: Text(
-            'This ticket is closed or resolved. Replies are disabled.',
+            context.mobileText(
+              'This ticket is closed or resolved. Replies are disabled.',
+            ),
             style: OpenVtsTypography.body.copyWith(
               color: colorScheme.onSurfaceVariant,
               fontWeight: FontWeight.w600,
@@ -1147,8 +1208,9 @@ Future<List<PlatformFile>?> _pickSupportAttachments({
     }
 
     final id = _attachmentIdentity(file);
-    final alreadyExists =
-        merged.any((existingFile) => _attachmentIdentity(existingFile) == id);
+    final alreadyExists = merged.any(
+      (existingFile) => _attachmentIdentity(existingFile) == id,
+    );
     if (!alreadyExists) {
       merged.add(file);
     }
@@ -1184,11 +1246,13 @@ List<PlatformFile> _filterInvalidAttachments(
   final details = preview.isEmpty
       ? ''
       : overflow > 0
-          ? ' ($preview, +$overflow more)'
-          : ' ($preview)';
+      ? ' ($preview, +$overflow more)'
+      : ' ($preview)';
 
   ToastHelper.showError(
-    'Some files are over 5MB and were removed$details.',
+    context.mobileText("Some files are over 5MB and were removed{value1}.", {
+      'value1': (details).toString(),
+    }),
     context: context,
   );
 
@@ -1249,7 +1313,9 @@ String _resolveAttachmentUrl(String baseUrl, String path) {
 }
 
 Color _priorityColor(
-    BuildContext context, SuperadminSupportTicketPriority priority) {
+  BuildContext context,
+  SuperadminSupportTicketPriority priority,
+) {
   final isDark = Theme.of(context).brightness == Brightness.dark;
   switch (priority) {
     case SuperadminSupportTicketPriority.high:

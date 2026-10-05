@@ -7,6 +7,7 @@ import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../core/utils/unit_formatter.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../controllers/user_providers.dart';
 import '../../../models/user_dashboard_model.dart';
 import 'user_dashboard_vehicle_selector.dart';
@@ -36,10 +37,11 @@ class _UserWeeklyComparisonWidgetState
   @override
   void initState() {
     super.initState();
-    _selectedVehicleId = userDashboardPropString(
-          widget.config.props,
-          const ['vehicleId', 'vehicle_id'],
-        ) ??
+    _selectedVehicleId =
+        userDashboardPropString(widget.config.props, const [
+          'vehicleId',
+          'vehicle_id',
+        ]) ??
         'all';
   }
 
@@ -90,11 +92,12 @@ class _UserWeeklyComparisonWidgetState
 
   Widget _buildBody(
     AsyncValue<
-            ({
-              List<UserDashboardVehicleOption> vehicles,
-              UserDashboardWeeklyComparison comparison,
-            })>
-        state,
+      ({
+        List<UserDashboardVehicleOption> vehicles,
+        UserDashboardWeeklyComparison comparison,
+      })
+    >
+    state,
     UnitFormatter unitFormatter,
   ) {
     if (state.hasError) {
@@ -133,17 +136,17 @@ class _UserWeeklyComparisonWidgetState
           children: [
             Expanded(
               child: UserDashboardMetricTile(
-                label: 'This week',
+                label: context.mobileText('This week'),
                 value: _metric.format(thisWeekTotal),
                 subtitle: selectedVehicleId == 'all'
-                    ? 'all vehicles'
+                    ? context.mobileText('all vehicles')
                     : _vehicleName(data.vehicles, selectedVehicleId),
               ),
             ),
             const SizedBox(width: OpenVtsSpacing.xs),
             Expanded(
               child: UserDashboardMetricTile(
-                label: 'Last week',
+                label: context.mobileText('Last week'),
                 value: _metric.format(lastWeekTotal),
                 subtitle: _deltaText(thisWeekTotal, lastWeekTotal),
               ),
@@ -152,15 +155,12 @@ class _UserWeeklyComparisonWidgetState
         ),
         const SizedBox(height: OpenVtsSpacing.md),
         if (comparison.points.isEmpty)
-          const UserDashboardWidgetEmpty(
-            message: 'No weekly comparison data.',
+          UserDashboardWidgetEmpty(
+            message: context.mobileText('No weekly comparison data.'),
             icon: Icons.compare_arrows_rounded,
           )
         else
-          _WeeklyComparisonChart(
-            points: comparison.points,
-            metric: _metric,
-          ),
+          _WeeklyComparisonChart(points: comparison.points, metric: _metric),
       ],
     );
   }
@@ -262,7 +262,9 @@ class _WeeklyComparisonChartPainter extends CustomPainter {
       return math.max(
         max,
         math.max(
-            metric.valueOf(point.thisWeek), metric.valueOf(point.lastWeek)),
+          metric.valueOf(point.thisWeek),
+          metric.valueOf(point.lastWeek),
+        ),
       );
     });
     final scale = math.max(maxValue, 1);
@@ -273,7 +275,10 @@ class _WeeklyComparisonChartPainter extends CustomPainter {
     for (var line = 0; line < 4; line++) {
       final y = top + chartHeight * line / 3;
       canvas.drawLine(
-          Offset(left, y), Offset(size.width - right, y), gridPaint);
+        Offset(left, y),
+        Offset(size.width - right, y),
+        gridPaint,
+      );
     }
 
     final slot = chartWidth / points.length;
@@ -311,12 +316,7 @@ class _WeeklyComparisonChartPainter extends CustomPainter {
         const Radius.circular(5),
       );
       final lastRect = RRect.fromRectAndRadius(
-        Rect.fromLTWH(
-          centerX + 2,
-          baseline - lastHeight,
-          barWidth,
-          lastHeight,
-        ),
+        Rect.fromLTWH(centerX + 2, baseline - lastHeight, barWidth, lastHeight),
         const Radius.circular(5),
       );
       canvas.drawRRect(thisRect, thisPaint);
@@ -357,10 +357,14 @@ class _WeeklyComparisonChartPainter extends CustomPainter {
   }
 
   void _drawLegend(Canvas canvas) {
-    _legendPainter('This week', thisWeekColor)
-        .paint(canvas, const Offset(4, 0));
-    _legendPainter('Last week', lastWeekColor)
-        .paint(canvas, const Offset(92, 0));
+    _legendPainter(
+      'This week',
+      thisWeekColor,
+    ).paint(canvas, const Offset(4, 0));
+    _legendPainter(
+      'Last week',
+      lastWeekColor,
+    ).paint(canvas, const Offset(92, 0));
   }
 
   TextPainter _legendPainter(String text, Color color) {
@@ -450,8 +454,9 @@ class _MetricToggle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final labelStyle =
-        OpenVtsTypography.meta.copyWith(fontWeight: FontWeight.w800);
+    final labelStyle = OpenVtsTypography.meta.copyWith(
+      fontWeight: FontWeight.w800,
+    );
 
     return Row(
       children: [
@@ -460,11 +465,15 @@ class _MetricToggle extends StatelessWidget {
             segments: [
               ButtonSegment(
                 value: _WeeklyMetric.drivenKm,
-                label: Text('Driven $distanceLabel'),
+                label: Text(
+                  context.mobileText("Driven {value1}", {
+                    'value1': (distanceLabel).toString(),
+                  }),
+                ),
               ),
-              const ButtonSegment(
+              ButtonSegment(
                 value: _WeeklyMetric.engineHours,
-                label: Text('Engine Hours'),
+                label: Text(context.mobileText('Engine Hours')),
               ),
             ],
             selected: {metric},

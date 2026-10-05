@@ -1,7 +1,11 @@
+// Pure validation rules return canonical English messages. Form widgets localize
+// these messages with ValidationLocalizations; input values are never modified.
 class Validators {
   const Validators._();
 
   static final _emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
+  static final _asciiRegex = RegExp(r'^[\x20-\x7E]*$');
+  static bool isPrintableAscii(String value) => _asciiRegex.hasMatch(value);
   static final _numericRegex = RegExp(r'^\d+$');
   static final _vinRegex = RegExp(r'^[A-HJ-NPR-Z0-9]{17}$');
 
@@ -11,7 +15,7 @@ class Validators {
   static const int maxEmailLength = 254;
   static const int maxUsernameLength = 50;
   static const int maxPasswordLength = 100;
-  static const int minPasswordLength = 8;
+  static const int minPasswordLength = 6;
   static const int maxMobilePrefixLength = 10;
   static const int maxMobileNumberLength = 20;
   static const int minMobileNumberLength = 7;
@@ -43,6 +47,7 @@ class Validators {
 
   static String? email(String? value) {
     final s = value?.trim() ?? '';
+    if (!isPrintableAscii(s)) return 'Email must contain ASCII characters only';
     if (s.isEmpty) return 'Email is required';
     if (s.length > maxEmailLength) {
       return 'Email must be $maxEmailLength characters or fewer';
@@ -69,6 +74,9 @@ class Validators {
 
   static String? driverUsername(String? value) {
     final s = value?.trim() ?? '';
+    if (!isPrintableAscii(s)) {
+      return 'Username must contain ASCII characters only';
+    }
     if (s.isEmpty) return 'Username is required';
     if (s.length < 3) {
       return 'Username must be at least 3 characters';
@@ -138,6 +146,7 @@ class Validators {
 
   static String? adminEmailOptional(String? value) {
     final s = value?.trim() ?? '';
+    if (!isPrintableAscii(s)) return 'Email must contain ASCII characters only';
     if (s.isEmpty) return null;
     if (!_emailRegex.hasMatch(s)) return 'Enter a valid email address';
     return null;
@@ -145,6 +154,9 @@ class Validators {
 
   static String? adminUsername(String? value) {
     final s = value?.trim() ?? '';
+    if (!isPrintableAscii(s)) {
+      return 'Username must contain ASCII characters only';
+    }
     if (s.isEmpty) return 'Username is required';
     if (s.length < minNameLength) {
       return 'Username must be at least $minNameLength characters';
@@ -156,7 +168,10 @@ class Validators {
   }
 
   static String? adminPassword(String? value) {
-    final s = value?.trim() ?? '';
+    final s = value ?? '';
+    if (!isPrintableAscii(s)) {
+      return 'Password must contain ASCII characters only';
+    }
     if (s.isEmpty) return 'Password is required';
     if (s.length < minPasswordLength) {
       return 'Minimum $minPasswordLength characters';

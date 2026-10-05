@@ -11,19 +11,22 @@ import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../core/access/workspace_scope_provider.dart';
 import '../../../core/api/api_exception.dart';
 import '../../../core/providers/core_providers.dart';
 import '../../../core/socket/socket_service.dart';
-import '../../../core/widgets/map_attribution.dart';
 import '../../../core/utils/date_time_formatter.dart';
 import '../../../core/utils/unit_formatter.dart';
+import '../../../shared/helpers/mobile_text.dart';
 import '../../../shared/helpers/toast_helper.dart';
+import '../../../shared/helpers/validation_localizations.dart';
 import '../../../shared/models/vehicle_summary.dart';
 import '../../../shared/utils/command_catalogue_utils.dart';
 import '../../../shared/widgets/open_vts_bottom_sheet.dart';
 import '../../../shared/widgets/open_vts_button.dart';
 import '../../../shared/widgets/open_vts_date_time_range_selector.dart';
 import '../../../shared/widgets/open_vts_text_field.dart';
+import '../../auth/controllers/auth_controller.dart';
 import '../../notifications/models/app_notification.dart';
 import '../../superadmin/models/superadmin_map_overlay_model.dart';
 import '../../superadmin/models/superadmin_vehicle_history_model.dart';
@@ -71,10 +74,14 @@ class LiveMapScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Recreate map data only when identity/effective access changes. A fresh
+    // equivalent permission object every minute must not reset live telemetry.
+    final workspaceScope = ref.watch(workspaceDataScopeProvider);
+    final user = ref.read(authControllerProvider).user;
+    final scopedConfig = config.forSession(user);
     return ProviderScope(
-      overrides: [
-        currentLiveMapConfigProvider.overrideWithValue(config),
-      ],
+      key: ValueKey(workspaceScope),
+      overrides: [currentLiveMapConfigProvider.overrideWithValue(scopedConfig)],
       child: Consumer(
         builder: (context, ref, _) {
           final liveState = ref.watch(liveMapControllerProvider);
@@ -91,8 +98,10 @@ class LiveMapScreen extends ConsumerWidget {
               inactiveCount: telemetry.inactiveCount,
               alerts: liveState.alerts,
               isAlertsLoading: liveState.isAlertsLoading,
-              onCreatePoiAt: onCreatePoiAt,
-              onCreateGeofenceAt: onCreateGeofenceAt,
+              onCreatePoiAt: scopedConfig.supportsPoi ? onCreatePoiAt : null,
+              onCreateGeofenceAt: scopedConfig.supportsGeofence
+                  ? onCreateGeofenceAt
+                  : null,
             ),
           );
         },
@@ -151,7 +160,7 @@ class _CloseMapButton extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Tooltip(
-      message: 'Close map',
+      message: context.mobileText('Close map'),
       child: Material(
         color: Colors.transparent,
         shape: const CircleBorder(),
@@ -200,7 +209,7 @@ class _MapDrawerCloseButton extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Tooltip(
-      message: 'Close drawer',
+      message: context.mobileText('Close drawer'),
       child: Material(
         color: Colors.transparent,
         shape: const CircleBorder(),
@@ -342,9 +351,8 @@ class _LiveMapState extends ConsumerState<_LiveMap>
       );
     }
     _visualSettings = loaded;
-    _selectedMapLayer = _mapLayerOptionById(
-          cache.getString(config.mapLayerStorageKey),
-        ) ??
+    _selectedMapLayer =
+        _mapLayerOptionById(cache.getString(config.mapLayerStorageKey)) ??
         _primaryMapLayerOptions.first;
   }
 
@@ -471,16 +479,18 @@ class _LiveMapState extends ConsumerState<_LiveMap>
   List<VehicleSummary> _visibleVehiclesFor(List<VehicleSummary> vehicles) {
     return switch (_selectedFilter) {
       _MapFilter.all => vehicles,
-      _MapFilter.running => vehicles
-          .where((vehicle) => !_isInactiveVehicle(vehicle))
-          .where(_isRunningVehicle)
-          .toList(growable: false),
-      _MapFilter.stop => vehicles
-          .where(
-            (vehicle) =>
-                !_isRunningVehicle(vehicle) && !_isInactiveVehicle(vehicle),
-          )
-          .toList(growable: false),
+      _MapFilter.running =>
+        vehicles
+            .where((vehicle) => !_isInactiveVehicle(vehicle))
+            .where(_isRunningVehicle)
+            .toList(growable: false),
+      _MapFilter.stop =>
+        vehicles
+            .where(
+              (vehicle) =>
+                  !_isRunningVehicle(vehicle) && !_isInactiveVehicle(vehicle),
+            )
+            .toList(growable: false),
       _MapFilter.inactive =>
         vehicles.where(_isInactiveVehicle).toList(growable: false),
     };
@@ -524,7 +534,8 @@ class _LiveMapState extends ConsumerState<_LiveMap>
       if (_isInactiveVehicle(vehicle)) {
         nextMotions[key] = _AnimatedVehicleMotion.immediate(
           vehicle,
-          bearingRadians: _seedVehicleBearingRadians(vehicle) ??
+          bearingRadians:
+              _seedVehicleBearingRadians(vehicle) ??
               currentMotion.bearingRadians,
         );
         continue;
@@ -549,7 +560,8 @@ class _LiveMapState extends ConsumerState<_LiveMap>
       if (!animateChanges) {
         nextMotions[key] = _AnimatedVehicleMotion.immediate(
           vehicle,
-          bearingRadians: _seedVehicleBearingRadians(vehicle) ??
+          bearingRadians:
+              _seedVehicleBearingRadians(vehicle) ??
               settledMotion.bearingRadians,
         );
         continue;
@@ -577,8 +589,9 @@ class _LiveMapState extends ConsumerState<_LiveMap>
     }
 
     _animatedVehicleMotions = nextMotions;
-    if (_animatedVehicleMotions.values
-        .any((motion) => motion.isAnimatingAt(now))) {
+    if (_animatedVehicleMotions.values.any(
+      (motion) => motion.isAnimatingAt(now),
+    )) {
       _startVehicleAnimationTicker();
     } else {
       _stopVehicleAnimationTicker();
@@ -597,8 +610,9 @@ class _LiveMapState extends ConsumerState<_LiveMap>
     // rebuild on every animation frame.
     _vehicleMotionFrameNotifier.value = now;
 
-    final hasActiveAnimations = _animatedVehicleMotions.values
-        .any((motion) => motion.isAnimatingAt(now));
+    final hasActiveAnimations = _animatedVehicleMotions.values.any(
+      (motion) => motion.isAnimatingAt(now),
+    );
     if (!hasActiveAnimations) {
       _stopVehicleAnimationTicker();
     }
@@ -1015,7 +1029,9 @@ class _LiveMapState extends ConsumerState<_LiveMap>
             _selectedMapLayer = layer;
           });
           unawaited(
-            ref.read(localCacheProvider).setString(
+            ref
+                .read(localCacheProvider)
+                .setString(
                   ref.read(currentLiveMapConfigProvider).mapLayerStorageKey,
                   layer.id,
                 ),
@@ -1043,7 +1059,9 @@ class _LiveMapState extends ConsumerState<_LiveMap>
             _visualSettings = settings;
           });
           unawaited(
-            ref.read(localCacheProvider).setString(
+            ref
+                .read(localCacheProvider)
+                .setString(
                   ref
                       .read(currentLiveMapConfigProvider)
                       .visualSettingsStorageKey,
@@ -1370,7 +1388,9 @@ class _LiveMapState extends ConsumerState<_LiveMap>
       if (value.isLoading && !value.hasValue) {
         items.add(
           _MapOverlayStatusItem(
-            message: 'Loading $noun',
+            message: context.mobileText("Loading {value1}", {
+              'value1': (noun).toString(),
+            }),
             kind: _MapOverlayStatusKind.loading,
           ),
         );
@@ -1380,7 +1400,9 @@ class _LiveMapState extends ConsumerState<_LiveMap>
       if (value.hasError) {
         items.add(
           _MapOverlayStatusItem(
-            message: '$noun unavailable',
+            message: context.mobileText("{value1} unavailable", {
+              'value1': (noun).toString(),
+            }),
             kind: _MapOverlayStatusKind.error,
           ),
         );
@@ -1391,7 +1413,9 @@ class _LiveMapState extends ConsumerState<_LiveMap>
       if (data != null && data.isEmpty) {
         items.add(
           _MapOverlayStatusItem(
-            message: 'No $noun found',
+            message: context.mobileText("No {value1} found", {
+              'value1': (noun).toString(),
+            }),
             kind: _MapOverlayStatusKind.empty,
           ),
         );
@@ -1441,8 +1465,9 @@ class _LiveMapState extends ConsumerState<_LiveMap>
     final visibleMapVehicles = _visibleMapVehicles();
     final vehicleMarkerGroups = _buildVehicleMarkerGroups(visibleMapVehicles);
     final replayActive = _replayOpen && _replayPoints.isNotEmpty;
-    final replayPathPoints =
-        replayActive ? _replayPathLatLngs(_replayPoints) : const <LatLng>[];
+    final replayPathPoints = replayActive
+        ? _replayPathLatLngs(_replayPoints)
+        : const <LatLng>[];
     final replayVisitedPoints = replayActive
         ? _replayVisitedPathLatLngs(_replayPoints, _replayIndex)
         : const <LatLng>[];
@@ -1458,11 +1483,11 @@ class _LiveMapState extends ConsumerState<_LiveMap>
         : null;
     final replayCumulativeTripDistanceKm =
         replayActive && _replayCumulativeDistanceKm.isNotEmpty
-            ? _replayCumulativeDistanceKm[_replayIndex.clamp(
-                0,
-                _replayCumulativeDistanceKm.length - 1,
-              )]
-            : null;
+        ? _replayCumulativeDistanceKm[_replayIndex.clamp(
+            0,
+            _replayCumulativeDistanceKm.length - 1,
+          )]
+        : null;
     final replayTripDistanceKm = replayCurrentPoint == null
         ? null
         : _replayTripDistanceKm(
@@ -1471,8 +1496,8 @@ class _LiveMapState extends ConsumerState<_LiveMap>
           );
     final selectedReplayStopMarker =
         replayActive && _replayStopMarkers.contains(_selectedReplayStopMarker)
-            ? _selectedReplayStopMarker
-            : null;
+        ? _selectedReplayStopMarker
+        : null;
     final routePolylines = routes
         .where((route) => route.hasPath)
         .map(
@@ -1522,15 +1547,13 @@ class _LiveMapState extends ConsumerState<_LiveMap>
           ),
         )
         .toList(growable: false);
-    final historyPathPoints =
-        replayActive ? const <LatLng>[] : _historyPathLatLngs(history);
+    final historyPathPoints = replayActive
+        ? const <LatLng>[]
+        : _historyPathLatLngs(history);
     final historyRoadPolylines = _historyRoadPolylines(historyPathPoints);
     final selectedHistoryRoadPolylines = replayActive
         ? const <Polyline>[]
-        : _selectedHistoryRoadPolylines(
-            history,
-            _selectedHistorySegmentId,
-          );
+        : _selectedHistoryRoadPolylines(history, _selectedHistorySegmentId);
     final historyStartPoint = replayActive ? null : history?.startPoint;
     final historyEndPoint = replayActive ? null : history?.endPoint;
     final historyStopMarkers = replayActive
@@ -1560,8 +1583,9 @@ class _LiveMapState extends ConsumerState<_LiveMap>
                 initialZoom: _currentZoom,
                 onPointerDown: _supportsMapCreate ? _onMapPointerDown : null,
                 onPointerUp: _supportsMapCreate ? _onMapPointerUp : null,
-                onPointerCancel:
-                    _supportsMapCreate ? _onMapPointerCancel : null,
+                onPointerCancel: _supportsMapCreate
+                    ? _onMapPointerCancel
+                    : null,
                 onPositionChanged: (position, hasGesture) {
                   // Cancel any in-progress hold when the map is being dragged.
                   if (hasGesture && _holdTimer != null) {
@@ -1572,7 +1596,8 @@ class _LiveMapState extends ConsumerState<_LiveMap>
                   final nextRotation = position.rotation;
                   final shouldUpdateZoom =
                       (nextZoom - _currentZoom).abs() >= 0.01;
-                  final shouldUpdateRotation = _normalizedMapRotation(
+                  final shouldUpdateRotation =
+                      _normalizedMapRotation(
                         nextRotation - _currentMapRotation,
                       ).abs() >=
                       0.1;
@@ -1627,50 +1652,53 @@ class _LiveMapState extends ConsumerState<_LiveMap>
                               (group) => Marker(
                                 point: group.isCluster
                                     ? group.center
-                                    : (_animatedVehicleMotions[
-                                                _animatedVehicleKey(
-                                                    group.vehicle)] ??
-                                            _AnimatedVehicleMotion.immediate(
-                                              group.vehicle,
-                                              bearingRadians:
-                                                  _seedVehicleBearingRadians(
+                                    : (_animatedVehicleMotions[_animatedVehicleKey(
                                                 group.vehicle,
-                                              ),
-                                            ))
-                                        .positionAt(frameNow),
+                                              )] ??
+                                              _AnimatedVehicleMotion.immediate(
+                                                group.vehicle,
+                                                bearingRadians:
+                                                    _seedVehicleBearingRadians(
+                                                      group.vehicle,
+                                                    ),
+                                              ))
+                                          .positionAt(frameNow),
                                 width: group.isCluster
                                     ? 62
                                     : _visualSettings.vehicleLabel
-                                        ? 124
-                                        : 100,
+                                    ? 124
+                                    : 100,
                                 height: group.isCluster
                                     ? 62
                                     : _visualSettings.vehicleLabel
-                                        ? 110
-                                        : 100,
+                                    ? 110
+                                    : 100,
                                 child: group.isCluster
                                     ? _VehicleClusterMarker(
                                         count: group.vehicles.length,
                                         onTap: () => _focusCluster(group),
                                       )
                                     : (() {
-                                        final motion = _animatedVehicleMotions[
-                                                _animatedVehicleKey(
-                                                    group.vehicle)] ??
+                                        final motion =
+                                            _animatedVehicleMotions[_animatedVehicleKey(
+                                              group.vehicle,
+                                            )] ??
                                             _AnimatedVehicleMotion.immediate(
                                               group.vehicle,
                                               bearingRadians:
                                                   _seedVehicleBearingRadians(
-                                                group.vehicle,
-                                              ),
+                                                    group.vehicle,
+                                                  ),
                                             );
-                                        final status =
-                                            _vehicleMarkerStatus(group.vehicle);
+                                        final status = _vehicleMarkerStatus(
+                                          group.vehicle,
+                                        );
                                         return RepaintBoundary(
                                           child: _VehicleMarker(
                                             key: ValueKey<String>(
                                               _animatedVehicleKey(
-                                                  group.vehicle),
+                                                group.vehicle,
+                                              ),
                                             ),
                                             vehicle: group.vehicle,
                                             showLabel:
@@ -1679,15 +1707,17 @@ class _LiveMapState extends ConsumerState<_LiveMap>
                                             status: status,
                                             headingRadians:
                                                 motion.bearingRadians,
-                                            motionProgress:
-                                                motion.progressAt(frameNow),
-                                            isInMotion:
-                                                motion.isAnimatingAt(frameNow),
+                                            motionProgress: motion.progressAt(
+                                              frameNow,
+                                            ),
+                                            isInMotion: motion.isAnimatingAt(
+                                              frameNow,
+                                            ),
                                             onTap: replayActive
                                                 ? () {}
                                                 : () => _handleVehicleMarkerTap(
-                                                      group.vehicle,
-                                                    ),
+                                                    group.vehicle,
+                                                  ),
                                           ),
                                         );
                                       })(),
@@ -1792,10 +1822,9 @@ class _LiveMapState extends ConsumerState<_LiveMap>
                         child: _HistoryMapMarker(
                           kind: _HistoryMapMarkerKind.start,
                           isSelected: _selectedHistorySegmentId == 'start',
-                          onTap: () => _selectHistoryTarget(
-                            'start',
-                            [_historyPointLatLng(historyStartPoint)],
-                          ),
+                          onTap: () => _selectHistoryTarget('start', [
+                            _historyPointLatLng(historyStartPoint),
+                          ]),
                         ),
                       ),
                     ],
@@ -1810,7 +1839,8 @@ class _LiveMapState extends ConsumerState<_LiveMap>
                             height: 50,
                             child: _HistoryMapMarker(
                               kind: _HistoryMapMarkerKind.stop,
-                              isSelected: _selectedHistorySegmentId ==
+                              isSelected:
+                                  _selectedHistorySegmentId ==
                                   _historyStopSegmentId(stop.segment),
                               onTap: () {
                                 final id = _historyStopSegmentId(stop.segment);
@@ -1840,10 +1870,9 @@ class _LiveMapState extends ConsumerState<_LiveMap>
                         child: _HistoryMapMarker(
                           kind: _HistoryMapMarkerKind.end,
                           isSelected: _selectedHistorySegmentId == 'end',
-                          onTap: () => _selectHistoryTarget(
-                            'end',
-                            [_historyPointLatLng(historyEndPoint)],
-                          ),
+                          onTap: () => _selectHistoryTarget('end', [
+                            _historyPointLatLng(historyEndPoint),
+                          ]),
                         ),
                       ),
                     ],
@@ -1960,23 +1989,13 @@ class _LiveMapState extends ConsumerState<_LiveMap>
               onClear: _clearReplay,
             ),
           ),
-        Positioned.fill(
-          child: SafeArea(
-            child: OpenVtsMapAttribution(
-              layerId: _selectedMapLayer.id,
-              alignment: Alignment.topRight,
-              padding: const EdgeInsets.only(top: 84, right: 4),
-            ),
-          ),
-        ),
       ],
     );
   }
 }
 
-typedef _ReplayRequestHandler = Future<_ReplayRequestResult> Function(
-  _ReplayRequest request,
-);
+typedef _ReplayRequestHandler =
+    Future<_ReplayRequestResult> Function(_ReplayRequest request);
 
 class _ReplayRequest {
   const _ReplayRequest({
@@ -1991,10 +2010,7 @@ class _ReplayRequest {
 }
 
 class _ReplayRequestResult {
-  const _ReplayRequestResult({
-    this.started = false,
-    this.errorMessage,
-  });
+  const _ReplayRequestResult({this.started = false, this.errorMessage});
 
   final bool started;
   final String? errorMessage;
@@ -2055,9 +2071,7 @@ class _VehicleBottomDrawerState extends ConsumerState<_VehicleBottomDrawer>
   @override
   Widget build(BuildContext context) {
     final liveVehicles = ref.watch(
-      liveMapControllerProvider.select(
-        (state) => state.telemetry.vehicles,
-      ),
+      liveMapControllerProvider.select((state) => state.telemetry.vehicles),
     );
     final liveVehicle = _resolveLiveVehicleSummary(
       selectedImei: widget.selectedImei,
@@ -2101,7 +2115,9 @@ class _VehicleBottomDrawerState extends ConsumerState<_VehicleBottomDrawer>
                       const SizedBox(height: 3),
                       Text(
                         _buildVehicleDrawerSubtitle(
-                            liveVehicle, ref.watch(appDateFormatterProvider)),
+                          liveVehicle,
+                          ref.watch(appDateFormatterProvider),
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
@@ -2140,13 +2156,13 @@ class _VehicleBottomDrawerState extends ConsumerState<_VehicleBottomDrawer>
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                 ),
-                tabs: const [
-                  Tab(text: 'Details'),
-                  Tab(text: 'Logs'),
-                  Tab(text: 'replay'),
-                  Tab(text: 'events'),
-                  Tab(text: 'Sensors'),
-                  Tab(text: 'Commands'),
+                tabs: [
+                  Tab(text: context.mobileText('Details')),
+                  Tab(text: context.mobileText('Logs')),
+                  const Tab(text: 'replay'),
+                  const Tab(text: 'events'),
+                  Tab(text: context.mobileText('Sensors')),
+                  Tab(text: context.mobileText('Commands')),
                 ],
               );
             },
@@ -2158,8 +2174,9 @@ class _VehicleBottomDrawerState extends ConsumerState<_VehicleBottomDrawer>
             children: [
               _VehicleDetailsTab(
                 vehicle: liveVehicle,
-                scrollController:
-                    _selectedTabIndex == 0 ? widget.scrollController : null,
+                scrollController: _selectedTabIndex == 0
+                    ? widget.scrollController
+                    : null,
               ),
               _VehicleLogsTab(
                 vehicle: liveVehicle,
@@ -2170,8 +2187,9 @@ class _VehicleBottomDrawerState extends ConsumerState<_VehicleBottomDrawer>
                 initialLoading: widget.replayLoading,
                 initialError: widget.replayError,
                 onReplayRequested: widget.onReplayRequested,
-                scrollController:
-                    _selectedTabIndex == 2 ? widget.scrollController : null,
+                scrollController: _selectedTabIndex == 2
+                    ? widget.scrollController
+                    : null,
               ),
               _VehicleEventsTab(
                 vehicle: liveVehicle,
@@ -2223,10 +2241,7 @@ VehicleSummary _resolveLiveVehicleSummary({
 }
 
 class _VehicleLogsTab extends ConsumerStatefulWidget {
-  const _VehicleLogsTab({
-    required this.vehicle,
-    required this.isActive,
-  });
+  const _VehicleLogsTab({required this.vehicle, required this.isActive});
 
   final VehicleSummary vehicle;
   final bool isActive;
@@ -2340,11 +2355,9 @@ class _VehicleLogsTabState extends ConsumerState<_VehicleLogsTab> {
     });
 
     try {
-      final page =
-          await ref.read(liveMapVehicleControllerProvider).getVehicleLogsByImei(
-                imei,
-                limit: _pageSize,
-              );
+      final page = await ref
+          .read(liveMapVehicleControllerProvider)
+          .getVehicleLogsByImei(imei, limit: _pageSize);
       if (!mounted || generation != _requestGeneration || _imei != imei) {
         return;
       }
@@ -2385,12 +2398,9 @@ class _VehicleLogsTabState extends ConsumerState<_VehicleLogsTab> {
     });
 
     try {
-      final page =
-          await ref.read(liveMapVehicleControllerProvider).getVehicleLogsByImei(
-                imei,
-                limit: _pageSize,
-                beforeId: cursor,
-              );
+      final page = await ref
+          .read(liveMapVehicleControllerProvider)
+          .getVehicleLogsByImei(imei, limit: _pageSize, beforeId: cursor);
       if (!mounted || generation != _requestGeneration || _imei != imei) {
         return;
       }
@@ -2431,8 +2441,9 @@ class _VehicleLogsTabState extends ConsumerState<_VehicleLogsTab> {
     final generation = ++_socketGeneration;
 
     try {
-      final connection =
-          await ref.read(liveMapSocketControllerProvider).connectTelemetry();
+      final connection = await ref
+          .read(liveMapSocketControllerProvider)
+          .connectTelemetry();
       if (!mounted ||
           generation != _socketGeneration ||
           !widget.isActive ||
@@ -2449,7 +2460,9 @@ class _VehicleLogsTabState extends ConsumerState<_VehicleLogsTab> {
       connection.on('telemetry:update', _handleTelemetryUpdate);
       connection.on('telemetry:snapshot', _handleTelemetrySnapshot);
       connection.on(
-          'telemetry:error', (error) => _handleSocketError(imei, error));
+        'telemetry:error',
+        (error) => _handleSocketError(imei, error),
+      );
 
       if (connection.isConnected) {
         _handleSocketConnected(imei);
@@ -2540,8 +2553,9 @@ class _VehicleLogsTabState extends ConsumerState<_VehicleLogsTab> {
       return;
     }
 
-    final accepted =
-        logs.where((log) => log.imei.trim() == imei).toList(growable: false);
+    final accepted = logs
+        .where((log) => log.imei.trim() == imei)
+        .toList(growable: false);
     if (accepted.isEmpty || !mounted) {
       return;
     }
@@ -2561,17 +2575,20 @@ class _VehicleLogsTabState extends ConsumerState<_VehicleLogsTab> {
     final scheme = Theme.of(context).colorScheme;
     final imei = _imei;
     if (imei.isEmpty) {
-      return const _VehicleDrawerPlaceholderTab(
+      return _VehicleDrawerPlaceholderTab(
         icon: Icons.receipt_long_rounded,
-        title: 'Logs unavailable',
-        message: 'Vehicle IMEI is required to load telemetry logs.',
+        title: context.mobileText('Logs unavailable'),
+        message: context.mobileText(
+          'Vehicle IMEI is required to load telemetry logs.',
+        ),
       );
     }
 
     final logs = _visibleLogs;
     final statusLabel = _socketConnected ? 'Live' : 'Connecting';
-    final statusColor =
-        _socketConnected ? const Color(0xFF20B15A) : scheme.onSurfaceVariant;
+    final statusColor = _socketConnected
+        ? const Color(0xFF20B15A)
+        : scheme.onSurfaceVariant;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -2599,7 +2616,9 @@ class _VehicleLogsTabState extends ConsumerState<_VehicleLogsTab> {
               ),
               const SizedBox(width: 8),
               Text(
-                '${logs.length} rows',
+                context.mobileText("{value1} rows", {
+                  'value1': (logs.length).toString(),
+                }),
                 style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w700,
@@ -2618,7 +2637,11 @@ class _VehicleLogsTabState extends ConsumerState<_VehicleLogsTab> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.keyboard_double_arrow_down_rounded),
-                label: Text(_loadingOlder ? 'Loading' : 'Older'),
+                label: Text(
+                  _loadingOlder
+                      ? context.mobileText('Loading')
+                      : context.mobileText('Older'),
+                ),
                 style: TextButton.styleFrom(
                   visualDensity: VisualDensity.compact,
                   padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -2653,27 +2676,25 @@ class _VehicleLogsTabState extends ConsumerState<_VehicleLogsTab> {
                   ),
                 )
               : logs.isEmpty
-                  ? const _VehicleDrawerPlaceholderTab(
-                      icon: Icons.receipt_long_rounded,
-                      title: 'No logs yet',
-                      message:
-                          'Database and live telemetry logs will appear here.',
-                    )
-                  : ListView.separated(
-                      controller: _scrollController,
-                      padding: const EdgeInsets.fromLTRB(10, 0, 10, 14),
-                      itemCount: logs.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 6),
-                      itemBuilder: (context, index) {
-                        return _VehicleLogListRow(
-                          log: logs[index],
-                          onTap: () => _showVehicleLogDetails(
-                            context,
-                            logs[index],
-                          ),
-                        );
-                      },
-                    ),
+              ? _VehicleDrawerPlaceholderTab(
+                  icon: Icons.receipt_long_rounded,
+                  title: context.mobileText('No logs yet'),
+                  message: context.mobileText(
+                    'Database and live telemetry logs will appear here.',
+                  ),
+                )
+              : ListView.separated(
+                  controller: _scrollController,
+                  padding: const EdgeInsets.fromLTRB(10, 0, 10, 14),
+                  itemCount: logs.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 6),
+                  itemBuilder: (context, index) {
+                    return _VehicleLogListRow(
+                      log: logs[index],
+                      onTap: () => _showVehicleLogDetails(context, logs[index]),
+                    );
+                  },
+                ),
         ),
       ],
     );
@@ -2681,10 +2702,7 @@ class _VehicleLogsTabState extends ConsumerState<_VehicleLogsTab> {
 }
 
 class _VehicleLogListRow extends ConsumerWidget {
-  const _VehicleLogListRow({
-    required this.log,
-    required this.onTap,
-  });
+  const _VehicleLogListRow({required this.log, required this.onTap});
 
   final SuperadminVehicleLog log;
   final VoidCallback onTap;
@@ -2750,13 +2768,18 @@ class _VehicleLogListRow extends ConsumerWidget {
               ),
               const SizedBox(width: 8),
               _VehicleLogPill(
-                label: _formatVehicleLogSpeed(log.speedKph,
-                    unitFormatter: unitFormatter),
+                label: _formatVehicleLogSpeed(
+                  log.speedKph,
+                  unitFormatter: unitFormatter,
+                ),
               ),
               const SizedBox(width: 6),
               _VehicleLogPill(
-                label: _formatVehicleLogBool(ignition,
-                    trueLabel: 'IGN On', falseLabel: 'IGN Off'),
+                label: _formatVehicleLogBool(
+                  ignition,
+                  trueLabel: 'IGN On',
+                  falseLabel: 'IGN Off',
+                ),
                 isPositive: ignition,
               ),
             ],
@@ -2768,10 +2791,7 @@ class _VehicleLogListRow extends ConsumerWidget {
 }
 
 class _VehicleLogPill extends StatelessWidget {
-  const _VehicleLogPill({
-    required this.label,
-    this.isPositive,
-  });
+  const _VehicleLogPill({required this.label, this.isPositive});
 
   final String label;
   final bool? isPositive;
@@ -2782,8 +2802,8 @@ class _VehicleLogPill extends StatelessWidget {
     final color = isPositive == true
         ? const Color(0xFF20B15A)
         : isPositive == false
-            ? const Color(0xFFB42318)
-            : scheme.onSurface;
+        ? const Color(0xFFB42318)
+        : scheme.onSurface;
     return Container(
       constraints: const BoxConstraints(minWidth: 48),
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 5),
@@ -2822,8 +2842,9 @@ class _VehicleLogDetailsDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final attributesText =
-        log.attributes == null ? null : _formatVehicleLogJson(log.attributes);
+    final attributesText = log.attributes == null
+        ? null
+        : _formatVehicleLogJson(log.attributes);
     return Dialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 24),
       backgroundColor: scheme.surface,
@@ -2839,7 +2860,7 @@ class _VehicleLogDetailsDialog extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      'Telemetry log',
+                      context.mobileText('Telemetry log'),
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w900,
@@ -2864,14 +2885,14 @@ class _VehicleLogDetailsDialog extends StatelessWidget {
                   if (log.rawPacket.trim().isNotEmpty) ...[
                     const SizedBox(height: 12),
                     _VehicleLogCodeBlock(
-                      title: 'Raw packet',
+                      title: context.mobileText('Raw packet'),
                       value: log.rawPacket,
                     ),
                   ],
                   if (attributesText != null) ...[
                     const SizedBox(height: 12),
                     _VehicleLogCodeBlock(
-                      title: 'Attributes',
+                      title: context.mobileText('Attributes'),
                       value: attributesText,
                     ),
                   ],
@@ -2881,7 +2902,7 @@ class _VehicleLogDetailsDialog extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
               child: OpenVtsButton(
-                label: 'Close',
+                label: context.mobileText('Close'),
                 onPressed: () => Navigator.of(context).pop(),
                 height: 40,
               ),
@@ -2905,77 +2926,101 @@ class _VehicleLogDetailGrid extends ConsumerWidget {
     final dateFormatter = ref.watch(appDateFormatterProvider);
     final rows = <({String label, String value})>[
       (
-        label: 'Source',
+        label: context.mobileText('Source'),
         value: log.source == SuperadminVehicleLogSource.live
             ? 'Socket'
-            : 'Database'
+            : 'Database',
       ),
       (label: 'IMEI', value: log.imei.isEmpty ? '--' : log.imei),
       (
-        label: 'Server time',
-        value: _formatVehicleLogDateTime(log.serverTime, dateFormatter)
+        label: context.mobileText('Server time'),
+        value: _formatVehicleLogDateTime(log.serverTime, dateFormatter),
       ),
       (
-        label: 'Device time',
-        value: _formatVehicleLogDateTime(log.deviceTime, dateFormatter)
+        label: context.mobileText('Device time'),
+        value: _formatVehicleLogDateTime(log.deviceTime, dateFormatter),
       ),
       (
-        label: 'Packet type',
-        value: log.packetType.isEmpty ? '--' : log.packetType
+        label: context.mobileText('Packet type'),
+        value: log.packetType.isEmpty ? '--' : log.packetType,
       ),
-      (label: 'Protocol', value: log.protocol.isEmpty ? '--' : log.protocol),
       (
-        label: 'Speed',
-        value:
-            _formatVehicleLogSpeed(log.speedKph, unitFormatter: unitFormatter)
+        label: context.mobileText('Protocol'),
+        value: log.protocol.isEmpty ? '--' : log.protocol,
       ),
-      (label: 'Ignition', value: _formatVehicleLogBool(log.ignition)),
+      (
+        label: context.mobileText('Speed'),
+        value: _formatVehicleLogSpeed(
+          log.speedKph,
+          unitFormatter: unitFormatter,
+        ),
+      ),
+      (
+        label: context.mobileText('Ignition'),
+        value: _formatVehicleLogBool(log.ignition),
+      ),
       (label: 'ACC', value: _formatVehicleLogBool(log.acc)),
-      (label: 'Latitude', value: _formatVehicleLogCoordinate(log.latitude)),
-      (label: 'Longitude', value: _formatVehicleLogCoordinate(log.longitude)),
       (
-        label: 'Altitude',
+        label: context.mobileText('Latitude'),
+        value: _formatVehicleLogCoordinate(log.latitude),
+      ),
+      (
+        label: context.mobileText('Longitude'),
+        value: _formatVehicleLogCoordinate(log.longitude),
+      ),
+      (
+        label: context.mobileText('Altitude'),
         value: log.altitude == null
             ? '--'
-            : '${_formatVehicleMetricNumber(log.altitude!, 0)} m'
-      ),
-      (label: 'Satellites', value: log.satellites?.toString() ?? '--'),
-      (
-        label: 'Valid',
-        value:
-            _formatVehicleLogBool(log.valid, trueLabel: 'Yes', falseLabel: 'No')
+            : '${_formatVehicleMetricNumber(log.altitude!, 0)} m',
       ),
       (
-        label: 'Course',
+        label: context.mobileText('Satellites'),
+        value: log.satellites?.toString() ?? '--',
+      ),
+      (
+        label: context.mobileText('Valid'),
+        value: _formatVehicleLogBool(
+          log.valid,
+          trueLabel: 'Yes',
+          falseLabel: 'No',
+        ),
+      ),
+      (
+        label: context.mobileText('Course'),
         value: log.course == null
             ? '--'
-            : '${_formatVehicleMetricNumber(log.course!, 0)} deg'
+            : '${_formatVehicleMetricNumber(log.course!, 0)} deg',
       ),
       (
-        label: 'Distance',
-        value: _formatVehicleMetricDistance(null,
-            fallback: log.distance,
-            fractionDigits: 3,
-            unitFormatter: unitFormatter)
+        label: context.mobileText('Distance'),
+        value: _formatVehicleMetricDistance(
+          null,
+          fallback: log.distance,
+          fractionDigits: 3,
+          unitFormatter: unitFormatter,
+        ),
       ),
       (
-        label: 'Odometer',
-        value: _formatVehicleMetricDistance(null,
-            fallback: log.odometer,
-            fractionDigits: 1,
-            unitFormatter: unitFormatter)
+        label: context.mobileText('Odometer'),
+        value: _formatVehicleMetricDistance(
+          null,
+          fallback: log.odometer,
+          fractionDigits: 1,
+          unitFormatter: unitFormatter,
+        ),
       ),
       (
-        label: 'Engine hours',
-        value: _formatVehicleEngineHoursValue(log.engineHours)
+        label: context.mobileText('Engine hours'),
+        value: _formatVehicleEngineHoursValue(log.engineHours),
       ),
       (
-        label: 'Total engine hours',
-        value: _formatVehicleEngineHoursValue(log.totalEngineHours)
+        label: context.mobileText('Total engine hours'),
+        value: _formatVehicleEngineHoursValue(log.totalEngineHours),
       ),
       (
-        label: 'Created',
-        value: _formatVehicleLogDateTime(log.createdAt, dateFormatter)
+        label: context.mobileText('Created'),
+        value: _formatVehicleLogDateTime(log.createdAt, dateFormatter),
       ),
     ];
 
@@ -3016,9 +3061,7 @@ class _VehicleLogDetailRow extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         border: showDivider
-            ? Border(
-                bottom: BorderSide(color: scheme.outlineVariant),
-              )
+            ? Border(bottom: BorderSide(color: scheme.outlineVariant))
             : null,
       ),
       child: Padding(
@@ -3057,10 +3100,7 @@ class _VehicleLogDetailRow extends StatelessWidget {
 }
 
 class _VehicleLogCodeBlock extends StatelessWidget {
-  const _VehicleLogCodeBlock({
-    required this.title,
-    required this.value,
-  });
+  const _VehicleLogCodeBlock({required this.title, required this.value});
 
   final String title;
   final String value;
@@ -3107,10 +3147,7 @@ class _VehicleLogCodeBlock extends StatelessWidget {
 }
 
 class _VehicleEventsTab extends ConsumerStatefulWidget {
-  const _VehicleEventsTab({
-    required this.vehicle,
-    required this.isActive,
-  });
+  const _VehicleEventsTab({required this.vehicle, required this.isActive});
 
   final VehicleSummary vehicle;
   final bool isActive;
@@ -3226,10 +3263,7 @@ class _VehicleEventsTabState extends ConsumerState<_VehicleEventsTab> {
     try {
       final page = await ref
           .read(liveMapVehicleControllerProvider)
-          .getVehicleEventsByImei(
-            imei,
-            limit: _pageSize,
-          );
+          .getVehicleEventsByImei(imei, limit: _pageSize);
       if (!mounted || generation != _requestGeneration || _imei != imei) {
         return;
       }
@@ -3272,11 +3306,7 @@ class _VehicleEventsTabState extends ConsumerState<_VehicleEventsTab> {
     try {
       final page = await ref
           .read(liveMapVehicleControllerProvider)
-          .getVehicleEventsByImei(
-            imei,
-            limit: _pageSize,
-            beforeId: cursor,
-          );
+          .getVehicleEventsByImei(imei, limit: _pageSize, beforeId: cursor);
       if (!mounted || generation != _requestGeneration || _imei != imei) {
         return;
       }
@@ -3432,17 +3462,18 @@ class _VehicleEventsTabState extends ConsumerState<_VehicleEventsTab> {
     final scheme = Theme.of(context).colorScheme;
     final imei = _imei;
     if (imei.isEmpty) {
-      return const _VehicleDrawerPlaceholderTab(
+      return _VehicleDrawerPlaceholderTab(
         icon: Icons.event_note_rounded,
-        title: 'Events unavailable',
-        message: 'Vehicle IMEI is required to load events.',
+        title: context.mobileText('Events unavailable'),
+        message: context.mobileText('Vehicle IMEI is required to load events.'),
       );
     }
 
     final events = _visibleEvents;
     final statusLabel = _socketConnected ? 'Live' : 'Connecting';
-    final statusColor =
-        _socketConnected ? const Color(0xFF20B15A) : scheme.onSurfaceVariant;
+    final statusColor = _socketConnected
+        ? const Color(0xFF20B15A)
+        : scheme.onSurfaceVariant;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -3470,7 +3501,9 @@ class _VehicleEventsTabState extends ConsumerState<_VehicleEventsTab> {
               ),
               const SizedBox(width: 8),
               Text(
-                '${events.length} events',
+                context.mobileText("{value1} events", {
+                  'value1': (events.length).toString(),
+                }),
                 style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w700,
@@ -3489,7 +3522,11 @@ class _VehicleEventsTabState extends ConsumerState<_VehicleEventsTab> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.keyboard_double_arrow_down_rounded),
-                label: Text(_loadingOlder ? 'Loading' : 'Older'),
+                label: Text(
+                  _loadingOlder
+                      ? context.mobileText('Loading')
+                      : context.mobileText('Older'),
+                ),
                 style: TextButton.styleFrom(
                   visualDensity: VisualDensity.compact,
                   padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -3524,26 +3561,26 @@ class _VehicleEventsTabState extends ConsumerState<_VehicleEventsTab> {
                   ),
                 )
               : events.isEmpty
-                  ? const _VehicleDrawerPlaceholderTab(
-                      icon: Icons.event_note_rounded,
-                      title: 'No events yet',
-                      message: 'Vehicle events will appear here.',
-                    )
-                  : ListView.separated(
-                      controller: _scrollController,
-                      padding: const EdgeInsets.fromLTRB(10, 0, 10, 14),
-                      itemCount: events.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 6),
-                      itemBuilder: (context, index) {
-                        return _VehicleEventListRow(
-                          event: events[index],
-                          onTap: () => _showVehicleEventDetails(
-                            context,
-                            events[index],
-                          ),
-                        );
-                      },
-                    ),
+              ? _VehicleDrawerPlaceholderTab(
+                  icon: Icons.event_note_rounded,
+                  title: context.mobileText('No events yet'),
+                  message: context.mobileText(
+                    'Vehicle events will appear here.',
+                  ),
+                )
+              : ListView.separated(
+                  controller: _scrollController,
+                  padding: const EdgeInsets.fromLTRB(10, 0, 10, 14),
+                  itemCount: events.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 6),
+                  itemBuilder: (context, index) {
+                    return _VehicleEventListRow(
+                      event: events[index],
+                      onTap: () =>
+                          _showVehicleEventDetails(context, events[index]),
+                    );
+                  },
+                ),
         ),
       ],
     );
@@ -3551,10 +3588,7 @@ class _VehicleEventsTabState extends ConsumerState<_VehicleEventsTab> {
 }
 
 class _VehicleEventListRow extends ConsumerWidget {
-  const _VehicleEventListRow({
-    required this.event,
-    required this.onTap,
-  });
+  const _VehicleEventListRow({required this.event, required this.onTap});
 
   final AppNotification event;
   final VoidCallback onTap;
@@ -3614,8 +3648,9 @@ class _VehicleEventListRow extends ConsumerWidget {
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w800,
-                            color:
-                                scheme.onSurfaceVariant.withValues(alpha: 0.7),
+                            color: scheme.onSurfaceVariant.withValues(
+                              alpha: 0.7,
+                            ),
                           ),
                         ),
                       ],
@@ -3631,7 +3666,7 @@ class _VehicleEventListRow extends ConsumerWidget {
                         Expanded(
                           child: Text(
                             event.message.trim().isEmpty
-                                ? 'OpenVTS event'
+                                ? context.mobileText('OpenVTS event')
                                 : event.message.trim(),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -3656,10 +3691,7 @@ class _VehicleEventListRow extends ConsumerWidget {
 }
 
 class _VehicleEventSeverityPill extends StatelessWidget {
-  const _VehicleEventSeverityPill({
-    required this.label,
-    required this.color,
-  });
+  const _VehicleEventSeverityPill({required this.label, required this.color});
 
   final String label;
   final Color color;
@@ -3690,10 +3722,7 @@ class _VehicleEventSeverityPill extends StatelessWidget {
   }
 }
 
-void _showVehicleEventDetails(
-  BuildContext context,
-  AppNotification event,
-) {
+void _showVehicleEventDetails(BuildContext context, AppNotification event) {
   showDialog<void>(
     context: context,
     builder: (context) => _VehicleEventDetailsDialog(event: event),
@@ -3708,8 +3737,9 @@ class _VehicleEventDetailsDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final metadataText =
-        event.metadata.isEmpty ? null : _formatVehicleLogJson(event.metadata);
+    final metadataText = event.metadata.isEmpty
+        ? null
+        : _formatVehicleLogJson(event.metadata);
     return Dialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 24),
       backgroundColor: scheme.surface,
@@ -3725,7 +3755,7 @@ class _VehicleEventDetailsDialog extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      'Vehicle event',
+                      context.mobileText('Vehicle event'),
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w900,
@@ -3750,7 +3780,7 @@ class _VehicleEventDetailsDialog extends StatelessWidget {
                   if (metadataText != null) ...[
                     const SizedBox(height: 12),
                     _VehicleLogCodeBlock(
-                      title: 'Metadata',
+                      title: context.mobileText('Metadata'),
                       value: metadataText,
                     ),
                   ],
@@ -3760,7 +3790,7 @@ class _VehicleEventDetailsDialog extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
               child: OpenVtsButton(
-                label: 'Close',
+                label: context.mobileText('Close'),
                 onPressed: () => Navigator.of(context).pop(),
                 height: 40,
               ),
@@ -3781,31 +3811,40 @@ class _VehicleEventDetailGrid extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final dateFormatter = ref.watch(appDateFormatterProvider);
     final rows = <({String label, String value})>[
-      (label: 'Title', value: event.title.trim()),
-      (label: 'Category', value: event.category?.trim() ?? '--'),
-      (label: 'Severity', value: event.severity?.trim() ?? '--'),
-      (label: 'Message', value: event.message.trim()),
-      (label: 'IMEI', value: event.vehicleImei?.trim() ?? '--'),
-      (label: 'Context', value: event.contextLabel?.trim() ?? '--'),
+      (label: context.mobileText('Title'), value: event.title.trim()),
       (
-        label: 'Created',
-        value: _formatVehicleEventDateTime(event.createdAt, dateFormatter)
+        label: context.mobileText('Category'),
+        value: event.category?.trim() ?? '--',
       ),
-      (label: 'Read', value: event.isRead ? 'Yes' : 'No'),
+      (
+        label: context.mobileText('Severity'),
+        value: event.severity?.trim() ?? '--',
+      ),
+      (label: context.mobileText('Message'), value: event.message.trim()),
+      (label: 'IMEI', value: event.vehicleImei?.trim() ?? '--'),
+      (
+        label: context.mobileText('Context'),
+        value: event.contextLabel?.trim() ?? '--',
+      ),
+      (
+        label: context.mobileText('Created'),
+        value: _formatVehicleEventDateTime(event.createdAt, dateFormatter),
+      ),
+      (label: context.mobileText('Read'), value: event.isRead ? 'Yes' : 'No'),
       (label: 'ID', value: event.id > 0 ? event.id.toString() : '--'),
       (
-        label: 'Event ID',
-        value: event.eventId == null ? '--' : event.eventId.toString()
+        label: context.mobileText('Event ID'),
+        value: event.eventId == null ? '--' : event.eventId.toString(),
       ),
       (
-        label: 'Log ID',
-        value: event.logId == null ? '--' : event.logId.toString()
+        label: context.mobileText('Log ID'),
+        value: event.logId == null ? '--' : event.logId.toString(),
       ),
       (
-        label: 'Dedupe',
+        label: context.mobileText('Dedupe'),
         value: event.dedupeKey?.trim().isEmpty ?? true
             ? event.dedupeIdentity
-            : event.dedupeKey!.trim()
+            : event.dedupeKey!.trim(),
       ),
     ];
 
@@ -3830,10 +3869,7 @@ class _VehicleEventDetailGrid extends ConsumerWidget {
 }
 
 class _VehicleSensorsTab extends ConsumerStatefulWidget {
-  const _VehicleSensorsTab({
-    required this.vehicle,
-    required this.isActive,
-  });
+  const _VehicleSensorsTab({required this.vehicle, required this.isActive});
 
   final VehicleSummary vehicle;
   final bool isActive;
@@ -3985,10 +4021,12 @@ class _VehicleSensorsTabState extends ConsumerState<_VehicleSensorsTab> {
   Widget build(BuildContext context) {
     final imei = _imei;
     if (imei.isEmpty) {
-      return const _VehicleDrawerPlaceholderTab(
+      return _VehicleDrawerPlaceholderTab(
         icon: Icons.sensors_rounded,
-        title: 'Sensors unavailable',
-        message: 'Vehicle IMEI is required to load sensors.',
+        title: context.mobileText('Sensors unavailable'),
+        message: context.mobileText(
+          'Vehicle IMEI is required to load sensors.',
+        ),
       );
     }
 
@@ -4019,9 +4057,9 @@ class _VehicleSensorsTabState extends ConsumerState<_VehicleSensorsTab> {
     }
 
     if (_hasLoaded && _sensors.isEmpty) {
-      return const _VehicleDrawerPlaceholderTab(
+      return _VehicleDrawerPlaceholderTab(
         icon: Icons.sensors_rounded,
-        title: 'No sensors configured for this vehicle.',
+        title: context.mobileText('No sensors configured for this vehicle.'),
         message: '',
       );
     }
@@ -4029,7 +4067,8 @@ class _VehicleSensorsTabState extends ConsumerState<_VehicleSensorsTab> {
     final countLabel = _truncated && _totalCount > _sensors.length
         ? '${_sensors.length}/$_totalCount sensors'
         : '${_sensors.length} sensors';
-    final telemetryTime = _telemetryMeta?.serverTime ??
+    final telemetryTime =
+        _telemetryMeta?.serverTime ??
         _vehicleSensorTelemetryUpdatedAt(widget.vehicle);
 
     final scheme = Theme.of(context).colorScheme;
@@ -4041,7 +4080,7 @@ class _VehicleSensorsTabState extends ConsumerState<_VehicleSensorsTab> {
           child: Row(
             children: [
               Text(
-                'Sensors',
+                context.mobileText('Sensors'),
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w900,
@@ -4068,7 +4107,9 @@ class _VehicleSensorsTabState extends ConsumerState<_VehicleSensorsTab> {
                 Flexible(
                   child: Text(
                     _formatVehicleSensorUpdatedAt(
-                        telemetryTime, ref.watch(appDateFormatterProvider)),
+                      telemetryTime,
+                      ref.watch(appDateFormatterProvider),
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.end,
@@ -4285,8 +4326,9 @@ class _VehicleCommandsTabState extends ConsumerState<_VehicleCommandsTab> {
   static const Duration _pollPreSentInterval = Duration(seconds: 5);
   static const Duration _pollPostSentInterval = Duration(seconds: 8);
   static const Duration _pollFastCutoff = Duration(seconds: 6);
-  static const Duration _activeCommandHistoryRefreshInterval =
-      Duration(seconds: 6);
+  static const Duration _activeCommandHistoryRefreshInterval = Duration(
+    seconds: 6,
+  );
   static const Duration _pollTimeout = Duration(seconds: 90);
 
   final _commandController = TextEditingController();
@@ -4529,8 +4571,9 @@ class _VehicleCommandsTabState extends ConsumerState<_VehicleCommandsTab> {
 
         // Cache miss — await the full fetch.
         if (resolvedDeviceTypeId == null) {
-          final details =
-              await ref.read(liveMapVehicleDetailsProvider(imei).future);
+          final details = await ref.read(
+            liveMapVehicleDetailsProvider(imei).future,
+          );
           resolvedDeviceTypeId = details.deviceTypeId;
         }
       }
@@ -4566,7 +4609,8 @@ class _VehicleCommandsTabState extends ConsumerState<_VehicleCommandsTab> {
       // Validate any previous selection — the new catalogue may have a
       // different set of stableKeys after a vehicle or device-type change.
       final previousKey = _selectedCommandKey;
-      final previousStillValid = previousKey != null &&
+      final previousStillValid =
+          previousKey != null &&
           activeCommands.any((cmd) => cmd.stableKey == previousKey);
 
       setState(() {
@@ -4828,10 +4872,7 @@ class _VehicleCommandsTabState extends ConsumerState<_VehicleCommandsTab> {
               vehicleIds: <String>[vehicleId],
               command: command,
             )
-          : await service.sendCommandByImei(
-              imei: imei,
-              command: command,
-            );
+          : await service.sendCommandByImei(imei: imei, command: command);
       if (!mounted || (!bulkMode && _imei != imei)) {
         return;
       }
@@ -4856,13 +4897,10 @@ class _VehicleCommandsTabState extends ConsumerState<_VehicleCommandsTab> {
         final queueId = response.queueId?.trim() ?? '';
         _sendMessage = response.wasQueued
             ? queueId.isEmpty
-                ? 'Queued until device reconnects'
-                : 'Queued until device reconnects ($queueId)'
+                  ? 'Queued until device reconnects'
+                  : 'Queued until device reconnects ($queueId)'
             : 'Sent to device, waiting for response';
-        _localHistory = _upsertVehicleCommandEntry(
-          _localHistory,
-          localRow,
-        );
+        _localHistory = _upsertVehicleCommandEntry(_localHistory, localRow);
       });
 
       final cmdId = response.cmdId?.trim() ?? '';
@@ -4892,10 +4930,7 @@ class _VehicleCommandsTabState extends ConsumerState<_VehicleCommandsTab> {
       setState(() {
         _sending = false;
         _sendError = _formatVehicleLogError(error);
-        _localHistory = _upsertVehicleCommandEntry(
-          _localHistory,
-          localRow,
-        );
+        _localHistory = _upsertVehicleCommandEntry(_localHistory, localRow);
       });
     }
   }
@@ -4990,29 +5025,28 @@ class _VehicleCommandsTabState extends ConsumerState<_VehicleCommandsTab> {
     final nextDelay = _pollSentObserved
         ? _pollPostSentInterval
         : elapsed < _pollFastCutoff
-            ? _pollFastInterval
-            : _pollPreSentInterval;
+        ? _pollFastInterval
+        : _pollPreSentInterval;
     _schedulePoll(cmdId, generation, nextDelay);
   }
 
-  void _applyPolledStatus(
-    String cmdId,
-    SuperadminVehicleCommandEntry status,
-  ) {
+  void _applyPolledStatus(String cmdId, SuperadminVehicleCommandEntry status) {
     final normalizedCmdId = cmdId.trim();
 
     List<SuperadminVehicleCommandEntry> updateRows(
       List<SuperadminVehicleCommandEntry> rows,
     ) {
       var changed = false;
-      final updated = rows.map((row) {
-        if (row.cmdId.trim() != normalizedCmdId) {
-          return row;
-        }
+      final updated = rows
+          .map((row) {
+            if (row.cmdId.trim() != normalizedCmdId) {
+              return row;
+            }
 
-        changed = true;
-        return _mergeVehicleCommandEntry(row, status);
-      }).toList(growable: false);
+            changed = true;
+            return _mergeVehicleCommandEntry(row, status);
+          })
+          .toList(growable: false);
 
       if (changed) {
         return updated;
@@ -5081,9 +5115,9 @@ class _VehicleCommandsTabState extends ConsumerState<_VehicleCommandsTab> {
     final selectedCommand = _selectedCommandKey == null
         ? null
         : _customCommands.cast<SuperadminCustomCommand?>().firstWhere(
-              (command) => command?.stableKey == _selectedCommandKey,
-              orElse: () => null,
-            );
+            (command) => command?.stableKey == _selectedCommandKey,
+            orElse: () => null,
+          );
     final payloadLength = _commandController.text.trim().length;
 
     return Column(
@@ -5091,10 +5125,7 @@ class _VehicleCommandsTabState extends ConsumerState<_VehicleCommandsTab> {
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(10, 8, 10, 6),
-          child: _VehicleCommandTargetCard(
-            vehicle: widget.vehicle,
-            imei: imei,
-          ),
+          child: _VehicleCommandTargetCard(vehicle: widget.vehicle, imei: imei),
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(10, 0, 10, 6),
@@ -5109,11 +5140,12 @@ class _VehicleCommandsTabState extends ConsumerState<_VehicleCommandsTab> {
             maxPayloadLength: _maxPayloadLength,
             controller: _commandController,
             onCommandChanged: (stableKey) {
-              final command =
-                  _customCommands.cast<SuperadminCustomCommand?>().firstWhere(
-                        (item) => item?.stableKey == stableKey,
-                        orElse: () => null,
-                      );
+              final command = _customCommands
+                  .cast<SuperadminCustomCommand?>()
+                  .firstWhere(
+                    (item) => item?.stableKey == stableKey,
+                    orElse: () => null,
+                  );
               if (command != null) _selectCommand(command);
             },
             onSend: _sendCommand,
@@ -5127,8 +5159,9 @@ class _VehicleCommandsTabState extends ConsumerState<_VehicleCommandsTab> {
               icon: _commandsUnavailable
                   ? Icons.lock_outline_rounded
                   : Icons.error_outline_rounded,
-              onRetry:
-                  _commandsUnavailable ? null : () => unawaited(_loadCatalog()),
+              onRetry: _commandsUnavailable
+                  ? null
+                  : () => unawaited(_loadCatalog()),
             ),
           ),
         if (_vehicleIdRequirementMessage != null)
@@ -5163,7 +5196,7 @@ class _VehicleCommandsTabState extends ConsumerState<_VehicleCommandsTab> {
           child: Row(
             children: [
               Text(
-                'History',
+                context.mobileText('History'),
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w900,
@@ -5172,7 +5205,9 @@ class _VehicleCommandsTabState extends ConsumerState<_VehicleCommandsTab> {
               ),
               const SizedBox(width: 8),
               Text(
-                '${history.length} rows',
+                context.mobileText("{value1} rows", {
+                  'value1': (history.length).toString(),
+                }),
                 style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w700,
@@ -5181,7 +5216,7 @@ class _VehicleCommandsTabState extends ConsumerState<_VehicleCommandsTab> {
               ),
               const Spacer(),
               IconButton(
-                tooltip: 'Refresh history',
+                tooltip: context.mobileText('Refresh history'),
                 onPressed: _loadingHistory
                     ? null
                     : () => unawaited(_loadHistory(refresh: true)),
@@ -5207,7 +5242,11 @@ class _VehicleCommandsTabState extends ConsumerState<_VehicleCommandsTab> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.keyboard_double_arrow_down_rounded),
-                label: Text(_loadingOlder ? 'Loading' : 'Older'),
+                label: Text(
+                  _loadingOlder
+                      ? context.mobileText('Loading')
+                      : context.mobileText('Older'),
+                ),
                 style: TextButton.styleFrom(
                   visualDensity: VisualDensity.compact,
                   padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -5240,25 +5279,26 @@ class _VehicleCommandsTabState extends ConsumerState<_VehicleCommandsTab> {
                   ),
                 )
               : history.isEmpty
-                  ? const _VehicleDrawerPlaceholderTab(
-                      icon: Icons.terminal_rounded,
-                      title: 'No commands yet',
-                      message:
-                          'Sent commands and device responses appear here.',
-                    )
-                  : ListView.separated(
-                      controller: _historyScrollController,
-                      padding: const EdgeInsets.fromLTRB(10, 0, 10, 14),
-                      itemCount: history.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 6),
-                      itemBuilder: (context, index) {
-                        final row = history[index];
-                        return _VehicleCommandHistoryRow(
-                          entry: row,
-                          onTap: () => _showDetails(row),
-                        );
-                      },
-                    ),
+              ? _VehicleDrawerPlaceholderTab(
+                  icon: Icons.terminal_rounded,
+                  title: context.mobileText('No commands yet'),
+                  message: context.mobileText(
+                    'Sent commands and device responses appear here.',
+                  ),
+                )
+              : ListView.separated(
+                  controller: _historyScrollController,
+                  padding: const EdgeInsets.fromLTRB(10, 0, 10, 14),
+                  itemCount: history.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 6),
+                  itemBuilder: (context, index) {
+                    final row = history[index];
+                    return _VehicleCommandHistoryRow(
+                      entry: row,
+                      onTap: () => _showDetails(row),
+                    );
+                  },
+                ),
         ),
       ],
     );
@@ -5266,10 +5306,7 @@ class _VehicleCommandsTabState extends ConsumerState<_VehicleCommandsTab> {
 }
 
 class _VehicleCommandTargetCard extends StatelessWidget {
-  const _VehicleCommandTargetCard({
-    required this.vehicle,
-    required this.imei,
-  });
+  const _VehicleCommandTargetCard({required this.vehicle, required this.imei});
 
   final VehicleSummary vehicle;
   final String imei;
@@ -5319,7 +5356,9 @@ class _VehicleCommandTargetCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    imei.isEmpty ? 'IMEI unavailable' : 'IMEI $imei',
+                    imei.isEmpty
+                        ? context.mobileText('IMEI unavailable')
+                        : 'IMEI $imei',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
@@ -5414,7 +5453,7 @@ class _VehicleCommandComposerCard extends StatelessWidget {
             Row(
               children: [
                 Text(
-                  'Command',
+                  context.mobileText('Command'),
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w900,
@@ -5435,21 +5474,23 @@ class _VehicleCommandComposerCard extends StatelessWidget {
               initialValue: selectedCommandKey,
               isExpanded: true,
               selectedItemBuilder: (context) {
-                return commands.map((command) {
-                  return Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      command.displaySelectedLabel,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w800,
-                        color: scheme.onSurface,
-                      ),
-                    ),
-                  );
-                }).toList(growable: false);
+                return commands
+                    .map((command) {
+                      return Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          command.displaySelectedLabel,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                            color: scheme.onSurface,
+                          ),
+                        ),
+                      );
+                    })
+                    .toList(growable: false);
               },
               decoration: InputDecoration(
                 isDense: true,
@@ -5461,80 +5502,79 @@ class _VehicleCommandComposerCard extends StatelessWidget {
                 ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide(
-                    color: scheme.outlineVariant,
-                  ),
+                  borderSide: BorderSide(color: scheme.outlineVariant),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide(
-                    color: scheme.outlineVariant,
-                  ),
+                  borderSide: BorderSide(color: scheme.outlineVariant),
                 ),
               ),
               hint: Text(
                 loading
-                    ? 'Loading commands…'
+                    ? context.mobileText('Loading commands…')
                     : commands.isEmpty
-                        ? 'No compatible commands'
-                        : 'Select command',
+                    ? context.mobileText('No compatible commands')
+                    : context.mobileText('Select command'),
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
                   color: scheme.onSurfaceVariant,
                 ),
               ),
-              items: commands.map((command) {
-                final payload = command.command.trim();
-                final title = command.displayTitle;
-                return DropdownMenuItem<String>(
-                  value: command.stableKey,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w800,
-                          color: scheme.onSurface,
-                        ),
+              items: commands
+                  .map((command) {
+                    final payload = command.command.trim();
+                    final title = command.displayTitle;
+                    return DropdownMenuItem<String>(
+                      value: command.stableKey,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                              color: scheme.onSurface,
+                            ),
+                          ),
+                          if (payload.isNotEmpty && payload != title) ...[
+                            const SizedBox(height: 1),
+                            Text(
+                              payload,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 9,
+                                fontWeight: FontWeight.w700,
+                                fontFamily: 'monospace',
+                                color: scheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                          if (command.displaySubtitle.isNotEmpty) ...[
+                            const SizedBox(height: 1),
+                            Text(
+                              command.displaySubtitle,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 8,
+                                fontWeight: FontWeight.w700,
+                                color: scheme.onSurfaceVariant.withValues(
+                                  alpha: 0.70,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
-                      if (payload.isNotEmpty && payload != title) ...[
-                        const SizedBox(height: 1),
-                        Text(
-                          payload,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 9,
-                            fontWeight: FontWeight.w700,
-                            fontFamily: 'monospace',
-                            color: scheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                      if (command.displaySubtitle.isNotEmpty) ...[
-                        const SizedBox(height: 1),
-                        Text(
-                          command.displaySubtitle,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 8,
-                            fontWeight: FontWeight.w700,
-                            color:
-                                scheme.onSurfaceVariant.withValues(alpha: 0.70),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                );
-              }).toList(growable: false),
+                    );
+                  })
+                  .toList(growable: false),
               onChanged: commands.isEmpty
                   ? null
                   : (value) {
@@ -5572,7 +5612,7 @@ class _VehicleCommandComposerCard extends StatelessWidget {
               ),
               decoration: InputDecoration(
                 counterText: '',
-                hintText: 'Enter command text',
+                hintText: context.mobileText('Enter command text'),
                 hintStyle: TextStyle(
                   fontSize: 12,
                   color: scheme.onSurfaceVariant,
@@ -5582,15 +5622,11 @@ class _VehicleCommandComposerCard extends StatelessWidget {
                 contentPadding: const EdgeInsets.all(10),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide(
-                    color: scheme.outlineVariant,
-                  ),
+                  borderSide: BorderSide(color: scheme.outlineVariant),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide(
-                    color: scheme.outlineVariant,
-                  ),
+                  borderSide: BorderSide(color: scheme.outlineVariant),
                 ),
               ),
             ),
@@ -5611,7 +5647,7 @@ class _VehicleCommandComposerCard extends StatelessWidget {
                 SizedBox(
                   width: 112,
                   child: OpenVtsButton(
-                    label: 'Send',
+                    label: context.mobileText('Send'),
                     onPressed: canSend ? onSend : null,
                     isLoading: sending,
                     trailingIcon: Icons.send_rounded,
@@ -5657,7 +5693,7 @@ class _VehicleCommandLatestStatusCard extends StatelessWidget {
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                isError ? 'Failed' : message,
+                isError ? context.mobileText('Failed') : message,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -5706,8 +5742,8 @@ class _VehicleCommandPollStrip extends StatelessWidget {
     final label = timedOut
         ? 'Still waiting for device response. History will update when backend receives it.'
         : status == null
-            ? 'Checking command status...'
-            : _vehicleCommandStatusLabel(status!);
+        ? 'Checking command status...'
+        : _vehicleCommandStatusLabel(status!);
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -5752,10 +5788,7 @@ class _VehicleCommandPollStrip extends StatelessWidget {
 }
 
 class _VehicleCommandHistoryRow extends ConsumerWidget {
-  const _VehicleCommandHistoryRow({
-    required this.entry,
-    required this.onTap,
-  });
+  const _VehicleCommandHistoryRow({required this.entry, required this.onTap});
 
   final SuperadminVehicleCommandEntry entry;
   final VoidCallback onTap;
@@ -5791,8 +5824,9 @@ class _VehicleCommandHistoryRow extends ConsumerWidget {
                             style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w800,
-                              color: scheme.onSurfaceVariant
-                                  .withValues(alpha: 0.7),
+                              color: scheme.onSurfaceVariant.withValues(
+                                alpha: 0.7,
+                              ),
                             ),
                           ),
                         ),
@@ -5822,8 +5856,9 @@ class _VehicleCommandHistoryRow extends ConsumerWidget {
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w700,
-                          color:
-                              scheme.onSurfaceVariant.withValues(alpha: 0.75),
+                          color: scheme.onSurfaceVariant.withValues(
+                            alpha: 0.75,
+                          ),
                         ),
                       ),
                     ],
@@ -5907,7 +5942,7 @@ class _VehicleCommandDetailsDialog extends StatelessWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          'Command details',
+                          context.mobileText('Command details'),
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w900,
@@ -5940,7 +5975,7 @@ class _VehicleCommandDetailsDialog extends StatelessWidget {
                       _VehicleCommandDetailGrid(entry: detail),
                       const SizedBox(height: 12),
                       _VehicleLogCodeBlock(
-                        title: 'Command',
+                        title: context.mobileText('Command'),
                         value: detail.command.trim().isEmpty
                             ? '--'
                             : detail.command.trim(),
@@ -5948,28 +5983,28 @@ class _VehicleCommandDetailsDialog extends StatelessWidget {
                       if (detail.responseRaw?.trim().isNotEmpty ?? false) ...[
                         const SizedBox(height: 12),
                         _VehicleLogCodeBlock(
-                          title: 'Device response',
+                          title: context.mobileText('Device response'),
                           value: detail.responseRaw!.trim(),
                         ),
                       ],
                       if (detail.responseHex?.trim().isNotEmpty ?? false) ...[
                         const SizedBox(height: 12),
                         _VehicleLogCodeBlock(
-                          title: 'Response hex',
+                          title: context.mobileText('Response hex'),
                           value: detail.responseHex!.trim(),
                         ),
                       ],
                       if (detail.errorMessage?.trim().isNotEmpty ?? false) ...[
                         const SizedBox(height: 12),
                         _VehicleLogCodeBlock(
-                          title: 'Error',
+                          title: context.mobileText('Error'),
                           value: detail.errorMessage!.trim(),
                         ),
                       ],
                       if (detail.metadata.isNotEmpty) ...[
                         const SizedBox(height: 12),
                         _VehicleLogCodeBlock(
-                          title: 'Metadata',
+                          title: context.mobileText('Metadata'),
                           value: _formatVehicleLogJson(detail.metadata),
                         ),
                       ],
@@ -5979,7 +6014,7 @@ class _VehicleCommandDetailsDialog extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
                   child: OpenVtsButton(
-                    label: 'Close',
+                    label: context.mobileText('Close'),
                     onPressed: () => Navigator.of(context).pop(),
                     height: 40,
                   ),
@@ -6002,63 +6037,74 @@ class _VehicleCommandDetailGrid extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final dateFormatter = ref.watch(appDateFormatterProvider);
     final rows = <({String label, String value})>[
-      (label: 'Status', value: _vehicleCommandStatusLabel(entry.status)),
-      (label: 'IMEI', value: entry.imei.trim().isEmpty ? '--' : entry.imei),
-      (label: 'cmdId', value: entry.cmdId.trim().isEmpty ? '--' : entry.cmdId),
       (
-        label: 'queueId',
-        value:
-            entry.queueId?.trim().isEmpty ?? true ? '--' : entry.queueId!.trim()
+        label: context.mobileText('Status'),
+        value: _vehicleCommandStatusLabel(entry.status),
+      ),
+      (label: 'IMEI', value: entry.imei.trim().isEmpty ? '--' : entry.imei),
+      (
+        label: context.mobileText('cmdId'),
+        value: entry.cmdId.trim().isEmpty ? '--' : entry.cmdId,
       ),
       (
-        label: 'Role',
+        label: context.mobileText('queueId'),
+        value: entry.queueId?.trim().isEmpty ?? true
+            ? '--'
+            : entry.queueId!.trim(),
+      ),
+      (
+        label: context.mobileText('Role'),
         value: entry.requestedByRole?.trim().isEmpty ?? true
             ? '--'
-            : entry.requestedByRole!.trim()
+            : entry.requestedByRole!.trim(),
       ),
       (
-        label: 'Transport',
+        label: context.mobileText('Transport'),
         value: entry.transport?.trim().isEmpty ?? true
             ? '--'
-            : entry.transport!.trim()
+            : entry.transport!.trim(),
       ),
       (
-        label: 'Source',
-        value:
-            entry.source?.trim().isEmpty ?? true ? '--' : entry.source!.trim()
+        label: context.mobileText('Source'),
+        value: entry.source?.trim().isEmpty ?? true
+            ? '--'
+            : entry.source!.trim(),
       ),
       (
-        label: 'Connected',
-        value: _formatVehicleLogBool(entry.connectedAtSend,
-            trueLabel: 'Yes', falseLabel: 'No')
+        label: context.mobileText('Connected'),
+        value: _formatVehicleLogBool(
+          entry.connectedAtSend,
+          trueLabel: 'Yes',
+          falseLabel: 'No',
+        ),
       ),
       (
-        label: 'Requested',
-        value: _formatVehicleLogDateTime(entry.requestedAt, dateFormatter)
+        label: context.mobileText('Requested'),
+        value: _formatVehicleLogDateTime(entry.requestedAt, dateFormatter),
       ),
       (
-        label: 'Queued',
-        value: _formatVehicleLogDateTime(entry.queuedAt, dateFormatter)
+        label: context.mobileText('Queued'),
+        value: _formatVehicleLogDateTime(entry.queuedAt, dateFormatter),
       ),
       (
-        label: 'Sent',
-        value: _formatVehicleLogDateTime(entry.sentAt, dateFormatter)
+        label: context.mobileText('Sent'),
+        value: _formatVehicleLogDateTime(entry.sentAt, dateFormatter),
       ),
       (
-        label: 'Responded',
-        value: _formatVehicleLogDateTime(entry.respondedAt, dateFormatter)
+        label: context.mobileText('Responded'),
+        value: _formatVehicleLogDateTime(entry.respondedAt, dateFormatter),
       ),
       (
-        label: 'Failed',
-        value: _formatVehicleLogDateTime(entry.failedAt, dateFormatter)
+        label: context.mobileText('Failed'),
+        value: _formatVehicleLogDateTime(entry.failedAt, dateFormatter),
       ),
       (
-        label: 'Timed out',
-        value: _formatVehicleLogDateTime(entry.timeoutAt, dateFormatter)
+        label: context.mobileText('Timed out'),
+        value: _formatVehicleLogDateTime(entry.timeoutAt, dateFormatter),
       ),
       (
-        label: 'Created',
-        value: _formatVehicleLogDateTime(entry.createdAt, dateFormatter)
+        label: context.mobileText('Created'),
+        value: _formatVehicleLogDateTime(entry.createdAt, dateFormatter),
       ),
     ];
 
@@ -6162,7 +6208,9 @@ class _VehicleReplaySetupTabState extends State<_VehicleReplaySetupTab> {
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      imei.isEmpty ? 'IMEI unavailable' : 'IMEI $imei',
+                      imei.isEmpty
+                          ? context.mobileText('IMEI unavailable')
+                          : 'IMEI $imei',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -6183,9 +6231,9 @@ class _VehicleReplaySetupTabState extends State<_VehicleReplaySetupTab> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               OpenVtsDateTimeRangeField(
-                label: 'Date Time Range',
-                title: 'Choose Replay Range',
-                hintText: 'Select date time range',
+                label: context.mobileText('Date Time Range'),
+                title: context.mobileText('Choose Replay Range'),
+                hintText: context.mobileText('Select date time range'),
                 dateTimeEnabled: true,
                 enabled: !_isLoading,
                 value: _dateTimeRange,
@@ -6205,7 +6253,7 @@ class _VehicleReplaySetupTabState extends State<_VehicleReplaySetupTab> {
               ],
               const SizedBox(height: 14),
               OpenVtsButton(
-                label: 'Get Replay',
+                label: context.mobileText('Get Replay'),
                 onPressed: _isLoading ? null : _submit,
                 isLoading: _isLoading,
                 trailingIcon: Icons.play_circle_outline_rounded,
@@ -6235,11 +6283,7 @@ class _VehicleReplaySetupTabState extends State<_VehicleReplaySetupTab> {
     });
 
     final result = await widget.onReplayRequested(
-      _ReplayRequest(
-        vehicle: widget.vehicle,
-        from: from,
-        to: to,
-      ),
+      _ReplayRequest(vehicle: widget.vehicle, from: from, to: to),
     );
 
     if (!mounted) {
@@ -6332,10 +6376,7 @@ class _ReplaySetupMessage extends StatelessWidget {
 }
 
 class _VehicleDetailsTab extends ConsumerWidget {
-  const _VehicleDetailsTab({
-    required this.vehicle,
-    this.scrollController,
-  });
+  const _VehicleDetailsTab({required this.vehicle, this.scrollController});
 
   final VehicleSummary vehicle;
   final ScrollController? scrollController;
@@ -6347,9 +6388,10 @@ class _VehicleDetailsTab extends ConsumerWidget {
       return _VehicleDetailsContent(
         vehicle: vehicle,
         scrollController: scrollController,
-        notice: const _VehicleDetailsNotice(
-          message:
-              'IMEI is unavailable for this vehicle. Showing the live map summary only.',
+        notice: _VehicleDetailsNotice(
+          message: context.mobileText(
+            'IMEI is unavailable for this vehicle. Showing the live map summary only.',
+          ),
           icon: Icons.info_outline_rounded,
         ),
       );
@@ -6363,7 +6405,9 @@ class _VehicleDetailsTab extends ConsumerWidget {
       details: detailsAsync.asData?.value,
       notice: detailsAsync.hasError
           ? _VehicleDetailsNotice(
-              message: 'Failed to load full vehicle details.',
+              message: context.mobileText(
+                'Failed to load full vehicle details.',
+              ),
               icon: Icons.error_outline_rounded,
               onRetry: () {
                 ref.invalidate(liveMapVehicleDetailsProvider(imei));
@@ -6396,10 +6440,7 @@ class _VehicleDetailsContent extends ConsumerWidget {
       fallbackLabel: 'Unknown',
     );
     final liveSpeed = vehicle.speed;
-    final isRunning = _isRunningStatus(
-      liveStatusText,
-      speed: liveSpeed,
-    );
+    final isRunning = _isRunningStatus(liveStatusText, speed: liveSpeed);
     final vehicleType = _firstVehicleDetailValue([
       _findVehicleDetailValue(details, const [
         'vehicletypename',
@@ -6459,8 +6500,9 @@ class _VehicleDetailsContent extends ConsumerWidget {
     final ignitionValue = vehicle.ignition ?? vehicle.acc;
     final satellites = vehicle.satellites?.toString() ?? '--';
     final resolvedLatitude = vehicle.hasValidLocation ? vehicle.latitude : null;
-    final resolvedLongitude =
-        vehicle.hasValidLocation ? vehicle.longitude : null;
+    final resolvedLongitude = vehicle.hasValidLocation
+        ? vehicle.longitude
+        : null;
     final hasCoordinates =
         resolvedLatitude != null && resolvedLongitude != null;
     final address = _firstVehicleDetailValue([
@@ -6503,22 +6545,22 @@ class _VehicleDetailsContent extends ConsumerWidget {
           items: [
             _VehicleMetricCardData(
               icon: Icons.alt_route_rounded,
-              label: 'Today Distance',
+              label: context.mobileText('Today Distance'),
               value: todayDistance,
             ),
             _VehicleMetricCardData(
               icon: Icons.speed_rounded,
-              label: 'Odometer',
+              label: context.mobileText('Odometer'),
               value: odometer,
             ),
             _VehicleMetricCardData(
               icon: Icons.access_time_rounded,
-              label: 'Today Eng. Hours',
+              label: context.mobileText('Today Eng. Hours'),
               value: todayEngineHours,
             ),
             _VehicleMetricCardData(
               icon: Icons.access_time_filled_rounded,
-              label: 'Total Eng. Hours',
+              label: context.mobileText('Total Eng. Hours'),
               value: totalEngineHours,
             ),
           ],
@@ -6533,42 +6575,42 @@ class _VehicleDetailsContent extends ConsumerWidget {
             ),
             _VehicleInfoRowData(
               icon: Icons.confirmation_number_outlined,
-              label: 'VIN Number',
+              label: context.mobileText('VIN Number'),
               value: vinNumber,
             ),
             _VehicleInfoRowData(
               icon: Icons.directions_car_filled_outlined,
-              label: 'Vehicle Type',
+              label: context.mobileText('Vehicle Type'),
               value: vehicleType,
             ),
             _VehicleInfoRowData(
               icon: Icons.gps_fixed_rounded,
-              label: 'GPS Model',
+              label: context.mobileText('GPS Model'),
               value: gpsModel,
             ),
             _VehicleInfoRowData(
               icon: Icons.person_outline_rounded,
-              label: 'Primary User',
+              label: context.mobileText('Primary User'),
               value: primaryUser,
             ),
             _VehicleInfoRowData.status(
-              label: 'Status',
+              label: context.mobileText('Status'),
               value: statusLabel,
               isRunning: isRunning,
             ),
             _VehicleInfoRowData(
               icon: Icons.key_rounded,
-              label: 'Ignition',
+              label: context.mobileText('Ignition'),
               value: _formatVehicleIgnitionLabel(ignitionValue),
             ),
             _VehicleInfoRowData(
               icon: Icons.speed_rounded,
-              label: 'Speed',
+              label: context.mobileText('Speed'),
               value: speedText,
             ),
             _VehicleInfoRowData(
               icon: Icons.sensors_rounded,
-              label: 'Satellites',
+              label: context.mobileText('Satellites'),
               value: satellites,
             ),
           ],
@@ -6580,10 +6622,10 @@ class _VehicleDetailsContent extends ConsumerWidget {
           hasCoordinates: hasCoordinates,
           onOpenNavigation: hasCoordinates
               ? () => _openVehicleNavigation(
-                    context,
-                    resolvedLatitude,
-                    resolvedLongitude,
-                  )
+                  context,
+                  resolvedLatitude,
+                  resolvedLongitude,
+                )
               : null,
         ),
       ],
@@ -6644,7 +6686,7 @@ class _VehicleDetailsHeroCard extends StatelessWidget {
                     width: itemWidth,
                     child: _VehicleMetaItem(
                       icon: Icons.directions_car_filled_outlined,
-                      label: 'Vehicle Type',
+                      label: context.mobileText('Vehicle Type'),
                       value: vehicleType,
                     ),
                   ),
@@ -6652,7 +6694,7 @@ class _VehicleDetailsHeroCard extends StatelessWidget {
                     width: itemWidth,
                     child: _VehicleMetaItem(
                       icon: Icons.confirmation_number_outlined,
-                      label: 'VIN Number',
+                      label: context.mobileText('VIN Number'),
                       value: vinNumber,
                     ),
                   ),
@@ -6714,7 +6756,7 @@ class _VehicleInformationCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Vehicle Information',
+            context.mobileText('Vehicle Information'),
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w800,
@@ -6723,17 +6765,14 @@ class _VehicleInformationCard extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           ...rows.asMap().entries.map(
-                (entry) => Column(
-                  children: [
-                    _VehicleInfoRow(data: entry.value),
-                    if (entry.key < rows.length - 1)
-                      Divider(
-                        height: 1,
-                        color: scheme.outlineVariant,
-                      ),
-                  ],
-                ),
-              ),
+            (entry) => Column(
+              children: [
+                _VehicleInfoRow(data: entry.value),
+                if (entry.key < rows.length - 1)
+                  Divider(height: 1, color: scheme.outlineVariant),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -6777,7 +6816,7 @@ class _VehicleLocationCard extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                'Location',
+                context.mobileText('Location'),
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w800,
@@ -6787,11 +6826,17 @@ class _VehicleLocationCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 10),
-          _VehicleLocationLine(label: 'Address', value: address),
+          _VehicleLocationLine(
+            label: context.mobileText('Address'),
+            value: address,
+          ),
           const SizedBox(height: 10),
           Divider(height: 1, color: scheme.outlineVariant),
           const SizedBox(height: 10),
-          _VehicleLocationLine(label: 'Lat / Long', value: latLongText),
+          _VehicleLocationLine(
+            label: context.mobileText('Lat / Long'),
+            value: latLongText,
+          ),
           const SizedBox(height: 10),
           Material(
             color: Colors.transparent,
@@ -6802,9 +6847,7 @@ class _VehicleLocationCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: scheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: scheme.outlineVariant,
-                  ),
+                  border: Border.all(color: scheme.outlineVariant),
                 ),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
@@ -6831,7 +6874,7 @@ class _VehicleLocationCard extends StatelessWidget {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          'Open in Navigation',
+                          context.mobileText('Open in Navigation'),
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
@@ -6857,7 +6900,9 @@ class _VehicleLocationCard extends StatelessWidget {
           if (!hasCoordinates) ...[
             const SizedBox(height: 8),
             Text(
-              'Live coordinates are unavailable for this vehicle.',
+              context.mobileText(
+                'Live coordinates are unavailable for this vehicle.',
+              ),
               style: TextStyle(
                 fontSize: 9,
                 fontWeight: FontWeight.w600,
@@ -7013,9 +7058,12 @@ class _VehicleDetailsNotice extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 8),
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
-                child: const Text(
-                  'Retry',
-                  style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700),
+                child: Text(
+                  context.mobileText('Retry'),
+                  style: const TextStyle(
+                    fontSize: 9,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
           ],
@@ -7147,15 +7195,15 @@ class _VehicleInfoRowData {
     required this.icon,
     required this.label,
     required this.value,
-  })  : isStatus = false,
-        isRunning = false;
+  }) : isStatus = false,
+       isRunning = false;
 
   const _VehicleInfoRowData.status({
     required this.label,
     required this.value,
     required this.isRunning,
-  })  : icon = Icons.radio_button_checked_rounded,
-        isStatus = true;
+  }) : icon = Icons.radio_button_checked_rounded,
+       isStatus = true;
 
   final IconData icon;
   final String label;
@@ -7293,19 +7341,22 @@ class _VehiclesTab extends ConsumerWidget {
     if (vehicles.isEmpty) {
       return _DrawerScrollFill(
         scrollController: scrollController,
-        child: const _DrawerEmptyState(
+        child: _DrawerEmptyState(
           icon: Icons.directions_car_outlined,
-          title: 'No vehicles',
-          message: 'No vehicles are visible on the map right now.',
+          title: context.mobileText('No vehicles'),
+          message: context.mobileText(
+            'No vehicles are visible on the map right now.',
+          ),
         ),
       );
     }
 
     final query = searchController.text.trim().toLowerCase();
-    final filteredVehicles = vehicles
-        .where((vehicle) => _matchesSearch(vehicle, query))
-        .toList(growable: false)
-      ..sort(_compareVehicleListOrder);
+    final filteredVehicles =
+        vehicles
+            .where((vehicle) => _matchesSearch(vehicle, query))
+            .toList(growable: false)
+          ..sort(_compareVehicleListOrder);
 
     final scheme = Theme.of(context).colorScheme;
 
@@ -7322,7 +7373,7 @@ class _VehiclesTab extends ConsumerWidget {
               color: scheme.onSurface,
             ),
             decoration: InputDecoration(
-              hintText: 'Search vehicle',
+              hintText: context.mobileText('Search vehicle'),
               hintStyle: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
@@ -7347,10 +7398,12 @@ class _VehiclesTab extends ConsumerWidget {
           child: filteredVehicles.isEmpty
               ? _DrawerScrollFill(
                   scrollController: scrollController,
-                  child: const _DrawerEmptyState(
+                  child: _DrawerEmptyState(
                     icon: Icons.search_off_rounded,
-                    title: 'No vehicles found',
-                    message: 'Try another name or plate number.',
+                    title: context.mobileText('No vehicles found'),
+                    message: context.mobileText(
+                      'Try another name or plate number.',
+                    ),
                   ),
                 )
               : ListView.separated(
@@ -7360,10 +7413,8 @@ class _VehiclesTab extends ConsumerWidget {
                   ),
                   padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
                   itemCount: filteredVehicles.length,
-                  separatorBuilder: (_, __) => Divider(
-                    height: 1,
-                    color: scheme.outlineVariant,
-                  ),
+                  separatorBuilder: (_, __) =>
+                      Divider(height: 1, color: scheme.outlineVariant),
                   itemBuilder: (context, index) {
                     final vehicle = filteredVehicles[index];
                     return _VehicleListTile(
@@ -7457,9 +7508,11 @@ class _VehicleListTile extends ConsumerWidget {
                   text: TextSpan(
                     children: [
                       TextSpan(
-                        text: _formatVehicleSpeed(ref
-                            .watch(unitFormatterProvider)
-                            .speedFromKph(vehicle.speed)),
+                        text: _formatVehicleSpeed(
+                          ref
+                              .watch(unitFormatterProvider)
+                              .speedFromKph(vehicle.speed),
+                        ),
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
@@ -7483,7 +7536,9 @@ class _VehicleListTile extends ConsumerWidget {
                 width: 52,
                 child: Text(
                   _formatVehicleDistance(
-                      vehicle.distanceKm, ref.watch(unitFormatterProvider)),
+                    vehicle.distanceKm,
+                    ref.watch(unitFormatterProvider),
+                  ),
                   textAlign: TextAlign.right,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -7536,16 +7591,16 @@ class _HistoryTab extends ConsumerWidget {
           onGetHistory: state.isLoading || selectableVehicles.isEmpty
               ? null
               : () => _openHistoryQuery(
-                    context,
-                    ref,
-                    selectableVehicles,
-                    state.request,
-                  ),
+                  context,
+                  ref,
+                  selectableVehicles,
+                  state.request,
+                ),
           onClearHistory: state.isLoading || state.history == null
               ? null
               : () => ref
-                  .read(liveMapVehicleHistoryControllerProvider.notifier)
-                  .clearHistory(),
+                    .read(liveMapVehicleHistoryControllerProvider.notifier)
+                    .clearHistory(),
         ),
         Expanded(
           child: _buildHistoryBody(context, ref, state, selectableVehicles),
@@ -7563,10 +7618,12 @@ class _HistoryTab extends ConsumerWidget {
     if (selectableVehicles.isEmpty) {
       return _DrawerScrollFill(
         scrollController: scrollController,
-        child: const _DrawerEmptyState(
+        child: _DrawerEmptyState(
           icon: Icons.no_crash_rounded,
-          title: 'No selectable vehicles',
-          message: 'History needs a vehicle with an IMEI from live telemetry.',
+          title: context.mobileText('No selectable vehicles'),
+          message: context.mobileText(
+            'History needs a vehicle with an IMEI from live telemetry.',
+          ),
         ),
       );
     }
@@ -7595,10 +7652,12 @@ class _HistoryTab extends ConsumerWidget {
     if (history == null) {
       return _DrawerScrollFill(
         scrollController: scrollController,
-        child: const _DrawerEmptyState(
+        child: _DrawerEmptyState(
           icon: Icons.route_rounded,
-          title: 'Run a history search',
-          message: 'Select a vehicle, stop threshold, and date time range.',
+          title: context.mobileText('Run a history search'),
+          message: context.mobileText(
+            'Select a vehicle, stop threshold, and date time range.',
+          ),
         ),
       );
     }
@@ -7608,10 +7667,12 @@ class _HistoryTab extends ConsumerWidget {
         history.stopMarkers.isEmpty) {
       return _DrawerScrollFill(
         scrollController: scrollController,
-        child: const _DrawerEmptyState(
+        child: _DrawerEmptyState(
           icon: Icons.timeline_rounded,
-          title: 'No history points',
-          message: 'No valid GPS path or stop markers were returned.',
+          title: context.mobileText('No history points'),
+          message: context.mobileText(
+            'No valid GPS path or stop markers were returned.',
+          ),
         ),
       );
     }
@@ -7694,7 +7755,9 @@ class _HistoryQueryHeader extends StatelessWidget {
               final actionButton = SizedBox(
                 width: constraints.maxWidth < 360 ? double.infinity : 132,
                 child: OpenVtsButton(
-                  label: history == null ? 'Get History' : 'Clear History',
+                  label: history == null
+                      ? context.mobileText('Get History')
+                      : context.mobileText('Clear History'),
                   onPressed: history == null ? onGetHistory : onClearHistory,
                   variant: history == null
                       ? OpenVtsButtonVariant.primary
@@ -7768,8 +7831,8 @@ class _HistoryQueryHeaderText extends ConsumerWidget {
     final subtitle = !hasSelectableVehicles
         ? 'Waiting for live telemetry vehicles with IMEI.'
         : request == null
-            ? 'Choose a vehicle, stop threshold, and date time range.'
-            : _formatHistoryRequestSummary(request, formatter);
+        ? 'Choose a vehicle, stop threshold, and date time range.'
+        : _formatHistoryRequestSummary(request, formatter);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -7819,28 +7882,44 @@ class _HistorySummaryStrip extends ConsumerWidget {
       children: [
         _HistorySummaryPill(
           icon: Icons.timeline_rounded,
-          label: '${history.pointCount} points',
+          label: context.mobileText("{value1} points", {
+            'value1': (history.pointCount).toString(),
+          }),
         ),
         _HistorySummaryPill(
           icon: Icons.pause_circle_outline_rounded,
-          label: '$stopCount stops',
+          label: context.mobileText("{value1} stops", {
+            'value1': (stopCount).toString(),
+          }),
         ),
         if (overspeedCount > 0)
           _HistorySummaryPill(
             icon: Icons.speed_rounded,
-            label: '$overspeedCount overspeed',
+            label: context.mobileText("{value1} overspeed", {
+              'value1': (overspeedCount).toString(),
+            }),
           ),
         if (history.maxSpeedKph != null)
           _HistorySummaryPill(
             icon: Icons.speed_rounded,
-            label:
-                '${_formatHistoryNumber(uf.speedFromKph(history.maxSpeedKph!), 1)} ${uf.speedLabel} max',
+            label: context.mobileText("{value1} {value2} max", {
+              'value1': (_formatHistoryNumber(
+                uf.speedFromKph(history.maxSpeedKph!),
+                1,
+              )).toString(),
+              'value2': (uf.speedLabel).toString(),
+            }),
           ),
         if (analytics.averageSpeedKph != null)
           _HistorySummaryPill(
             icon: Icons.query_stats_rounded,
-            label:
-                '${_formatHistoryNumber(uf.speedFromKph(analytics.averageSpeedKph!), 1)} ${uf.speedLabel} avg',
+            label: context.mobileText("{value1} {value2} avg", {
+              'value1': (_formatHistoryNumber(
+                uf.speedFromKph(analytics.averageSpeedKph!),
+                1,
+              )).toString(),
+              'value2': (uf.speedLabel).toString(),
+            }),
           ),
         if (history.totalDistanceKm != null)
           _HistorySummaryPill(
@@ -7851,14 +7930,20 @@ class _HistorySummaryStrip extends ConsumerWidget {
         if (analytics.runningDuration != null)
           _HistorySummaryPill(
             icon: Icons.directions_car_rounded,
-            label:
-                '${_formatHistoryDuration(analytics.runningDuration)} running',
+            label: context.mobileText("{value1} running", {
+              'value1': (_formatHistoryDuration(
+                analytics.runningDuration,
+              )).toString(),
+            }),
           ),
         if (analytics.stoppedDuration != null)
           _HistorySummaryPill(
             icon: Icons.pause_circle_outline_rounded,
-            label:
-                '${_formatHistoryDuration(analytics.stoppedDuration)} stopped',
+            label: context.mobileText("{value1} stopped", {
+              'value1': (_formatHistoryDuration(
+                analytics.stoppedDuration,
+              )).toString(),
+            }),
           ),
       ],
     );
@@ -7921,7 +8006,7 @@ class _HistoryLoadingState extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Text(
-            'Loading history...',
+            context.mobileText('Loading history...'),
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w700,
@@ -7957,7 +8042,7 @@ class _HistoryErrorState extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Unable to load history',
+              context.mobileText('Unable to load history'),
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 12,
@@ -7980,7 +8065,7 @@ class _HistoryErrorState extends StatelessWidget {
             SizedBox(
               width: 120,
               child: OpenVtsButton(
-                label: 'Retry',
+                label: context.mobileText('Retry'),
                 onPressed: onRetry,
                 variant: OpenVtsButtonVariant.secondary,
                 height: 38,
@@ -8027,8 +8112,9 @@ class _HistoryTimelineList extends StatelessWidget {
         return _HistoryTimelineTile(
           number: entryIndex + 1,
           entry: entry,
-          onTap:
-              entry.focusPoints.isEmpty ? null : () => onEntrySelected(entry),
+          onTap: entry.focusPoints.isEmpty
+              ? null
+              : () => onEntrySelected(entry),
           isSelected:
               selectedHistorySegmentId == _historyTimelineEntryId(entry),
           isFirst: entryIndex == 0,
@@ -8051,7 +8137,9 @@ class _HistoryTimelineHeader extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(0, 0, 0, 9),
       child: Text(
-        'TIMELINE ($count)',
+        context.mobileText("TIMELINE ({value1})", {
+          'value1': (count).toString(),
+        }),
         style: TextStyle(
           fontSize: 10,
           fontWeight: FontWeight.w800,
@@ -8094,8 +8182,9 @@ class _HistoryTimelineTile extends StatelessWidget {
             top: isFirst ? 24 : 0,
             bottom: isLast ? 24 : 0,
             child: CustomPaint(
-              painter:
-                  _HistoryTimelineRailPainter(color: scheme.outlineVariant),
+              painter: _HistoryTimelineRailPainter(
+                color: scheme.outlineVariant,
+              ),
               child: const SizedBox(width: 1),
             ),
           ),
@@ -8226,8 +8315,8 @@ class _HistoryTimelineCard extends StatelessWidget {
               color: isSelected
                   ? scheme.outlineVariant
                   : isDark
-                      ? scheme.outlineVariant
-                      : Colors.black.withValues(alpha: 0.1),
+                  ? scheme.outlineVariant
+                  : Colors.black.withValues(alpha: 0.1),
             ),
             boxShadow: [
               BoxShadow(
@@ -8272,11 +8361,12 @@ class _HistoryTimelineCard extends StatelessWidget {
                 const SizedBox(height: 7),
                 switch (entry.kind) {
                   _HistoryTimelineEntryKind.start ||
-                  _HistoryTimelineEntryKind.end =>
-                    _HistoryPointTimelineDetails(entry: entry),
+                  _HistoryTimelineEntryKind.end => _HistoryPointTimelineDetails(
+                    entry: entry,
+                  ),
                   _HistoryTimelineEntryKind.stop => _HistoryStopTimelineDetails(
-                      segment: entry.primarySegment,
-                    ),
+                    segment: entry.primarySegment,
+                  ),
                   _HistoryTimelineEntryKind.running =>
                     _HistoryRunningTimelineDetails(entry: entry),
                 },
@@ -8301,7 +8391,8 @@ class _HistoryPointTimelineDetails extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _HistoryTimeLine(
-            text: _formatHistoryPointTimestamp(entry.timestamp, formatter)),
+          text: _formatHistoryPointTimestamp(entry.timestamp, formatter),
+        ),
         const SizedBox(height: 5),
         _HistoryMutedLine(text: _formatHistoryAddress(entry.point?.address)),
       ],
@@ -8329,7 +8420,9 @@ class _HistoryStopTimelineDetails extends ConsumerWidget {
         ),
         const SizedBox(height: 5),
         _HistoryMutedLine(
-          text: 'Duration: ${_formatHistoryDuration(segment?.duration)}',
+          text: context.mobileText("Duration: {value1}", {
+            'value1': (_formatHistoryDuration(segment?.duration)).toString(),
+          }),
         ),
         const SizedBox(height: 4),
         _HistoryMutedLine(text: _formatHistoryAddress(segment?.address)),
@@ -8364,7 +8457,7 @@ class _HistoryRunningTimelineDetails extends ConsumerWidget {
           children: [
             Expanded(
               child: _HistoryMetricBox(
-                label: 'Distance',
+                label: context.mobileText('Distance'),
                 value: _formatHistoryDistanceValue(
                   _historyEntryDistanceKm(entry),
                   uf,
@@ -8374,7 +8467,7 @@ class _HistoryRunningTimelineDetails extends ConsumerWidget {
             const SizedBox(width: 6),
             Expanded(
               child: _HistoryMetricBox(
-                label: 'Avg Speed',
+                label: context.mobileText('Avg Speed'),
                 value: _formatHistorySpeedValue(
                   _historyEntryAvgSpeedKph(entry),
                   uf,
@@ -8384,7 +8477,7 @@ class _HistoryRunningTimelineDetails extends ConsumerWidget {
             const SizedBox(width: 6),
             Expanded(
               child: _HistoryMetricBox(
-                label: 'Max Speed',
+                label: context.mobileText('Max Speed'),
                 value: _formatHistorySpeedValue(
                   _historyEntryMaxSpeedKph(entry),
                   uf,
@@ -8395,7 +8488,9 @@ class _HistoryRunningTimelineDetails extends ConsumerWidget {
         ),
         const SizedBox(height: 7),
         _HistoryMutedLine(
-          text: '${_formatHistoryDuration(duration)} driving',
+          text: context.mobileText("{value1} driving", {
+            'value1': (_formatHistoryDuration(duration)).toString(),
+          }),
         ),
       ],
     );
@@ -8470,11 +8565,7 @@ class _HistoryTimeLine extends StatelessWidget {
 
     return Row(
       children: [
-        Icon(
-          Icons.timer_outlined,
-          size: 12,
-          color: scheme.onSurfaceVariant,
-        ),
+        Icon(Icons.timer_outlined, size: 12, color: scheme.onSurfaceVariant),
         const SizedBox(width: 4),
         Expanded(
           child: Text(
@@ -8634,7 +8725,7 @@ class _HistoryQueryDialogState extends State<_HistoryQueryDialog> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  'Get History',
+                  context.mobileText('Get History'),
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
@@ -8643,7 +8734,9 @@ class _HistoryQueryDialogState extends State<_HistoryQueryDialog> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Use the live map vehicle list, then choose the stop threshold and date time range.',
+                  context.mobileText(
+                    'Use the live map vehicle list, then choose the stop threshold and date time range.',
+                  ),
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
@@ -8653,7 +8746,7 @@ class _HistoryQueryDialogState extends State<_HistoryQueryDialog> {
                 ),
                 const SizedBox(height: 18),
                 Text(
-                  'Vehicle',
+                  context.mobileText('Vehicle'),
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
@@ -8664,8 +8757,8 @@ class _HistoryQueryDialogState extends State<_HistoryQueryDialog> {
                 DropdownButtonFormField<VehicleSummary>(
                   initialValue: _selectedVehicle,
                   isExpanded: true,
-                  decoration: const InputDecoration(
-                    hintText: 'Select vehicle',
+                  decoration: InputDecoration(
+                    hintText: context.mobileText('Select vehicle'),
                   ),
                   items: widget.vehicles
                       .map(
@@ -8679,9 +8772,7 @@ class _HistoryQueryDialogState extends State<_HistoryQueryDialog> {
                         ),
                       )
                       .toList(growable: false),
-                  validator: (value) => value == null
-                      ? 'Select a vehicle from live telemetry.'
-                      : null,
+                  validator: context.localizedValidator((value) => value == null ? 'Select a vehicle from live telemetry.' : null),
                   onChanged: (vehicle) {
                     setState(() {
                       _selectedVehicle = vehicle;
@@ -8690,7 +8781,7 @@ class _HistoryQueryDialogState extends State<_HistoryQueryDialog> {
                 ),
                 const SizedBox(height: 14),
                 OpenVtsTextField(
-                  label: 'Stop Minutes',
+                  label: context.mobileText('Stop Minutes'),
                   controller: _stopMinutesController,
                   hintText: '5',
                   keyboardType: TextInputType.number,
@@ -8699,9 +8790,9 @@ class _HistoryQueryDialogState extends State<_HistoryQueryDialog> {
                 ),
                 const SizedBox(height: 14),
                 OpenVtsDateTimeRangeField(
-                  label: 'Date Time Range',
-                  title: 'Choose Date Time Range',
-                  hintText: 'Select date time range',
+                  label: context.mobileText('Date Time Range'),
+                  title: context.mobileText('Choose Date Time Range'),
+                  hintText: context.mobileText('Select date time range'),
                   dateTimeEnabled: true,
                   value: _dateTimeRange,
                   firstDate: DateTime(2020),
@@ -8730,7 +8821,7 @@ class _HistoryQueryDialogState extends State<_HistoryQueryDialog> {
                   children: [
                     Expanded(
                       child: OpenVtsButton(
-                        label: 'Cancel',
+                        label: context.mobileText('Cancel'),
                         onPressed: () => Navigator.of(context).pop(),
                         variant: OpenVtsButtonVariant.secondary,
                         height: 42,
@@ -8739,7 +8830,7 @@ class _HistoryQueryDialogState extends State<_HistoryQueryDialog> {
                     const SizedBox(width: 10),
                     Expanded(
                       child: OpenVtsButton(
-                        label: 'Show History',
+                        label: context.mobileText('Show History'),
                         onPressed: _submit,
                         trailingIcon: Icons.timeline_rounded,
                         height: 42,
@@ -8825,7 +8916,9 @@ List<VehicleSummary> _historySelectableVehicles(List<VehicleSummary> vehicles) {
 }
 
 String _formatHistoryRequestSummary(
-    SuperadminVehicleHistoryRequest request, AppDateFormatter formatter) {
+  SuperadminVehicleHistoryRequest request,
+  AppDateFormatter formatter,
+) {
   final start = formatter.formatDateTime(request.from.toLocal());
   final end = formatter.formatDateTime(request.to.toLocal());
   return '$start - $end • Stops >= ${request.stopMinutes} min';
@@ -8835,9 +8928,10 @@ String _historyVehicleOptionLabel(VehicleSummary vehicle) {
   final name = _vehicleDisplayName(vehicle);
   final plate = vehicle.plateNumber.trim();
   final imei = vehicle.imei.trim();
-  final meta = [plate, imei]
-      .where((value) => value.isNotEmpty && value != name)
-      .join(' • ');
+  final meta = [
+    plate,
+    imei,
+  ].where((value) => value.isNotEmpty && value != name).join(' • ');
   return meta.isEmpty ? name : '$name • $meta';
 }
 
@@ -8919,7 +9013,7 @@ List<_HistoryTimelineEntry> _historyTimelineEntries(
       case SuperadminVehicleHistorySegmentType.drive:
         runningSegments.add(segment);
       case SuperadminVehicleHistorySegmentType.stop ||
-            SuperadminVehicleHistorySegmentType.idle:
+          SuperadminVehicleHistorySegmentType.idle:
         flushRunningSegments();
         entries.add(
           _HistoryTimelineEntry(
@@ -8929,7 +9023,7 @@ List<_HistoryTimelineEntry> _historyTimelineEntries(
           ),
         );
       case SuperadminVehicleHistorySegmentType.overspeed ||
-            SuperadminVehicleHistorySegmentType.other:
+          SuperadminVehicleHistorySegmentType.other:
         flushRunningSegments();
     }
   }
@@ -8952,17 +9046,18 @@ List<_HistoryTimelineEntry> _historyTimelineEntries(
 List<SuperadminVehicleHistorySegment> _historyCleanTimelineSegments(
   SuperadminVehicleHistory history,
 ) {
-  return history.segments.where((segment) {
-    return switch (segment.type) {
-      SuperadminVehicleHistorySegmentType.drive => true,
-      SuperadminVehicleHistorySegmentType.stop ||
-      SuperadminVehicleHistorySegmentType.idle =>
-        _historySegmentDurationSec(segment) >= 180,
-      SuperadminVehicleHistorySegmentType.overspeed ||
-      SuperadminVehicleHistorySegmentType.other =>
-        false,
-    };
-  }).toList(growable: false);
+  return history.segments
+      .where((segment) {
+        return switch (segment.type) {
+          SuperadminVehicleHistorySegmentType.drive => true,
+          SuperadminVehicleHistorySegmentType.stop ||
+          SuperadminVehicleHistorySegmentType.idle =>
+            _historySegmentDurationSec(segment) >= 180,
+          SuperadminVehicleHistorySegmentType.overspeed ||
+          SuperadminVehicleHistorySegmentType.other => false,
+        };
+      })
+      .toList(growable: false);
 }
 
 _HistoryTimelineVisuals _historyTimelineVisuals(
@@ -8970,22 +9065,22 @@ _HistoryTimelineVisuals _historyTimelineVisuals(
 ) {
   return switch (kind) {
     _HistoryTimelineEntryKind.start => const _HistoryTimelineVisuals(
-        icon: Icons.location_on_outlined,
-        color: Color(0xFF6B7280),
-      ),
+      icon: Icons.location_on_outlined,
+      color: Color(0xFF6B7280),
+    ),
     _HistoryTimelineEntryKind.running => const _HistoryTimelineVisuals(
-        icon: Icons.speed_rounded,
-        color: Color(0xFF6B7280),
-      ),
+      icon: Icons.speed_rounded,
+      color: Color(0xFF6B7280),
+    ),
     _HistoryTimelineEntryKind.stop => const _HistoryTimelineVisuals(
-        icon: Icons.local_parking_rounded,
-        color: Color(0xFF6B7280),
-        textIcon: 'P',
-      ),
+      icon: Icons.local_parking_rounded,
+      color: Color(0xFF6B7280),
+      textIcon: 'P',
+    ),
     _HistoryTimelineEntryKind.end => const _HistoryTimelineVisuals(
-        icon: Icons.flag_outlined,
-        color: Color(0xFF6B7280),
-      ),
+      icon: Icons.flag_outlined,
+      color: Color(0xFF6B7280),
+    ),
   };
 }
 
@@ -9005,8 +9100,8 @@ String _historyTimelineEntryId(_HistoryTimelineEntry entry) {
     _HistoryTimelineEntryKind.running =>
       'running-${_historyEntryStartIndex(entry) ?? 0}-${_historyEntryEndIndex(entry) ?? 0}',
     _HistoryTimelineEntryKind.stop => _historyStopSegmentId(
-        entry.primarySegment,
-      ),
+      entry.primarySegment,
+    ),
   };
 }
 
@@ -9125,11 +9220,7 @@ List<LatLng> _historySegmentLatLngs(
   SuperadminVehicleHistory history,
   SuperadminVehicleHistorySegment segment,
 ) {
-  return _historyIndexedLatLngs(
-    history,
-    segment.startIndex,
-    segment.endIndex,
-  );
+  return _historyIndexedLatLngs(history, segment.startIndex, segment.endIndex);
 }
 
 List<LatLng> _historyStopFocusLatLngs(
@@ -9190,10 +9281,7 @@ int _historySegmentDurationSec(SuperadminVehicleHistorySegment segment) {
 }
 
 class _HistoryDerivedStopMarker {
-  const _HistoryDerivedStopMarker({
-    required this.point,
-    required this.segment,
-  });
+  const _HistoryDerivedStopMarker({required this.point, required this.segment});
 
   final LatLng point;
   final SuperadminVehicleHistorySegment segment;
@@ -9210,7 +9298,7 @@ List<_HistoryDerivedStopMarker> _historyDerivedStopMarkers(
   for (final segment in history.segments) {
     final isStopLike =
         segment.type == SuperadminVehicleHistorySegmentType.stop ||
-            segment.type == SuperadminVehicleHistorySegmentType.idle;
+        segment.type == SuperadminVehicleHistorySegmentType.idle;
     if (!isStopLike || _historySegmentDurationSec(segment) < 180) {
       continue;
     }
@@ -9220,12 +9308,7 @@ List<_HistoryDerivedStopMarker> _historyDerivedStopMarkers(
       continue;
     }
 
-    markers.add(
-      _HistoryDerivedStopMarker(
-        point: point,
-        segment: segment,
-      ),
-    );
+    markers.add(_HistoryDerivedStopMarker(point: point, segment: segment));
   }
 
   return markers;
@@ -9368,8 +9451,8 @@ List<LatLng> _replayVisitedPathLatLngs(
   final endIndex = replayIndex < 0
       ? 0
       : replayIndex >= points.length
-          ? points.length - 1
-          : replayIndex;
+      ? points.length - 1
+      : replayIndex;
   return points
       .take(endIndex + 1)
       .map(_replayPointLatLng)
@@ -9448,8 +9531,11 @@ List<SuperadminReplayStopMarker> _deriveReplayStopMarkers(
       return;
     }
 
-    final duration =
-        _replayStoppedDuration(points, startIndex, segmentEndIndex);
+    final duration = _replayStoppedDuration(
+      points,
+      startIndex,
+      segmentEndIndex,
+    );
     if (duration.inSeconds < 180) {
       return;
     }
@@ -9677,10 +9763,10 @@ const _replaySpeedOptions = <_ReplaySpeedOption>[
   _ReplaySpeedOption(label: 'Faster', value: 16),
 ];
 
-String _replaySpeedLabel(double speed) {
+String _replaySpeedLabel(BuildContext context, double speed) {
   for (final option in _replaySpeedOptions) {
     if (option.value == speed) {
-      return '${option.label} ${option.value.toInt()}x';
+      return '${context.mobileText(option.label)} ${option.value.toInt()}x';
     }
   }
 
@@ -9688,7 +9774,9 @@ String _replaySpeedLabel(double speed) {
 }
 
 String _formatHistoryPointTimestamp(
-    DateTime? timestamp, AppDateFormatter formatter) {
+  DateTime? timestamp,
+  AppDateFormatter formatter,
+) {
   if (timestamp == null) {
     return '--';
   }
@@ -9698,9 +9786,13 @@ String _formatHistoryPointTimestamp(
 }
 
 String _formatHistoryTimeRange(
-    DateTime? start, DateTime? end, AppDateFormatter formatter) {
-  final startText =
-      start == null ? '--' : formatter.formatTime(start.toLocal());
+  DateTime? start,
+  DateTime? end,
+  AppDateFormatter formatter,
+) {
+  final startText = start == null
+      ? '--'
+      : formatter.formatTime(start.toLocal());
   final endText = end == null ? '--' : formatter.formatTime(end.toLocal());
   return '$startText → $endText';
 }
@@ -9828,10 +9920,12 @@ class _AlertsTab extends ConsumerWidget {
     if (alerts.isEmpty) {
       return _DrawerScrollFill(
         scrollController: scrollController,
-        child: const _DrawerEmptyState(
+        child: _DrawerEmptyState(
           icon: Icons.notifications_none_rounded,
-          title: 'No alerts',
-          message: 'There are no alerts available right now.',
+          title: context.mobileText('No alerts'),
+          message: context.mobileText(
+            'There are no alerts available right now.',
+          ),
         ),
       );
     }
@@ -9846,7 +9940,9 @@ class _AlertsTab extends ConsumerWidget {
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
       itemCount: visibleAlerts.length,
       separatorBuilder: (_, __) => Divider(
-          height: 1, color: scheme.outlineVariant.withValues(alpha: 0.3)),
+        height: 1,
+        color: scheme.outlineVariant.withValues(alpha: 0.3),
+      ),
       itemBuilder: (context, index) {
         final alert = visibleAlerts[index];
         final visuals = _resolveAlertVisuals(alert);
@@ -10082,14 +10178,14 @@ class _MapOverlayStatusPanel extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: switch (item.kind) {
                     _MapOverlayStatusKind.loading => Colors.white.withValues(
-                        alpha: 0.94,
-                      ),
+                      alpha: 0.94,
+                    ),
                     _MapOverlayStatusKind.empty => const Color(
-                        0xFF141118,
-                      ).withValues(alpha: 0.78),
+                      0xFF141118,
+                    ).withValues(alpha: 0.78),
                     _MapOverlayStatusKind.error => const Color(
-                        0xFFB42318,
-                      ).withValues(alpha: 0.92),
+                      0xFFB42318,
+                    ).withValues(alpha: 0.92),
                   },
                   borderRadius: BorderRadius.circular(999),
                   boxShadow: [
@@ -10202,7 +10298,9 @@ class _VehicleClusterMarker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Tooltip(
-      message: '$count vehicles',
+      message: context.mobileText("{value1} vehicles", {
+        'value1': (count).toString(),
+      }),
       child: MouseRegion(
         cursor: SystemMouseCursors.click,
         child: GestureDetector(
@@ -10299,13 +10397,7 @@ class _VehicleMarkerGroup {
   VehicleSummary get vehicle => vehicles.first;
 }
 
-enum _VehicleMarkerStatus {
-  running,
-  idle,
-  stopped,
-  inactive,
-  unknown,
-}
+enum _VehicleMarkerStatus { running, idle, stopped, inactive, unknown }
 
 class _VehicleMarker extends StatelessWidget {
   const _VehicleMarker({
@@ -10336,8 +10428,9 @@ class _VehicleMarker extends StatelessWidget {
     final showStatusRipple = showRipple && _vehicleMarkerShowsRipple(status);
     final showMotionTrail =
         isInMotion && status == _VehicleMarkerStatus.running;
-    final motionPulse =
-        showMotionTrail ? math.sin(motionProgress * math.pi) : 0.0;
+    final motionPulse = showMotionTrail
+        ? math.sin(motionProgress * math.pi)
+        : 0.0;
     final assetPath = _vehicleMarkerAssetPath(status);
     final trailColor = _vehicleMarkerColor(_VehicleMarkerStatus.running);
 
@@ -10384,10 +10477,7 @@ class _VehicleMarker extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: markerColor,
                           shape: BoxShape.circle,
-                          border: Border.all(
-                            color: scheme.surface,
-                            width: 2.4,
-                          ),
+                          border: Border.all(color: scheme.surface, width: 2.4),
                         ),
                         child: SizedBox(
                           width: 34,
@@ -10577,11 +10667,7 @@ class _CreationPinMarker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Icon(
-      Icons.location_pin,
-      size: 40,
-      color: Color(0xFF7C3AED),
-    );
+    return const Icon(Icons.location_pin, size: 40, color: Color(0xFF7C3AED));
   }
 }
 
@@ -10631,10 +10717,7 @@ class _MapCreationMenuSheet extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Text(
                 coordText,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: scheme.onSurfaceVariant,
-                ),
+                style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant),
                 textAlign: TextAlign.center,
               ),
             ),
@@ -10642,13 +10725,13 @@ class _MapCreationMenuSheet extends StatelessWidget {
             if (canCreatePoi)
               ListTile(
                 leading: const Icon(Icons.place_outlined),
-                title: const Text('Create POI'),
+                title: Text(context.mobileText('Create POI')),
                 onTap: onCreatePoi,
               ),
             if (canCreateGeofence)
               ListTile(
                 leading: const Icon(Icons.crop_free_rounded),
-                title: const Text('Create Geofence'),
+                title: Text(context.mobileText('Create Geofence')),
                 onTap: onCreateGeofence,
               ),
             const SizedBox(height: 8),
@@ -10682,26 +10765,22 @@ class _MapVisualSettings {
 
   factory _MapVisualSettings.fromJson(Map<String, dynamic> json) {
     return _MapVisualSettings(
-      vehicleLabel: _readBool(
-        json,
-        const ['vehicleLabel', 'showVehicleLabel'],
-        defaults.vehicleLabel,
-      ),
-      cluster: _readBool(
-        json,
-        const ['cluster', 'enableCluster'],
-        defaults.cluster,
-      ),
-      ripple: _readBool(
-        json,
-        const ['ripple', 'enableRipple'],
-        defaults.ripple,
-      ),
-      geofence: _readBool(
-        json,
-        const ['geofence', 'showGeofence'],
-        defaults.geofence,
-      ),
+      vehicleLabel: _readBool(json, const [
+        'vehicleLabel',
+        'showVehicleLabel',
+      ], defaults.vehicleLabel),
+      cluster: _readBool(json, const [
+        'cluster',
+        'enableCluster',
+      ], defaults.cluster),
+      ripple: _readBool(json, const [
+        'ripple',
+        'enableRipple',
+      ], defaults.ripple),
+      geofence: _readBool(json, const [
+        'geofence',
+        'showGeofence',
+      ], defaults.geofence),
       poi: _readBool(json, const ['poi', 'showPoi'], defaults.poi),
       route: _readBool(json, const ['route', 'showRoute'], defaults.route),
     );
@@ -10827,7 +10906,7 @@ enum _LayerPreviewStyle {
 }
 
 const List<String> _googleTileSubdomains = ['mt0', 'mt1', 'mt2', 'mt3'];
-const List<String> _osmTileSubdomains = [];
+const List<String> _osmTileSubdomains = ['a', 'b', 'c'];
 const List<String> _cartoTileSubdomains = ['a', 'b', 'c', 'd'];
 
 const List<_MapLayerOption> _primaryMapLayerOptions = [
@@ -10871,7 +10950,7 @@ const List<_MapLayerOption> _detailMapLayerOptions = [
     id: 'osm',
     name: 'OpenStreetMap',
     shortLabel: 'OSM',
-    url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
     subdomains: _osmTileSubdomains,
     previewStyle: _LayerPreviewStyle.osm,
   ),
@@ -10935,10 +11014,7 @@ _MapLayerOption? _mapLayerOptionById(String? id) {
     return null;
   }
 
-  for (final layer in [
-    ..._primaryMapLayerOptions,
-    ..._detailMapLayerOptions,
-  ]) {
+  for (final layer in [..._primaryMapLayerOptions, ..._detailMapLayerOptions]) {
     if (layer.id == normalizedId) {
       return layer;
     }
@@ -11069,11 +11145,12 @@ Duration _vehicleMotionDuration({
   if (fromTime != null && toTime != null) {
     final deltaMs = toTime.difference(fromTime).inMilliseconds;
     if (deltaMs > 0) {
-      final scaledMs =
-          (deltaMs * _vehicleMarkerTimestampDurationScale).round().clamp(
-                _vehicleMarkerMinMotionDuration.inMilliseconds,
-                _vehicleMarkerMaxMotionDuration.inMilliseconds,
-              );
+      final scaledMs = (deltaMs * _vehicleMarkerTimestampDurationScale)
+          .round()
+          .clamp(
+            _vehicleMarkerMinMotionDuration.inMilliseconds,
+            _vehicleMarkerMaxMotionDuration.inMilliseconds,
+          );
       return Duration(milliseconds: scaledMs);
     }
   }
@@ -11121,13 +11198,17 @@ double _coordinateDistanceMeters({
   final startLatitudeRadians = _degreesToRadians(fromLatitude);
   final endLatitudeRadians = _degreesToRadians(toLatitude);
 
-  final haversine = math.pow(math.sin(deltaLatitude / 2), 2) +
+  final haversine =
+      math.pow(math.sin(deltaLatitude / 2), 2) +
       math.cos(startLatitudeRadians) *
           math.cos(endLatitudeRadians) *
           math.pow(math.sin(deltaLongitude / 2), 2);
-  final arc = 2 *
+  final arc =
+      2 *
       math.atan2(
-          math.sqrt(haversine.toDouble()), math.sqrt(1 - haversine.toDouble()));
+        math.sqrt(haversine.toDouble()),
+        math.sqrt(1 - haversine.toDouble()),
+      );
   return earthRadiusMeters * arc;
 }
 
@@ -11154,7 +11235,8 @@ double? _vehicleBearingRadians({
   final endLatitudeRadians = _degreesToRadians(toLatitude);
   final deltaLongitudeRadians = _degreesToRadians(toLongitude - fromLongitude);
   final y = math.sin(deltaLongitudeRadians) * math.cos(endLatitudeRadians);
-  final x = math.cos(startLatitudeRadians) * math.sin(endLatitudeRadians) -
+  final x =
+      math.cos(startLatitudeRadians) * math.sin(endLatitudeRadians) -
       math.sin(startLatitudeRadians) *
           math.cos(endLatitudeRadians) *
           math.cos(deltaLongitudeRadians);
@@ -11249,11 +11331,11 @@ class _AnimatedVehicleMotion {
   final Duration duration;
 
   bool get hasDirectionalMotion => _hasMeaningfulLocationChange(
-        startLatitude,
-        startLongitude,
-        targetLatitude,
-        targetLongitude,
-      );
+    startLatitude,
+    startLongitude,
+    targetLatitude,
+    targetLongitude,
+  );
 
   bool isAnimatingAt(DateTime now) {
     if (startedAt == null || duration == Duration.zero) {
@@ -11274,8 +11356,10 @@ class _AnimatedVehicleMotion {
     }
 
     final elapsedMilliseconds = now.difference(startedAt!).inMilliseconds;
-    final rawProgress =
-        (elapsedMilliseconds / totalMilliseconds).clamp(0.0, 1.0);
+    final rawProgress = (elapsedMilliseconds / totalMilliseconds).clamp(
+      0.0,
+      1.0,
+    );
     // Linear motion (matches Web Leaflet2D live marker movement) so that the
     // marker moves at a constant speed instead of step-like easing.
     return rawProgress;
@@ -11356,13 +11440,18 @@ String _commandImeiFor(VehicleSummary vehicle, String fallbackImei) {
 String _vehicleCommandConnectionHint(VehicleSummary vehicle) {
   final deviceStatus = vehicle.deviceConnectionStatus?.trim().toLowerCase();
   if (deviceStatus != null && deviceStatus.isNotEmpty) {
-    if (const <String>{'connected', 'online', 'active'}
-        .contains(deviceStatus)) {
+    if (const <String>{
+      'connected',
+      'online',
+      'active',
+    }.contains(deviceStatus)) {
       return 'Online';
     }
-    if (const <String>{'disconnected', 'offline', 'inactive'}.contains(
-      deviceStatus,
-    )) {
+    if (const <String>{
+      'disconnected',
+      'offline',
+      'inactive',
+    }.contains(deviceStatus)) {
       return 'Offline';
     }
   }
@@ -11379,7 +11468,9 @@ String _vehicleCommandConnectionHint(VehicleSummary vehicle) {
 }
 
 String _formatVehicleListSubtitle(
-    VehicleSummary vehicle, AppDateFormatter formatter) {
+  VehicleSummary vehicle,
+  AppDateFormatter formatter,
+) {
   if (vehicle.updatedAt != null) {
     return formatter.formatDateTime(vehicle.updatedAt!.toLocal());
   }
@@ -11392,7 +11483,9 @@ String _formatVehicleListSubtitle(
 }
 
 String _buildVehicleDrawerSubtitle(
-    VehicleSummary vehicle, AppDateFormatter formatter) {
+  VehicleSummary vehicle,
+  AppDateFormatter formatter,
+) {
   final plateNumber = vehicle.plateNumber.trim();
   final updatedAt = vehicle.updatedAt;
 
@@ -11573,8 +11666,11 @@ String _formatVehicleMetricDistance(
   return '--';
 }
 
-String _formatVehicleSpeedMetric(String? raw,
-    {double? fallback, required UnitFormatter unitFormatter}) {
+String _formatVehicleSpeedMetric(
+  String? raw, {
+  double? fallback,
+  required UnitFormatter unitFormatter,
+}) {
   final rawText = raw?.trim() ?? '';
   if (rawText.isNotEmpty) {
     final numeric = _parseVehicleDouble(rawText);
@@ -11635,7 +11731,9 @@ String _formatVehicleEventTime(DateTime? value, AppDateFormatter formatter) {
 }
 
 String _formatVehicleEventDateTime(
-    DateTime? value, AppDateFormatter formatter) {
+  DateTime? value,
+  AppDateFormatter formatter,
+) {
   if (value == null) {
     return '--';
   }
@@ -11866,9 +11964,7 @@ bool _isFailedVehicleCommandStatus(String status) {
   return upper == 'ENCODE_FAILED' || upper == 'FAILED' || upper == 'ERROR';
 }
 
-String _vehicleCommandLatestStatusMessage(
-  SuperadminVehicleCommandEntry entry,
-) {
+String _vehicleCommandLatestStatusMessage(SuperadminVehicleCommandEntry entry) {
   final label = _vehicleCommandStatusLabel(entry.status);
   final rawResponse = entry.responseRaw?.trim() ?? '';
   final hexResponse = entry.responseHex?.trim() ?? '';
@@ -11876,8 +11972,8 @@ String _vehicleCommandLatestStatusMessage(
   final response = rawResponse.isNotEmpty
       ? rawResponse
       : hexResponse.isNotEmpty
-          ? hexResponse
-          : null;
+      ? hexResponse
+      : null;
   final error = errorMessage.isEmpty ? null : errorMessage;
 
   if (error != null) {
@@ -11923,7 +12019,9 @@ DateTime? _vehicleSensorTelemetryUpdatedAt(VehicleSummary vehicle) {
 }
 
 String _formatVehicleSensorUpdatedAt(
-    DateTime value, AppDateFormatter formatter) {
+  DateTime value,
+  AppDateFormatter formatter,
+) {
   return formatter.formatDateTime(value.toLocal());
 }
 
@@ -11943,8 +12041,10 @@ String _formatVehicleLogDateTime(DateTime? value, AppDateFormatter formatter) {
   return formatter.formatDateTime(value.toLocal());
 }
 
-String _formatVehicleLogSpeed(double? value,
-    {required UnitFormatter unitFormatter}) {
+String _formatVehicleLogSpeed(
+  double? value, {
+  required UnitFormatter unitFormatter,
+}) {
   if (value == null || !value.isFinite) {
     return '--';
   }
@@ -12045,7 +12145,7 @@ Future<void> _openVehicleNavigation(
   if (!launched) {
     if (!context.mounted) return;
     ToastHelper.showError(
-      'Unable to open navigation for this vehicle.',
+      context.mobileText('Unable to open navigation for this vehicle.'),
       context: context,
     );
   }
@@ -12120,8 +12220,7 @@ bool _vehicleMarkerShowsRipple(_VehicleMarkerStatus status) {
   return switch (status) {
     _VehicleMarkerStatus.running ||
     _VehicleMarkerStatus.idle ||
-    _VehicleMarkerStatus.stopped =>
-      true,
+    _VehicleMarkerStatus.stopped => true,
     _VehicleMarkerStatus.inactive || _VehicleMarkerStatus.unknown => false,
   };
 }

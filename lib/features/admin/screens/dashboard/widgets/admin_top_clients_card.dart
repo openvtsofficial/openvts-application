@@ -5,6 +5,7 @@ import '../../../../../core/router/route_paths.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../core/utils/date_time_formatter.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../models/admin_dashboard_model.dart';
 import 'admin_dashboard_list_card.dart';
 
@@ -23,11 +24,13 @@ class AdminTopClientsCard extends ConsumerWidget {
     final formatter = ref.watch(appDateFormatterProvider);
 
     return AdminDashboardListCard(
-      title: 'Top Clients',
+      title: context.mobileText('Top Clients'),
       icon: Icons.people_outline_rounded,
       viewAllRoute: RoutePaths.adminUsers,
       emptyTitle: 'No clients yet',
-      emptyMessage: 'Client revenue will appear after payments are recorded.',
+      emptyMessage: context.mobileText(
+        'Client revenue will appear after payments are recorded.',
+      ),
       itemCount: clients.length,
       itemBuilder: (context, index) {
         return _TopClientRow(
@@ -81,7 +84,12 @@ class _TopClientRow extends StatelessWidget {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  '${adminDashboardFormatNumber(client.vehicles)} veh · $revenue',
+                  context.mobileText("{value1} veh · {value2}", {
+                    'value1': (adminDashboardFormatNumber(
+                      client.vehicles,
+                    )).toString(),
+                    'value2': (revenue).toString(),
+                  }),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: OpenVtsTypography.meta.copyWith(
@@ -92,7 +100,12 @@ class _TopClientRow extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Paid ${adminDashboardRelativeDate(client.lastPaymentAt, formatter: formatter)}',
+                  context.mobileText("Paid {value1}", {
+                    'value1': (adminDashboardRelativeDate(
+                      client.lastPaymentAt,
+                      formatter: formatter,
+                    )).toString(),
+                  }),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: OpenVtsTypography.meta.copyWith(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../../core/theme/open_vts_spacing.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../../../shared/widgets/open_vts_empty_state.dart';
 import '../../../../../shared/widgets/open_vts_metric_card.dart';
@@ -26,8 +27,11 @@ class AdminPaymentsAnalyticsSection extends StatelessWidget {
   Widget build(BuildContext context) {
     if (isLoading && analytics == null) {
       return const OpenVtsCard(
-          child: SizedBox(
-              height: 120, child: Center(child: CircularProgressIndicator())));
+        child: SizedBox(
+          height: 120,
+          child: Center(child: CircularProgressIndicator()),
+        ),
+      );
     }
 
     if (errorMessage != null && analytics == null) {
@@ -36,10 +40,12 @@ class AdminPaymentsAnalyticsSection extends StatelessWidget {
 
     final model = analytics;
     if (model == null) {
-      return const OpenVtsCard(
+      return OpenVtsCard(
         child: OpenVtsEmptyState(
-          title: 'No analytics data',
-          message: 'Analytics will appear once payments are available.',
+          title: context.mobileText('No analytics data'),
+          message: context.mobileText(
+            'Analytics will appear once payments are available.',
+          ),
         ),
       );
     }
@@ -47,7 +53,10 @@ class AdminPaymentsAnalyticsSection extends StatelessWidget {
     final primary = model.totalsByCurrency.isNotEmpty
         ? model.totalsByCurrency.first
         : const AdminCurrencyTotal(
-            currency: 'USD', totalAmount: '0', countSuccess: 0);
+            currency: 'USD',
+            totalAmount: '0',
+            countSuccess: 0,
+          );
     final revenue = primary.totalAmountValue;
     final success = model.statusBreakdown[AdminPaymentStatus.success] ?? 0;
     final pending = model.statusBreakdown[AdminPaymentStatus.pending] ?? 0;
@@ -58,7 +67,7 @@ class AdminPaymentsAnalyticsSection extends StatelessWidget {
     final metrics = [
       (
         'Revenue Total',
-        '${primary.currency} ${NumberFormat('#,##0.##').format(revenue)}'
+        '${primary.currency} ${NumberFormat('#,##0.##').format(revenue)}',
       ),
       ('Successful Payments', success.toString()),
       ('Pending Payments', pending.toString()),
@@ -96,7 +105,10 @@ class AdminPaymentsAnalyticsSection extends StatelessWidget {
         AdminPaymentsModeBreakdown(items: model.modeBreakdown),
         const SizedBox(height: OpenVtsSpacing.sm),
         AdminPaymentsStatusDistribution(
-            success: success, pending: pending, failed: failed),
+          success: success,
+          pending: pending,
+          failed: failed,
+        ),
       ],
     );
   }

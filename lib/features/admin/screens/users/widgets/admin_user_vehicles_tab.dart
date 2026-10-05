@@ -6,6 +6,7 @@ import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../core/utils/date_time_formatter.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
 import '../../../../../shared/widgets/open_vts_bottom_sheet.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
@@ -14,12 +15,10 @@ import '../../../../../shared/widgets/open_vts_error_view.dart';
 import '../../../controllers/admin_providers.dart';
 import '../../../controllers/admin_user_details_controller.dart';
 import '../../../models/admin_user_details_model.dart';
+import '../../../widgets/admin_action_gate.dart';
 
 class AdminUserVehiclesTab extends ConsumerStatefulWidget {
-  const AdminUserVehiclesTab({
-    super.key,
-    required this.userId,
-  });
+  const AdminUserVehiclesTab({super.key, required this.userId});
 
   final String userId;
 
@@ -46,12 +45,13 @@ class _AdminUserVehiclesTabState extends ConsumerState<AdminUserVehiclesTab> {
     final provider = adminUserDetailsControllerProvider(widget.userId);
     final state = ref.watch(provider);
     final controller = ref.read(provider.notifier);
-    final isInitialLoading = state.isLoadingVehicles &&
+    final isInitialLoading =
+        state.isLoadingVehicles &&
         state.linkedVehicles.isEmpty &&
         state.availableVehicles.isEmpty;
 
     if (isInitialLoading) {
-      return const _SectionLoader(title: 'Vehicles');
+      return _SectionLoader(title: context.mobileText('Vehicles'));
     }
 
     if (state.sectionErrorMessage != null &&
@@ -64,8 +64,9 @@ class _AdminUserVehiclesTabState extends ConsumerState<AdminUserVehiclesTab> {
     }
 
     final assigned = state.linkedVehicles.where(_matchesFilters).toList();
-    final blockedCount =
-        state.linkedVehicles.where((v) => v.isLicenseBlocked).length;
+    final blockedCount = state.linkedVehicles
+        .where((v) => v.isLicenseBlocked)
+        .length;
     final expiringCount = state.linkedVehicles
         .where((v) => _isExpiringSoon(v.secondaryExpiry))
         .length;
@@ -107,8 +108,8 @@ class _AdminUserVehiclesTabState extends ConsumerState<AdminUserVehiclesTab> {
         if (assigned.isEmpty)
           _EmptyCard(
             label: _query.trim().isEmpty
-                ? 'No assigned vehicles'
-                : 'No vehicles match your search',
+                ? context.mobileText('No assigned vehicles')
+                : context.mobileText('No vehicles match your search'),
           )
         else
           for (final vehicle in assigned) ...[
@@ -173,7 +174,7 @@ class _AdminUserVehiclesTabState extends ConsumerState<AdminUserVehiclesTab> {
     final provider = adminUserDetailsControllerProvider(widget.userId);
     return OpenVtsBottomSheet.show<void>(
       context: context,
-      title: 'Assign Vehicle',
+      title: context.mobileText('Assign Vehicle'),
       initialChildSize: 0.72,
       minChildSize: 0.42,
       maxChildSize: 0.92,
@@ -185,7 +186,10 @@ class _AdminUserVehiclesTabState extends ConsumerState<AdminUserVehiclesTab> {
             return false;
           }
           if (ok) {
-            ToastHelper.showSuccess('Vehicle assigned.', context: context);
+            ToastHelper.showSuccess(
+              context.mobileText('Vehicle assigned.'),
+              context: context,
+            );
           } else {
             ToastHelper.showError(
               ref.read(provider).sectionErrorMessage ??
@@ -209,7 +213,10 @@ class _AdminUserVehiclesTabState extends ConsumerState<AdminUserVehiclesTab> {
       return;
     }
     if (ok) {
-      ToastHelper.showSuccess('Vehicle unassigned.', context: context);
+      ToastHelper.showSuccess(
+        context.mobileText('Vehicle unassigned.'),
+        context: context,
+      );
     } else {
       ToastHelper.showError(
         ref.read(provider).sectionErrorMessage ?? 'Unable to unassign vehicle.',
@@ -238,7 +245,7 @@ class _StatsGrid extends StatelessWidget {
       children: [
         Expanded(
           child: _SummaryTile(
-            label: 'Vehicles',
+            label: context.mobileText('Vehicles'),
             value: total.toString(),
             icon: Icons.directions_car_outlined,
           ),
@@ -246,7 +253,7 @@ class _StatsGrid extends StatelessWidget {
         const SizedBox(width: OpenVtsSpacing.xs),
         Expanded(
           child: _SummaryTile(
-            label: 'Available',
+            label: context.mobileText('Available'),
             value: available.toString(),
             icon: Icons.add_road_outlined,
           ),
@@ -254,7 +261,7 @@ class _StatsGrid extends StatelessWidget {
         const SizedBox(width: OpenVtsSpacing.xs),
         Expanded(
           child: _SummaryTile(
-            label: 'Blocked',
+            label: context.mobileText('Blocked'),
             value: blocked.toString(),
             icon: Icons.lock_outline,
           ),
@@ -262,7 +269,7 @@ class _StatsGrid extends StatelessWidget {
         const SizedBox(width: OpenVtsSpacing.xs),
         Expanded(
           child: _SummaryTile(
-            label: 'Expiring',
+            label: context.mobileText('Expiring'),
             value: expiring.toString(),
             icon: Icons.schedule_outlined,
           ),
@@ -357,7 +364,7 @@ class _SummaryCard extends StatelessWidget {
                     ),
                     const SizedBox(width: OpenVtsSpacing.xs),
                     Text(
-                      'Vehicles',
+                      context.mobileText('Vehicles'),
                       style: OpenVtsTypography.label.copyWith(
                         color: Theme.of(context).colorScheme.onSurface,
                         fontWeight: FontWeight.w800,
@@ -375,7 +382,10 @@ class _SummaryCard extends StatelessWidget {
                 ),
                 const SizedBox(height: OpenVtsSpacing.xs),
                 Text(
-                  '$assignedCount assigned - $availableCount available',
+                  context.mobileText("{value1} assigned - {value2} available", {
+                    'value1': (assignedCount).toString(),
+                    'value2': (availableCount).toString(),
+                  }),
                   style: OpenVtsTypography.meta.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontWeight: FontWeight.w700,
@@ -386,12 +396,15 @@ class _SummaryCard extends StatelessWidget {
           ),
           SizedBox(
             height: 34,
-            child: OpenVtsButton(
-              label: 'Assign Vehicle',
-              height: 34,
-              isLoading: isAssigning,
-              onPressed: onAssign,
-              trailingIcon: Icons.add_rounded,
+            child: AdminActionGate(
+              capability: 'users.update',
+              child: OpenVtsButton(
+                label: context.mobileText('Assign Vehicle'),
+                height: 34,
+                isLoading: isAssigning,
+                onPressed: onAssign,
+                trailingIcon: Icons.add_rounded,
+              ),
             ),
           ),
         ],
@@ -401,10 +414,7 @@ class _SummaryCard extends StatelessWidget {
 }
 
 class _SearchField extends StatelessWidget {
-  const _SearchField({
-    required this.controller,
-    required this.onChanged,
-  });
+  const _SearchField({required this.controller, required this.onChanged});
 
   final TextEditingController controller;
   final ValueChanged<String> onChanged;
@@ -415,9 +425,7 @@ class _SearchField extends StatelessWidget {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.outlineVariant,
-        ),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
       padding: const EdgeInsets.symmetric(horizontal: OpenVtsSpacing.sm),
       child: Row(
@@ -439,7 +447,7 @@ class _SearchField extends StatelessWidget {
               ),
               decoration: InputDecoration(
                 isDense: true,
-                hintText: 'Search assigned vehicles',
+                hintText: context.mobileText('Search assigned vehicles'),
                 hintStyle: TextStyle(
                   fontSize: 12,
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -613,11 +621,14 @@ class _VehicleCard extends StatelessWidget {
                   ],
                 ),
               ),
-              _TinyTextButton(
-                label: 'Unassign',
-                icon: Icons.link_off_rounded,
-                isLoading: isUnassigning,
-                onPressed: onUnassign,
+              AdminActionGate(
+                capability: 'users.update',
+                child: _TinyTextButton(
+                  label: context.mobileText('Unassign'),
+                  icon: Icons.link_off_rounded,
+                  isLoading: isUnassigning,
+                  onPressed: onUnassign,
+                ),
               ),
             ],
           ),
@@ -627,16 +638,25 @@ class _VehicleCard extends StatelessWidget {
             runSpacing: OpenVtsSpacing.xs,
             children: [
               _MetaPill(
-                  icon: Icons.memory_rounded,
-                  label: 'IMEI ${_displayValue(vehicle.imei)}'),
+                icon: Icons.memory_rounded,
+                label: context.mobileText("IMEI {value1}", {
+                  'value1': (_displayValue(vehicle.imei)).toString(),
+                }),
+              ),
               if (vehicle.simNumber.trim().isNotEmpty)
                 _MetaPill(
-                    icon: Icons.sim_card_outlined,
-                    label: 'SIM ${vehicle.simNumber.trim()}'),
+                  icon: Icons.sim_card_outlined,
+                  label: context.mobileText("SIM {value1}", {
+                    'value1': (vehicle.simNumber.trim()).toString(),
+                  }),
+                ),
               if (vehicle.vin.trim().isNotEmpty)
                 _MetaPill(
-                    icon: Icons.tag_rounded,
-                    label: 'VIN ${vehicle.vin.trim()}'),
+                  icon: Icons.tag_rounded,
+                  label: context.mobileText("VIN {value1}", {
+                    'value1': (vehicle.vin.trim()).toString(),
+                  }),
+                ),
               if (_planName(vehicle).isNotEmpty)
                 _MetaPill(
                   icon: Icons.workspace_premium_outlined,
@@ -644,12 +664,14 @@ class _VehicleCard extends StatelessWidget {
                 ),
               _MetaPill(
                 icon: Icons.event_available_outlined,
-                label: 'Expiry ${_dateText(vehicle.secondaryExpiry)}',
+                label: context.mobileText("Expiry {value1}", {
+                  'value1': (_dateText(vehicle.secondaryExpiry)).toString(),
+                }),
               ),
               if (vehicle.isLicenseBlocked)
-                const _MetaPill(
+                _MetaPill(
                   icon: Icons.block_rounded,
-                  label: 'License blocked',
+                  label: context.mobileText('License blocked'),
                   color: OpenVtsColors.error,
                 ),
             ],
@@ -661,10 +683,7 @@ class _VehicleCard extends StatelessWidget {
 }
 
 class _AssignVehicleSheet extends StatefulWidget {
-  const _AssignVehicleSheet({
-    required this.vehicles,
-    required this.onAssign,
-  });
+  const _AssignVehicleSheet({required this.vehicles, required this.onAssign});
 
   final List<AdminUserVehicle> vehicles;
   final Future<bool> Function(AdminUserVehicle vehicle) onAssign;
@@ -698,11 +717,9 @@ class _AssignVehicleSheetState extends State<_AssignVehicleSheet> {
             controller: _searchController,
             onChanged: (value) => setState(() => _query = value),
             cursorColor: Theme.of(context).colorScheme.primary,
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
             decoration: InputDecoration(
-              hintText: 'Search available vehicles',
+              hintText: context.mobileText('Search available vehicles'),
               hintStyle: TextStyle(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
@@ -717,12 +734,13 @@ class _AssignVehicleSheetState extends State<_AssignVehicleSheet> {
         Expanded(
           child: matches.isEmpty
               ? Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: OpenVtsSpacing.md),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: OpenVtsSpacing.md,
+                  ),
                   child: _EmptyCard(
                     label: _query.trim().isEmpty
-                        ? 'No available vehicles'
-                        : 'No vehicles match your search',
+                        ? context.mobileText('No available vehicles')
+                        : context.mobileText('No vehicles match your search'),
                   ),
                 )
               : ListView.separated(
@@ -756,7 +774,7 @@ class _AssignVehicleSheetState extends State<_AssignVehicleSheet> {
               children: [
                 Expanded(
                   child: OpenVtsButton(
-                    label: 'Cancel',
+                    label: context.mobileText('Cancel'),
                     height: 40,
                     variant: OpenVtsButtonVariant.secondary,
                     onPressed: _isSubmitting
@@ -767,7 +785,7 @@ class _AssignVehicleSheetState extends State<_AssignVehicleSheet> {
                 const SizedBox(width: OpenVtsSpacing.sm),
                 Expanded(
                   child: OpenVtsButton(
-                    label: 'Assign',
+                    label: context.mobileText('Assign'),
                     height: 40,
                     isLoading: _isSubmitting,
                     trailingIcon: Icons.check_rounded,
@@ -802,8 +820,12 @@ class _AssignVehicleSheetState extends State<_AssignVehicleSheet> {
     if (normalized.isEmpty) {
       return true;
     }
-    return [vehicle.name, vehicle.plateNumber, vehicle.imei, vehicle.vin]
-        .any((value) => value.toLowerCase().contains(normalized));
+    return [
+      vehicle.name,
+      vehicle.plateNumber,
+      vehicle.imei,
+      vehicle.vin,
+    ].any((value) => value.toLowerCase().contains(normalized));
   }
 
   Future<void> _assign(AdminUserVehicle vehicle) async {
@@ -937,11 +959,7 @@ class _TinyTextButton extends StatelessWidget {
 }
 
 class _MetaPill extends StatelessWidget {
-  const _MetaPill({
-    required this.icon,
-    required this.label,
-    this.color,
-  });
+  const _MetaPill({required this.icon, required this.label, this.color});
 
   final IconData icon;
   final String label;
@@ -989,7 +1007,8 @@ class _InlineError extends StatelessWidget {
         color: Theme.of(context).colorScheme.error.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
         border: Border.all(
-            color: Theme.of(context).colorScheme.error.withValues(alpha: 0.2)),
+          color: Theme.of(context).colorScheme.error.withValues(alpha: 0.2),
+        ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1033,7 +1052,9 @@ class _SectionLoader extends StatelessWidget {
           ),
           const SizedBox(width: OpenVtsSpacing.sm),
           Text(
-            'Loading $title',
+            context.mobileText("Loading {value1}", {
+              'value1': (title).toString(),
+            }),
             style: OpenVtsTypography.label.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
               fontWeight: FontWeight.w700,
@@ -1055,10 +1076,7 @@ class _SectionErrorCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return OpenVtsCard(
       padding: const EdgeInsets.all(OpenVtsSpacing.md),
-      child: OpenVtsErrorView(
-        message: message,
-        onRetry: onRetry,
-      ),
+      child: OpenVtsErrorView(message: message, onRetry: onRetry),
     );
   }
 }

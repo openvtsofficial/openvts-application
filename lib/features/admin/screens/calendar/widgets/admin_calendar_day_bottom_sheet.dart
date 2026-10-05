@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../../../shared/widgets/open_vts_empty_state.dart';
 import '../../../../../shared/widgets/open_vts_error_view.dart';
@@ -28,24 +29,25 @@ class _AdminCalendarDayBottomSheetState
 
   @override
   Widget build(BuildContext context) {
-    final detailsAsync =
-        ref.watch(adminCalendarDayDetailsProvider(widget.date));
+    final detailsAsync = ref.watch(
+      adminCalendarDayDetailsProvider(widget.date),
+    );
 
     return detailsAsync.when(
       loading: () => const Center(child: OpenVtsLoader()),
       error: (err, stack) => Padding(
         padding: const EdgeInsets.all(OpenVtsSpacing.md),
         child: OpenVtsErrorView(
-          message: 'Failed to load details',
+          message: context.mobileText('Failed to load details'),
           onRetry: () =>
               ref.refresh(adminCalendarDayDetailsProvider(widget.date)),
         ),
       ),
       data: (details) {
         if (details.isEmpty) {
-          return const OpenVtsEmptyState(
-            title: 'No Data',
-            message: 'There are no events on this day',
+          return OpenVtsEmptyState(
+            title: context.mobileText('No Data'),
+            message: context.mobileText('There are no events on this day'),
           );
         }
 
@@ -54,16 +56,17 @@ class _AdminCalendarDayBottomSheetState
           for (final detail in details) {
             final linked = detail.isUser
                 ? ref
-                    .watch(adminCalendarUserDetailsProvider(detail.userId!))
-                    .asData
-                    ?.value
+                      .watch(adminCalendarUserDetailsProvider(detail.userId!))
+                      .asData
+                      ?.value
                 : detail.isVehicle
-                    ? ref
-                        .watch(adminCalendarVehicleDetailsProvider(
-                            detail.vehicleId!))
-                        .asData
-                        ?.value
-                    : null;
+                ? ref
+                      .watch(
+                        adminCalendarVehicleDetailsProvider(detail.vehicleId!),
+                      )
+                      .asData
+                      ?.value
+                : null;
             linkedDetails[detail.id] = linked;
           }
         }
@@ -83,17 +86,18 @@ class _AdminCalendarDayBottomSheetState
           child: Column(
             children: [
               OpenVtsSearchField(
-                hintText: 'Search daily records...',
-                onChanged: (value) => setState(
-                  () => _searchQuery = value.trim().toLowerCase(),
-                ),
+                hintText: context.mobileText('Search daily records...'),
+                onChanged: (value) =>
+                    setState(() => _searchQuery = value.trim().toLowerCase()),
               ),
               const SizedBox(height: OpenVtsSpacing.sm),
               Expanded(
                 child: filtered.isEmpty
-                    ? const OpenVtsEmptyState(
-                        title: 'No matching records',
-                        message: 'Try a different search term.',
+                    ? OpenVtsEmptyState(
+                        title: context.mobileText('No matching records'),
+                        message: context.mobileText(
+                          'Try a different search term.',
+                        ),
                       )
                     : ListView.separated(
                         padding: const EdgeInsets.only(
@@ -125,10 +129,7 @@ List<AdminCalendarDayDetail> filterAdminCalendarDayDetails(
   }
   return details
       .where(
-        (detail) => detail.matchesQuery(
-          normalized,
-          linkedDetails[detail.id],
-        ),
+        (detail) => detail.matchesQuery(normalized, linkedDetails[detail.id]),
       )
       .toList(growable: false);
 }
@@ -144,8 +145,8 @@ class _CalendarDayEventTile extends ConsumerWidget {
     final linkedDetailAsync = detail.isUser
         ? ref.watch(adminCalendarUserDetailsProvider(detail.userId!))
         : detail.isVehicle
-            ? ref.watch(adminCalendarVehicleDetailsProvider(detail.vehicleId!))
-            : const AsyncValue<AdminCalendarLinkedDetail?>.data(null);
+        ? ref.watch(adminCalendarVehicleDetailsProvider(detail.vehicleId!))
+        : const AsyncValue<AdminCalendarLinkedDetail?>.data(null);
 
     final linkedDetail = linkedDetailAsync.asData?.value;
     final title = _resolveTitle(detail, linkedDetail);
@@ -198,8 +199,9 @@ class _CalendarDayEventTile extends ConsumerWidget {
                         item,
                         style: OpenVtsTypography.meta.copyWith(
                           color: isDark
-                              ? OpenVtsColors.darkTextSecondary
-                                  .withValues(alpha: 0.7)
+                              ? OpenVtsColors.darkTextSecondary.withValues(
+                                  alpha: 0.7,
+                                )
                               : OpenVtsColors.textTertiary,
                         ),
                       ),

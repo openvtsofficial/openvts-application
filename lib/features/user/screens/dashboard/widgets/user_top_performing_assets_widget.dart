@@ -7,6 +7,7 @@ import '../../../../../core/theme/open_vts_colors.dart';
 import '../../../../../core/theme/open_vts_radius.dart';
 import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../controllers/user_providers.dart';
 import '../../../models/user_dashboard_model.dart';
 import 'user_dashboard_widget_card.dart';
@@ -113,12 +114,19 @@ class _UserTopPerformingAssetsWidgetState
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         SegmentedButton<_TopAssetsRange>(
-          segments: const [
-            ButtonSegment(value: _TopAssetsRange.today, label: Text('Today')),
+          segments: [
             ButtonSegment(
-                value: _TopAssetsRange.last7Days, label: Text('Last 7 Days')),
+              value: _TopAssetsRange.today,
+              label: Text(context.mobileText('Today')),
+            ),
             ButtonSegment(
-                value: _TopAssetsRange.last30Days, label: Text('Last 30 Days')),
+              value: _TopAssetsRange.last7Days,
+              label: Text(context.mobileText('Last 7 Days')),
+            ),
+            ButtonSegment(
+              value: _TopAssetsRange.last30Days,
+              label: Text(context.mobileText('Last 30 Days')),
+            ),
           ],
           selected: {_range},
           showSelectedIcon: false,
@@ -132,8 +140,8 @@ class _UserTopPerformingAssetsWidgetState
         ),
         const SizedBox(height: OpenVtsSpacing.sm),
         if (data.items.isEmpty)
-          const UserDashboardWidgetEmpty(
-            message: 'No top assets for this range.',
+          UserDashboardWidgetEmpty(
+            message: context.mobileText('No top assets for this range.'),
             icon: Icons.leaderboard_outlined,
           )
         else
@@ -158,11 +166,7 @@ class _TopAssetsList extends StatelessWidget {
     return Column(
       children: [
         for (var index = 0; index < items.length; index++) ...[
-          _TopAssetRow(
-            rank: index + 1,
-            item: items[index],
-            maxKm: maxKm,
-          ),
+          _TopAssetRow(rank: index + 1, item: items[index], maxKm: maxKm),
           if (index != items.length - 1)
             const SizedBox(height: OpenVtsSpacing.sm),
         ],
@@ -200,8 +204,9 @@ class _TopAssetRow extends StatelessWidget {
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
-            border:
-                Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+            border: Border.all(
+              color: Theme.of(context).colorScheme.outlineVariant,
+            ),
           ),
           child: Text(
             '$rank',

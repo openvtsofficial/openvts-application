@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/theme/open_vts_spacing.dart';
+import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
+import '../../../../../shared/helpers/validation_localizations.dart';
 import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../shared/widgets/open_vts_searchable_dropdown.dart';
 import '../../../../../shared/widgets/open_vts_text_field.dart';
@@ -13,11 +15,11 @@ enum AdminPlanFormMode { create, edit }
 
 class AdminPlanFormSheet extends ConsumerStatefulWidget {
   const AdminPlanFormSheet.create({super.key})
-      : mode = AdminPlanFormMode.create,
-        initialPlan = null;
+    : mode = AdminPlanFormMode.create,
+      initialPlan = null;
 
   const AdminPlanFormSheet.edit({required this.initialPlan, super.key})
-      : mode = AdminPlanFormMode.edit;
+    : mode = AdminPlanFormMode.edit;
 
   final AdminPlanFormMode mode;
   final AdminPlan? initialPlan;
@@ -108,7 +110,7 @@ class _AdminPlanFormSheetState extends ConsumerState<AdminPlanFormSheet> {
                       const SizedBox(height: OpenVtsSpacing.md),
                     ],
                     OpenVtsTextField(
-                      label: 'Name',
+                      label: context.mobileText('Name'),
                       controller: _nameController,
                       textInputAction: TextInputAction.next,
                       prefixIcon: Icons.badge_outlined,
@@ -125,19 +127,21 @@ class _AdminPlanFormSheetState extends ConsumerState<AdminPlanFormSheet> {
                             ),
                           )
                           .toList(growable: false),
-                      decoration: const InputDecoration(
-                        labelText: 'Duration',
-                        prefixIcon: Icon(Icons.schedule_rounded, size: 20),
+                      decoration: InputDecoration(
+                        labelText: context.mobileText('Duration'),
+                        prefixIcon: const Icon(
+                          Icons.schedule_rounded,
+                          size: 20,
+                        ),
                       ),
                       onChanged: isSubmitting
                           ? null
                           : (value) => setState(() => _durationDays = value),
-                      validator: (value) =>
-                          value == null ? 'Duration is required' : null,
+                      validator: context.localizedValidator((value) => value == null ? 'Duration is required' : null),
                     ),
                     const SizedBox(height: OpenVtsSpacing.sm),
                     OpenVtsTextField(
-                      label: 'Price',
+                      label: context.mobileText('Price'),
                       controller: _priceController,
                       textInputAction: TextInputAction.next,
                       keyboardType: const TextInputType.numberWithOptions(
@@ -164,7 +168,9 @@ class _AdminPlanFormSheetState extends ConsumerState<AdminPlanFormSheet> {
                             .read(adminPlansControllerProvider.notifier)
                             .loadCurrencies(force: true),
                         icon: const Icon(Icons.refresh_rounded, size: 16),
-                        label: const Text('Retry loading currencies'),
+                        label: Text(
+                          context.mobileText('Retry loading currencies'),
+                        ),
                       ),
                     ],
                   ],
@@ -181,7 +187,7 @@ class _AdminPlanFormSheetState extends ConsumerState<AdminPlanFormSheet> {
                 children: [
                   Expanded(
                     child: OpenVtsButton(
-                      label: 'Cancel',
+                      label: context.mobileText('Cancel'),
                       variant: OpenVtsButtonVariant.secondary,
                       onPressed: isSubmitting
                           ? null
@@ -191,7 +197,9 @@ class _AdminPlanFormSheetState extends ConsumerState<AdminPlanFormSheet> {
                   const SizedBox(width: OpenVtsSpacing.sm),
                   Expanded(
                     child: OpenVtsButton(
-                      label: _isEditMode ? 'Save Changes' : 'Save Plan',
+                      label: _isEditMode
+                          ? context.mobileText('Save Changes')
+                          : context.mobileText('Save Plan'),
                       onPressed: isSubmitting ? null : _submit,
                       isLoading: isSubmitting,
                     ),
@@ -239,17 +247,16 @@ class _AdminPlanFormSheetState extends ConsumerState<AdminPlanFormSheet> {
     if (success) {
       Navigator.of(context).pop(result);
       ToastHelper.showSuccess(
-        _isEditMode ? 'Plan updated.' : 'Plan created.',
+        _isEditMode
+            ? context.mobileText('Plan updated.')
+            : context.mobileText('Plan created.'),
         context: context,
       );
       return;
     }
 
     final message = ref.read(adminPlansControllerProvider).submitErrorMessage;
-    ToastHelper.showError(
-      message ?? 'Unable to save plan.',
-      context: context,
-    );
+    ToastHelper.showError(message ?? 'Unable to save plan.', context: context);
   }
 
   String _durationLabel(int days) {
@@ -317,7 +324,7 @@ class AdminPlanCurrencyDropdown extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return OpenVtsSearchableDropdown<String>(
-      label: 'Currency',
+      label: context.mobileText('Currency'),
       value: value,
       options: currencies
           .map(
