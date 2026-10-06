@@ -256,6 +256,114 @@ void main() {
         throwsA(isA<DioException>()),
       );
       expect(refreshes, 1);
+      final active = await storage.getActiveSession();
+      expect(active, isNotNull);
+      expect(active!.role, UserRole.user);
+      expect(active.user.id, '7');
+      expect(active.accessToken, 'new-access');
+      expect(active.refreshToken, 'new-refresh');
+    },
+  );
+
+  test(
+    'role-mismatch 401 after successful refresh preserves child session',
+    () async {
+      // This reproduces Login-as navigation: after switching accounts, an old
+      // screen can still issue one request to a parent-role endpoint. The
+      // backend intentionally reports role mismatches as 401. The child refresh
+      // token is valid, so the retried parent request is still 401 and MUST NOT
+      // erase the valid child login.
+      await storage.clearAllSessions();
+      await storage.saveSessionForRole(
+        role: UserRole.superadmin,
+        accessToken: 'superadmin-access',
+        refreshToken: 'superadmin-refresh',
+        currentUserJson: jsonEncode({
+          'id': '1',
+          'name': 'Superadmin',
+          'role': 'SUPERADMIN',
+        }),
+      );
+      await storage.saveSessionForRole(
+        role: UserRole.admin,
+        accessToken: 'admin-access',
+        refreshToken: 'admin-refresh',
+        currentUserJson: jsonEncode({
+          'id': '22',
+          'name': 'Admin',
+          'role': 'ADMIN',
+        }),
+      );
+
+      final dio = Dio(BaseOptions(baseUrl: 'https://example.test/api'));
+      var refreshes = 0;
+      dio.interceptors.add(AuthInterceptor(storage));
+      dio.interceptors.add(
+        RefreshTokenInterceptor(
+          dio: dio,
+          tokenStorage: storage,
+          refreshClientFactory: (options) {
+            final client = Dio(options);
+            client.interceptors.add(
+              InterceptorsWrapper(
+                onRequest: (request, handler) {
+                  refreshes++;
+                  handler.resolve(
+                    Response<dynamic>(
+                      requestOptions: request,
+                      statusCode: 200,
+                      data: {
+                        'action': true,
+                        'data': {
+                          'token': 'admin-access-rotated',
+                          'refresh_token': 'admin-refresh-rotated',
+                          'user': {
+                            'id': '22',
+                            'role': 'ADMIN',
+                            'name': 'Admin',
+                          },
+                        },
+                      },
+                    ),
+                  );
+                },
+              ),
+            );
+            return client;
+          },
+        ),
+      );
+      dio.interceptors.add(
+        InterceptorsWrapper(
+          onRequest: (options, handler) {
+            // Represents a stale Superadmin-only request after Admin became
+            // active. It stays unauthorized even with the rotated Admin token.
+            handler.reject(_unauthorized(options), true);
+          },
+        ),
+      );
+
+      await expectLater(
+        dio.get<dynamic>('https://example.test/api/superadmin/profile'),
+        throwsA(isA<DioException>()),
+      );
+
+      expect(refreshes, 1);
+      final active = await storage.getActiveSession();
+      expect(active, isNotNull);
+      expect(active!.role, UserRole.admin);
+      expect(active.user.id, '22');
+      expect(active.accessToken, 'admin-access-rotated');
+      expect(active.refreshToken, 'admin-refresh-rotated');
+      expect(await storage.hasSessionForRole(UserRole.superadmin), isTrue);
+
+      // Normal child logout must still reveal the retained parent login.
+      await storage.clearSessionForRole(UserRole.admin);
+      final parent = await storage.getActiveSession();
+      expect(parent, isNotNull);
+      expect(parent!.role, UserRole.superadmin);
+      expect(parent.user.id, '1');
+      expect(parent.accessToken, 'superadmin-access');
     },
   );
 }

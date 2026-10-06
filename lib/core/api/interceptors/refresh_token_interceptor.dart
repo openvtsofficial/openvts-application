@@ -47,14 +47,17 @@ class RefreshTokenInterceptor extends Interceptor {
         handler.next(err);
         return;
       }
-      // A genuine 401 even after successful refresh is terminal for that login.
-      // A permission-denied 403 on an ordinary feature request never signs out.
+      // The Open VTS backend intentionally answers 401 for both an expired
+      // token and a role mismatch. After a successful refresh, a repeated 401
+      // from the original feature endpoint therefore is NOT proof that the
+      // freshly issued session is invalid (for example an Admin token hitting
+      // a stale Superadmin request during Login-as navigation).
+      //
+      // Only the refresh endpoint itself is authoritative for revocation.
+      // `_refresh` clears this role session when /auth/refresh-token rejects
+      // the refresh token with 401/403. Never destroy a valid child session
+      // merely because the retried business request is still unauthorized.
       if (request.extra['retried'] == true) {
-        if (request.headers['Authorization'] ==
-            'Bearer ${session.accessToken}') {
-          request.extra['sessionInvalidated'] = await _storage
-              .clearSessionIfCurrent(session, generation as int);
-        }
         handler.next(err);
         return;
       }

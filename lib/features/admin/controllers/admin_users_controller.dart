@@ -300,7 +300,7 @@ class AdminUsersController extends StateNotifier<AdminUsersState> {
         throw Exception('User login did not return an access token.');
       }
 
-      await _authController.setSession(result.toLoginResponse());
+      await _authController.switchToChildSession(result.toLoginResponse());
       if (mounted) {
         state = state.copyWith(
           loggingInIds: _removeId(state.loggingInIds, id),

@@ -81,6 +81,39 @@ void main() {
     expect(await tokenStorage.getActiveSession(), isNull);
   });
 
+  test('nested role traversal restores the exact parent path', () async {
+    await saveSession(UserRole.superadmin);
+    await saveSession(UserRole.admin);
+    await saveSession(UserRole.user);
+
+    expect((await tokenStorage.getActiveSession())?.role, UserRole.user);
+
+    await tokenStorage.clearSessionForRole(UserRole.user);
+    expect((await tokenStorage.getActiveSession())?.role, UserRole.admin);
+
+    await tokenStorage.clearSessionForRole(UserRole.admin);
+    expect((await tokenStorage.getActiveSession())?.role, UserRole.superadmin);
+  });
+
+  test('role traversal stack survives secure-storage rehydration', () async {
+    await saveSession(UserRole.superadmin);
+    await saveSession(UserRole.admin);
+    await saveSession(UserRole.team);
+    await saveSession(UserRole.user);
+
+    tokenStorage = TokenStorage(secureStorage);
+    expect((await tokenStorage.getActiveSession())?.role, UserRole.user);
+
+    await tokenStorage.clearSessionForRole(UserRole.user);
+    expect((await tokenStorage.getActiveSession())?.role, UserRole.team);
+
+    await tokenStorage.clearSessionForRole(UserRole.team);
+    expect((await tokenStorage.getActiveSession())?.role, UserRole.admin);
+
+    await tokenStorage.clearSessionForRole(UserRole.admin);
+    expect((await tokenStorage.getActiveSession())?.role, UserRole.superadmin);
+  });
+
   test('serves repeated active token reads from hydrated cache', () async {
     await saveSession(UserRole.user);
 
@@ -186,6 +219,10 @@ void main() {
       isNull,
     );
     expect(await secureStorage.read(key: StorageKeys.activeRole), isNull);
+    expect(
+      await secureStorage.read(key: StorageKeys.sessionRoleStack),
+      isNull,
+    );
     expect(await secureStorage.read(key: StorageKeys.accessToken), isNull);
     expect(await secureStorage.read(key: StorageKeys.refreshToken), isNull);
     expect(await secureStorage.read(key: StorageKeys.userRole), isNull);

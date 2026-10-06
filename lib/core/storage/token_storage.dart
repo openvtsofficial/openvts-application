@@ -38,6 +38,7 @@ class TokenStorage {
   bool _cacheHydrated = false;
   final Map<UserRole, RoleSession?> _roleSessionCache =
       <UserRole, RoleSession?>{};
+  final List<UserRole> _sessionRoleStack = <UserRole>[];
   RoleSession? _activeSessionCache;
   Future<void>? _cacheHydration;
   bool _didCheckLegacyMigration = false;
@@ -195,6 +196,7 @@ class TokenStorage {
     _cacheHydration = null;
     _cacheHydrated = false;
     _roleSessionCache.clear();
+    _sessionRoleStack.clear();
     _activeSessionCache = null;
     _verifiedActiveUser = null;
     _sessionGeneration++;
@@ -207,14 +209,24 @@ class TokenStorage {
     await _migrateLegacySessionIfNeeded();
 
     final preferredRole = await _readStoredActiveRole();
+    final storedRoleStack = await _readStoredRoleStack();
     _roleSessionCache.clear();
     for (final role in UserRole.values) {
       _roleSessionCache[role] = await _readRoleSession(role);
+    }
+    _sessionRoleStack
+      ..clear()
+      ..addAll(
+        storedRoleStack.where((role) => _roleSessionCache[role] != null),
+      );
+    if (preferredRole != null && _roleSessionCache[preferredRole] != null) {
+      _recordActiveRole(preferredRole);
     }
     _activeSessionCache = _resolveActiveSessionFromCache(
       preferredRole: preferredRole,
     );
     _cacheHydrated = true;
+    await _persistRoleStack();
     await _syncActiveRoleKeyFromCache();
   }
 
@@ -276,7 +288,9 @@ class TokenStorage {
     // A successful login or role switch is authoritative. Do not let a
     // previously saved lower-priority role silently replace the new session.
     _activeSessionCache = savedSession;
+    _recordActiveRole(role);
     _cacheHydrated = true;
+    await _persistRoleStack();
     await _syncActiveRoleKeyFromCache();
   }
 
@@ -324,10 +338,12 @@ class TokenStorage {
     await _storage.delete(key: StorageKeys.refreshTokenForRole(role.apiValue));
     await _storage.delete(key: StorageKeys.currentUserForRole(role.apiValue));
     _roleSessionCache[role] = null;
+    _sessionRoleStack.removeWhere((storedRole) => storedRole == role);
     if (_activeSessionCache?.role == role) {
       _activeSessionCache = _resolveActiveSessionFromCache();
     }
     _cacheHydrated = true;
+    await _persistRoleStack();
     await _syncActiveRoleKeyFromCache();
   }
 
@@ -350,12 +366,14 @@ class TokenStorage {
       await _storage.delete(key: StorageKeys.currentUserForRole(role.apiValue));
     }
     await _storage.delete(key: StorageKeys.activeRole);
+    await _storage.delete(key: StorageKeys.sessionRoleStack);
     await _deleteLegacyKeys();
     _cacheHydration = null;
     _roleSessionCache.clear();
     for (final role in UserRole.values) {
       _roleSessionCache[role] = null;
     }
+    _sessionRoleStack.clear();
     _activeSessionCache = null;
     _cacheHydrated = true;
   }
@@ -546,6 +564,13 @@ class TokenStorage {
       }
     }
 
+    for (final role in _sessionRoleStack.reversed) {
+      final session = _roleSessionCache[role];
+      if (session != null) {
+        return session;
+      }
+    }
+
     for (final role in _rolePriority) {
       final session = _roleSessionCache[role];
       if (session != null) {
@@ -592,6 +617,14 @@ class TokenStorage {
       return;
     }
 
+    final roleStack = await _readStoredRoleStack();
+    for (final role in roleStack.reversed) {
+      if (await _hasSessionForRoleRaw(role)) {
+        await _storage.write(key: StorageKeys.activeRole, value: role.apiValue);
+        return;
+      }
+    }
+
     for (final role in _rolePriority) {
       if (await _hasSessionForRoleRaw(role)) {
         await _storage.write(key: StorageKeys.activeRole, value: role.apiValue);
@@ -600,6 +633,45 @@ class TokenStorage {
     }
 
     await _storage.delete(key: StorageKeys.activeRole);
+  }
+
+  void _recordActiveRole(UserRole role) {
+    if (role == UserRole.unknown) return;
+    _sessionRoleStack.removeWhere((storedRole) => storedRole == role);
+    _sessionRoleStack.add(role);
+  }
+
+  Future<List<UserRole>> _readStoredRoleStack() async {
+    final raw = await _readNonEmpty(StorageKeys.sessionRoleStack);
+    if (raw == null) return const <UserRole>[];
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! List) return const <UserRole>[];
+      final roles = <UserRole>[];
+      for (final item in decoded) {
+        final role = UserRole.fromString(item?.toString());
+        if (role == UserRole.unknown || roles.contains(role)) continue;
+        roles.add(role);
+      }
+      return roles;
+    } catch (_) {
+      return const <UserRole>[];
+    }
+  }
+
+  Future<void> _persistRoleStack() async {
+    final roles = _sessionRoleStack
+        .where((role) => role != UserRole.unknown)
+        .map((role) => role.apiValue)
+        .toList(growable: false);
+    if (roles.isEmpty) {
+      await _storage.delete(key: StorageKeys.sessionRoleStack);
+      return;
+    }
+    await _storage.write(
+      key: StorageKeys.sessionRoleStack,
+      value: jsonEncode(roles),
+    );
   }
 
   Future<UserRole?> _readStoredActiveRole() async {

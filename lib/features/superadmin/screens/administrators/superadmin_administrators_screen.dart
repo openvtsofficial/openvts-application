@@ -315,7 +315,9 @@ class _SuperadminAdministratorsScreenState
           settings: outcome.settings,
         );
 
-        await ref.read(authControllerProvider.notifier).setSession(session);
+        await ref
+            .read(authControllerProvider.notifier)
+            .switchToChildSession(session);
         if (!context.mounted) {
           return;
         }
@@ -331,14 +333,11 @@ class _SuperadminAdministratorsScreenState
       }
 
       final message = outcome.message?.trim();
-      if (message != null && message.isNotEmpty) {
-        ToastHelper.showSuccess(message, context: context);
-      } else {
-        ToastHelper.showInfo(
-          context.mobileText('Admin login request completed.'),
-          context: context,
-        );
-      }
+      throw Exception(
+        message != null && message.isNotEmpty
+            ? message
+            : 'Admin login did not return a complete session.',
+      );
     } catch (error) {
       if (!context.mounted) {
         return;

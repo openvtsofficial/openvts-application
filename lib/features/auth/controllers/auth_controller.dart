@@ -60,17 +60,9 @@ class AuthController extends StateNotifier<AuthState>
        _appPreferencesCtrl = appPreferencesCtrl,
        super(const AuthState.initial()) {
     WidgetsBinding.instance.addObserver(this);
-    _removeSessionListener = _tokenStorage.listenToSession(() {
-      if (!state.isRealSession) return;
-      final active = _tokenStorage.cachedActiveSession;
-      if (active == null ||
-          active.user.id != state.user?.id ||
-          active.role != state.role) {
-        _setUnauthenticated(
-          errorMessage: 'Your session expired. Sign in again.',
-        );
-      }
-    });
+    _removeSessionListener = _tokenStorage.listenToSession(
+      _handleStoredSessionChanged,
+    );
     _accessTimer = Timer.periodic(
       const Duration(seconds: 60),
       (_) => refreshAccess(),
@@ -86,6 +78,7 @@ class AuthController extends StateNotifier<AuthState>
   Timer? _accessTimer;
   void Function()? _removeSessionListener;
   bool _refreshingAccess = false;
+  bool _reconcilingStoredSession = false;
   int _generation = 0;
   bool _valid(int generation) => mounted && generation == _generation;
   CurrentUser? get currentUser => state.user;
@@ -121,9 +114,19 @@ class AuthController extends StateNotifier<AuthState>
     } catch (error) {
       if (!_valid(generation)) return;
       if (AuthApiError.isSessionInvalidated(error)) {
-        _setUnauthenticated(
-          errorMessage: 'Your session expired. Sign in again.',
-        );
+        final session = await _tokenStorage.getActiveSession();
+        if (!_valid(generation)) return;
+        if (session != null &&
+            session.user.id == user.id &&
+            session.role == user.role) {
+          await _tokenStorage.clearSessionIfCurrent(
+            session,
+            _tokenStorage.sessionGeneration,
+          );
+        }
+        if (_valid(generation)) {
+          await _restoreAfterSessionInvalidation(generation);
+        }
       } else {
         // Authentication survives transport outages. Permission data must still
         // fail closed until the next foreground/periodic verification succeeds.
@@ -225,23 +228,92 @@ class AuthController extends StateNotifier<AuthState>
       }
       if (response.settings.isNotEmpty) {
         final settings = response.settings;
-        await _appPreferencesCtrl.applyFromUserSettings(
-          preserveAppLanguage: true,
-          languageCode: settings['languageCode']?.toString() ?? 'en',
-          dateFormat: settings['dateFormat']?.toString() ?? 'DD MMM YYYY',
-          timeFormat: settings['timeFormat']?.toString() ?? '12H',
-          theme: settings['theme']?.toString() ?? 'SYSTEM',
-          timezone: settings['timezone']?.toString() ?? '+00:00',
-          layoutDirection: settings['direction']?.toString() ?? 'LTR',
-          units: settings['distanceUnit']?.toString() ?? 'KM',
-        );
+        try {
+          await _appPreferencesCtrl.applyFromUserSettings(
+            preserveAppLanguage: true,
+            languageCode: settings['languageCode']?.toString() ?? 'en',
+            dateFormat: settings['dateFormat']?.toString() ?? 'DD MMM YYYY',
+            timeFormat: settings['timeFormat']?.toString() ?? '12H',
+            theme: settings['theme']?.toString() ?? 'SYSTEM',
+            timezone: settings['timezone']?.toString() ?? '+00:00',
+            layoutDirection: settings['direction']?.toString() ?? 'LTR',
+            units: settings['distanceUnit']?.toString() ?? 'KM',
+          );
+        } catch (_) {
+          // Preferences are not authentication state. A local preferences
+          // write failure must never discard a freshly issued session.
+        }
       }
       await _restore(generation);
     } catch (error) {
-      if (_valid(generation)) {
+      if (!_valid(generation)) return;
+      final active = await _tokenStorage.getActiveSession();
+      if (!_valid(generation)) return;
+      if (active != null) {
+        await _restore(generation);
+      } else {
         _setUnauthenticated(errorMessage: _friendlyLoginError(error));
       }
     }
+  }
+
+  /// Switches from the currently authenticated parent account to a child
+  /// account without discarding the parent session. The stored role stack then
+  /// provides deterministic back-navigation when the child logs out or expires.
+  Future<void> switchToChildSession(LoginResponse response) async {
+    final parentUser = state.user;
+    final parentSession = await _tokenStorage.getActiveSession();
+    if (!state.isRealSession ||
+        parentUser == null ||
+        parentSession == null ||
+        parentSession.user.id != parentUser.id ||
+        parentSession.role != parentUser.role) {
+      throw const ApiException(
+        message: 'Your current account session is no longer available.',
+      );
+    }
+    if (!_canSwitchToChild(parentSession.role, response.user.role)) {
+      throw ApiException(
+        message:
+            'The ${response.user.role.displayLabel} account is not a child of '
+            'the current ${parentSession.role.displayLabel} session.',
+      );
+    }
+
+    await setSession(response);
+
+    final active = await _tokenStorage.getActiveSession();
+    final switched = state.isRealSession &&
+        active != null &&
+        active.role == response.user.role &&
+        active.user.id == response.user.id &&
+        state.role == response.user.role &&
+        state.user?.id == response.user.id;
+    if (switched) return;
+
+    // If bootstrap failed after the child credentials were stored, remove only
+    // that child and recover the exact parent path. Never clear all roles.
+    if (active != null &&
+        active.role == response.user.role &&
+        active.user.id == response.user.id) {
+      await _tokenStorage.clearSessionIfCurrent(
+        active,
+        _tokenStorage.sessionGeneration,
+      );
+    }
+    final restored = await _tokenStorage.getActiveSession();
+    if (restored != null &&
+        (!state.isRealSession ||
+            state.role != restored.role ||
+            state.user?.id != restored.user.id)) {
+      final generation = ++_generation;
+      state = const AuthState.loading();
+      await _restore(generation);
+    }
+
+    throw const ApiException(
+      message: 'Unable to switch accounts. Your previous session was restored.',
+    );
   }
 
   Future<void> _restore(int generation) async {
@@ -272,9 +344,17 @@ class AuthController extends StateNotifier<AuthState>
     } catch (error) {
       if (!_valid(generation)) return;
       if (AuthApiError.isSessionInvalidated(error)) {
-        _setUnauthenticated(
-          errorMessage: 'Your session expired. Sign in again.',
-        );
+        final active = await _tokenStorage.getActiveSession();
+        if (!_valid(generation)) return;
+        if (_sameSession(active, session)) {
+          await _tokenStorage.clearSessionIfCurrent(
+            session,
+            _tokenStorage.sessionGeneration,
+          );
+        }
+        if (_valid(generation)) {
+          await _restoreAfterSessionInvalidation(generation);
+        }
       } else {
         // A server timeout or a temporary permission error must not send a
         // returning mobile user to Login. Cached authorization is not trusted.
@@ -287,6 +367,71 @@ class AuthController extends StateNotifier<AuthState>
         _appPreferencesCtrl.rehydrate();
       }
     }
+  }
+
+  void _handleStoredSessionChanged() {
+    if (!state.isRealSession || _reconcilingStoredSession) return;
+    final active = _tokenStorage.cachedActiveSession;
+    if (active != null &&
+        active.user.id == state.user?.id &&
+        active.role == state.role) {
+      return;
+    }
+
+    if (active == null) {
+      _generation++;
+      _setUnauthenticated(
+        errorMessage: 'Your session expired. Sign in again.',
+      );
+      return;
+    }
+
+    unawaited(_restoreStoredActiveSession());
+  }
+
+  Future<void> _restoreStoredActiveSession() async {
+    if (_reconcilingStoredSession || !mounted) return;
+    _reconcilingStoredSession = true;
+    final generation = ++_generation;
+    state = const AuthState.loading();
+    try {
+      await _restore(generation);
+    } finally {
+      _reconcilingStoredSession = false;
+    }
+  }
+
+  Future<void> _restoreAfterSessionInvalidation(int generation) async {
+    if (!_valid(generation)) return;
+    final fallback = await _tokenStorage.getActiveSession();
+    if (!_valid(generation)) return;
+    if (fallback == null) {
+      _setUnauthenticated(
+        errorMessage: 'Your session expired. Sign in again.',
+      );
+      return;
+    }
+    await _restore(generation);
+  }
+
+  static bool _sameSession(RoleSession? left, RoleSession right) =>
+      left != null &&
+      left.role == right.role &&
+      left.user.id == right.user.id &&
+      left.accessToken == right.accessToken &&
+      left.refreshToken == right.refreshToken;
+
+  static bool _canSwitchToChild(UserRole parent, UserRole child) {
+    return switch (parent) {
+      UserRole.superadmin => child == UserRole.admin,
+      UserRole.admin => child == UserRole.team || child == UserRole.user,
+      UserRole.team => child == UserRole.user,
+      UserRole.user =>
+        child == UserRole.subuser || child == UserRole.driver,
+      UserRole.subuser => false,
+      UserRole.driver => false,
+      UserRole.unknown => false,
+    };
   }
 
   Future<void> replaceCurrentUser(CurrentUser user) async {

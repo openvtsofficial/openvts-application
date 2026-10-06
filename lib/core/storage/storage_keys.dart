@@ -11,6 +11,7 @@ class StorageKeys {
   static const userRole = 'openvts_user_role';
   static const currentUser = 'openvts_current_user';
   static const activeRole = 'openvts_active_role';
+  static const sessionRoleStack = 'openvts_session_role_stack';
 
   static const mobilePushDeviceId = 'openvts_mobile_push_device_id';
   static const mobilePushFcmToken = 'openvts_mobile_push_fcm_token';

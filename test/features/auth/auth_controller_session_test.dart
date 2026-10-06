@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:open_vts/core/access/mobile_access.dart';
 import 'package:open_vts/core/access/mobile_access_service.dart';
 import 'package:open_vts/core/api/api_client.dart';
+import 'package:open_vts/core/api/api_exception.dart';
 import 'package:open_vts/core/demo/demo_mode_store.dart';
 import 'package:open_vts/core/demo/demo_session.dart';
 import 'package:open_vts/core/demo/demo_session_service.dart';
@@ -109,6 +110,82 @@ void main() {
   }
 
   test(
+    'nested impersonation logout restores admin then superadmin',
+    () async {
+      await controller.setSession(_loginForRole(UserRole.superadmin));
+      await controller.switchToChildSession(_loginForRole(UserRole.admin));
+      await controller.switchToChildSession(_loginForRole(UserRole.user));
+
+      expect(controller.state.role, UserRole.user);
+      expect((await storage.getActiveSession())?.role, UserRole.user);
+
+      await controller.logoutActiveRole();
+      expect(controller.state.role, UserRole.admin);
+      expect((await storage.getActiveSession())?.role, UserRole.admin);
+
+      await controller.logoutActiveRole();
+      expect(controller.state.role, UserRole.superadmin);
+      expect((await storage.getActiveSession())?.role, UserRole.superadmin);
+    },
+  );
+
+  test('declared account hierarchy can traverse every supported role', () async {
+    await controller.setSession(_loginForRole(UserRole.superadmin));
+    await controller.switchToChildSession(_loginForRole(UserRole.admin));
+    await controller.switchToChildSession(_loginForRole(UserRole.team));
+    await controller.switchToChildSession(_loginForRole(UserRole.user));
+    await controller.switchToChildSession(_loginForRole(UserRole.subuser));
+
+    expect(controller.state.role, UserRole.subuser);
+    await controller.logoutActiveRole();
+    expect(controller.state.role, UserRole.user);
+
+    await controller.switchToChildSession(_loginForRole(UserRole.driver));
+    expect(controller.state.role, UserRole.driver);
+    await controller.logoutActiveRole();
+    expect(controller.state.role, UserRole.user);
+    await controller.logoutActiveRole();
+    expect(controller.state.role, UserRole.team);
+    await controller.logoutActiveRole();
+    expect(controller.state.role, UserRole.admin);
+    await controller.logoutActiveRole();
+    expect(controller.state.role, UserRole.superadmin);
+  });
+
+  test(
+    'revoked child during account switch restores the parent session',
+    () async {
+      await controller.setSession(_loginForRole(UserRole.superadmin));
+      service.invalidatedRoles.add(UserRole.admin);
+
+      await expectLater(
+        controller.switchToChildSession(_loginForRole(UserRole.admin)),
+        throwsA(isA<ApiException>()),
+      );
+
+      expect(controller.state.isRealSession, true);
+      expect(controller.state.role, UserRole.superadmin);
+      expect((await storage.getActiveSession())?.role, UserRole.superadmin);
+    },
+  );
+
+  test(
+    'external child invalidation automatically resumes the stored parent',
+    () async {
+      await controller.setSession(_loginForRole(UserRole.superadmin));
+      await controller.switchToChildSession(_loginForRole(UserRole.admin));
+      final child = (await storage.getActiveSession())!;
+
+      await storage.clearSessionIfCurrent(child, storage.sessionGeneration);
+      await pumpEventQueue(times: 10);
+
+      expect(controller.state.isRealSession, true);
+      expect(controller.state.role, UserRole.superadmin);
+      expect((await storage.getActiveSession())?.role, UserRole.superadmin);
+    },
+  );
+
+  test(
     'temporary profile permission denial retains login and fails closed',
     () async {
       await controller.setSession(_login);
@@ -159,6 +236,19 @@ void main() {
   });
 }
 
+LoginResponse _loginForRole(UserRole role) {
+  return LoginResponse(
+    accessToken: 'access-${role.apiValue}',
+    refreshToken: 'refresh-${role.apiValue}',
+    user: CurrentUser(
+      id: '${role.apiValue}-id',
+      name: role.displayLabel,
+      email: '${role.apiValue}@openvts.local',
+      role: role,
+    ),
+  );
+}
+
 const _user = CurrentUser(
   id: '7',
   name: 'Driver',
@@ -175,6 +265,7 @@ class _AuthService extends AuthService {
   _AuthService() : super(ApiClient(Dio()));
   bool needsMfa = false;
   Object? profileError;
+  final Set<UserRole> invalidatedRoles = <UserRole>{};
   Completer<CurrentUser>? profile;
   final profileStarted = Completer<void>();
   @override
@@ -198,6 +289,21 @@ class _AuthService extends AuthService {
   @override
   Future<CurrentUser> getProfile(CurrentUser user) {
     if (!profileStarted.isCompleted) profileStarted.complete();
+    if (invalidatedRoles.remove(user.role)) {
+      return Future.error(
+        DioException(
+          requestOptions: RequestOptions(
+            path: '/auth/refresh-token',
+            extra: const <String, dynamic>{'sessionInvalidated': true},
+          ),
+          type: DioExceptionType.badResponse,
+          response: Response<void>(
+            requestOptions: RequestOptions(path: '/auth/refresh-token'),
+            statusCode: 401,
+          ),
+        ),
+      );
+    }
     if (profileError != null) return Future.error(profileError!);
     return profile?.future ?? Future.value(user);
   }
