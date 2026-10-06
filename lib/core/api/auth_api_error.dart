@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+
 import 'api_exception.dart';
 
 /// Transport error details stay in the API layer, outside account UI/controllers.
@@ -6,6 +7,10 @@ class AuthApiError {
   const AuthApiError._();
   static bool isUnauthorized(Object error) =>
       error is DioException && error.response?.statusCode == 401;
+  static bool isSessionInvalidated(Object error) =>
+      error is DioException &&
+      error.requestOptions.extra['sessionInvalidated'] == true;
+
   static String message(Object error) {
     if (error is ApiException) return error.message;
     if (error is DioException) {

@@ -14,52 +14,74 @@ import 'package:open_vts/features/admin/services/admin_user_details_service.dart
 void main() {
   tearDown(() => debugDefaultTargetPlatformOverride = null);
 
-  test('SMTP test posts the named email field expected by the controller', () async {
-    final requests = <RequestOptions>[];
-    final service = AdminSettingsService(_client(requests));
-    await service.testSmtp('  operator@example.com  ');
-    expect(requests.single.method, 'POST');
-    expect(requests.single.path, '/admin/testsmtp');
-    expect(requests.single.data, {'email': 'operator@example.com'});
-  });
+  test(
+    'SMTP test posts the named email field expected by the controller',
+    () async {
+      final requests = <RequestOptions>[];
+      final service = AdminSettingsService(_client(requests));
+      await service.testSmtp('  operator@example.com  ');
+      expect(requests.single.method, 'POST');
+      expect(requests.single.path, '/admin/testsmtp');
+      expect(requests.single.data, {'email': 'operator@example.com'});
+    },
+  );
 
   test('new user permits absent optional email and location fields', () {
     const request = AdminCreateUserRequest(
-      name: 'Operator', email: ' ', mobilePrefix: '+1',
-      mobileNumber: '2025550100', username: 'operator',
-      password: 'ExampleSecret123', companyName: '', address: '1 Main Street',
-      countryCode: 'us', stateCode: ' ', city: '', pincode: '',
+      name: 'Operator',
+      email: ' ',
+      mobilePrefix: '+1',
+      mobileNumber: '2025550100',
+      username: 'operator',
+      password: 'ExampleSecret123',
+      companyName: '',
+      address: '1 Main Street',
+      countryCode: 'us',
+      stateCode: ' ',
+      city: '',
+      pincode: '',
     );
     final payload = request.toJson();
     expect(payload.containsKey('email'), isFalse);
     expect(payload.containsKey('stateCode'), isFalse);
     expect(payload.containsKey('city'), isFalse);
+    expect(payload.containsKey('companyName'), isFalse);
+    expect(payload.containsKey('pincode'), isFalse);
     expect(payload['countryCode'], 'US');
     expect(Validators.adminEmailOptional(''), isNull);
     expect(Validators.adminEmailOptional('invalid-address'), isNotNull);
     expect(const AdminUpdateUserRequest(email: '').toJson()['email'], '');
   });
 
-  test('both iOS renewal entry points reject before issuing any request', () async {
-    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
-    final requests = <RequestOptions>[];
-    final client = _client(requests);
-    await expectLater(
-      AdminPaymentsService(client).renewVehicles(const AdminRenewPaymentRequest(
-        userId: '12', vehicleIds: ['34'], paymentMode: AdminPaymentMode.cash,
-      )),
-      throwsUnsupportedError,
-    );
-    await expectLater(
-      AdminUserDetailsService(client).renewVehiclesPayment(
-        const AdminRenewVehiclesPaymentRequest(
-          userId: '12', vehicleIds: ['34'], paymentMode: 'CASH',
+  test(
+    'both iOS renewal entry points reject before issuing any request',
+    () async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+      final requests = <RequestOptions>[];
+      final client = _client(requests);
+      await expectLater(
+        AdminPaymentsService(client).renewVehicles(
+          const AdminRenewPaymentRequest(
+            userId: '12',
+            vehicleIds: ['34'],
+            paymentMode: AdminPaymentMode.cash,
+          ),
         ),
-      ),
-      throwsUnsupportedError,
-    );
-    expect(requests, isEmpty);
-  });
+        throwsUnsupportedError,
+      );
+      await expectLater(
+        AdminUserDetailsService(client).renewVehiclesPayment(
+          const AdminRenewVehiclesPaymentRequest(
+            userId: '12',
+            vehicleIds: ['34'],
+            paymentMode: 'CASH',
+          ),
+        ),
+        throwsUnsupportedError,
+      );
+      expect(requests, isEmpty);
+    },
+  );
 
   test('iOS retains payment history access', () async {
     debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
@@ -74,30 +96,57 @@ void main() {
   test('Android renewal preserves the backend mutation contract', () async {
     debugDefaultTargetPlatformOverride = TargetPlatform.android;
     final requests = <RequestOptions>[];
-    await AdminPaymentsService(_client(requests)).renewVehicles(
-      const AdminRenewPaymentRequest(
-        userId: '12', vehicleIds: ['34'], paymentMode: AdminPaymentMode.cash,
-        reference: ' receipt-1 ', amountOverride: '150.00',
+    final service = AdminPaymentsService(_client(requests));
+    const request = AdminRenewPaymentRequest(
+      userId: '12',
+      vehicleIds: ['34'],
+      paymentMode: AdminPaymentMode.cash,
+      reference: ' receipt-1 ',
+      amountOverride: '150.00',
+    );
+    await service.renewVehicles(request);
+    final payload = Map<String, dynamic>.from(requests.single.data as Map);
+    final idempotencyKey = payload.remove('idempotencyKey');
+    expect(
+      idempotencyKey,
+      matches(
+        RegExp(
+          r'^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$',
+        ),
       ),
     );
     expect(requests.single.method, 'POST');
     expect(requests.single.path, '/admin/payments/renew');
-    expect(requests.single.data, {
-      'userId': 12, 'vehicleIds': [34], 'paymentMode': 'CASH',
-      'reference': 'receipt-1', 'amountOverride': '150.00',
+    expect(payload, {
+      'userId': 12,
+      'vehicleIds': [34],
+      'paymentMode': 'CASH',
+      'reference': 'receipt-1',
+      'amountOverride': '150.00',
     });
+    await service.renewVehicles(request);
+    expect((requests.last.data as Map)['idempotencyKey'], idempotencyKey);
   });
 }
 
 ApiClient _client(List<RequestOptions> requests) {
   final dio = Dio(BaseOptions(baseUrl: 'https://test.invalid'));
-  dio.interceptors.add(InterceptorsWrapper(onRequest: (options, handler) {
-    requests.add(options);
-    handler.resolve(Response<dynamic>(
-      requestOptions: options,
-      statusCode: 200,
-      data: {'action': true, 'data': <String, dynamic>{'items': [], 'total': 0}},
-    ));
-  }));
+  dio.interceptors.add(
+    InterceptorsWrapper(
+      onRequest: (options, handler) {
+        requests.add(options);
+        handler.resolve(
+          Response<dynamic>(
+            requestOptions: options,
+            statusCode: 200,
+            data: {
+              'action': true,
+              'data': <String, dynamic>{'items': [], 'total': 0},
+            },
+          ),
+        );
+      },
+    ),
+  );
   return ApiClient(dio);
 }

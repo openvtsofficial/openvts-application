@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/api/api_exception.dart';
 import '../models/user_subuser_model.dart';
 import '../models/user_subusers_state.dart';
 import '../services/user_subuser_service.dart';
@@ -10,83 +11,82 @@ class UserSubUserDetailsController
   UserSubUserDetailsController({
     required String subUserId,
     required UserSubUserService service,
-    UserSubUser? initialSubUser,
-  })  : _subUserId = subUserId,
-        _service = service,
-        super(const UserSubUserDetailsState.initial()) {
-    if (initialSubUser != null) {
-      state = state.copyWith(subUser: initialSubUser);
-    }
-  }
+  }) : _subUserId = subUserId,
+       _service = service,
+       super(const UserSubUserDetailsState.initial());
 
   final String _subUserId;
   final UserSubUserService _service;
+  int _profileGeneration = 0;
 
   Future<void> loadInitial() async {
-    state = state.copyWith(
-      isLoading: true,
-      errorMessage: null,
-    );
-
+    if (!mounted) return;
+    final generation = ++_profileGeneration;
+    // Only state fetched by this scoped controller is retained during refresh.
+    // List/route extras have no principal/server provenance and cannot seed it.
+    state = state.copyWith(isLoading: true, errorMessage: null);
     try {
-      final refreshKey = DateTime.now().millisecondsSinceEpoch.toString();
-      final results = await Future.wait<dynamic>([
-        _service.fetchSubUserById(_subUserId, refreshKey: refreshKey),
-        _service.fetchSubUserVehicles(_subUserId),
-        _service.fetchAvailableVehicles(),
-      ]);
-
-      if (!mounted) {
-        return;
-      }
-
-      final subUser = results[0] as UserSubUser;
-      final assigned = results[1] as List<UserSubUserVehicle>;
-      final available = _toAvailableVehicles(
-          results[2] as List<UserSubUserVehicle>, assigned);
-
-      state = state.copyWith(
-        subUser: subUser,
-        assignedVehicles: assigned,
-        availableVehicles: available,
-        selectedVehicleIds: _keepExistingSelection(
-          state.selectedVehicleIds,
-          available,
-        ),
-        isLoading: false,
+      final subUser = await _service.fetchSubUserById(
+        _subUserId,
+        refreshKey: DateTime.now().millisecondsSinceEpoch.toString(),
       );
-    } catch (error) {
-      if (!mounted) {
-        return;
+      if (!mounted || generation != _profileGeneration) return;
+      if (subUser.id != _subUserId) {
+        throw const ApiException(
+          message: 'Sub user details could not be loaded.',
+        );
       }
-
+      state = state.copyWith(subUser: subUser, isLoading: false);
+      // A denied/unavailable vehicle list must not hide a verified profile or
+      // prevent the manager from opening the independent Permissions tab.
+      await loadVehicles();
+    } catch (error) {
+      if (!mounted || generation != _profileGeneration) return;
+      final statusCode = error is ApiException
+          ? error.statusCode
+          : error is DioException
+          ? error.response?.statusCode
+          : null;
+      final noAccess = const {401, 403, 404}.contains(statusCode);
       state = state.copyWith(
         isLoading: false,
+        subUser: noAccess ? null : state.subUser,
         errorMessage: _toErrorMessage(error),
       );
     }
   }
+
+  @override
+  void dispose() {
+    _profileGeneration++;
+    super.dispose();
+  }
+
+  bool get _canMutate =>
+      mounted &&
+      !state.isLoading &&
+      state.subUser?.id == _subUserId &&
+      !state.isSaving &&
+      !state.isDeleting &&
+      !state.isTogglingStatus &&
+      !state.isAssigningVehicles &&
+      !state.isUnassigningVehicles;
 
   Future<void> refresh() async {
     await loadInitial();
   }
 
   Future<bool> updateSubUser(UpdateUserSubUserRequest request) async {
-    state = state.copyWith(
-      isSaving: true,
-      errorMessage: null,
-    );
+    if (!_canMutate) return false;
+    state = state.copyWith(isSaving: true, errorMessage: null);
 
     try {
       final updated = await _service.updateSubUser(_subUserId, request);
       if (!mounted) {
-        return true;
+        return false;
       }
 
-      state = state.copyWith(
-        subUser: updated,
-        isSaving: false,
-      );
+      state = state.copyWith(subUser: updated, isSaving: false);
       return true;
     } catch (error) {
       if (!mounted) {
@@ -102,6 +102,7 @@ class UserSubUserDetailsController
   }
 
   Future<bool> toggleStatus() async {
+    if (!_canMutate) return false;
     final current = state.subUser;
     if (current == null) {
       return false;
@@ -125,13 +126,10 @@ class UserSubUserDetailsController
       );
 
       if (!mounted) {
-        return true;
+        return false;
       }
 
-      state = state.copyWith(
-        subUser: updated,
-        isTogglingStatus: false,
-      );
+      state = state.copyWith(subUser: updated, isTogglingStatus: false);
       return true;
     } catch (error) {
       if (!mounted) {
@@ -148,15 +146,13 @@ class UserSubUserDetailsController
   }
 
   Future<bool> deleteSubUser() async {
-    state = state.copyWith(
-      isDeleting: true,
-      errorMessage: null,
-    );
+    if (!_canMutate) return false;
+    state = state.copyWith(isDeleting: true, errorMessage: null);
 
     try {
       await _service.deleteSubUser(_subUserId);
       if (!mounted) {
-        return true;
+        return false;
       }
 
       state = state.copyWith(
@@ -181,10 +177,8 @@ class UserSubUserDetailsController
   }
 
   Future<void> loadVehicles() async {
-    state = state.copyWith(
-      isLoadingVehicles: true,
-      errorMessage: null,
-    );
+    if (!mounted || state.subUser?.id != _subUserId) return;
+    state = state.copyWith(isLoadingVehicles: true, errorMessage: null);
 
     try {
       final results = await Future.wait<dynamic>([
@@ -198,7 +192,9 @@ class UserSubUserDetailsController
 
       final assigned = results[0] as List<UserSubUserVehicle>;
       final available = _toAvailableVehicles(
-          results[1] as List<UserSubUserVehicle>, assigned);
+        results[1] as List<UserSubUserVehicle>,
+        assigned,
+      );
 
       state = state.copyWith(
         assignedVehicles: assigned,
@@ -222,6 +218,7 @@ class UserSubUserDetailsController
   }
 
   Future<bool> assignVehicles(List<String> vehicleIds) async {
+    if (!_canMutate) return false;
     final normalizedIds = _normalizeVehicleIds(vehicleIds);
     if (normalizedIds.isEmpty) {
       state = state.copyWith(
@@ -230,15 +227,12 @@ class UserSubUserDetailsController
       return false;
     }
 
-    state = state.copyWith(
-      isAssigningVehicles: true,
-      errorMessage: null,
-    );
+    state = state.copyWith(isAssigningVehicles: true, errorMessage: null);
 
     try {
       await _service.assignVehicles(_subUserId, normalizedIds);
       if (!mounted) {
-        return true;
+        return false;
       }
 
       state = state.copyWith(
@@ -262,6 +256,7 @@ class UserSubUserDetailsController
   }
 
   Future<bool> unassignVehicles(List<String> vehicleIds) async {
+    if (!_canMutate) return false;
     final normalizedIds = _normalizeVehicleIds(vehicleIds);
     if (normalizedIds.isEmpty) {
       state = state.copyWith(
@@ -270,15 +265,12 @@ class UserSubUserDetailsController
       return false;
     }
 
-    state = state.copyWith(
-      isUnassigningVehicles: true,
-      errorMessage: null,
-    );
+    state = state.copyWith(isUnassigningVehicles: true, errorMessage: null);
 
     try {
       await _service.unassignVehicles(_subUserId, normalizedIds);
       if (!mounted) {
-        return true;
+        return false;
       }
 
       state = state.copyWith(
@@ -370,6 +362,7 @@ class UserSubUserDetailsController
   }
 
   String _toErrorMessage(Object error) {
+    if (error is ApiException) return error.message;
     if (error is ArgumentError) {
       final message = error.message?.toString().trim();
       if (message != null && message.isNotEmpty) {

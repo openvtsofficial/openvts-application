@@ -13,14 +13,14 @@ class AdminUserDetailsController extends StateNotifier<AdminUserDetailsState> {
     required String userId,
     required AdminUserDetailsService service,
     AdminUserDetails? initialUser,
-  })  : _userId = userId,
-        _service = service,
-        super(
-          AdminUserDetailsState.initial(
-            userId: userId,
-            initialUser: initialUser,
-          ),
-        );
+  }) : _userId = userId,
+       _service = service,
+       super(
+         AdminUserDetailsState.initial(
+           userId: userId,
+           initialUser: initialUser,
+         ),
+       );
 
   final String _userId;
   final AdminUserDetailsService _service;
@@ -40,10 +40,7 @@ class AdminUserDetailsController extends StateNotifier<AdminUserDetailsState> {
     if (state.selectedTab == tab) {
       return;
     }
-    state = state.copyWith(
-      selectedTab: tab,
-      sectionErrorMessage: null,
-    );
+    state = state.copyWith(selectedTab: tab, sectionErrorMessage: null);
     _lazyLoadForTab(tab);
   }
 
@@ -69,6 +66,9 @@ class AdminUserDetailsController extends StateNotifier<AdminUserDetailsState> {
         break;
       case AdminUserDetailsTab.logs:
         await loadLogs();
+        break;
+      case AdminUserDetailsTab.permissions:
+      case AdminUserDetailsTab.dataBackup:
         break;
     }
   }
@@ -114,6 +114,9 @@ class AdminUserDetailsController extends StateNotifier<AdminUserDetailsState> {
           unawaited(loadLogs());
         }
         break;
+      case AdminUserDetailsTab.permissions:
+      case AdminUserDetailsTab.dataBackup:
+        break;
     }
   }
 
@@ -125,6 +128,7 @@ class AdminUserDetailsController extends StateNotifier<AdminUserDetailsState> {
     );
     try {
       var user = await _service.getUserDetails(_userId);
+      if (!mounted) return;
 
       // Preserve known status from initialUser if detail API returned default true
       // and we have explicit false from the list
@@ -161,6 +165,7 @@ class AdminUserDetailsController extends StateNotifier<AdminUserDetailsState> {
         isLoadingProfile: false,
       );
     } catch (error) {
+      if (!mounted) return;
       state = state.copyWith(
         isLoadingProfile: false,
         errorMessage: state.user == null ? _errorMessage(error) : null,
@@ -187,6 +192,7 @@ class AdminUserDetailsController extends StateNotifier<AdminUserDetailsState> {
     // Otherwise, fetch linked vehicles only for count
     try {
       final linked = await _service.getLinkedVehicles(_userId);
+      if (!mounted) return;
       state = state.copyWith(
         linkedVehicles: linked,
         vehicleCount: linked.length,
@@ -194,22 +200,17 @@ class AdminUserDetailsController extends StateNotifier<AdminUserDetailsState> {
         // Full load happens when user opens Vehicle tab
       );
     } catch (error) {
+      if (!mounted) return;
       // Silently fail for summary count - don't show error, just leave count as unknown
       // Vehicle tab will load properly when user navigates to it
     }
   }
 
   Future<bool> updateProfile(AdminUpdateUserDetailsRequest request) async {
-    state = state.copyWith(
-      isSavingProfile: true,
-      sectionErrorMessage: null,
-    );
+    state = state.copyWith(isSavingProfile: true, sectionErrorMessage: null);
     try {
       final user = await _service.updateUserDetails(_userId, request);
-      state = state.copyWith(
-        user: user,
-        isSavingProfile: false,
-      );
+      state = state.copyWith(user: user, isSavingProfile: false);
       return true;
     } catch (error) {
       state = state.copyWith(
@@ -221,10 +222,7 @@ class AdminUserDetailsController extends StateNotifier<AdminUserDetailsState> {
   }
 
   Future<bool> updateStatus(bool isActive) async {
-    state = state.copyWith(
-      isUpdatingStatus: true,
-      sectionErrorMessage: null,
-    );
+    state = state.copyWith(isUpdatingStatus: true, sectionErrorMessage: null);
     try {
       await _service.updateUserStatus(_userId, isActive);
       state = state.copyWith(
@@ -245,10 +243,7 @@ class AdminUserDetailsController extends StateNotifier<AdminUserDetailsState> {
   }
 
   Future<bool> updatePassword(String newPassword) async {
-    state = state.copyWith(
-      isChangingPassword: true,
-      sectionErrorMessage: null,
-    );
+    state = state.copyWith(isChangingPassword: true, sectionErrorMessage: null);
     try {
       await _service.updateUserPassword(_userId, newPassword);
       state = state.copyWith(isChangingPassword: false);
@@ -263,10 +258,7 @@ class AdminUserDetailsController extends StateNotifier<AdminUserDetailsState> {
   }
 
   Future<bool> updateCompany(AdminUpdateUserCompanyRequest request) async {
-    state = state.copyWith(
-      isSavingCompany: true,
-      sectionErrorMessage: null,
-    );
+    state = state.copyWith(isSavingCompany: true, sectionErrorMessage: null);
     try {
       var user = await _service.updateCompanyDetails(_userId, request);
 
@@ -316,10 +308,7 @@ class AdminUserDetailsController extends StateNotifier<AdminUserDetailsState> {
         }
       }
 
-      state = state.copyWith(
-        user: user,
-        isSavingCompany: false,
-      );
+      state = state.copyWith(user: user, isSavingCompany: false);
       return true;
     } catch (error) {
       state = state.copyWith(
@@ -340,15 +329,13 @@ class AdminUserDetailsController extends StateNotifier<AdminUserDetailsState> {
   }
 
   Future<void> loadVehicles() async {
-    state = state.copyWith(
-      isLoadingVehicles: true,
-      sectionErrorMessage: null,
-    );
+    state = state.copyWith(isLoadingVehicles: true, sectionErrorMessage: null);
     try {
       final results = await Future.wait<List<AdminUserVehicle>>([
         _service.getLinkedVehicles(_userId),
         _service.getUnlinkedVehicles(_userId),
       ]);
+      if (!mounted) return;
       _loadedTabs.add(AdminUserDetailsTab.vehicles);
       state = state.copyWith(
         linkedVehicles: results[0],
@@ -357,6 +344,7 @@ class AdminUserDetailsController extends StateNotifier<AdminUserDetailsState> {
         isLoadingVehicles: false,
       );
     } catch (error) {
+      if (!mounted) return;
       state = state.copyWith(
         isLoadingVehicles: false,
         sectionErrorMessage: _errorMessage(error),
@@ -365,10 +353,7 @@ class AdminUserDetailsController extends StateNotifier<AdminUserDetailsState> {
   }
 
   Future<bool> linkVehicle(String vehicleId) async {
-    state = state.copyWith(
-      isLinkingVehicle: true,
-      sectionErrorMessage: null,
-    );
+    state = state.copyWith(isLinkingVehicle: true, sectionErrorMessage: null);
     try {
       await _service.linkVehicle(_userId, vehicleId);
       state = state.copyWith(isLinkingVehicle: false);
@@ -384,10 +369,7 @@ class AdminUserDetailsController extends StateNotifier<AdminUserDetailsState> {
   }
 
   Future<bool> unlinkVehicle(String vehicleId) async {
-    state = state.copyWith(
-      isUnlinkingVehicle: true,
-      sectionErrorMessage: null,
-    );
+    state = state.copyWith(isUnlinkingVehicle: true, sectionErrorMessage: null);
     try {
       await _service.unlinkVehicle(_userId, vehicleId);
       state = state.copyWith(isUnlinkingVehicle: false);
@@ -403,15 +385,13 @@ class AdminUserDetailsController extends StateNotifier<AdminUserDetailsState> {
   }
 
   Future<void> loadDrivers() async {
-    state = state.copyWith(
-      isLoadingDrivers: true,
-      sectionErrorMessage: null,
-    );
+    state = state.copyWith(isLoadingDrivers: true, sectionErrorMessage: null);
     try {
       final results = await Future.wait<List<AdminUserDriver>>([
         _service.getLinkedDrivers(_userId),
         _service.getUnlinkedDrivers(_userId),
       ]);
+      if (!mounted) return;
       _loadedTabs.add(AdminUserDetailsTab.drivers);
       state = state.copyWith(
         linkedDrivers: results[0],
@@ -419,6 +399,7 @@ class AdminUserDetailsController extends StateNotifier<AdminUserDetailsState> {
         isLoadingDrivers: false,
       );
     } catch (error) {
+      if (!mounted) return;
       state = state.copyWith(
         isLoadingDrivers: false,
         sectionErrorMessage: _errorMessage(error),
@@ -427,10 +408,7 @@ class AdminUserDetailsController extends StateNotifier<AdminUserDetailsState> {
   }
 
   Future<bool> linkDriver(String driverId) async {
-    state = state.copyWith(
-      isLinkingDriver: true,
-      sectionErrorMessage: null,
-    );
+    state = state.copyWith(isLinkingDriver: true, sectionErrorMessage: null);
     try {
       await _service.linkDriver(_userId, driverId);
       state = state.copyWith(isLinkingDriver: false);
@@ -446,10 +424,7 @@ class AdminUserDetailsController extends StateNotifier<AdminUserDetailsState> {
   }
 
   Future<bool> unlinkDriver(String driverId) async {
-    state = state.copyWith(
-      isUnlinkingDriver: true,
-      sectionErrorMessage: null,
-    );
+    state = state.copyWith(isUnlinkingDriver: true, sectionErrorMessage: null);
     try {
       await _service.unlinkDriver(_userId, driverId);
       state = state.copyWith(isUnlinkingDriver: false);
@@ -518,10 +493,7 @@ class AdminUserDetailsController extends StateNotifier<AdminUserDetailsState> {
     required String docId,
     required AdminUserDocumentRequest request,
   }) async {
-    state = state.copyWith(
-      isUpdatingDocument: true,
-      sectionErrorMessage: null,
-    );
+    state = state.copyWith(isUpdatingDocument: true, sectionErrorMessage: null);
     try {
       await _service.updateDocument(docId: docId, request: request);
       state = state.copyWith(isUpdatingDocument: false);
@@ -537,10 +509,7 @@ class AdminUserDetailsController extends StateNotifier<AdminUserDetailsState> {
   }
 
   Future<bool> deleteDocument(String docId) async {
-    state = state.copyWith(
-      isDeletingDocument: true,
-      sectionErrorMessage: null,
-    );
+    state = state.copyWith(isDeletingDocument: true, sectionErrorMessage: null);
     try {
       await _service.deleteDocument(docId, userId: _userId);
       state = state.copyWith(isDeletingDocument: false);
@@ -556,18 +525,14 @@ class AdminUserDetailsController extends StateNotifier<AdminUserDetailsState> {
   }
 
   Future<void> loadTickets() async {
-    state = state.copyWith(
-      isLoadingTickets: true,
-      sectionErrorMessage: null,
-    );
+    state = state.copyWith(isLoadingTickets: true, sectionErrorMessage: null);
     try {
       final tickets = await _service.getTickets(_userId);
+      if (!mounted) return;
       _loadedTabs.add(AdminUserDetailsTab.tickets);
-      state = state.copyWith(
-        tickets: tickets,
-        isLoadingTickets: false,
-      );
+      state = state.copyWith(tickets: tickets, isLoadingTickets: false);
     } catch (error) {
+      if (!mounted) return;
       state = state.copyWith(
         isLoadingTickets: false,
         sectionErrorMessage: _errorMessage(error),
@@ -602,10 +567,7 @@ class AdminUserDetailsController extends StateNotifier<AdminUserDetailsState> {
     required String priority,
     List<PlatformFile> attachments = const <PlatformFile>[],
   }) async {
-    state = state.copyWith(
-      isCreatingTicket: true,
-      sectionErrorMessage: null,
-    );
+    state = state.copyWith(isCreatingTicket: true, sectionErrorMessage: null);
     try {
       final ticket = await _service.createTicket(
         userId: _userId,
@@ -636,10 +598,7 @@ class AdminUserDetailsController extends StateNotifier<AdminUserDetailsState> {
     required String message,
     List<PlatformFile> attachments = const <PlatformFile>[],
   }) async {
-    state = state.copyWith(
-      isReplyingTicket: true,
-      sectionErrorMessage: null,
-    );
+    state = state.copyWith(isReplyingTicket: true, sectionErrorMessage: null);
     try {
       await _service.replyTicket(
         ticketId: ticketId,
@@ -687,10 +646,7 @@ class AdminUserDetailsController extends StateNotifier<AdminUserDetailsState> {
     DateTime? to,
     String? q,
   }) async {
-    state = state.copyWith(
-      isLoadingPayments: true,
-      sectionErrorMessage: null,
-    );
+    state = state.copyWith(isLoadingPayments: true, sectionErrorMessage: null);
     try {
       final paymentPage = await _service.getPayments(
         userId: _userId,
@@ -701,6 +657,7 @@ class AdminUserDetailsController extends StateNotifier<AdminUserDetailsState> {
         to: _formatDateForApi(to),
         q: q,
       );
+      if (!mounted) return;
       _loadedTabs.add(AdminUserDetailsTab.payments);
       state = state.copyWith(
         payments: paymentPage.items,
@@ -708,6 +665,7 @@ class AdminUserDetailsController extends StateNotifier<AdminUserDetailsState> {
         isLoadingPayments: false,
       );
     } catch (error) {
+      if (!mounted) return;
       state = state.copyWith(
         isLoadingPayments: false,
         sectionErrorMessage: _errorMessage(error),
@@ -718,17 +676,11 @@ class AdminUserDetailsController extends StateNotifier<AdminUserDetailsState> {
   Future<bool> renewVehiclesPayment(
     AdminRenewVehiclesPaymentRequest request,
   ) async {
-    state = state.copyWith(
-      isRenewingPayment: true,
-      sectionErrorMessage: null,
-    );
+    state = state.copyWith(isRenewingPayment: true, sectionErrorMessage: null);
     try {
       await _service.renewVehiclesPayment(request);
       state = state.copyWith(isRenewingPayment: false);
-      await Future.wait<void>([
-        loadPayments(),
-        loadVehicles(),
-      ]);
+      await Future.wait<void>([loadPayments(), loadVehicles()]);
       return true;
     } catch (error) {
       state = state.copyWith(
@@ -740,10 +692,7 @@ class AdminUserDetailsController extends StateNotifier<AdminUserDetailsState> {
   }
 
   Future<void> loadLogs({int limit = 20}) async {
-    state = state.copyWith(
-      isLoadingLogs: true,
-      sectionErrorMessage: null,
-    );
+    state = state.copyWith(isLoadingLogs: true, sectionErrorMessage: null);
     try {
       final page = await _service.getActivityLogs(
         userId: _userId,
@@ -782,10 +731,7 @@ class AdminUserDetailsController extends StateNotifier<AdminUserDetailsState> {
         to: _formatDateTimeForApi(state.logTo),
       );
       state = state.copyWith(
-        logs: <AdminUserActivityLog>[
-          ...state.logs,
-          ...page.items,
-        ],
+        logs: <AdminUserActivityLog>[...state.logs, ...page.items],
         logsNextCursorId: page.nextCursorId,
         logsHasMore: page.hasMore,
         isLoadingMoreLogs: false,
@@ -841,13 +787,15 @@ class AdminUserDetailsController extends StateNotifier<AdminUserDetailsState> {
       return tickets;
     }
     var replaced = false;
-    final next = tickets.map((item) {
-      if (item.id == id) {
-        replaced = true;
-        return ticket;
-      }
-      return item;
-    }).toList(growable: false);
+    final next = tickets
+        .map((item) {
+          if (item.id == id) {
+            replaced = true;
+            return ticket;
+          }
+          return item;
+        })
+        .toList(growable: false);
     if (replaced) {
       return next;
     }

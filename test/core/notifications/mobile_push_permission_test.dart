@@ -18,6 +18,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   late _PushService service;
+  late LocalCache cache;
   late MobilePushController controller;
 
   setUp(() async {
@@ -28,7 +29,7 @@ void main() {
       StorageKeys.mobilePushFirebaseConfigVersion: '1',
       StorageKeys.mobilePushFirebaseConfigJson: '{}',
     });
-    final cache = LocalCache(await SharedPreferences.getInstance());
+    cache = LocalCache(await SharedPreferences.getInstance());
     final storage = _SessionStorage();
     service = _PushService(cache, storage);
     controller = MobilePushController(
@@ -44,30 +45,92 @@ void main() {
     debugDefaultTargetPlatformOverride = null;
   });
 
-  test('cached authorization cannot register after OS permission is revoked', () async {
-    service.authorizationStatus = AuthorizationStatus.denied;
-    expect(controller.shouldAttemptBackgroundRegistration, isTrue);
-    expect(await controller.registerTokenForCurrentSession(), isFalse);
-    expect(controller.state.isPermissionGranted, isFalse);
-    expect(service.getTokenCalls, 0);
-    expect(service.registrationCalls, 0);
-    expect(service.permissionRequests, 0);
-    expect(service.deregistrationCalls, 1);
-  });
+  test(
+    'cached authorization cannot register after OS permission is revoked',
+    () async {
+      service.authorizationStatus = AuthorizationStatus.denied;
+      expect(controller.shouldAttemptBackgroundRegistration, isTrue);
+      expect(await controller.registerTokenForCurrentSession(), isFalse);
+      expect(controller.state.isPermissionGranted, isFalse);
+      expect(service.getTokenCalls, 0);
+      expect(service.registrationCalls, 0);
+      expect(service.permissionRequests, 0);
+      expect(service.deregistrationCalls, 1);
+    },
+  );
 
-  test('authorized silent registration does not display a permission prompt', () async {
-    expect(await controller.registerTokenForCurrentSession(), isTrue);
-    expect(service.getTokenCalls, 1);
-    expect(service.registrationCalls, 1);
-    expect(service.permissionRequests, 0);
-  });
+  test(
+    'cached backend registration cannot bypass current revoked permission',
+    () async {
+      await cache.setString(
+        StorageKeys.mobilePushRegisteredToken,
+        'test-token',
+      );
+      await cache.setString(StorageKeys.mobilePushRegisteredUserId, '17');
+      await cache.setString(StorageKeys.mobilePushRegisteredPlatform, 'ios');
+      service.authorizationStatus = AuthorizationStatus.denied;
+      expect(await controller.registerTokenForCurrentSession(), false);
+      expect(service.getTokenCalls, 0);
+      expect(service.registrationCalls, 0);
+      expect(service.deregistrationCalls, 1);
+      expect(
+        cache.getString(StorageKeys.mobilePushLastPermissionStatus),
+        'denied',
+      );
+    },
+  );
 
-  test('background registration errors do not escape into app lifecycle', () async {
-    service.throwPermissionError = true;
-    expect(await controller.registerTokenForCurrentSession(), isFalse);
-    expect(service.registrationCalls, 0);
-    expect(controller.state.lastError, isNotNull);
-  });
+  test(
+    'silent initialization failure stays within the background task',
+    () async {
+      service.throwInitializeError = true;
+      expect(await controller.registerTokenForCurrentSession(), false);
+      expect(service.registrationCalls, 0);
+      expect(service.permissionRequests, 0);
+      expect(controller.state.lastError, isNotNull);
+    },
+  );
+
+  test(
+    'silent token lookup failure cannot report a registration success',
+    () async {
+      service.throwTokenError = true;
+      expect(await controller.registerTokenForCurrentSession(), false);
+      expect(service.registrationCalls, 0);
+      expect(controller.state.lastError, isNotNull);
+    },
+  );
+
+  test(
+    'backend registration exception is contained and records failure',
+    () async {
+      service.throwRegistrationError = true;
+      expect(await controller.registerTokenForCurrentSession(), false);
+      expect(service.registrationCalls, 1);
+      expect(service.permissionRequests, 0);
+      expect(controller.state.lastError, isNotNull);
+    },
+  );
+
+  test(
+    'authorized silent registration does not display a permission prompt',
+    () async {
+      expect(await controller.registerTokenForCurrentSession(), isTrue);
+      expect(service.getTokenCalls, 1);
+      expect(service.registrationCalls, 1);
+      expect(service.permissionRequests, 0);
+    },
+  );
+
+  test(
+    'background registration errors do not escape into app lifecycle',
+    () async {
+      service.throwPermissionError = true;
+      expect(await controller.registerTokenForCurrentSession(), isFalse);
+      expect(service.registrationCalls, 0);
+      expect(controller.state.lastError, isNotNull);
+    },
+  );
 }
 
 class _SessionStorage extends TokenStorage {
@@ -75,29 +138,32 @@ class _SessionStorage extends TokenStorage {
 
   @override
   Future<RoleSession?> getActiveSession() async => const RoleSession(
-        role: UserRole.user,
-        accessToken: 'access',
-        refreshToken: 'refresh',
-        user: CurrentUser(
-          id: '17',
-          name: 'Test User',
-          email: '',
-          role: UserRole.user,
-        ),
-      );
+    role: UserRole.user,
+    accessToken: 'access',
+    refreshToken: 'refresh',
+    user: CurrentUser(
+      id: '17',
+      name: 'Test User',
+      email: '',
+      role: UserRole.user,
+    ),
+  );
 }
 
 class _PushService extends MobilePushService {
   _PushService(LocalCache cache, TokenStorage storage)
-      : super(
-          apiClient: ApiClient(Dio()),
-          localCache: cache,
-          tokenStorage: storage,
-          secureStorage: const FlutterSecureStorage(),
-        );
+    : super(
+        apiClient: ApiClient(Dio()),
+        localCache: cache,
+        tokenStorage: storage,
+        secureStorage: const FlutterSecureStorage(),
+      );
 
   AuthorizationStatus authorizationStatus = AuthorizationStatus.authorized;
   bool throwPermissionError = false;
+  bool throwInitializeError = false;
+  bool throwTokenError = false;
+  bool throwRegistrationError = false;
   int getTokenCalls = 0;
   int registrationCalls = 0;
   int permissionRequests = 0;
@@ -107,12 +173,16 @@ class _PushService extends MobilePushService {
   bool get hasFirebaseApp => true;
 
   @override
-  Future<MobilePushInitResult> initialize() async =>
-      MobilePushInitResult.initialized(platform: MobilePushPlatform.ios);
+  Future<MobilePushInitResult> initialize() async {
+    if (throwInitializeError) throw StateError('Initialization unavailable');
+    return MobilePushInitResult.initialized(platform: MobilePushPlatform.ios);
+  }
 
   @override
   Future<NotificationSettings?> getNotificationSettings() async {
-    if (throwPermissionError) throw StateError('Permission service unavailable');
+    if (throwPermissionError) {
+      throw StateError('Permission service unavailable');
+    }
     return _Settings(authorizationStatus);
   }
 
@@ -125,12 +195,14 @@ class _PushService extends MobilePushService {
   @override
   Future<String?> getCurrentToken() async {
     getTokenCalls++;
+    if (throwTokenError) throw StateError('Token unavailable');
     return 'test-token';
   }
 
   @override
   Future<bool> registerCurrentToken({String? token}) async {
     registrationCalls++;
+    if (throwRegistrationError) throw StateError('Registration unavailable');
     return true;
   }
 

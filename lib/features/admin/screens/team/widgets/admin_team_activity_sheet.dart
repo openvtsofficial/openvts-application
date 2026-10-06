@@ -5,107 +5,96 @@ import '../../../../../core/api/api_exception.dart';
 import '../../../../../core/utils/date_time_formatter.dart';
 import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/widgets/open_vts_error_view.dart';
-import '../../../controllers/admin_parity_controller.dart';
+import '../../../../../shared/widgets/open_vts_loader.dart';
+import '../../../controllers/admin_team_details_controller.dart';
 
-class AdminTeamActivitySheet extends ConsumerStatefulWidget {
+class AdminTeamActivitySheet extends ConsumerWidget {
   const AdminTeamActivitySheet({required this.memberId, super.key});
   final String memberId;
   @override
-  ConsumerState<AdminTeamActivitySheet> createState() =>
-      _AdminTeamActivitySheetState();
-}
-
-class _AdminTeamActivitySheetState
-    extends ConsumerState<AdminTeamActivitySheet> {
-  final _items = <Map<String, dynamic>>[];
-  bool _loading = true, _hasMore = false;
-  int? _cursor;
-  String? _error;
-  @override
-  void initState() {
-    super.initState();
-    _load();
-  }
-
-  Future<void> _load({bool more = false}) async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
-    try {
-      final data = await ref
-          .read(adminParityControllerProvider)
-          .teamActivity(widget.memberId, cursor: more ? _cursor : null);
-      if (!mounted) return;
-      setState(() {
-        if (!more) _items.clear();
-        _items.addAll(
-          (data['items'] as List? ?? []).whereType<Map>().map(
-            (v) => Map<String, dynamic>.from(v),
-          ),
-        );
-        _cursor = int.tryParse('${data['nextCursorId']}');
-        _hasMore = data['hasMore'] == true;
-        _loading = false;
-      });
-    } catch (error) {
-      if (mounted) {
-        setState(() {
-          _loading = false;
-          _error = error is ApiException
-              ? error.message
-              : 'Activity could not be loaded.';
-        });
-      }
+  Widget build(BuildContext context, WidgetRef ref) {
+    final provider = adminTeamActivityControllerProvider(memberId);
+    final state = ref.watch(provider);
+    final controller = ref.read(provider.notifier);
+    final page = state.valueOrNull;
+    final formatter = ref.watch(appDateFormatterProvider);
+    final error = state.error is ApiException
+        ? (state.error as ApiException).message
+        : context.mobileText('Activity could not be loaded.');
+    if (state.isLoading && page == null) return const OpenVtsLoader();
+    if (state.hasError && page == null) {
+      return OpenVtsErrorView(message: error, onRetry: controller.load);
     }
-  }
-
-  @override
-  Widget build(BuildContext context) => Column(
-    children: [
-      if (_loading) const LinearProgressIndicator(),
-      Expanded(
-        child: _error != null
-            ? OpenVtsErrorView(message: _error!, onRetry: () => _load())
-            : RefreshIndicator(
-                onRefresh: () => _load(),
-                child: ListView.builder(
-                  controller: PrimaryScrollController.maybeOf(context),
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  itemCount: _items.length + 1,
-                  itemBuilder: (context, index) {
-                    if (index == _items.length) {
-                      return _items.isEmpty
-                          ? Padding(
-                              padding: const EdgeInsets.all(32),
-                              child: Text(
-                                context.mobileText('No team activity found.'),
-                              ),
-                            )
-                          : _hasMore
-                          ? TextButton(
-                              onPressed: _loading
-                                  ? null
-                                  : () => _load(more: true),
-                              child: Text(context.mobileText('Load more')),
-                            )
-                          : const SizedBox(height: 16);
-                    }
-                    final row = _items[index];
-                    final date = DateTime.tryParse('${row['createdAt']}');
-                    return ListTile(
-                      leading: const Icon(Icons.history),
-                      title: Text(
-                        '${row['action'] ?? ''}'.replaceAll('.', ' · '),
-                      ),
-                      subtitle: Text(
-                        '${row['entity'] ?? ''}\n${date == null ? '' : const DateTimeFormatter().formatDateTime(date.toLocal())}',
+    return Column(
+      children: [
+        if (state.isLoading) const LinearProgressIndicator(),
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: controller.load,
+            child: ListView.builder(
+              controller: PrimaryScrollController.maybeOf(context),
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(12),
+              itemCount: (page?.items.length ?? 0) + 1,
+              itemBuilder: (context, index) {
+                if (index == (page?.items.length ?? 0)) {
+                  if (state.hasError) {
+                    return Column(
+                      children: [
+                        Text(error),
+                        TextButton(
+                          onPressed: () => controller.load(more: true),
+                          child: Text(context.mobileText('Retry')),
+                        ),
+                      ],
+                    );
+                  }
+                  if (page?.items.isEmpty ?? true) {
+                    return Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Text(
+                        context.mobileText('No team activity found.'),
                       ),
                     );
-                  },
-                ),
-              ),
-      ),
-    ],
-  );
+                  }
+                  if (page?.hasMore == true) {
+                    return TextButton(
+                      onPressed: state.isLoading
+                          ? null
+                          : () => controller.load(more: true),
+                      child: Text(context.mobileText('Load more')),
+                    );
+                  }
+                  return const SizedBox(height: 16);
+                }
+                final row = page!.items[index];
+                final date = DateTime.tryParse('${row['createdAt']}');
+                return Card(
+                  child: ListTile(
+                    isThreeLine: true,
+                    leading: const Icon(Icons.history_rounded),
+                    title: Text(
+                      '${row['action'] ?? ''}'.replaceAll('.', ' · '),
+                    ),
+                    subtitle: Text(
+                      [
+                        '${row['entity'] ?? ''}',
+                        formatter.formatDateTimeWithSeconds(date),
+                        if (row['ip'] != null) '${row['ip']}',
+                        if (row['browser'] != null || row['platform'] != null)
+                          [
+                            row['browser'],
+                            row['platform'],
+                          ].whereType<String>().join(' · '),
+                      ].where((line) => line.isNotEmpty).join('\n'),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 }

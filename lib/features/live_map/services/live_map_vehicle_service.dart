@@ -122,15 +122,10 @@ class LiveMapVehicleService {
       return _parsers.getMapTelemetry(refreshKey: refreshKey);
     }
 
-    final response = await _apiClient.get<LiveMapTelemetry>(
+    return _parsers.loadMapTelemetryEndpoint(
       _config.mapTelemetryEndpoint,
-      queryParameters: <String, dynamic>{
-        'rk': refreshKey ?? DateTime.now().millisecondsSinceEpoch.toString(),
-      },
-      options: _readOptions,
-      parser: _parsers.parseMapTelemetryPayload,
+      refreshKey: refreshKey,
     );
-    return response.data;
   }
 
   // -------------------------------------------------------------------------
@@ -523,10 +518,14 @@ class LiveMapVehicleService {
     }
 
     final normalizedCommand = command.trim();
-    final normalizedIds = vehicleIds
-        .map((id) => id.trim())
-        .where((id) => id.isNotEmpty)
-        .toList(growable: false);
+    final normalizedIds = <int>[];
+    for (final rawId in vehicleIds) {
+      final id = int.tryParse(rawId.trim());
+      if (id == null || id <= 0) {
+        throw ArgumentError('Vehicle IDs must be positive integers.');
+      }
+      if (!normalizedIds.contains(id)) normalizedIds.add(id);
+    }
     if (normalizedIds.isEmpty) {
       throw ArgumentError('At least one vehicleId is required.');
     }
@@ -537,16 +536,41 @@ class LiveMapVehicleService {
       throw ArgumentError('Command text must be 500 characters or less.');
     }
 
-    final response = await _apiClient.post<LiveMapSendCommandResult>(
+    final response = await _apiClient.post<Map<String, dynamic>>(
       endpoint,
       data: <String, dynamic>{
+        'mode': 'SELECTED',
         'vehicleIds': normalizedIds,
         'command': normalizedCommand,
       },
       options: _readOptions,
-      parser: _parsers.parseSendCommandResponsePayload,
+      parser: (json) => json is Map
+          ? json.map((key, value) => MapEntry(key.toString(), value))
+          : const <String, dynamic>{},
     );
-    return response.data;
+    final payload = response.data;
+    final results = payload['results'];
+    if (results is List) {
+      if (results.isEmpty) {
+        throw StateError('No command target was dispatched.');
+      }
+      for (final result in results) {
+        if (result is Map &&
+            result['error']?.toString().trim().isNotEmpty == true) {
+          throw StateError(result['error'].toString());
+        }
+      }
+      final first = results.first;
+      if (first is! Map ||
+          first['cmdId']?.toString().trim().isNotEmpty != true) {
+        throw StateError(
+          'The command response does not contain a dispatch ID.',
+        );
+      }
+      return _parsers.parseSendCommandResponsePayload(first);
+    }
+    // Older installations return a single result directly.
+    return _parsers.parseSendCommandResponsePayload(payload);
   }
 
   /// Per-IMEI command history (superadmin/admin).

@@ -35,7 +35,6 @@ import '../models/user_landmark_state.dart';
 import '../models/user_notification_settings_state.dart';
 import '../models/user_settings_state.dart';
 import '../models/user_share_track_link_state.dart';
-import '../models/user_subuser_model.dart';
 import '../models/user_subusers_state.dart';
 import '../models/user_support_state.dart';
 import '../models/user_transactions_state.dart';
@@ -179,13 +178,9 @@ final userSubUsersControllerProvider =
     });
 
 class UserSubUserDetailsProviderArgs {
-  const UserSubUserDetailsProviderArgs({
-    required this.subUserId,
-    this.initialSubUser,
-  });
+  const UserSubUserDetailsProviderArgs({required this.subUserId});
 
   final String subUserId;
-  final UserSubUser? initialSubUser;
 
   @override
   bool operator ==(Object other) {
@@ -203,9 +198,9 @@ final userSubUserDetailsControllerProvider = StateNotifierProvider.autoDispose
       UserSubUserDetailsState,
       UserSubUserDetailsProviderArgs
     >((ref, args) {
+      ref.watch(workspaceDataScopeProvider);
       return UserSubUserDetailsController(
         subUserId: args.subUserId,
-        initialSubUser: args.initialSubUser,
         service: ref.watch(userSubUsersServiceProvider),
       )..loadInitial();
     });

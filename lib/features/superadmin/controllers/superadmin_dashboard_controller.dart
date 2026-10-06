@@ -8,7 +8,7 @@ import '../services/superadmin_dashboard_service.dart';
 class SuperadminDashboardController
     extends StateNotifier<SuperadminDashboardState> {
   SuperadminDashboardController(this._service)
-      : super(const SuperadminDashboardState.initial()) {
+    : super(const SuperadminDashboardState.initial()) {
     load();
   }
 
@@ -51,11 +51,7 @@ class SuperadminDashboardController
     await load(refresh: true);
 
     if (actorId != null || fromDate != null || toDate != null) {
-      await applyFilters(
-        actorId: actorId,
-        from: fromDate,
-        to: toDate,
-      );
+      await applyFilters(actorId: actorId, from: fromDate, to: toDate);
     }
   }
 
@@ -129,15 +125,15 @@ class SuperadminDashboardController
       return;
     }
 
-    state = state.copyWith(
-      isLoadingMore: true,
-      errorMessage: null,
-    );
+    state = state.copyWith(isLoadingMore: true, errorMessage: null);
 
     try {
       final response = await _service.fetchActivityLogs(
         limit: SuperadminDashboardService.activityLogPageSize,
         cursorId: nextCursorId,
+        actorId: state.selectedActorId,
+        from: state.fromDate,
+        to: state.toDate,
       );
       final activityPage = SuperadminActivityLogPage.fromJson(response);
 
@@ -182,8 +178,8 @@ class SuperadminDashboardController
         (left, right) =>
             (right.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0))
                 .compareTo(
-          left.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0),
-        ),
+                  left.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0),
+                ),
       );
     return values;
   }

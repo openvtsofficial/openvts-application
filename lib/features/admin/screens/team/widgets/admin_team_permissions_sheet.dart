@@ -6,9 +6,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../core/api/api_exception.dart';
 import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
+import '../../../../../shared/widgets/open_vts_button.dart';
+import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../../../shared/widgets/open_vts_error_view.dart';
-import '../../../controllers/admin_parity_controller.dart';
+import '../../../../../shared/widgets/open_vts_loader.dart';
+import '../../../../../shared/widgets/open_vts_searchable_dropdown.dart';
+import '../../../controllers/admin_team_details_controller.dart';
 import '../../../models/admin_team_permissions.dart';
+import '../../../services/admin_team_details_service.dart';
 
 class AdminTeamPermissionsSheet extends ConsumerStatefulWidget {
   const AdminTeamPermissionsSheet({required this.memberId, super.key});
@@ -20,233 +25,134 @@ class AdminTeamPermissionsSheet extends ConsumerStatefulWidget {
 
 class _AdminTeamPermissionsSheetState
     extends ConsumerState<AdminTeamPermissionsSheet> {
-  List<AdminTeamPermissionFeature> _features = [];
-  Map<String, String> _selected = {}, _saved = {};
-  bool _loading = true, _saving = false;
+  AdminTeamPermissionSnapshot? _snapshot;
+  Map<String, String> _selected = {};
+  bool _saving = false;
   String? _error;
-  @override
-  void initState() {
-    super.initState();
-    _load();
-  }
 
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
-    try {
-      final responses = await ref
-          .read(adminParityControllerProvider)
-          .loadTeamPermissions(widget.memberId);
-      if (!mounted) return;
-      final features = parseAdminTeamFeatures(responses[0]);
-      if (features.isEmpty) {
-        throw ApiException(
-          message: context.mobileText(
-            'The permission catalog is unavailable. Editing is disabled.',
-          ),
-        );
-      }
-      if (!mounted) return;
-      setState(() {
-        _features = features;
-        _selected = parseAdminTeamGrants(responses[1]);
-        _saved = Map.from(_selected);
-        _loading = false;
-      });
-    } catch (error) {
-      if (mounted) {
-        setState(() {
-          _loading = false;
-          _error = error is ApiException
-              ? error.message
-              : 'Permissions could not be loaded.';
-        });
-      }
-    }
-  }
-
-  Future<void> _save() async {
-    final grants = legalAdminTeamGrants(_features, _selected);
-    final elevated = grants.any(
-      (g) =>
-          (g['scope'] == 'TENANT' && _saved[g['permissionSlug']] != 'TENANT') ||
-          (_features
-                  .expand((f) => f.actions)
-                  .any(
-                    (a) =>
-                        a.slug == g['permissionSlug'] && a.action == 'delete',
-                  ) &&
-              !_saved.containsKey(g['permissionSlug'])),
-    );
-    if (elevated) {
-      final yes = await showDialog<bool>(
-        context: context,
-        builder: (c) => AlertDialog(
-          title: Text(context.mobileText('Confirm increased access')),
-          content: Text(
-            context.mobileText(
-              'These changes grant global or delete access. Apply them to this team member?',
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(c, false),
-              child: Text(context.mobileText('Cancel')),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(c, true),
-              child: Text(context.mobileText('Confirm')),
-            ),
-          ],
-        ),
-      );
-      if (yes != true || !mounted) return;
-    }
-    setState(() => _saving = true);
-    try {
-      await ref
-          .read(adminParityControllerProvider)
-          .saveTeamPermissions(widget.memberId, grants);
-      if (!mounted) return;
-      ToastHelper.showSuccess(
-        context.mobileText('Team permissions updated'),
-        context: context,
-      );
-      await _load();
-    } catch (error) {
-      if (mounted) {
-        ToastHelper.showError(
-          error is ApiException
-              ? error.message
-              : context.mobileText('Unable to update permissions'),
-          context: context,
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _saving = false);
-    }
+  void _accept(AdminTeamPermissionSnapshot snapshot) {
+    _snapshot = snapshot;
+    _selected = Map.from(snapshot.grants);
+    _error = null;
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) return const Center(child: CircularProgressIndicator());
-    if (_error != null) {
-      return OpenVtsErrorView(message: _error!, onRetry: _load);
+    final provider = adminTeamPermissionsControllerProvider(widget.memberId);
+    final state = ref.watch(provider);
+    ref.listen(provider, (_, next) {
+      if (next.hasValue && !next.isLoading) {
+        setState(() => _accept(next.requireValue));
+      }
+      if (next.isLoading) _snapshot = null;
+    });
+    if (state.isLoading) return const OpenVtsLoader();
+    if (state.hasError) {
+      return OpenVtsErrorView(
+        message: _message(state.error!),
+        onRetry: () => ref.read(provider.notifier).load(),
+      );
     }
+    if (_snapshot == null) _accept(state.requireValue);
+    final snapshot = _snapshot!;
+    final features = snapshot.features
+        .where((feature) => feature.key != 'notify')
+        .toList(growable: false);
     final changed =
-        jsonEncode(legalAdminTeamGrants(_features, _selected)) !=
-        jsonEncode(legalAdminTeamGrants(_features, _saved));
+        jsonEncode(legalAdminTeamGrants(snapshot.features, _selected)) !=
+        jsonEncode(legalAdminTeamGrants(snapshot.features, snapshot.grants));
     return Column(
       children: [
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: Text(
-            context.mobileText(
-              'Choose what this member can view, edit and delete. Own applies to their records; Global applies across your account.',
-            ),
-          ),
-        ),
         Expanded(
-          child: ListView.builder(
+          child: ListView(
             controller: PrimaryScrollController.maybeOf(context),
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: _features.length,
-            itemBuilder: (context, index) {
-              final feature = _features[index];
-              return Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        feature.label,
-                        style: Theme.of(context).textTheme.titleSmall,
-                      ),
-                      if (feature.description.isNotEmpty)
+            padding: const EdgeInsets.all(16),
+            children: [
+              Text(
+                context.mobileText(
+                  'Choose what this member can view, edit and delete. Own applies to their records; Global applies across your account.',
+                ),
+              ),
+              const SizedBox(height: 12),
+              for (final feature in features)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: OpenVtsCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                         Text(
-                          feature.description,
-                          style: Theme.of(context).textTheme.bodySmall,
+                          _featureLabel(context, feature),
+                          style: Theme.of(context).textTheme.titleSmall,
                         ),
-                      for (final action in feature.actions)
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                '${action.action[0].toUpperCase()}${action.action.substring(1)}',
-                              ),
-                            ),
-                            DropdownButton<String>(
+                        for (final action in feature.actions)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: OpenVtsSearchableDropdown<String>(
+                              key: ValueKey(action.slug),
+                              label: switch (action.action) {
+                                'view' => context.mobileText('View'),
+                                'edit' => context.mobileText('Edit'),
+                                'delete' => context.mobileText('Delete'),
+                                _ => action.action,
+                              },
                               value:
-                                  _selected[action.slug] != null &&
-                                      action.scopes.contains(
-                                        _selected[action.slug],
-                                      )
-                                  ? _selected[action.slug]!
+                                  action.scopes.contains(_selected[action.slug])
+                                  ? _selected[action.slug]
                                   : 'NONE',
-                              items: [
-                                DropdownMenuItem(
+                              enabled: !_saving,
+                              options: [
+                                OpenVtsDropdownOption(
                                   value: 'NONE',
-                                  child: Text(context.mobileText('None')),
+                                  label: context.mobileText('None'),
                                 ),
                                 for (final scope in action.scopes)
-                                  DropdownMenuItem(
+                                  OpenVtsDropdownOption(
                                     value: scope,
-                                    child: Text(
-                                      scope == 'OWN'
-                                          ? context.mobileText('Own')
-                                          : context.mobileText('Global'),
-                                    ),
+                                    label: scope == 'OWN'
+                                        ? context.mobileText('Own')
+                                        : context.mobileText('Global'),
                                   ),
                               ],
-                              onChanged: _saving
-                                  ? null
-                                  : (scope) => setState(
-                                      () => _selected = changeAdminTeamGrant(
-                                        _features,
-                                        _selected,
-                                        action,
-                                        scope == 'NONE' ? null : scope,
-                                      ),
-                                    ),
+                              onChanged: (scope) => setState(
+                                () => _selected = changeAdminTeamGrant(
+                                  snapshot.features,
+                                  _selected,
+                                  action,
+                                  scope == 'NONE' ? null : scope,
+                                ),
+                              ),
                             ),
-                          ],
-                        ),
-                    ],
+                          ),
+                      ],
+                    ),
                   ),
                 ),
-              );
-            },
+              if (_error != null)
+                Text(
+                  _error!,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+            ],
           ),
         ),
         SafeArea(
           top: false,
           child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Expanded(
-                  child: TextButton(
-                    onPressed: !_saving && changed
-                        ? () => setState(() => _selected = Map.from(_saved))
-                        : null,
-                    child: Text(context.mobileText('Reset')),
-                  ),
+                OpenVtsButton(
+                  label: context.mobileText('Save permissions'),
+                  isLoading: _saving,
+                  onPressed: !_saving && changed ? _save : null,
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  flex: 2,
-                  child: FilledButton(
-                    onPressed: !_saving && changed ? _save : null,
-                    child: Text(
-                      _saving
-                          ? context.mobileText('Saving…')
-                          : context.mobileText('Save permissions'),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
+                TextButton(
+                  onPressed: !_saving && changed
+                      ? () => setState(() => _accept(snapshot))
+                      : null,
+                  child: Text(context.mobileText('Reset')),
                 ),
               ],
             ),
@@ -255,4 +161,94 @@ class _AdminTeamPermissionsSheetState
       ],
     );
   }
+
+  Future<void> _save() async {
+    final snapshot = _snapshot;
+    if (_saving || snapshot == null) return;
+    final controller = ref.read(
+      adminTeamPermissionsControllerProvider(widget.memberId).notifier,
+    );
+    final grants = legalAdminTeamGrants(snapshot.features, _selected);
+    final elevated = grants.any(
+      (grant) =>
+          (grant['scope'] == 'TENANT' &&
+              snapshot.grants[grant['permissionSlug']] != 'TENANT') ||
+          (snapshot.features
+                  .expand((feature) => feature.actions)
+                  .any(
+                    (action) =>
+                        action.slug == grant['permissionSlug'] &&
+                        action.action == 'delete',
+                  ) &&
+              !snapshot.grants.containsKey(grant['permissionSlug'])),
+    );
+    // Lock the button while confirmation is open to prevent double submissions.
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    try {
+      if (elevated) {
+        final yes = await showDialog<bool>(
+          context: context,
+          builder: (c) => AlertDialog(
+            title: Text(context.mobileText('Confirm increased access')),
+            content: Text(
+              context.mobileText(
+                'These changes grant global or delete access. Apply them to this team member?',
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(c, false),
+                child: Text(context.mobileText('Cancel')),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(c, true),
+                child: Text(context.mobileText('Confirm')),
+              ),
+            ],
+          ),
+        );
+        if (!mounted || yes != true) return;
+      }
+      // Read the current scope after confirmation; permission revocation or an
+      // account switch while the dialog is open must block the write.
+      final saved = await controller.save(Map.from(_selected));
+      if (mounted && saved) {
+        ToastHelper.showSuccess(
+          context.mobileText('Team permissions updated'),
+          context: context,
+        );
+      }
+    } catch (error) {
+      if (mounted) setState(() => _error = _message(error));
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  String _message(Object error) => error is ApiException
+      ? (error.statusCode == 403 &&
+                error.message == 'Unable to update permissions'
+            ? context.mobileText('Unable to update permissions')
+            : error.message)
+      : context.mobileText('Permissions could not be loaded.');
 }
+
+String _featureLabel(
+  BuildContext context,
+  AdminTeamPermissionFeature feature,
+) => switch (feature.key) {
+  'dashboard' => context.mobileText('Dashboard'),
+  'users' => context.mobileText('Users'),
+  'vehicles' => context.mobileText('Vehicles'),
+  'drivers' => context.mobileText('Drivers'),
+  'inventory' => context.mobileText('Inventory'),
+  'maps' => context.mobileText('Maps'),
+  'payments' => context.mobileText('Payments'),
+  'support' => context.mobileText('Support'),
+  'calendar' => context.mobileText('Calendar'),
+  'logs' => context.mobileText('Logs'),
+  _ => feature.label,
+};

@@ -23,12 +23,15 @@ class AdminTeamPermissionFeature {
     required this.label,
     required this.description,
     required this.actions,
+    this.key = '',
   });
+  final String key;
   final String label;
   final String description;
   final List<AdminTeamPermissionAction> actions;
   factory AdminTeamPermissionFeature.fromJson(Map<String, dynamic> json) =>
       AdminTeamPermissionFeature(
+        key: '${json['key'] ?? ''}',
         label: '${json['label'] ?? json['key'] ?? ''}',
         description: '${json['description'] ?? ''}',
         actions: (json['actions'] as List? ?? [])

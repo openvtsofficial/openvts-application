@@ -5,13 +5,19 @@ import '../storage/token_storage.dart';
 typedef SocketEventHandler = void Function(dynamic data);
 
 class SocketService {
-  SocketService(
-    this._tokenStorage, {
-    required String apiBaseUrl,
-  }) : _apiBaseUrl = apiBaseUrl;
+  SocketService(this._tokenStorage, {required String apiBaseUrl})
+    : _apiBaseUrl = apiBaseUrl;
 
   final TokenStorage _tokenStorage;
   final String _apiBaseUrl;
+  final Set<SocketConnection> _connections = {};
+
+  void dispose() {
+    for (final connection in _connections.toList(growable: false)) {
+      connection.disconnect();
+    }
+    _connections.clear();
+  }
 
   Future<SocketConnection> connect(
     String namespace, {
@@ -25,25 +31,35 @@ class SocketService {
         token = _tokenStorage.cachedActiveAccessToken;
       }
     }
+    final session = _tokenStorage.cachedActiveSession;
+    final generation = _tokenStorage.sessionGeneration;
+    bool sessionIsCurrent() =>
+        !authenticated ||
+        (_tokenStorage.sessionGeneration == generation &&
+            _tokenStorage.cachedActiveSession?.role == session?.role &&
+            _tokenStorage.cachedActiveSession?.user.id == session?.user.id);
     final url = socketUrlForApiBase(_apiBaseUrl, namespace);
 
-    final options = io.OptionBuilder()
-        .setPath('/socket.io')
-        // The Nest gateways intentionally expose WebSocket transport only.
-        // Advertising polling first causes avoidable failed handshakes.
-        .setTransports(['websocket'])
-        .disableAutoConnect()
-        .setAuth(
-          authenticated
-              ? <String, dynamic>{'token': token}
-              : const <String, dynamic>{},
-        )
-        .enableReconnection()
-        .setReconnectionDelay(500)
-        .setReconnectionDelayMax(2000)
-        .setReconnectionAttempts(double.infinity)
-        .build()
-      ..['reconnection'] = true;
+    final options =
+        io.OptionBuilder()
+            .setPath('/socket.io')
+            // The Nest gateways intentionally expose WebSocket transport only.
+            // Advertising polling first causes avoidable failed handshakes.
+            .setTransports(['websocket'])
+            .disableAutoConnect()
+            .setAuth(
+              authenticated
+                  ? <String, dynamic>{'token': token}
+                  : const <String, dynamic>{},
+            )
+            .enableReconnection()
+            .setReconnectionDelay(500)
+            .setReconnectionDelayMax(2000)
+            .setReconnectionAttempts(double.infinity)
+            .build()
+          ..['reconnection'] = true
+          ..['forceNew'] = true
+          ..['multiplex'] = false;
 
     final socket = io.io(url, options);
     // socket_io_client invokes a functional auth value for every connection,
@@ -53,19 +69,48 @@ class SocketService {
       callback(
         authenticated
             ? <String, dynamic>{
-                'token': _tokenStorage.cachedActiveAccessToken,
+                'token': sessionIsCurrent()
+                    ? _tokenStorage.cachedActiveAccessToken
+                    : null,
               }
             : const <String, dynamic>{},
       );
     };
 
+    late _IoSocketConnection connection;
+    final removeListener = _tokenStorage.listenToSession(() {
+      if (!authenticated) return;
+      if (!sessionIsCurrent()) {
+        // A socket subscribed under an old account must never silently adopt
+        // credentials from a new login, including the same user logging in again.
+        connection.disconnect();
+        return;
+      }
+      final nextToken = _tokenStorage.cachedActiveAccessToken;
+      if (nextToken != token) {
+        token = nextToken;
+        // The server validates authVersion at the handshake. Rejoin the map's
+        // vehicle rooms through its existing onConnect handler after rotation.
+        socket.disconnect();
+        socket.connect();
+      }
+    });
+    connection = _IoSocketConnection(
+      socket,
+      onDispose: () {
+        removeListener();
+        _connections.remove(connection);
+      },
+    );
+    _connections.add(connection);
     socket.connect();
-    return _IoSocketConnection(socket);
+    return connection;
   }
 
   static String socketUrlForApiBase(String apiBaseUrl, String namespace) {
-    final normalizedNamespace =
-        namespace.startsWith('/') ? namespace : '/$namespace';
+    final normalizedNamespace = namespace.startsWith('/')
+        ? namespace
+        : '/$namespace';
     final normalizedApiBase = apiBaseUrl.trim().replaceAll(RegExp(r'/+$'), '');
     if (normalizedApiBase.isEmpty) {
       return normalizedNamespace;
@@ -79,8 +124,8 @@ class SocketService {
     final socketBase = normalizedApiBase == '/api'
         ? ''
         : normalizedApiBase.endsWith('/api')
-            ? normalizedApiBase.substring(0, normalizedApiBase.length - 4)
-            : normalizedApiBase;
+        ? normalizedApiBase.substring(0, normalizedApiBase.length - 4)
+        : normalizedApiBase;
     return '$socketBase$normalizedNamespace';
   }
 }
@@ -104,9 +149,12 @@ abstract class SocketConnection {
 }
 
 class _IoSocketConnection implements SocketConnection {
-  _IoSocketConnection(this._socket);
+  _IoSocketConnection(this._socket, {required void Function() onDispose})
+    : _onDispose = onDispose;
 
   final io.Socket _socket;
+  final void Function() _onDispose;
+  bool _disposed = false;
 
   @override
   bool get isConnected => _socket.connected;
@@ -154,6 +202,9 @@ class _IoSocketConnection implements SocketConnection {
 
   @override
   void disconnect() {
+    if (_disposed) return;
+    _disposed = true;
+    _onDispose();
     _socket.disconnect();
     _socket.dispose();
   }

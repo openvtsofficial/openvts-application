@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/access/workspace_scope_provider.dart';
 import '../../../../core/router/route_paths.dart';
 import '../../../../core/theme/open_vts_colors.dart';
 import '../../../../core/theme/open_vts_radius.dart';
@@ -13,15 +14,19 @@ import '../../../../shared/models/user_role.dart';
 import '../../../../shared/widgets/open_vts_bottom_sheet.dart';
 import '../../../../shared/widgets/open_vts_button.dart';
 import '../../../../shared/widgets/open_vts_card.dart';
+import '../../../../shared/widgets/open_vts_detail_tab_strip.dart';
 import '../../../../shared/widgets/open_vts_page_scaffold.dart';
 import '../../../../shared/widgets/open_vts_text_field.dart';
 import '../../../auth/controllers/auth_controller.dart';
 import '../../controllers/admin_providers.dart';
 import '../../controllers/admin_user_details_controller.dart';
+import '../../controllers/admin_user_permissions_controller.dart';
+import '../../controllers/admin_user_retention_controller.dart';
 import '../../models/admin_user_details_model.dart';
 import '../../models/admin_user_details_state.dart';
 import '../../models/admin_users_model.dart' show AdminUserListItem;
 import '../../widgets/admin_action_gate.dart';
+import 'widgets/admin_user_data_backup_tab.dart';
 import 'widgets/admin_user_documents_tab.dart';
 import 'widgets/admin_user_drivers_tab.dart';
 import 'widgets/admin_user_logs_tab.dart';
@@ -48,10 +53,22 @@ class AdminUserDetailsScreen extends ConsumerStatefulWidget {
 
 class _AdminUserDetailsScreenState
     extends ConsumerState<AdminUserDetailsScreen> {
+  late final String _initialScope;
+
+  AdminUserListItem? get _verifiedInitialUser {
+    final details = ref.read(adminUserDetailsControllerProvider(widget.userId));
+    return details.user?.id == widget.userId &&
+            ref.read(workspaceDataScopeProvider) == _initialScope
+        ? widget.initialUser
+        : null;
+  }
+
   @override
   void initState() {
     super.initState();
+    _initialScope = ref.read(workspaceDataScopeProvider);
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       final controller = ref.read(
         adminUserDetailsControllerProvider(widget.userId).notifier,
       );
@@ -66,12 +83,15 @@ class _AdminUserDetailsScreenState
 
   @override
   Widget build(BuildContext context) {
+    ref.watch(workspaceDataScopeProvider);
     final provider = adminUserDetailsControllerProvider(widget.userId);
     final state = ref.watch(provider);
     final controller = ref.read(provider.notifier);
     final user = _UserSnapshot.resolve(
       details: state.user,
-      fallback: widget.initialUser,
+      // List-route extras are supplemental data only after this account has
+      // verified the detail. They cannot seed a retained route after a switch.
+      fallback: _verifiedInitialUser,
       userId: widget.userId,
       effectiveIsActive: state.effectiveIsActive,
     );
@@ -87,19 +107,6 @@ class _AdminUserDetailsScreenState
         OpenVtsSpacing.xs,
       ),
       actions: [
-        if (ref.watch(authControllerProvider).user?.role == UserRole.admin)
-          IconButton(
-            tooltip: context.mobileText('Permissions'),
-            icon: const Icon(Icons.admin_panel_settings_outlined),
-            onPressed: () => OpenVtsBottomSheet.show<void>(
-              context: context,
-              title: context.mobileText('Permissions'),
-              initialChildSize: 0.9,
-              minChildSize: 0.5,
-              maxChildSize: 0.96,
-              child: AdminUserPermissionsSheet(userId: widget.userId),
-            ),
-          ),
         Padding(
           padding: const EdgeInsets.only(right: OpenVtsSpacing.xxs),
           child: Center(child: _StatusChip(isActive: user.isActive)),
@@ -110,7 +117,7 @@ class _AdminUserDetailsScreenState
               state.isUpdatingStatus ||
               state.isChangingPassword ||
               state.isLoadingProfile,
-          onRefresh: () => controller.refreshCurrentTab(),
+          onRefresh: _refreshCurrentTab,
           onEditProfile: () => _showEditProfileSheet(),
           onEditCompany: () => _showEditCompanySheet(),
           onToggleStatus: () => _toggleStatus(user),
@@ -121,7 +128,7 @@ class _AdminUserDetailsScreenState
         const SizedBox(width: OpenVtsSpacing.xs),
       ],
       body: RefreshIndicator(
-        onRefresh: controller.refreshCurrentTab,
+        onRefresh: _refreshCurrentTab,
         child: ListView(
           padding: EdgeInsets.zero,
           physics: const AlwaysScrollableScrollPhysics(),
@@ -144,13 +151,22 @@ class _AdminUserDetailsScreenState
             const SizedBox(height: OpenVtsSpacing.sm),
             _TabChips(
               selected: state.selectedTab,
-              onSelect: controller.selectTab,
+              onSelect: _selectTab,
+              tabs: AdminUserDetailsTab.values
+                  .where(
+                    (tab) =>
+                        (tab != AdminUserDetailsTab.permissions &&
+                            tab != AdminUserDetailsTab.dataBackup) ||
+                        ref.watch(authControllerProvider).user?.role ==
+                            UserRole.admin,
+                  )
+                  .toList(),
             ),
             const SizedBox(height: OpenVtsSpacing.sm),
             _TabContent(
               state: state,
               userId: widget.userId,
-              initialUser: widget.initialUser,
+              initialUser: _verifiedInitialUser,
               controller: controller,
             ),
             const SizedBox(height: OpenVtsSpacing.lg),
@@ -160,12 +176,78 @@ class _AdminUserDetailsScreenState
     );
   }
 
-  void _close() {
+  Future<void> _close() async {
+    if (!await _confirmDiscardEdits() || !mounted) return;
     if (context.canPop()) {
       context.pop();
       return;
     }
     context.go(RoutePaths.adminUsers);
+  }
+
+  Future<bool> _confirmDiscardEdits() async {
+    final selected = ref
+        .read(adminUserDetailsControllerProvider(widget.userId))
+        .selectedTab;
+    bool dirty = false, saving = false;
+    if (selected == AdminUserDetailsTab.permissions) {
+      final state = ref.read(
+        adminUserPermissionsControllerProvider(widget.userId),
+      );
+      dirty = state.dirty;
+      saving = state.saving;
+    } else if (selected == AdminUserDetailsTab.dataBackup) {
+      final state = ref.read(
+        adminUserRetentionControllerProvider(widget.userId),
+      );
+      dirty = state.dirty;
+      saving = state.saving;
+    }
+    if (saving) return false;
+    if (!dirty) return true;
+    return await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: Text(context.mobileText('Changes will be lost. Continue?')),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                child: Text(context.mobileText('Cancel')),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+                child: Text(context.mobileText('Continue')),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+  }
+
+  Future<void> _selectTab(AdminUserDetailsTab tab) async {
+    final provider = adminUserDetailsControllerProvider(widget.userId);
+    if (ref.read(provider).selectedTab == tab) return;
+    if (!await _confirmDiscardEdits() || !mounted) return;
+    ref.read(provider.notifier).selectTab(tab);
+  }
+
+  Future<void> _refreshCurrentTab() async {
+    final provider = adminUserDetailsControllerProvider(widget.userId);
+    if (!await _confirmDiscardEdits() || !mounted) return;
+    switch (ref.read(provider).selectedTab) {
+      case AdminUserDetailsTab.permissions:
+        await ref
+            .read(
+              adminUserPermissionsControllerProvider(widget.userId).notifier,
+            )
+            .load();
+      case AdminUserDetailsTab.dataBackup:
+        await ref
+            .read(adminUserRetentionControllerProvider(widget.userId).notifier)
+            .load();
+      default:
+        await ref.read(provider.notifier).refreshCurrentTab();
+    }
   }
 
   Future<void> _toggleStatus(_UserSnapshot user) async {
@@ -246,7 +328,7 @@ class _AdminUserDetailsScreenState
       ref: ref,
       userId: widget.userId,
       details: state.user,
-      fallback: widget.initialUser,
+      fallback: _verifiedInitialUser,
       controller: controller,
     );
   }
@@ -260,7 +342,7 @@ class _AdminUserDetailsScreenState
       ref: ref,
       userId: widget.userId,
       details: state.user,
-      fallback: widget.initialUser,
+      fallback: _verifiedInitialUser,
       controller: controller,
     );
   }
@@ -895,87 +977,28 @@ class _MetricTile extends StatelessWidget {
 }
 
 class _TabChips extends StatelessWidget {
-  const _TabChips({required this.selected, required this.onSelect});
-
+  const _TabChips({
+    required this.selected,
+    required this.onSelect,
+    required this.tabs,
+  });
   final AdminUserDetailsTab selected;
   final ValueChanged<AdminUserDetailsTab> onSelect;
-
+  final List<AdminUserDetailsTab> tabs;
   @override
-  Widget build(BuildContext context) {
-    const tabs = AdminUserDetailsTab.values;
-    return SizedBox(
-      height: 32,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: tabs.length,
-        separatorBuilder: (context, index) =>
-            const SizedBox(width: OpenVtsSpacing.xs),
-        itemBuilder: (context, index) {
-          final tab = tabs[index];
-          return _TabChip(
-            tab: tab,
-            isSelected: tab == selected,
-            onTap: () => onSelect(tab),
-          );
-        },
-      ),
-    );
-  }
-}
-
-class _TabChip extends StatelessWidget {
-  const _TabChip({
-    required this.tab,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  final AdminUserDetailsTab tab;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final background = isSelected
-        ? OpenVtsColors.brandInk
-        : Theme.of(context).colorScheme.surface;
-    final foreground = isSelected
-        ? (isDark ? OpenVtsColors.darkTextPrimary : OpenVtsColors.white)
-        : Theme.of(context).colorScheme.onSurface;
-    final borderColor = isSelected
-        ? OpenVtsColors.brandInk
-        : Theme.of(context).colorScheme.outlineVariant;
-    return Material(
-      color: background,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
-        side: BorderSide(color: borderColor),
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(tab.icon, size: 14, color: foreground),
-              const SizedBox(width: 5),
-              Text(
-                tab.label,
-                style: OpenVtsTypography.meta.copyWith(
-                  color: foreground,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) =>
+      OpenVtsDetailTabStrip<AdminUserDetailsTab>(
+        tabs: [
+          for (final tab in tabs)
+            OpenVtsDetailTabOption(
+              value: tab,
+              label: tab.label(context),
+              icon: tab.icon,
+            ),
+        ],
+        selected: selected,
+        onChanged: onSelect,
+      );
 }
 
 class _TabContent extends StatelessWidget {
@@ -1008,6 +1031,10 @@ class _TabContent extends StatelessWidget {
         return AdminUserPaymentsTab(userId: userId);
       case AdminUserDetailsTab.logs:
         return AdminUserLogsTab(userId: userId);
+      case AdminUserDetailsTab.permissions:
+        return AdminUserPermissionsTab(userId: userId);
+      case AdminUserDetailsTab.dataBackup:
+        return AdminUserDataBackupTab(userId: userId);
     }
   }
 }
@@ -1382,22 +1409,26 @@ class _UserSnapshot {
 }
 
 extension _AdminUserDetailsTabX on AdminUserDetailsTab {
-  String get label {
+  String label(BuildContext context) {
     switch (this) {
       case AdminUserDetailsTab.profile:
-        return 'Profile';
+        return context.mobileText('Profile');
       case AdminUserDetailsTab.vehicles:
-        return 'Vehicles';
+        return context.mobileText('Vehicles');
       case AdminUserDetailsTab.drivers:
-        return 'Drivers';
+        return context.mobileText('Drivers');
       case AdminUserDetailsTab.documents:
-        return 'Documents';
+        return context.mobileText('Documents');
       case AdminUserDetailsTab.tickets:
-        return 'Tickets';
+        return context.mobileText('Tickets');
       case AdminUserDetailsTab.payments:
-        return 'Payments';
+        return context.mobileText('Payments');
       case AdminUserDetailsTab.logs:
-        return 'Logs';
+        return context.mobileText('Logs');
+      case AdminUserDetailsTab.permissions:
+        return context.mobileText('Permissions');
+      case AdminUserDetailsTab.dataBackup:
+        return context.mobileText('Data Backup');
     }
   }
 
@@ -1417,6 +1448,10 @@ extension _AdminUserDetailsTabX on AdminUserDetailsTab {
         return Icons.payments_outlined;
       case AdminUserDetailsTab.logs:
         return Icons.history_rounded;
+      case AdminUserDetailsTab.permissions:
+        return Icons.admin_panel_settings_outlined;
+      case AdminUserDetailsTab.dataBackup:
+        return Icons.archive_outlined;
     }
   }
 }

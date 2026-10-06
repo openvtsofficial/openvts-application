@@ -9118,4 +9118,89 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get validationFieldSimNumber => 'Número do SIM';
+
+  @override
+  String get mobileDataBackup => 'Cópia de segurança dos dados';
+
+  @override
+  String get mobileEffectiveRetention => 'Retenção efetiva';
+
+  @override
+  String get mobileAdministratorLimit => 'Limite do administrador';
+
+  @override
+  String get mobilePolicySource => 'Origem da política';
+
+  @override
+  String mobileUseAdministratorPolicy(String value1) {
+    return 'Usar a política do administrador ($value1)';
+  }
+
+  @override
+  String get mobileRetentionCleanupNotice =>
+      'A limpeza programada remove a telemetria histórica anterior ao período de retenção. Aumentar a retenção não restaura os dados excluídos.';
+
+  @override
+  String mobileRetentionLimitError(String value1) {
+    return 'O período de retenção não pode exceder $value1 dias.';
+  }
+
+  @override
+  String get mobileRetentionLoadError =>
+      'Não foi possível carregar a retenção de dados';
+
+  @override
+  String get mobileRetentionSaveError =>
+      'Não foi possível salvar a retenção de dados';
+
+  @override
+  String get mobileRetentionSaved => 'Retenção de dados atualizada';
+
+  @override
+  String get mobileRetentionUnsupported =>
+      'O servidor retornou uma política de retenção não compatível. A edição está desativada.';
+
+  @override
+  String get mobileDiscardDetailChanges =>
+      'As alterações serão perdidas. Continuar?';
+
+  @override
+  String get mobileLiveTrackingReconnecting =>
+      'Reconectando o rastreamento ao vivo…';
+
+  @override
+  String get mobileLastConnection => 'Última conexão';
+
+  @override
+  String get mobileTeamLoadError =>
+      'Não foi possível carregar o membro da equipe.';
+
+  @override
+  String get mobilePermissionsLoadError =>
+      'Não foi possível carregar as permissões.';
+
+  @override
+  String get mobileActivityLoadError =>
+      'Não foi possível carregar a atividade.';
+
+  @override
+  String get mobilePermissionsRetryError =>
+      'Não foi possível carregar ou salvar as permissões. Tente novamente.';
+
+  @override
+  String get mobilePermissionMaps => 'Mapas';
+
+  @override
+  String get mobilePermissionLandmarks => 'Pontos de referência';
+
+  @override
+  String get mobilePermissionShareTracking =>
+      'Compartilhar link de rastreamento';
+
+  @override
+  String get mobilePrivacyPolicyLink => 'Política de privacidade';
+
+  @override
+  String get mobilePageLinkError =>
+      'Não foi possível abrir esta página. Tente novamente.';
 }

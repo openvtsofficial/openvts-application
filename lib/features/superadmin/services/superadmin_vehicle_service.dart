@@ -1,10 +1,13 @@
 import 'package:dio/dio.dart';
 
+import '../../../core/access/workspace_scope_provider.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/api/api_endpoints.dart';
 import '../../../core/api/api_options.dart';
 import '../../../core/config/app_config.dart';
+import '../../../core/utils/telemetry_timestamp.dart';
 import '../../../shared/models/vehicle_summary.dart';
+import '../../../shared/utils/live_vehicle_presentation.dart';
 import '../../notifications/models/app_notification.dart';
 import '../models/superadmin_vehicle_history_model.dart';
 import '../models/superadmin_vehicle_model.dart';
@@ -47,17 +50,121 @@ class SuperadminVehicleService {
       return _buildTelemetryFromVehicles(_mockMapVehicles);
     }
 
-    final requestKey =
-        refreshKey ?? DateTime.now().millisecondsSinceEpoch.toString();
-
-    final response = await _apiClient.get<SuperadminMapTelemetry>(
+    return loadMapTelemetryEndpoint(
       ApiEndpoints.superadmin.mapTelemetry,
-      queryParameters: <String, dynamic>{'rk': requestKey},
-      options: _readOptions,
-      parser: _parseMapTelemetry,
+      refreshKey: refreshKey,
     );
+  }
 
-    return response.data;
+  /// Load the complete authorized fleet from any role-scoped map endpoint.
+  /// The endpoint is resolved by the role service; parsers remain shared.
+  Future<SuperadminMapTelemetry> loadMapTelemetryEndpoint(
+    String endpoint, {
+    String? refreshKey,
+  }) async {
+    // Map telemetry is cursor-paginated (default 100, maximum 500). Collect
+    // the complete authorized fleet before publishing any baseline, otherwise
+    // both counts and the IMEI subscriptions silently omit later vehicles.
+    // Keep one device-local day context across every page, matching the web.
+    final now = DateTime.now();
+    final localDay = DateTime(now.year, now.month, now.day);
+    final dayKey =
+        '${now.year.toString().padLeft(4, '0')}-'
+        '${now.month.toString().padLeft(2, '0')}-'
+        '${now.day.toString().padLeft(2, '0')}';
+    final requestKey = refreshKey ?? now.millisecondsSinceEpoch.toString();
+    final requestScope = workspaceDataScope(
+      _apiClient.activeUser,
+      isDemo: _apiClient.isDemoMode,
+    );
+    void ensureSameScope() {
+      if (workspaceDataScope(
+            _apiClient.activeUser,
+            isDemo: _apiClient.isDemoMode,
+          ) !=
+          requestScope) {
+        throw StateError('Map access changed while loading vehicles.');
+      }
+    }
+
+    final vehiclesByIdentity = <String, VehicleSummary>{};
+    final visitedCursors = <String>{};
+    String? cursor;
+
+    while (true) {
+      ensureSameScope();
+      final response = await _apiClient.get<_CompleteMapTelemetryPage>(
+        endpoint,
+        queryParameters: <String, dynamic>{
+          'rk': requestKey,
+          'limit': 500,
+          'dayStart': localDay.toUtc().toIso8601String(),
+          'dayKey': dayKey,
+          if (cursor != null) 'cursor': cursor,
+        },
+        options: _readOptions,
+        parser: _parseMapTelemetryPage,
+      );
+      ensureSameScope();
+      final page = response.data;
+      for (final rawVehicle in page.telemetry.vehicles) {
+        final vehicle = rawVehicle.browserDayKey == dayKey
+            ? rawVehicle.withTodayDistanceFrom(
+                rawVehicle,
+                now: now,
+                authoritativeBaseline: true,
+              )
+            : rawVehicle.copyWith(
+                distanceKm: null,
+                browserDayKey: dayKey,
+                browserDayStart: localDay.toUtc(),
+                browserDayBaseOdometer: null,
+              );
+        final identity = vehicle.id.isNotEmpty
+            ? 'id:${vehicle.id}'
+            : 'imei:${vehicle.imei}';
+        vehiclesByIdentity[identity] = vehicle;
+      }
+      if (!page.hasMore) {
+        return _buildTelemetryFromVehicles(
+          vehiclesByIdentity.values.toList(growable: false),
+        );
+      }
+      final nextCursor = page.nextCursor;
+      if (page.telemetry.vehicles.isEmpty ||
+          nextCursor == null ||
+          nextCursor.isEmpty ||
+          !visitedCursors.add(nextCursor)) {
+        throw StateError('Map telemetry pagination did not advance.');
+      }
+      cursor = nextCursor;
+    }
+  }
+
+  _CompleteMapTelemetryPage _parseMapTelemetryPage(dynamic raw) {
+    if (raw is List) {
+      return _CompleteMapTelemetryPage(
+        telemetry: _parseMapTelemetry(raw),
+        hasMore: false,
+      );
+    }
+    if (raw is! Map) {
+      throw StateError('Map telemetry response is invalid.');
+    }
+    // ApiClient unwraps the action/data envelope. Accept a nested data object
+    // for older gateways which wrap the same payload an additional time.
+    final nested = raw['data'];
+    final source = nested is Map ? nested : raw;
+    final items = source['items'] ?? source['vehicles'] ?? source['data'];
+    if (items is! List) {
+      throw StateError('Map telemetry response does not contain vehicles.');
+    }
+    final nextCursor = source['nextCursor'] ?? source['cursor'];
+    return _CompleteMapTelemetryPage(
+      telemetry: _parseMapTelemetry(items),
+      hasMore: source['hasMore'] == true,
+      nextCursor: nextCursor?.toString().trim(),
+    );
   }
 
   Future<SuperadminVehicleDetails> getVehicleDetailsByImei(String imei) async {
@@ -1945,11 +2052,19 @@ class SuperadminVehicleService {
   SuperadminMapTelemetry _buildTelemetryFromVehicles(
     List<VehicleSummary> vehicles,
   ) {
-    final inactiveCount = vehicles.where(_isInactiveVehicle).length;
-    final runningCount = vehicles
-        .where((vehicle) => !_isInactiveVehicle(vehicle))
-        .where(_isRunningVehicle)
-        .length;
+    final now = DateTime.now();
+    var runningCount = 0;
+    var inactiveCount = 0;
+    for (final vehicle in vehicles) {
+      switch (classifyLiveVehicle(vehicle, now: now)) {
+        case LiveVehicleStatus.running:
+          runningCount++;
+        case LiveVehicleStatus.inactive:
+          inactiveCount++;
+        case LiveVehicleStatus.stop:
+          break;
+      }
+    }
     return SuperadminMapTelemetry(
       allCount: vehicles.length,
       runningCount: runningCount,
@@ -2229,7 +2344,21 @@ class SuperadminVehicleService {
     }
 
     final candidateMaps = _candidateVehicleMaps(json);
-    final coordinates = _extractCoordinates(json);
+    final telemetryMaps = <Map<String, dynamic>>[
+      _asMap(json['telemetry']),
+      _asMap(json['lastTelemetry']),
+      _asMap(json['last_telemetry']),
+      _asMap(json['telemetrySnapshot']),
+      _asMap(json['telemetry_snapshot']),
+      ...candidateMaps,
+    ].where((map) => map.isNotEmpty).toList(growable: false);
+    final deviceStatusMaps = <Map<String, dynamic>>[
+      _asMap(json['_deviceStatus']),
+      _asMap(json['deviceStatus']),
+      _asMap(json['device_status']),
+      ...candidateMaps,
+    ];
+    final coordinates = _firstCoordinatesInMaps(telemetryMaps);
     if (coordinates == null && requireCoordinates) {
       return null;
     }
@@ -2250,6 +2379,8 @@ class SuperadminVehicleService {
         '';
     final name =
         (_firstStringInMaps(candidateMaps, const [
+                  'vehicleNumber',
+                  'vehicle_number',
                   'name',
                   'vehicleName',
                   'vehicle_name',
@@ -2304,7 +2435,7 @@ class SuperadminVehicleService {
       plateNumber: plateNumber,
       status: status,
       speed:
-          _firstDoubleInMaps(candidateMaps, const [
+          _firstDoubleInMaps(telemetryMaps, const [
             'speed',
             'vehicleSpeed',
             'vehicle_speed',
@@ -2319,7 +2450,7 @@ class SuperadminVehicleService {
       latitude: coordinates?.latitude ?? 28.6139,
       longitude: coordinates?.longitude ?? 77.2090,
       deviceTypeId:
-          _firstIntByKeyPriority(candidateMaps, const [
+          _firstIntByKeyPriority(telemetryMaps, const [
             'deviceTypeId',
             'device_type_id',
             'trackerDeviceTypeId',
@@ -2328,67 +2459,88 @@ class SuperadminVehicleService {
           _firstInt(_asMap(json['deviceType']), const ['id']) ??
           _firstInt(_asMap(json['device_type']), const ['id']),
       hasValidLocation: coordinates != null,
-      updatedAt: _firstDateInMaps(candidateMaps, const [
-        'updatedAt',
-        'updated_at',
-        'lastUpdate',
-        'last_update',
-        'lastUpdatedAt',
-        'last_updated_at',
-        'lastUpdatedAtMs',
-        'last_updated_at_ms',
-        'timestamp',
-        'deviceTime',
-        'device_time',
-        'gpsTime',
-        'gps_time',
+      // Only server receive time drives live freshness. A GPS time or heartbeat
+      // must not keep an otherwise silent vehicle moving on the map.
+      updatedAt: _firstDateByKeyPriority(telemetryMaps, const [
         'serverTime',
         'server_time',
         'serverTimeMs',
         'server_time_ms',
-        'lastSeenAt',
-        'last_seen_at',
-        'lastSeen',
-        'last_seen',
-        'lastSeenOn',
-        'last_seen_on',
-        'seenAt',
-        'seen_at',
-        'packetTime',
-        'packet_time',
-        'recordedAt',
-        'recorded_at',
-        'time',
-        'dateTime',
-        'datetime',
-        'createdAt',
-        'created_at',
-        'date',
+        'lastUpdatedAt',
+        'last_updated_at',
+        'lastUpdatedAtMs',
+        'last_updated_at_ms',
       ]),
-      distanceKm: _firstDoubleByKeyPriority(candidateMaps, const [
-        'todayDistance',
-        'today_distance',
+      serverTime:
+          _firstDateByKeyPriority(telemetryMaps, const [
+            'serverTime',
+            'server_time',
+            'serverTimeMs',
+            'server_time_ms',
+          ]) ??
+          (!json.containsKey('telemetry')
+              ? _firstDate(json, const ['timestamp'])
+              : null),
+      deviceTime: _firstDateByKeyPriority(telemetryMaps, const [
+        'deviceTime',
+        'device_time',
+        'gpsTime',
+        'gps_time',
+      ]),
+      licenseBlocked: licenseBlocked == true,
+      vehicleTypeSlug:
+          _firstStringInMaps(candidateMaps, const [
+            'vehicleTypeSlug',
+            'vehicle_type_slug',
+          ]) ??
+          _firstString(_asMap(json['vehicleType']), const ['slug']) ??
+          _firstString(_asMap(json['vehicle_type']), const ['slug']),
+      motionState: _firstStringInMaps(deviceStatusMaps, const [
+        'motionState',
+        'motion_state',
+      ]),
+      motionStateSince: _firstDateInMaps(deviceStatusMaps, const [
+        'motionStateSince',
+        'motion_state_since',
+      ]),
+      pendingMotionState:
+          _firstStringInMaps(deviceStatusMaps, const [
+            'pendingMotionState',
+            'pending_motion_state',
+          ]) ??
+          (_firstDateInMaps(deviceStatusMaps, const [
+                    'pendingStopSince',
+                    'pending_stop_since',
+                  ]) !=
+                  null
+              ? 'stop'
+              : null),
+      pendingMotionStateSince: _firstDateInMaps(deviceStatusMaps, const [
+        'pendingMotionStateSince',
+        'pending_motion_state_since',
+        'pendingStopSince',
+        'pending_stop_since',
+      ]),
+      distanceKm: _firstDoubleByKeyPriority(telemetryMaps, const [
         'distanceToday',
         'distance_today',
+        'todayDistance',
+        'today_distance',
         'todayKm',
         'today_km',
         'kmToday',
         'km_today',
         'dailyDistance',
         'daily_distance',
-        'travelDistance',
-        'travel_distance',
-        'coveredDistance',
-        'covered_distance',
-        'tripDistance',
-        'trip_distance',
-        'coveredKm',
-        'covered_km',
-        'distance',
-        'distanceKm',
-        'distance_km',
       ]),
-      odometerKm: _firstOdometerKmByKeyPriority(candidateMaps, const [
+      browserDayKey: _firstStringInMaps(telemetryMaps, const ['browserDayKey']),
+      browserDayStart: _firstDateInMaps(telemetryMaps, const [
+        'browserDayStart',
+      ]),
+      browserDayBaseOdometer: _firstDoubleByKeyPriority(telemetryMaps, const [
+        'browserDayBaseOdometer',
+      ]),
+      odometerKm: _firstOdometerKmByKeyPriority(telemetryMaps, const [
         'odometer',
         'odometerKm',
         'odometer_km',
@@ -2400,7 +2552,7 @@ class SuperadminVehicleService {
         'mileageKm',
         'mileage_km',
       ]),
-      engineHoursToday: _firstEngineHoursByKeyPriority(candidateMaps, const [
+      engineHoursToday: _firstEngineHoursByKeyPriority(telemetryMaps, const [
         'engineHoursToday',
         'engine_hours_today',
         'todayEngineHours',
@@ -2408,11 +2560,11 @@ class SuperadminVehicleService {
         'engineHours',
         'engine_hours',
       ]),
-      engineHours: _firstEngineHoursByKeyPriority(candidateMaps, const [
+      engineHours: _firstEngineHoursByKeyPriority(telemetryMaps, const [
         'engineHours',
         'engine_hours',
       ]),
-      totalEngineHours: _firstEngineHoursByKeyPriority(candidateMaps, const [
+      totalEngineHours: _firstEngineHoursByKeyPriority(telemetryMaps, const [
         'totalengineHours',
         'totalEngineHours',
         'total_engine_hours',
@@ -2420,7 +2572,7 @@ class SuperadminVehicleService {
         'engine_hours_total',
         'hours',
       ]),
-      satellites: _firstIntByKeyPriority(candidateMaps, const [
+      satellites: _firstIntByKeyPriority(telemetryMaps, const [
         'satellites',
         'satelliteCount',
         'satellite_count',
@@ -2452,14 +2604,14 @@ class SuperadminVehicleService {
               ]),
             ),
       ),
-      ignition: _firstBoolByKeyPriority(candidateMaps, const [
+      ignition: _firstBoolByKeyPriority(telemetryMaps, const [
         'ignition',
         'ignitionStatus',
         'ignition_status',
         'engineOn',
         'engine_on',
       ]),
-      acc: _firstBoolByKeyPriority(candidateMaps, const [
+      acc: _firstBoolByKeyPriority(telemetryMaps, const [
         'acc',
         'accessory',
         'accessoryOn',
@@ -2760,27 +2912,16 @@ class SuperadminVehicleService {
         'current_speed',
       ]),
       distanceKm: _firstDoubleByKeyPriority(candidateMaps, const [
-        'todayDistance',
-        'today_distance',
         'distanceToday',
         'distance_today',
+        'todayDistance',
+        'today_distance',
         'todayKm',
         'today_km',
         'kmToday',
         'km_today',
         'dailyDistance',
         'daily_distance',
-        'travelDistance',
-        'travel_distance',
-        'coveredDistance',
-        'covered_distance',
-        'tripDistance',
-        'trip_distance',
-        'coveredKm',
-        'covered_km',
-        'distance',
-        'distanceKm',
-        'distance_km',
       ]),
       updatedAt: _firstDateInMaps(candidateMaps, const [
         'updatedAt',
@@ -3081,7 +3222,10 @@ class SuperadminVehicleService {
       return false;
     }
 
-    return latitude >= -90 &&
+    return latitude.isFinite &&
+        longitude.isFinite &&
+        !(latitude == 0 && longitude == 0) &&
+        latitude >= -90 &&
         latitude <= 90 &&
         longitude >= -180 &&
         longitude <= 180;
@@ -3197,7 +3341,7 @@ class SuperadminVehicleService {
         }
 
         final normalizedValue = _normalizeOdometerKm(key, value);
-        if (normalizedValue.isFinite && normalizedValue > 0) {
+        if (normalizedValue.isFinite && normalizedValue >= 0) {
           return normalizedValue;
         }
       }
@@ -3359,33 +3503,22 @@ class SuperadminVehicleService {
 
   DateTime? _firstDate(Map<String, dynamic> source, List<String> keys) {
     for (final key in keys) {
-      final value = source[key];
-      if (value is DateTime) {
-        return value;
-      }
+      final parsed = parseTelemetryTimestamp(source[key]);
+      if (parsed != null) return parsed;
+    }
+    return null;
+  }
 
-      if (value is num) {
-        return _dateFromEpoch(value);
-      }
-
-      if (value is String) {
-        final trimmed = value.trim();
-        if (trimmed.isEmpty) {
-          continue;
-        }
-
-        final parsed = DateTime.tryParse(trimmed);
-        if (parsed != null) {
-          return parsed;
-        }
-
-        final numeric = num.tryParse(trimmed);
-        if (numeric != null) {
-          return _dateFromEpoch(numeric);
-        }
+  DateTime? _firstDateByKeyPriority(
+    List<Map<String, dynamic>> sources,
+    List<String> keys,
+  ) {
+    for (final key in keys) {
+      for (final source in sources) {
+        final parsed = parseTelemetryTimestamp(source[key]);
+        if (parsed != null) return parsed;
       }
     }
-
     return null;
   }
 
@@ -3401,12 +3534,6 @@ class SuperadminVehicleService {
     }
 
     return null;
-  }
-
-  DateTime _dateFromEpoch(num value) {
-    final raw = value.toInt();
-    final milliseconds = raw.abs() < 100000000000 ? raw * 1000 : raw;
-    return DateTime.fromMillisecondsSinceEpoch(milliseconds, isUtc: true);
   }
 
   int? _firstInt(Map<String, dynamic> source, List<String> keys) {
@@ -3680,40 +3807,13 @@ const _mockMapVehicles = [
   ),
 ];
 
-bool _isRunningVehicle(VehicleSummary vehicle) {
-  final status = _normalizeVehicleStatus(vehicle.status);
-  return vehicle.speed > 0 ||
-      status.contains('running') ||
-      status.contains('moving') ||
-      status.contains('drive');
-}
-
-bool _isInactiveVehicle(VehicleSummary vehicle) {
-  final status = _normalizeVehicleStatus(vehicle.status);
-  if (const <String>{
-    'inactive',
-    'no_data',
-    'offline',
-    'disconnected',
-    'license_blocked',
-  }.contains(status)) {
-    return true;
-  }
-
-  final deviceStatus = vehicle.deviceConnectionStatus?.trim().toUpperCase();
-  if (deviceStatus == 'DISCONNECTED') {
-    final lastSeenAt = vehicle.lastSeenAt ?? vehicle.updatedAt;
-    if (lastSeenAt == null) {
-      return true;
-    }
-
-    final age = DateTime.now().difference(lastSeenAt);
-    return !age.isNegative && age >= const Duration(hours: 48);
-  }
-
-  return false;
-}
-
-String _normalizeVehicleStatus(String status) {
-  return status.trim().toLowerCase().replaceAll(RegExp(r'[\s-]+'), '_');
+class _CompleteMapTelemetryPage {
+  const _CompleteMapTelemetryPage({
+    required this.telemetry,
+    required this.hasMore,
+    this.nextCursor,
+  });
+  final SuperadminMapTelemetry telemetry;
+  final bool hasMore;
+  final String? nextCursor;
 }

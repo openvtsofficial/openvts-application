@@ -9020,4 +9020,81 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get validationFieldSimNumber => 'SIM number';
+
+  @override
+  String get mobileDataBackup => 'Data Backup';
+
+  @override
+  String get mobileEffectiveRetention => 'Effective retention';
+
+  @override
+  String get mobileAdministratorLimit => 'Administrator limit';
+
+  @override
+  String get mobilePolicySource => 'Policy source';
+
+  @override
+  String mobileUseAdministratorPolicy(String value1) {
+    return 'Use administrator policy ($value1)';
+  }
+
+  @override
+  String get mobileRetentionCleanupNotice =>
+      'Historical telemetry older than the retention period is removed by scheduled cleanup. Increasing retention does not restore deleted data.';
+
+  @override
+  String mobileRetentionLimitError(String value1) {
+    return 'The retention period cannot exceed $value1 days.';
+  }
+
+  @override
+  String get mobileRetentionLoadError => 'Unable to load data retention';
+
+  @override
+  String get mobileRetentionSaveError => 'Unable to save data retention';
+
+  @override
+  String get mobileRetentionSaved => 'Data retention updated';
+
+  @override
+  String get mobileRetentionUnsupported =>
+      'The server returned an unsupported retention policy. Editing is disabled.';
+
+  @override
+  String get mobileDiscardDetailChanges => 'Changes will be lost. Continue?';
+
+  @override
+  String get mobileLiveTrackingReconnecting => 'Live tracking reconnecting…';
+
+  @override
+  String get mobileLastConnection => 'Last connection';
+
+  @override
+  String get mobileTeamLoadError => 'Team could not be loaded.';
+
+  @override
+  String get mobilePermissionsLoadError => 'Permissions could not be loaded.';
+
+  @override
+  String get mobileActivityLoadError => 'Activity could not be loaded.';
+
+  @override
+  String get mobilePermissionsRetryError =>
+      'Unable to load or save permissions. Please try again.';
+
+  @override
+  String get mobilePermissionMaps => 'Maps';
+
+  @override
+  String get mobilePermissionLandmarks => 'Landmarks';
+
+  @override
+  String get mobilePermissionShareTracking => 'Share tracking link';
+
+  @override
+  String get mobilePrivacyPolicyLink => 'Privacy policy';
+
+  @override
+  String get mobilePageLinkError =>
+      'Unable to open this page. Please try again.';
 }

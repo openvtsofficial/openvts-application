@@ -278,13 +278,14 @@ class _LandmarkPickerState extends ConsumerState<_LandmarkPicker> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(l.routeBuilderLandmarkError),
-                            TextButton(
+                            OpenVtsButton(
+                              label: l.routeBuilderRetry,
                               onPressed: () => ref.invalidate(
                                 userRouteLandmarkStopsProvider(
                                   widget.geofences,
                                 ),
                               ),
-                              child: Text(l.routeBuilderRetry),
+                              variant: OpenVtsButtonVariant.secondary,
                             ),
                           ],
                         ),

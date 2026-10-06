@@ -19,6 +19,7 @@ import '../../../../shared/widgets/open_vts_search_field.dart';
 import '../../../auth/controllers/auth_controller.dart';
 import '../../controllers/admin_providers.dart';
 import '../../models/admin_payments_model.dart';
+import '../../models/admin_subscription_policy.dart';
 import 'widgets/admin_payment_transaction_card.dart';
 import 'widgets/admin_payment_transaction_details_sheet.dart';
 import 'widgets/admin_payments_analytics_section.dart';
@@ -259,10 +260,11 @@ class _AdminPaymentsScreenState extends ConsumerState<AdminPaymentsScreen> {
                 onPressed: onRefresh,
                 icon: const Icon(Icons.refresh_rounded, size: 18),
               ),
-              if (PermissionHelper.canPerform(
-                ref.watch(authControllerProvider).user,
-                'payments.edit',
-              ))
+              if (AdminSubscriptionPolicy.allowsRenewals &&
+                  PermissionHelper.canPerform(
+                    ref.watch(authControllerProvider).user,
+                    'payments.edit',
+                  ))
                 FilledButton.icon(
                   onPressed: onRenew,
                   icon: Icon(

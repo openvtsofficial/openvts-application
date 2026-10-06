@@ -81,16 +81,11 @@ class UserSubUserService {
     return created;
   }
 
-  Future<UserSubUser> fetchSubUserById(
-    String id, {
-    String? refreshKey,
-  }) async {
+  Future<UserSubUser> fetchSubUserById(String id, {String? refreshKey}) async {
     final subUserId = _requireId(id, 'id');
     final response = await _apiClient.get<UserSubUser>(
       ApiEndpoints.user.subuserById(subUserId),
-      queryParameters: <String, dynamic>{
-        'rk': _resolveRefreshKey(refreshKey),
-      },
+      queryParameters: <String, dynamic>{'rk': _resolveRefreshKey(refreshKey)},
       options: _readOptions,
       parser: UserSubUser.fromJson,
     );
@@ -148,8 +143,8 @@ class UserSubUserService {
 
   Future<void> assignVehicles(String subUserId, List<String> vehicleIds) async {
     final id = _requireId(subUserId, 'subUserId');
-    final payload =
-        UserSubUserVehicleAssignmentPayload(vehicleIds: vehicleIds).toJson();
+    final payload = UserSubUserVehicleAssignmentPayload(vehicleIds: vehicleIds)
+        .toJson();
 
     await _apiClient.post<void>(
       ApiEndpoints.user.assignSubuserVehicles(id),
@@ -164,8 +159,8 @@ class UserSubUserService {
     List<String> vehicleIds,
   ) async {
     final id = _requireId(subUserId, 'subUserId');
-    final payload =
-        UserSubUserVehicleAssignmentPayload(vehicleIds: vehicleIds).toJson();
+    final payload = UserSubUserVehicleAssignmentPayload(vehicleIds: vehicleIds)
+        .toJson();
 
     await _apiClient.post<void>(
       ApiEndpoints.user.unassignSubuserVehicles(id),
@@ -177,7 +172,7 @@ class UserSubUserService {
 
   Future<Map<String, dynamic>> fetchPermissions(String id) async {
     final response = await _apiClient.get<Map<String, dynamic>>(
-      '${ApiEndpoints.user.subuserById(_requireId(id, 'id'))}/permissions',
+      ApiEndpoints.user.subuserPermissions(_requireId(id, 'id')),
       options: _readOptions,
       parser: (json) => Map<String, dynamic>.from(json as Map),
     );
@@ -190,10 +185,10 @@ class UserSubUserService {
     required List<String> disabledReports,
   }) async {
     final response = await _apiClient.put<Map<String, dynamic>>(
-      '${ApiEndpoints.user.subuserById(_requireId(id, 'id'))}/permissions',
+      ApiEndpoints.user.subuserPermissions(_requireId(id, 'id')),
       data: {
         'disabledFeatures': disabledFeatures,
-        'disabledReports': disabledReports
+        'disabledReports': disabledReports,
       },
       options: _mutationOptions,
       parser: (json) => Map<String, dynamic>.from(json as Map),

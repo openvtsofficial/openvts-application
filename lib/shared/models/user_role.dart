@@ -14,6 +14,8 @@ enum UserRole {
     switch (value?.trim().toLowerCase()) {
       case 'superadmin':
       case 'super_admin':
+      case 'super admin':
+      case 'super-admin':
         return superadmin;
       case 'admin':
         return admin;
@@ -23,6 +25,8 @@ enum UserRole {
         return user;
       case 'subuser':
       case 'sub_user':
+      case 'sub user':
+      case 'sub-user':
         return subuser;
       case 'driver':
         return driver;

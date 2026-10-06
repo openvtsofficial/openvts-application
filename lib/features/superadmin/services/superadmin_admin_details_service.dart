@@ -160,7 +160,8 @@ class SuperadminAdminDetailsService {
   }
 
   Future<List<SuperadminAdminDocument>> getAdminDocuments(
-      String adminId) async {
+    String adminId,
+  ) async {
     final id = _requireAdminId(adminId);
     final response = await _apiClient.get<dynamic>(
       ApiEndpoints.superadmin.documentsByAdmin(id),
@@ -234,11 +235,9 @@ class SuperadminAdminDetailsService {
     String? refreshKey,
   }) async {
     final id = _requireAdminId(adminId);
-    final normalizedLimit = limit < 1 ? 1 : (limit > 100 ? 100 : limit);
+    final normalizedLimit = limit.clamp(5, 50);
 
-    final query = <String, dynamic>{
-      'limit': normalizedLimit,
-    };
+    final query = <String, dynamic>{'limit': normalizedLimit};
 
     final normalizedQ = q?.trim() ?? '';
     if (normalizedQ.isNotEmpty) query['q'] = normalizedQ;
@@ -289,8 +288,10 @@ class SuperadminAdminDetailsService {
   Future<FormData> _buildDocumentFormData(
     SuperadminAdminDocumentRequest request,
   ) async {
-    final tags =
-        request.tags.map((t) => t.trim()).where((t) => t.isNotEmpty).join(',');
+    final tags = request.tags
+        .map((t) => t.trim())
+        .where((t) => t.isNotEmpty)
+        .join(',');
 
     final formData = FormData();
     formData.fields.addAll(<MapEntry<String, String>>[

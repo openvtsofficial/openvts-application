@@ -15,27 +15,30 @@ void main() {
   group('SuperadminVehicleService replay', () {
     final service = SuperadminVehicleService(ApiClient(Dio()));
 
-    test('builds map telemetry counts with inactive excluded from stop', () {
-      final telemetry = service.parseMapTelemetryPayload(<String, dynamic>{
-        'vehicles': <Map<String, dynamic>>[
-          _mapVehicle(imei: 'running-by-speed', speedKph: 12),
-          _mapVehicle(imei: 'running-by-status', status: 'moving'),
-          _mapVehicle(imei: 'stopped', status: 'idle'),
-          _mapVehicle(imei: 'inactive', status: 'inactive'),
-          _mapVehicle(imei: 'offline', status: 'offline'),
-          _mapVehicle(
-            imei: 'license-blocked',
-            status: 'running',
-            licenseBlocked: true,
-          ),
-        ],
-      });
+    test(
+      'builds telemetry counts from receive time and speed, ignoring stale status text',
+      () {
+        final telemetry = service.parseMapTelemetryPayload(<String, dynamic>{
+          'vehicles': <Map<String, dynamic>>[
+            _mapVehicle(imei: 'running-by-speed', speedKph: 12),
+            _mapVehicle(imei: 'running-by-status', status: 'moving'),
+            _mapVehicle(imei: 'stopped', status: 'idle'),
+            _mapVehicle(imei: 'inactive', status: 'inactive'),
+            _mapVehicle(imei: 'offline', status: 'offline'),
+            _mapVehicle(
+              imei: 'license-blocked',
+              status: 'running',
+              licenseBlocked: true,
+            ),
+          ],
+        });
 
-      expect(telemetry.allCount, 6);
-      expect(telemetry.runningCount, 2);
-      expect(telemetry.stopCount, 1);
-      expect(telemetry.inactiveCount, 3);
-    });
+        expect(telemetry.allCount, 6);
+        expect(telemetry.runningCount, 1);
+        expect(telemetry.stopCount, 2);
+        expect(telemetry.inactiveCount, 3);
+      },
+    );
 
     test('parses live distance and odometer as separate telemetry fields', () {
       final telemetry = service.parseMapTelemetryPayload(<String, dynamic>{
@@ -242,9 +245,7 @@ void main() {
         '/superadmin/devices/867440060976859/send-command',
       );
       expect(capturedRequest?.method, 'POST');
-      expect(capturedRequest?.data, <String, dynamic>{
-        'command': 'STATUS',
-      });
+      expect(capturedRequest?.data, <String, dynamic>{'command': 'STATUS'});
       expect(result.cmdId, 'cmd-1');
       expect(result.localStatus, 'SENT');
     });
@@ -848,10 +849,7 @@ void main() {
 
     test('parses deviceTypeId from flat deviceTypeId field', () {
       final details = service.parseVehicleDetailsPayload(<String, dynamic>{
-        'vehicle': <String, dynamic>{
-          'imei': 'imei-1',
-          'deviceTypeId': 7,
-        },
+        'vehicle': <String, dynamic>{'imei': 'imei-1', 'deviceTypeId': 7},
       });
       expect(details.deviceTypeId, 7);
     });
@@ -864,27 +862,28 @@ void main() {
     });
 
     test(
-        'parses deviceTypeId from nested vehicle.device.type.id (backend shape)',
-        () {
-      // Actual unwrapped backend response: data.vehicle.device.type.id where
-      // ApiClient strips the outer {action, message, data} envelope and the
-      // parser receives the data object directly.
-      final details = service.parseVehicleDetailsPayload(<String, dynamic>{
-        'vehicle': <String, dynamic>{
-          'device': <String, dynamic>{
-            'type': <String, dynamic>{
-              'id': 37,
-              'name': 'Example Tracker',
-              'protocol': 'example',
+      'parses deviceTypeId from nested vehicle.device.type.id (backend shape)',
+      () {
+        // Actual unwrapped backend response: data.vehicle.device.type.id where
+        // ApiClient strips the outer {action, message, data} envelope and the
+        // parser receives the data object directly.
+        final details = service.parseVehicleDetailsPayload(<String, dynamic>{
+          'vehicle': <String, dynamic>{
+            'device': <String, dynamic>{
+              'type': <String, dynamic>{
+                'id': 37,
+                'name': 'Example Tracker',
+                'protocol': 'example',
+              },
             },
           },
-        },
-        'telemetry': null,
-        'deviceStatus': null,
-        'lastConnectionAt': null,
-      });
-      expect(details.deviceTypeId, 37);
-    });
+          'telemetry': null,
+          'deviceStatus': null,
+          'lastConnectionAt': null,
+        });
+        expect(details.deviceTypeId, 37);
+      },
+    );
 
     test('parser does not require extra outer data wrapper', () {
       // Confirm parser works without source["data"]["vehicle"] nesting —
@@ -900,18 +899,20 @@ void main() {
       expect(details.deviceTypeId, 99);
     });
 
-    test('nested vehicle.device.type.id takes priority over absent flat field',
-        () {
-      final details = service.parseVehicleDetailsPayload(<String, dynamic>{
-        'vehicle': <String, dynamic>{
-          'imei': 'imei-1',
-          'device': <String, dynamic>{
-            'type': <String, dynamic>{'id': 55, 'name': 'TrackerX'},
+    test(
+      'nested vehicle.device.type.id takes priority over absent flat field',
+      () {
+        final details = service.parseVehicleDetailsPayload(<String, dynamic>{
+          'vehicle': <String, dynamic>{
+            'imei': 'imei-1',
+            'device': <String, dynamic>{
+              'type': <String, dynamic>{'id': 55, 'name': 'TrackerX'},
+            },
           },
-        },
-      });
-      expect(details.deviceTypeId, 55);
-    });
+        });
+        expect(details.deviceTypeId, 55);
+      },
+    );
   });
 }
 
@@ -929,6 +930,8 @@ Map<String, dynamic> _mapVehicle({
     'speedKph': speedKph,
     'latitude': 28.61,
     'longitude': 77.20,
+    if (status != 'inactive' && status != 'offline')
+      'serverTime': DateTime.now().toUtc().toIso8601String(),
     if (licenseBlocked != null) 'licenseBlocked': licenseBlocked,
   };
 }

@@ -16397,6 +16397,144 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'SIM number'**
   String get validationFieldSimNumber;
+
+  /// No description provided for @mobileDataBackup.
+  ///
+  /// In en, this message translates to:
+  /// **'Data Backup'**
+  String get mobileDataBackup;
+
+  /// No description provided for @mobileEffectiveRetention.
+  ///
+  /// In en, this message translates to:
+  /// **'Effective retention'**
+  String get mobileEffectiveRetention;
+
+  /// No description provided for @mobileAdministratorLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Administrator limit'**
+  String get mobileAdministratorLimit;
+
+  /// No description provided for @mobilePolicySource.
+  ///
+  /// In en, this message translates to:
+  /// **'Policy source'**
+  String get mobilePolicySource;
+
+  /// No description provided for @mobileUseAdministratorPolicy.
+  ///
+  /// In en, this message translates to:
+  /// **'Use administrator policy ({value1})'**
+  String mobileUseAdministratorPolicy(String value1);
+
+  /// No description provided for @mobileRetentionCleanupNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Historical telemetry older than the retention period is removed by scheduled cleanup. Increasing retention does not restore deleted data.'**
+  String get mobileRetentionCleanupNotice;
+
+  /// No description provided for @mobileRetentionLimitError.
+  ///
+  /// In en, this message translates to:
+  /// **'The retention period cannot exceed {value1} days.'**
+  String mobileRetentionLimitError(String value1);
+
+  /// No description provided for @mobileRetentionLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to load data retention'**
+  String get mobileRetentionLoadError;
+
+  /// No description provided for @mobileRetentionSaveError.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to save data retention'**
+  String get mobileRetentionSaveError;
+
+  /// No description provided for @mobileRetentionSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Data retention updated'**
+  String get mobileRetentionSaved;
+
+  /// No description provided for @mobileRetentionUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'The server returned an unsupported retention policy. Editing is disabled.'**
+  String get mobileRetentionUnsupported;
+
+  /// No description provided for @mobileDiscardDetailChanges.
+  ///
+  /// In en, this message translates to:
+  /// **'Changes will be lost. Continue?'**
+  String get mobileDiscardDetailChanges;
+
+  /// No description provided for @mobileLiveTrackingReconnecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Live tracking reconnecting…'**
+  String get mobileLiveTrackingReconnecting;
+
+  /// No description provided for @mobileLastConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'Last connection'**
+  String get mobileLastConnection;
+
+  /// No description provided for @mobileTeamLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Team could not be loaded.'**
+  String get mobileTeamLoadError;
+
+  /// No description provided for @mobilePermissionsLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Permissions could not be loaded.'**
+  String get mobilePermissionsLoadError;
+
+  /// No description provided for @mobileActivityLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Activity could not be loaded.'**
+  String get mobileActivityLoadError;
+
+  /// No description provided for @mobilePermissionsRetryError.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to load or save permissions. Please try again.'**
+  String get mobilePermissionsRetryError;
+
+  /// No description provided for @mobilePermissionMaps.
+  ///
+  /// In en, this message translates to:
+  /// **'Maps'**
+  String get mobilePermissionMaps;
+
+  /// No description provided for @mobilePermissionLandmarks.
+  ///
+  /// In en, this message translates to:
+  /// **'Landmarks'**
+  String get mobilePermissionLandmarks;
+
+  /// No description provided for @mobilePermissionShareTracking.
+  ///
+  /// In en, this message translates to:
+  /// **'Share tracking link'**
+  String get mobilePermissionShareTracking;
+
+  /// No description provided for @mobilePrivacyPolicyLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy policy'**
+  String get mobilePrivacyPolicyLink;
+
+  /// No description provided for @mobilePageLinkError.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to open this page. Please try again.'**
+  String get mobilePageLinkError;
 }
 
 class _AppLocalizationsDelegate

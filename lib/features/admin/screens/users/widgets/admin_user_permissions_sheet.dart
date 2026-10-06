@@ -1,202 +1,162 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../../core/api/api_exception.dart';
 import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
+import '../../../../../shared/widgets/open_vts_button.dart';
+import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../../../shared/widgets/open_vts_error_view.dart';
-import '../../../controllers/admin_parity_controller.dart';
+import '../../../controllers/admin_user_permissions_controller.dart';
+import '../../../models/admin_user_permissions.dart';
 
-class AdminUserPermissionsSheet extends ConsumerStatefulWidget {
+import 'admin_user_access_error_label.dart';
+
+/// The same editor is accessible as a detail tab and as a legacy sheet.
+class AdminUserPermissionsSheet extends StatelessWidget {
   const AdminUserPermissionsSheet({required this.userId, super.key});
   final String userId;
   @override
-  ConsumerState<AdminUserPermissionsSheet> createState() =>
-      _AdminUserPermissionsSheetState();
+  Widget build(BuildContext context) => SingleChildScrollView(
+    controller: PrimaryScrollController.maybeOf(context),
+    padding: const EdgeInsets.all(16),
+    child: AdminUserPermissionsTab(userId: userId),
+  );
 }
 
-class _AdminUserPermissionsSheetState
-    extends ConsumerState<AdminUserPermissionsSheet> {
-  static const _featureLabels = {
-    'dashboard': 'Dashboard',
-    'maps': 'Maps',
-    'landmarks': 'Landmarks',
-    'shareTrackLink': 'Share tracking link',
-    'routeOptimization': 'Operations',
-    'support': 'Support',
-    'transactions': 'Transactions',
-    'notifications': 'Notifications',
-    'vehicles': 'Vehicles',
-    'accounts': 'Accounts',
-    'reports': 'Reports',
-  };
-  static const _reportLabels = {
-    'distance': 'Distance',
-    'driven': 'Driven',
-    'overspeed': 'Overspeed',
-    'geofence': 'Geofence',
-    'sensor': 'Sensor',
-    'alerts': 'Alerts',
-    'logs': 'Logs',
-    'timeline': 'Timeline',
-    'details': 'Details',
-  };
-  Map<String, bool> _features = {}, _reports = {};
-  String _saved = '';
-  bool _loading = true, _saving = false;
-  String? _error;
-  Map<String, dynamic> get _payload => {
-    'disabledFeatures':
-        _features.entries.where((e) => !e.value).map((e) => e.key).toList()
-          ..sort(),
-    'disabledReports':
-        _reports.entries.where((e) => !e.value).map((e) => e.key).toList()
-          ..sort(),
-  };
+class AdminUserPermissionsTab extends ConsumerWidget {
+  const AdminUserPermissionsTab({required this.userId, super.key});
+  final String userId;
   @override
-  void initState() {
-    super.initState();
-    _load();
-  }
-
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
-    try {
-      final data = await ref
-          .read(adminParityControllerProvider)
-          .userPermissions(widget.userId);
-      if (!mounted) return;
-      final features = data['features'], reports = data['reports'];
-      if (data['catalogVersion'] != 1 ||
-          features is! Map ||
-          reports is! Map ||
-          ![
-            ..._featureLabels.keys,
-            'workflow',
-          ].every((k) => features[k] is bool) ||
-          !_reportLabels.keys.every((k) => reports[k] is bool)) {
-        throw ApiException(
-          message: context.mobileText(
-            'The server returned an unsupported permission catalog. Editing is disabled.',
-          ),
-        );
-      }
-      if (!mounted) return;
-      setState(() {
-        _features = {
-          for (final key in [..._featureLabels.keys, 'workflow'])
-            key: features[key] as bool,
-        };
-        _reports = {
-          for (final key in _reportLabels.keys) key: reports[key] as bool,
-        };
-        _saved = jsonEncode(_payload);
-        _loading = false;
-      });
-    } catch (error) {
-      if (mounted) {
-        setState(() {
-          _loading = false;
-          _error = error is ApiException
-              ? error.message
-              : 'User permissions could not be loaded.';
-        });
-      }
-    }
-  }
-
-  Future<void> _save() async {
-    setState(() => _saving = true);
-    try {
-      await ref
-          .read(adminParityControllerProvider)
-          .saveUserPermissions(widget.userId, _payload);
-      if (!mounted) return;
-      ToastHelper.showSuccess(
-        context.mobileText('User permissions updated'),
-        context: context,
+  Widget build(BuildContext context, WidgetRef ref) {
+    final provider = adminUserPermissionsControllerProvider(userId);
+    final state = ref.watch(provider);
+    final controller = ref.read(provider.notifier);
+    if (state.loading) {
+      return const Padding(
+        padding: EdgeInsets.all(32),
+        child: Center(child: CircularProgressIndicator()),
       );
-      await _load();
-    } catch (error) {
-      if (mounted) {
-        ToastHelper.showError(
-          error is ApiException
-              ? error.message
-              : context.mobileText('Unable to save permissions'),
-          context: context,
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _saving = false);
     }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (_loading) return const Center(child: CircularProgressIndicator());
-    if (_error != null) {
-      return OpenVtsErrorView(message: _error!, onRetry: _load);
+    if (state.draft == null) {
+      return OpenVtsErrorView(
+        message: adminUserAccessErrorLabel(context, state.error),
+        onRetry: controller.load,
+      );
     }
+    final draft = state.draft!;
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Padding(
-          padding: const EdgeInsets.all(16),
+        OpenVtsCard(
           child: Text(
             context.mobileText(
               'Choose the pages and reports available to this user. Changes also limit the access they can grant to subusers.',
             ),
           ),
         ),
-        Expanded(
-          child: ListView(
-            controller: PrimaryScrollController.maybeOf(context),
+        const SizedBox(height: 16),
+        OpenVtsCard(
+          padding: EdgeInsets.zero,
+          child: Column(
             children: [
-              for (final e in _featureLabels.entries)
-                SwitchListTile(
-                  title: Text(e.value),
-                  value: _features[e.key] == true,
-                  onChanged: _saving
+              for (final key in AdminUserPermissions.featureKeys.where(
+                (key) => key != 'workflow',
+              ))
+                SwitchListTile.adaptive(
+                  title: Text(_featureLabel(context, key)),
+                  value: draft.features[key] == true,
+                  onChanged: state.saving
                       ? null
-                      : (v) => setState(() => _features[e.key] = v),
-                ),
-              const Divider(),
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text(context.mobileText('Report access')),
-              ),
-              for (final e in _reportLabels.entries)
-                SwitchListTile(
-                  title: Text(e.value),
-                  value: _reports[e.key] == true,
-                  onChanged: _saving || _features['reports'] != true
-                      ? null
-                      : (v) => setState(() => _reports[e.key] = v),
+                      : (enabled) => controller.setFeature(key, enabled),
                 ),
             ],
           ),
         ),
-        SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: FilledButton(
-              onPressed: _saving || _saved == jsonEncode(_payload)
-                  ? null
-                  : _save,
-              child: Text(
-                _saving
-                    ? context.mobileText('Saving…')
-                    : context.mobileText('Save permissions'),
-              ),
+        const SizedBox(height: 16),
+        Text(
+          context.mobileText('Report access'),
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        const SizedBox(height: 8),
+        OpenVtsCard(
+          padding: EdgeInsets.zero,
+          child: Column(
+            children: [
+              for (final key in AdminUserPermissions.reportKeys)
+                SwitchListTile.adaptive(
+                  title: Text(_reportLabel(context, key)),
+                  value: draft.reports[key] == true,
+                  onChanged: state.saving || draft.features['reports'] != true
+                      ? null
+                      : (enabled) => controller.setReport(key, enabled),
+                ),
+            ],
+          ),
+        ),
+        if (state.error != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 16),
+            child: Text(
+              adminUserAccessErrorLabel(context, state.error),
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
             ),
           ),
+        const SizedBox(height: 16),
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: [
+            OpenVtsButton(
+              label: context.mobileText('Reset'),
+              variant: OpenVtsButtonVariant.secondary,
+              onPressed: state.dirty && !state.saving ? controller.reset : null,
+            ),
+            OpenVtsButton(
+              label: context.mobileText('Save permissions'),
+              isLoading: state.saving,
+              onPressed: state.dirty && !state.saving
+                  ? () async {
+                      final ok = await controller.save();
+                      if (!context.mounted) return;
+                      if (ok) {
+                        ToastHelper.showSuccess(
+                          context.mobileText('User permissions updated'),
+                          context: context,
+                        );
+                      }
+                    }
+                  : null,
+            ),
+          ],
         ),
       ],
     );
   }
 }
+
+String _featureLabel(BuildContext context, String key) => switch (key) {
+  'dashboard' => context.mobileText('Dashboard'),
+  'maps' => context.mobileText('Maps'),
+  'landmarks' => context.mobileText('Landmarks'),
+  'shareTrackLink' => context.mobileText('Share tracking link'),
+  'routeOptimization' => context.mobileText('Operations'),
+  'support' => context.mobileText('Support'),
+  'transactions' => context.mobileText('Transactions'),
+  'notifications' => context.mobileText('Notifications'),
+  'vehicles' => context.mobileText('Vehicles'),
+  'accounts' => context.mobileText('Accounts'),
+  'reports' => context.mobileText('Reports'),
+  _ => key,
+};
+String _reportLabel(BuildContext context, String key) => switch (key) {
+  'distance' => context.mobileText('Distance'),
+  'driven' => context.mobileText('Driven'),
+  'overspeed' => context.mobileText('Overspeed'),
+  'geofence' => context.mobileText('Geofence'),
+  'sensor' => context.mobileText('Sensor'),
+  'alerts' => context.mobileText('Alerts'),
+  'logs' => context.mobileText('Logs'),
+  'timeline' => context.mobileText('Timeline'),
+  'details' => context.mobileText('Details'),
+  _ => key,
+};

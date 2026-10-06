@@ -18,11 +18,11 @@ extension UserLandmarkEntityTypeX on UserLandmarkEntityType {
   String get apiValue {
     switch (this) {
       case UserLandmarkEntityType.geofence:
-        return 'GEOFENCE';
+        return 'geofence';
       case UserLandmarkEntityType.poi:
-        return 'POI';
+        return 'poi';
       case UserLandmarkEntityType.route:
-        return 'ROUTE';
+        return 'route';
     }
   }
 
@@ -31,7 +31,7 @@ extension UserLandmarkEntityTypeX on UserLandmarkEntityType {
       case UserLandmarkEntityType.geofence:
         return 'Geofence';
       case UserLandmarkEntityType.poi:
-        return 'POI';
+        return 'poi';
       case UserLandmarkEntityType.route:
         return 'Route';
     }
@@ -838,6 +838,23 @@ UserGeofenceType? _typeFromGeoData(UserGeofenceGeoData? geo) {
 // Request models
 // ---------------------------------------------------------------------------
 
+Map<String, dynamic> _geofenceGeoPayload(
+  UserGeofenceGeoData geodata,
+  double? toleranceMeters,
+) {
+  final payload = geodata.toJson();
+  if (toleranceMeters != null) {
+    if (geodata is! UserLineGeoData) {
+      throw ArgumentError('Tolerance is only supported for line geofences');
+    }
+    if (!toleranceMeters.isFinite || toleranceMeters < 1) {
+      throw ArgumentError('Line geofence tolerance must be at least 1 meter');
+    }
+    payload['toleranceM'] = toleranceMeters;
+  }
+  return payload;
+}
+
 class CreateUserGeofenceRequest {
   const CreateUserGeofenceRequest({
     required this.name,
@@ -878,10 +895,9 @@ class CreateUserGeofenceRequest {
       'name': name.trim(),
       if (description != null) 'description': description!.trim(),
       if (color != null && color!.trim().isNotEmpty) 'color': color!.trim(),
-      if (toleranceMeters != null) 'toleranceMeters': toleranceMeters,
       'isActive': isActive,
       'type': _typeFromGeoData(geodata)?.apiValue ?? geodata.kind,
-      'geodata': geodata.toJson(),
+      'geodata': _geofenceGeoPayload(geodata, toleranceMeters),
     };
   }
 }
@@ -908,12 +924,16 @@ class UpdateUserGeofenceRequest {
     if (name != null) payload['name'] = name!.trim();
     if (description != null) payload['description'] = description!.trim();
     if (color != null) payload['color'] = color!.trim();
-    if (toleranceMeters != null) payload['toleranceMeters'] = toleranceMeters;
     if (isActive != null) payload['isActive'] = isActive;
     final geo = geodata;
+    if (geo == null && toleranceMeters != null) {
+      throw ArgumentError(
+        'Line geofence geometry is required to change tolerance',
+      );
+    }
     if (geo != null) {
       payload['type'] = _typeFromGeoData(geo)?.apiValue ?? geo.kind;
-      payload['geodata'] = geo.toJson();
+      payload['geodata'] = _geofenceGeoPayload(geo, toleranceMeters);
     }
     return payload;
   }
@@ -954,6 +974,8 @@ class CreateUserPoiRequest {
       if (category != null && category!.trim().isNotEmpty)
         'category': category!.trim(),
       if (color != null && color!.trim().isNotEmpty) 'color': color!.trim(),
+      if (iconSlug != null && iconSlug!.trim().isNotEmpty)
+        'iconSlug': iconSlug!.trim(),
       if (toleranceMeters != null) 'toleranceMeters': toleranceMeters,
       'isActive': isActive,
       'coordinates': <String, double>{
@@ -991,6 +1013,7 @@ class UpdateUserPoiRequest {
     if (description != null) payload['description'] = description!.trim();
     if (category != null) payload['category'] = category!.trim();
     if (color != null) payload['color'] = color!.trim();
+    if (iconSlug != null) payload['iconSlug'] = iconSlug!.trim();
     if (toleranceMeters != null) payload['toleranceMeters'] = toleranceMeters;
     if (isActive != null) payload['isActive'] = isActive;
     if (coordinates != null) {
@@ -1374,7 +1397,10 @@ class CreateUserLandmarkBulkJobRequest {
 
   Map<String, dynamic> toJson() {
     validate();
-    return <String, dynamic>{'entity': entityType.apiValue, 'rows': rows};
+    return <String, dynamic>{
+      'entityType': entityType.apiValue,
+      '${entityType.apiValue}Rows': rows,
+    };
   }
 }
 

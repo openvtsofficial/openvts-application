@@ -2738,5 +2738,42 @@
   "validationStandardVin": "VIN में 17 अक्षर और अंक होने चाहिए; I, O, Q मान्य नहीं हैं",
   "validationVinAlphanumeric": "VIN में केवल अक्षर और अंक होने चाहिए",
   "validationThisField": "यह फ़ील्ड",
-  "validationFieldSimNumber": "SIM नंबर"
+  "validationFieldSimNumber": "SIM नंबर",
+  "mobileDataBackup": "डेटा बैकअप",
+  "mobileEffectiveRetention": "लागू डेटा संरक्षण अवधि",
+  "mobileAdministratorLimit": "व्यवस्थापक की सीमा",
+  "mobilePolicySource": "नीति का स्रोत",
+  "mobileUseAdministratorPolicy": "व्यवस्थापक की नीति इस्तेमाल करें ({value1})",
+  "@mobileUseAdministratorPolicy": {
+    "placeholders": {
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "mobileRetentionCleanupNotice": "निर्धारित सफाई में संरक्षण अवधि से पुराने ट्रैकिंग डेटा हटा दिए जाते हैं। अवधि बढ़ाने से हटाया गया डेटा वापस नहीं आता।",
+  "mobileRetentionLimitError": "डेटा संरक्षण अवधि {value1} दिनों से अधिक नहीं हो सकती।",
+  "@mobileRetentionLimitError": {
+    "placeholders": {
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "mobileRetentionLoadError": "डेटा संरक्षण नीति लोड नहीं हो सकी",
+  "mobileRetentionSaveError": "डेटा संरक्षण नीति सहेजी नहीं जा सकी",
+  "mobileRetentionSaved": "डेटा संरक्षण नीति अपडेट हो गई",
+  "mobileRetentionUnsupported": "सर्वर ने असमर्थित डेटा संरक्षण नीति भेजी है। संपादन बंद है।",
+  "mobileDiscardDetailChanges": "बदलाव खो जाएंगे। जारी रखें?",
+  "mobileLiveTrackingReconnecting": "लाइव ट्रैकिंग फिर से कनेक्ट हो रही है…",
+  "mobileLastConnection": "पिछला कनेक्शन",
+  "mobileTeamLoadError": "टीम सदस्य का विवरण लोड नहीं हो सका।",
+  "mobilePermissionsLoadError": "अनुमतियाँ लोड नहीं हो सकीं।",
+  "mobileActivityLoadError": "गतिविधि लोड नहीं हो सकी।",
+  "mobilePermissionsRetryError": "अनुमतियाँ लोड या सहेजी नहीं जा सकीं। फिर से कोशिश करें।",
+  "mobilePermissionMaps": "नक्शे",
+  "mobilePermissionLandmarks": "स्थल चिह्न",
+  "mobilePermissionShareTracking": "ट्रैकिंग लिंक साझा करें",
+  "mobilePrivacyPolicyLink": "गोपनीयता नीति",
+  "mobilePageLinkError": "यह पेज नहीं खुल सका। फिर से कोशिश करें।"
 }

@@ -2738,5 +2738,42 @@
   "validationStandardVin": "O VIN deve ter 17 caracteres alfanuméricos, exceto I, O e Q",
   "validationVinAlphanumeric": "O VIN deve conter apenas letras e números",
   "validationThisField": "Este campo",
-  "validationFieldSimNumber": "Número do SIM"
+  "validationFieldSimNumber": "Número do SIM",
+  "mobileDataBackup": "Cópia de segurança dos dados",
+  "mobileEffectiveRetention": "Retenção efetiva",
+  "mobileAdministratorLimit": "Limite do administrador",
+  "mobilePolicySource": "Origem da política",
+  "mobileUseAdministratorPolicy": "Usar a política do administrador ({value1})",
+  "@mobileUseAdministratorPolicy": {
+    "placeholders": {
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "mobileRetentionCleanupNotice": "A limpeza programada remove a telemetria histórica anterior ao período de retenção. Aumentar a retenção não restaura os dados excluídos.",
+  "mobileRetentionLimitError": "O período de retenção não pode exceder {value1} dias.",
+  "@mobileRetentionLimitError": {
+    "placeholders": {
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "mobileRetentionLoadError": "Não foi possível carregar a retenção de dados",
+  "mobileRetentionSaveError": "Não foi possível salvar a retenção de dados",
+  "mobileRetentionSaved": "Retenção de dados atualizada",
+  "mobileRetentionUnsupported": "O servidor retornou uma política de retenção não compatível. A edição está desativada.",
+  "mobileDiscardDetailChanges": "As alterações serão perdidas. Continuar?",
+  "mobileLiveTrackingReconnecting": "Reconectando o rastreamento ao vivo…",
+  "mobileLastConnection": "Última conexão",
+  "mobileTeamLoadError": "Não foi possível carregar o membro da equipe.",
+  "mobilePermissionsLoadError": "Não foi possível carregar as permissões.",
+  "mobileActivityLoadError": "Não foi possível carregar a atividade.",
+  "mobilePermissionsRetryError": "Não foi possível carregar ou salvar as permissões. Tente novamente.",
+  "mobilePermissionMaps": "Mapas",
+  "mobilePermissionLandmarks": "Pontos de referência",
+  "mobilePermissionShareTracking": "Compartilhar link de rastreamento",
+  "mobilePrivacyPolicyLink": "Política de privacidade",
+  "mobilePageLinkError": "Não foi possível abrir esta página. Tente novamente."
 }

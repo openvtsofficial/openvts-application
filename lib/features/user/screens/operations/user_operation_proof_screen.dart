@@ -7,6 +7,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../../../shared/helpers/toast_helper.dart';
 import '../../../../shared/models/user_role.dart';
+import '../../../../shared/widgets/open_vts_button.dart';
 import '../../../auth/controllers/auth_controller.dart';
 import '../../controllers/user_operations_providers.dart';
 import '../../models/user_operation_attachment.dart';
@@ -64,11 +65,12 @@ class _UserOperationProofScreenState
                         ? error.message
                         : operationError(context, error),
                   ),
-                  TextButton(
+                  OpenVtsButton(
+                    label: context.operationText('Retry'),
                     onPressed: () => ref.invalidate(
                       userOperationProofProvider(widget.proof),
                     ),
-                    child: Text(context.operationText('Retry')),
+                    variant: OpenVtsButtonVariant.secondary,
                   ),
                 ],
               ),

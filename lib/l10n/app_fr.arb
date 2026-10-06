@@ -2738,5 +2738,42 @@
   "validationStandardVin": "Le VIN doit comporter 17 caractères alphanumériques, sauf I, O et Q",
   "validationVinAlphanumeric": "Le VIN doit contenir uniquement des lettres et des chiffres",
   "validationThisField": "Ce champ",
-  "validationFieldSimNumber": "Numéro de SIM"
+  "validationFieldSimNumber": "Numéro de SIM",
+  "mobileDataBackup": "Sauvegarde des données",
+  "mobileEffectiveRetention": "Durée de conservation effective",
+  "mobileAdministratorLimit": "Limite de l’administrateur",
+  "mobilePolicySource": "Source de la politique",
+  "mobileUseAdministratorPolicy": "Utiliser la politique de l’administrateur ({value1})",
+  "@mobileUseAdministratorPolicy": {
+    "placeholders": {
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "mobileRetentionCleanupNotice": "Le nettoyage programmé supprime la télémétrie antérieure à la période de conservation. Augmenter cette période ne restaure pas les données supprimées.",
+  "mobileRetentionLimitError": "La période de conservation ne peut pas dépasser {value1} jours.",
+  "@mobileRetentionLimitError": {
+    "placeholders": {
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "mobileRetentionLoadError": "Impossible de charger la conservation des données",
+  "mobileRetentionSaveError": "Impossible d’enregistrer la conservation des données",
+  "mobileRetentionSaved": "Conservation des données mise à jour",
+  "mobileRetentionUnsupported": "Le serveur a renvoyé une politique de conservation non prise en charge. La modification est désactivée.",
+  "mobileDiscardDetailChanges": "Les modifications seront perdues. Continuer ?",
+  "mobileLiveTrackingReconnecting": "Reconnexion du suivi en direct…",
+  "mobileLastConnection": "Dernière connexion",
+  "mobileTeamLoadError": "Impossible de charger le membre de l’équipe.",
+  "mobilePermissionsLoadError": "Impossible de charger les autorisations.",
+  "mobileActivityLoadError": "Impossible de charger l’activité.",
+  "mobilePermissionsRetryError": "Impossible de charger ou d’enregistrer les autorisations. Veuillez réessayer.",
+  "mobilePermissionMaps": "Cartes",
+  "mobilePermissionLandmarks": "Repères",
+  "mobilePermissionShareTracking": "Partager le lien de suivi",
+  "mobilePrivacyPolicyLink": "Politique de confidentialité",
+  "mobilePageLinkError": "Impossible d’ouvrir cette page. Veuillez réessayer."
 }

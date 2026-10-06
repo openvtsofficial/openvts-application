@@ -9002,4 +9002,83 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get validationFieldSimNumber => 'رقم SIM';
+
+  @override
+  String get mobileDataBackup => 'نسخ البيانات احتياطيًا';
+
+  @override
+  String get mobileEffectiveRetention => 'مدة الاحتفاظ الفعلية';
+
+  @override
+  String get mobileAdministratorLimit => 'حد المسؤول';
+
+  @override
+  String get mobilePolicySource => 'مصدر السياسة';
+
+  @override
+  String mobileUseAdministratorPolicy(String value1) {
+    return 'استخدام سياسة المسؤول ($value1)';
+  }
+
+  @override
+  String get mobileRetentionCleanupNotice =>
+      'تُحذف بيانات التتبع الأقدم من مدة الاحتفاظ أثناء التنظيف المجدول. زيادة مدة الاحتفاظ لا تستعيد البيانات المحذوفة.';
+
+  @override
+  String mobileRetentionLimitError(String value1) {
+    return 'لا يمكن أن تتجاوز مدة الاحتفاظ $value1 يومًا.';
+  }
+
+  @override
+  String get mobileRetentionLoadError => 'تعذر تحميل سياسة الاحتفاظ بالبيانات';
+
+  @override
+  String get mobileRetentionSaveError => 'تعذر حفظ سياسة الاحتفاظ بالبيانات';
+
+  @override
+  String get mobileRetentionSaved => 'تم تحديث سياسة الاحتفاظ بالبيانات';
+
+  @override
+  String get mobileRetentionUnsupported =>
+      'أعاد الخادم سياسة احتفاظ غير مدعومة. التعديل معطل.';
+
+  @override
+  String get mobileDiscardDetailChanges =>
+      'ستُفقد التغييرات. هل تريد المتابعة؟';
+
+  @override
+  String get mobileLiveTrackingReconnecting =>
+      'جارٍ إعادة الاتصال بالتتبع المباشر…';
+
+  @override
+  String get mobileLastConnection => 'آخر اتصال';
+
+  @override
+  String get mobileTeamLoadError => 'تعذر تحميل بيانات عضو الفريق.';
+
+  @override
+  String get mobilePermissionsLoadError => 'تعذر تحميل الأذونات.';
+
+  @override
+  String get mobileActivityLoadError => 'تعذر تحميل سجل النشاط.';
+
+  @override
+  String get mobilePermissionsRetryError =>
+      'تعذر تحميل الأذونات أو حفظها. يُرجى المحاولة مرة أخرى.';
+
+  @override
+  String get mobilePermissionMaps => 'الخرائط';
+
+  @override
+  String get mobilePermissionLandmarks => 'المعالم';
+
+  @override
+  String get mobilePermissionShareTracking => 'مشاركة رابط التتبع';
+
+  @override
+  String get mobilePrivacyPolicyLink => 'سياسة الخصوصية';
+
+  @override
+  String get mobilePageLinkError =>
+      'تعذر فتح هذه الصفحة. يُرجى المحاولة مرة أخرى.';
 }

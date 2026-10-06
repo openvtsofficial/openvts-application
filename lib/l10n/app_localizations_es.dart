@@ -9155,4 +9155,86 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get validationFieldSimNumber => 'Número de SIM';
+
+  @override
+  String get mobileDataBackup => 'Copia de seguridad de datos';
+
+  @override
+  String get mobileEffectiveRetention => 'Retención efectiva';
+
+  @override
+  String get mobileAdministratorLimit => 'Límite del administrador';
+
+  @override
+  String get mobilePolicySource => 'Origen de la política';
+
+  @override
+  String mobileUseAdministratorPolicy(String value1) {
+    return 'Usar la política del administrador ($value1)';
+  }
+
+  @override
+  String get mobileRetentionCleanupNotice =>
+      'La limpieza programada elimina la telemetría histórica anterior al período de retención. Aumentar la retención no restaura los datos eliminados.';
+
+  @override
+  String mobileRetentionLimitError(String value1) {
+    return 'El período de retención no puede superar los $value1 días.';
+  }
+
+  @override
+  String get mobileRetentionLoadError =>
+      'No se pudo cargar la retención de datos';
+
+  @override
+  String get mobileRetentionSaveError =>
+      'No se pudo guardar la retención de datos';
+
+  @override
+  String get mobileRetentionSaved => 'Retención de datos actualizada';
+
+  @override
+  String get mobileRetentionUnsupported =>
+      'El servidor devolvió una política de retención no compatible. La edición está deshabilitada.';
+
+  @override
+  String get mobileDiscardDetailChanges =>
+      'Se perderán los cambios. ¿Continuar?';
+
+  @override
+  String get mobileLiveTrackingReconnecting =>
+      'Reconectando el seguimiento en directo…';
+
+  @override
+  String get mobileLastConnection => 'Última conexión';
+
+  @override
+  String get mobileTeamLoadError => 'No se pudo cargar el miembro del equipo.';
+
+  @override
+  String get mobilePermissionsLoadError =>
+      'No se pudieron cargar los permisos.';
+
+  @override
+  String get mobileActivityLoadError => 'No se pudo cargar la actividad.';
+
+  @override
+  String get mobilePermissionsRetryError =>
+      'No se pudieron cargar o guardar los permisos. Inténtalo de nuevo.';
+
+  @override
+  String get mobilePermissionMaps => 'Mapas';
+
+  @override
+  String get mobilePermissionLandmarks => 'Lugares de referencia';
+
+  @override
+  String get mobilePermissionShareTracking => 'Compartir enlace de seguimiento';
+
+  @override
+  String get mobilePrivacyPolicyLink => 'Política de privacidad';
+
+  @override
+  String get mobilePageLinkError =>
+      'No se pudo abrir esta página. Inténtalo de nuevo.';
 }

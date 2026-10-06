@@ -1,15 +1,23 @@
 import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:open_vts/core/access/mobile_access.dart';
 import 'package:open_vts/core/api/api_client.dart';
+import 'package:open_vts/features/auth/controllers/auth_controller.dart';
+import 'package:open_vts/features/auth/controllers/auth_state.dart';
+import 'package:open_vts/features/auth/models/current_user.dart';
 import 'package:open_vts/features/user/controllers/user_operations_providers.dart';
 import 'package:open_vts/features/user/controllers/user_providers.dart';
 import 'package:open_vts/features/user/screens/accounts/subusers/widgets/user_subuser_permissions_tab.dart';
 import 'package:open_vts/features/user/screens/operations/user_operation_plan_screen.dart';
 import 'package:open_vts/features/user/services/user_operations_service.dart';
 import 'package:open_vts/features/user/services/user_subuser_service.dart';
+import 'package:open_vts/l10n/app_localizations.dart';
+import 'package:open_vts/shared/models/user_role.dart';
+import 'package:open_vts/shared/widgets/open_vts_button.dart';
 
 void main() {
   test(
@@ -62,8 +70,13 @@ void main() {
       final service = _Permissions();
       await tester.pumpWidget(
         ProviderScope(
-          overrides: [userSubUsersServiceProvider.overrideWithValue(service)],
+          overrides: [
+            userSubUsersServiceProvider.overrideWithValue(service),
+            authControllerProvider.overrideWith((_) => _Auth()),
+          ],
           child: const MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
             home: Scaffold(
               body: SingleChildScrollView(
                 child: UserSubUserPermissionsTab(subUserId: '8'),
@@ -79,11 +92,16 @@ void main() {
       expect(maps.value, false);
       expect(maps.onChanged, isNull);
       expect(find.text('Workflow'), findsNothing);
+      await tester.tap(find.widgetWithText(SwitchListTile, 'Dashboard'));
+      await tester.pump();
       await tester.ensureVisible(find.text('Save permissions'));
       await tester.tap(find.text('Save permissions'));
       await tester.pumpAndSettle();
       expect(service.savedFeatures, contains('workflow'));
       expect(service.savedFeatures, contains('maps'));
+      expect(service.savedFeatures, contains('dashboard'));
+      expect(service.savedReports, ['logs']);
+      expect(tester.takeException(), isNull);
     },
   );
 
@@ -114,7 +132,11 @@ void main() {
               },
             ),
           ],
-          child: const MaterialApp(home: UserOperationPlanScreen()),
+          child: const MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: UserOperationPlanScreen(),
+          ),
         ),
       );
       await tester.pumpAndSettle();
@@ -129,12 +151,14 @@ void main() {
             )
             .first,
       );
-      final button = tester.widget<FilledButton>(
-        find.ancestor(
-          of: find.text('Create trip'),
-          matching: find.byType(FilledButton),
+      final commonButton = find.widgetWithText(OpenVtsButton, 'Create trip');
+      final button = tester.widget<ElevatedButton>(
+        find.descendant(
+          of: commonButton,
+          matching: find.byType(ElevatedButton),
         ),
       );
+      expect(tester.widget<OpenVtsButton>(commonButton).onPressed, isNull);
       expect(button.onPressed, isNull);
       expect(tester.takeException(), isNull);
     },
@@ -158,9 +182,14 @@ class _Operations extends UserOperationsService {
 class _Permissions extends UserSubUserService {
   _Permissions() : super(ApiClient(Dio()));
   List<String>? savedFeatures;
+  List<String>? savedReports;
   final payload = <String, dynamic>{
-    'availableFeatures': {'maps': false, 'reports': true, 'workflow': true},
-    'availableReports': {'logs': false},
+    'availableFeatures': {
+      for (final key in MobileAccess.userFeatures) key: key != 'maps',
+    },
+    'availableReports': {
+      for (final key in MobileAccess.userReports) key: key != 'logs',
+    },
     'disabledFeatures': ['maps', 'workflow'],
     'disabledReports': ['logs'],
   };
@@ -173,6 +202,28 @@ class _Permissions extends UserSubUserService {
     required List<String> disabledReports,
   }) async {
     savedFeatures = disabledFeatures;
-    return payload;
+    savedReports = disabledReports;
+    return {
+      ...payload,
+      'disabledFeatures': disabledFeatures,
+      'disabledReports': disabledReports,
+    };
   }
+}
+
+class _Auth extends StateNotifier<AuthState> implements AuthController {
+  _Auth()
+    : super(
+        const AuthState.authenticated(
+          CurrentUser(
+            id: '11',
+            name: 'User manager',
+            email: '',
+            role: UserRole.user,
+            access: MobileAccess(loaded: true, features: {'accounts': true}),
+          ),
+        ),
+      );
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }

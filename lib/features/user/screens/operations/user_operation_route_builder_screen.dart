@@ -344,13 +344,15 @@ class _RouteBuilderState
           title: Text(l.routeBuilderDiscardTitle),
           content: Text(l.routeBuilderDiscardMessage),
           actions: [
-            TextButton(
+            OpenVtsButton(
+              label: l.routeBuilderKeepEditing,
               onPressed: () => Navigator.pop(ctx, false),
-              child: Text(l.routeBuilderKeepEditing),
+              variant: OpenVtsButtonVariant.secondary,
             ),
-            TextButton(
+            OpenVtsButton(
+              label: l.routeBuilderDiscard,
               onPressed: () => Navigator.pop(ctx, true),
-              child: Text(l.routeBuilderDiscard),
+              variant: OpenVtsButtonVariant.secondary,
             ),
           ],
         ),
@@ -471,12 +473,13 @@ class _RouteBuilderState
                             style: Theme.of(context).textTheme.titleLarge,
                           ),
                         ),
-                        TextButton.icon(
+                        OpenVtsButton(
+                          label: l.routeBuilderAddStop,
                           onPressed: _busy || _errorKey == 'load'
                               ? null
                               : () => _add(),
-                          icon: const Icon(Icons.add),
-                          label: Text(l.routeBuilderAddStop),
+                          variant: OpenVtsButtonVariant.secondary,
+                          trailingIcon: Icons.add,
                         ),
                       ],
                     ),

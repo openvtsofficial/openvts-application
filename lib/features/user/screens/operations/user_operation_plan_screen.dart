@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../shared/helpers/toast_helper.dart';
 import '../../../../shared/helpers/validation_localizations.dart';
+import '../../../../shared/widgets/open_vts_button.dart';
 import '../../../../shared/widgets/open_vts_card.dart';
 import '../../../../shared/widgets/open_vts_searchable_dropdown.dart';
 import '../../controllers/user_operations_providers.dart';
@@ -154,11 +155,12 @@ class _UserOperationPlanScreenState
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 12),
-                      OutlinedButton.icon(
+                      OpenVtsButton(
+                        label: context.operationText('Retry'),
                         onPressed: () =>
                             ref.invalidate(userOperationPlanningProvider),
-                        icon: const Icon(Icons.refresh_rounded),
-                        label: Text(context.operationText('Retry')),
+                        variant: OpenVtsButtonVariant.secondary,
+                        trailingIcon: Icons.refresh_rounded,
                       ),
                     ],
                   ),
@@ -319,19 +321,22 @@ class _UserOperationPlanScreenState
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
+                runSpacing: 8,
                 children: [
-                  OutlinedButton.icon(
+                  OpenVtsButton(
                     key: const ValueKey('operation-create-route'),
+                    label: context.operationText('Create route'),
                     onPressed: _busy ? null : () => _editRoute(),
-                    icon: const Icon(Icons.add_rounded),
-                    label: Text(context.operationText('Create route')),
+                    variant: OpenVtsButtonVariant.secondary,
+                    trailingIcon: Icons.add_rounded,
                   ),
                   if (selectedRoute != null)
-                    TextButton.icon(
+                    OpenVtsButton(
                       key: const ValueKey('operation-edit-route'),
+                      label: context.operationText('Edit route'),
                       onPressed: _busy ? null : () => _editRoute(id: _route),
-                      icon: const Icon(Icons.edit_outlined),
-                      label: Text(context.operationText('Edit route')),
+                      variant: OpenVtsButtonVariant.secondary,
+                      trailingIcon: Icons.edit_outlined,
                     ),
                 ],
               ),
@@ -357,7 +362,11 @@ class _UserOperationPlanScreenState
                   labelText: context.operationText('Trip title'),
                 ),
                 maxLength: 120,
-                validator: context.localizedValidator((v) => (v?.trim().length ?? 0) < 2 ? context.operationText('Enter at least 2 characters') : null),
+                validator: context.localizedValidator(
+                  (v) => (v?.trim().length ?? 0) < 2
+                      ? context.operationText('Enter at least 2 characters')
+                      : null,
+                ),
               ),
               TextFormField(
                 controller: _remark,
@@ -389,14 +398,12 @@ class _UserOperationPlanScreenState
                           _endDate = null;
                         }),
                 ),
-              DropdownButtonFormField<String>(
+              OpenVtsSearchableDropdown<String>(
                 key: ValueKey(_schedule),
-                initialValue: _schedule,
-                isExpanded: true,
-                decoration: InputDecoration(
-                  labelText: context.operationText('Schedule'),
-                ),
-                items:
+                value: _schedule,
+                enabled: !_busy,
+                label: context.operationText('Schedule'),
+                options:
                     (_recurring
                             ? ['FIXED_TIME', 'TIME_SLOT']
                             : [
@@ -406,15 +413,15 @@ class _UserOperationPlanScreenState
                                 'MULTI_DAY',
                               ])
                         .map(
-                          (s) => DropdownMenuItem(
-                            value: s,
-                            child: Text(operationLabel(context, s)),
+                          (schedule) => OpenVtsDropdownOption(
+                            value: schedule,
+                            label: operationLabel(context, schedule),
                           ),
                         )
                         .toList(),
-                onChanged: _busy
-                    ? null
-                    : (value) => _change(() => _schedule = value!),
+                onChanged: (value) {
+                  if (value != null) _change(() => _schedule = value);
+                },
               ),
               const SizedBox(height: 8),
               Text(
@@ -441,11 +448,12 @@ class _UserOperationPlanScreenState
               if (_endDate != null && _recurring)
                 Align(
                   alignment: AlignmentDirectional.centerEnd,
-                  child: TextButton(
+                  child: OpenVtsButton(
+                    label: context.operationText('Remove end date'),
                     onPressed: _busy
                         ? null
                         : () => _change(() => _endDate = null),
-                    child: Text(context.operationText('Remove end date')),
+                    variant: OpenVtsButtonVariant.secondary,
                   ),
                 ),
               if (_schedule != 'DATE_ONLY')
@@ -517,24 +525,18 @@ class _UserOperationPlanScreenState
               child: _notice(_error!, error: true),
             ),
           const SizedBox(height: 20),
-          FilledButton.icon(
+          OpenVtsButton(
             key: const ValueKey('operation-save-plan'),
             onPressed: _busy || eligible.isEmpty || routes.isEmpty
                 ? null
                 : () => _save(timezone),
-            icon: _saving
-                ? const SizedBox.square(
-                    dimension: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.check_rounded),
-            label: Text(
-              widget.recurring != null
-                  ? context.operationText('Save schedule')
-                  : _recurring
-                  ? context.operationText('Create schedule')
-                  : context.operationText('Create trip'),
-            ),
+            isLoading: _saving,
+            trailingIcon: Icons.check_rounded,
+            label: widget.recurring != null
+                ? context.operationText('Save schedule')
+                : _recurring
+                ? context.operationText('Create schedule')
+                : context.operationText('Create trip'),
           ),
         ],
       ),
@@ -787,9 +789,9 @@ class _UserOperationPlanScreenState
                 ),
               ),
               actions: [
-                FilledButton(
+                OpenVtsButton(
+                  label: context.operationText('Done'),
                   onPressed: () => Navigator.pop(ctx),
-                  child: Text(context.operationText('Done')),
                 ),
               ],
             ),
@@ -850,13 +852,14 @@ class _UserOperationPlanScreenState
           ),
         ),
         actions: [
-          TextButton(
+          OpenVtsButton(
+            label: context.operationText('Keep editing'),
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text(context.operationText('Keep editing')),
+            variant: OpenVtsButtonVariant.secondary,
           ),
-          FilledButton(
+          OpenVtsButton(
+            label: context.operationText('Discard changes'),
             onPressed: () => Navigator.pop(ctx, true),
-            child: Text(context.operationText('Discard changes')),
           ),
         ],
       ),

@@ -9,11 +9,13 @@ import '../../../../../core/theme/open_vts_spacing.dart';
 import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
+import '../../../../../shared/widgets/open_vts_detail_tab_strip.dart';
 import '../../../../../shared/widgets/open_vts_error_view.dart';
 import '../../../../../shared/widgets/open_vts_loader.dart';
 import '../../../../../shared/widgets/open_vts_page_scaffold.dart';
 import '../../../controllers/user_providers.dart';
 import '../../../controllers/user_subuser_details_controller.dart';
+import '../../../controllers/user_subuser_permissions_controller.dart';
 import '../../../models/user_subuser_model.dart';
 import '../../../models/user_subusers_state.dart';
 import 'widgets/user_subuser_permissions_tab.dart';
@@ -36,6 +38,9 @@ class UserSubUserDetailsScreen extends ConsumerStatefulWidget {
   });
 
   final String subUserId;
+
+  /// Retained for older route callers; profile data is fetched for the current
+  /// principal/server and this unverified hint is deliberately never rendered.
   final UserSubUser? initialSubUser;
 
   @override
@@ -46,19 +51,15 @@ class UserSubUserDetailsScreen extends ConsumerStatefulWidget {
 class _UserSubUserDetailsScreenState
     extends ConsumerState<UserSubUserDetailsScreen> {
   var _selectedTab = _UserSubUserDetailsTab.profile;
-  int _permissionsRevision = 0;
 
   @override
   Widget build(BuildContext context) {
     final provider = userSubUserDetailsControllerProvider(
-      UserSubUserDetailsProviderArgs(
-        subUserId: widget.subUserId,
-        initialSubUser: widget.initialSubUser,
-      ),
+      UserSubUserDetailsProviderArgs(subUserId: widget.subUserId),
     );
     final state = ref.watch(provider);
     final controller = ref.read(provider.notifier);
-    final subUser = state.subUser ?? widget.initialSubUser;
+    final subUser = state.subUser;
 
     return OpenVtsPageScaffold(
       title: _subUserTitle(subUser),
@@ -127,7 +128,6 @@ class _UserSubUserDetailsScreenState
           ),
           const SizedBox(height: OpenVtsSpacing.sm),
           _TabContent(
-            key: ValueKey(_permissionsRevision),
             provider: provider,
             selectedTab: _selectedTab,
             subUserId: widget.subUserId,
@@ -142,7 +142,13 @@ class _UserSubUserDetailsScreenState
     final controller = ref.read(provider.notifier);
     switch (_selectedTab) {
       case _UserSubUserDetailsTab.permissions:
-        setState(() => _permissionsRevision++);
+        await ref
+            .read(
+              userSubUserPermissionsControllerProvider(
+                widget.subUserId,
+              ).notifier,
+            )
+            .load();
         break;
       case _UserSubUserDetailsTab.profile:
         await controller.refresh();
@@ -178,7 +184,6 @@ class _UserSubUserDetailsScreenState
 
 class _TabContent extends StatelessWidget {
   const _TabContent({
-    super.key,
     required this.subUserId,
     required this.provider,
     required this.selectedTab,
@@ -306,36 +311,26 @@ class _TabChips extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: _UserSubUserDetailsTab.values
-            .map((tab) {
-              final isSelected = tab == selectedTab;
-              return Padding(
-                padding: const EdgeInsets.only(right: OpenVtsSpacing.xs),
-                child: ChoiceChip(
-                  selected: isSelected,
-                  label: Text(_tabLabel(tab)),
-                  onSelected: (_) => onSelect(tab),
-                  showCheckmark: false,
-                  labelStyle: OpenVtsTypography.meta.copyWith(
-                    fontWeight: FontWeight.w800,
-                    color: isSelected
-                        ? OpenVtsColors.white
-                        : OpenVtsColors.textPrimary,
-                  ),
-                  selectedColor: OpenVtsColors.brandInk,
-                  backgroundColor: OpenVtsColors.white,
-                  side: const BorderSide(color: OpenVtsColors.border),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
-                  ),
-                ),
-              );
-            })
-            .toList(growable: false),
-      ),
+    return OpenVtsDetailTabStrip<_UserSubUserDetailsTab>(
+      tabs: [
+        OpenVtsDetailTabOption(
+          value: _UserSubUserDetailsTab.profile,
+          label: context.mobileText('Profile'),
+          icon: Icons.person_outline_rounded,
+        ),
+        OpenVtsDetailTabOption(
+          value: _UserSubUserDetailsTab.vehicles,
+          label: context.mobileText('Vehicles'),
+          icon: Icons.directions_car_outlined,
+        ),
+        OpenVtsDetailTabOption(
+          value: _UserSubUserDetailsTab.permissions,
+          label: context.mobileText('Permissions'),
+          icon: Icons.shield_outlined,
+        ),
+      ],
+      selected: selectedTab,
+      onChanged: onSelect,
     );
   }
 }
@@ -443,20 +438,12 @@ class _HeaderIconButton extends StatelessWidget {
       onPressed: onPressed,
       icon: icon,
       style: IconButton.styleFrom(
-        minimumSize: const Size.square(36),
+        minimumSize: const Size.square(48),
         padding: EdgeInsets.zero,
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
       ),
     );
   }
-}
-
-String _tabLabel(_UserSubUserDetailsTab tab) {
-  return switch (tab) {
-    _UserSubUserDetailsTab.profile => 'Profile',
-    _UserSubUserDetailsTab.vehicles => 'Vehicles',
-    _UserSubUserDetailsTab.permissions => 'Permissions',
-  };
 }
 
 String _subUserTitle(UserSubUser? subUser) {

@@ -1,3 +1,4 @@
+import '../../../core/utils/telemetry_timestamp.dart';
 import '../../notifications/models/app_notification.dart';
 
 class SuperadminVehiclePage {
@@ -638,6 +639,7 @@ class SuperadminVehicleLog {
     required this.rawPacket,
     required this.attributes,
     required this.createdAt,
+    this.timelineTime,
   });
 
   final String id;
@@ -664,7 +666,10 @@ class SuperadminVehicleLog {
   final Object? attributes;
   final DateTime? createdAt;
 
-  DateTime? get displayTime => serverTime ?? deviceTime ?? createdAt;
+  final DateTime? timelineTime;
+
+  DateTime? get displayTime =>
+      timelineTime ?? deviceTime ?? serverTime ?? createdAt;
 
   bool get hasDedupeIdentity {
     return serverTime != null || packetType.trim().isNotEmpty;
@@ -781,6 +786,10 @@ class SuperadminVehicleLog {
           '',
       source: source,
       imei: imei,
+      timelineTime: _firstDateInMaps(candidateMaps, const [
+        'timelineTime',
+        'timeline_time',
+      ]),
       serverTime: serverTime,
       deviceTime: deviceTime,
       packetType: packetType,
@@ -2541,33 +2550,9 @@ Object? _firstExistingValueInMaps(
 
 DateTime? _firstDate(Map<String, dynamic> source, List<String> keys) {
   for (final key in keys) {
-    final value = source[key];
-    if (value is DateTime) {
-      return value;
-    }
-
-    if (value is num) {
-      return _dateFromEpoch(value);
-    }
-
-    if (value is String) {
-      final trimmed = value.trim();
-      if (trimmed.isEmpty) {
-        continue;
-      }
-
-      final parsed = DateTime.tryParse(trimmed);
-      if (parsed != null) {
-        return parsed;
-      }
-
-      final numeric = num.tryParse(trimmed);
-      if (numeric != null) {
-        return _dateFromEpoch(numeric);
-      }
-    }
+    final parsed = parseTelemetryTimestamp(source[key]);
+    if (parsed != null) return parsed;
   }
-
   return null;
 }
 
@@ -3555,12 +3540,6 @@ class _ReplayCoordinatePair {
 
   final double latitude;
   final double longitude;
-}
-
-DateTime _dateFromEpoch(num value) {
-  final raw = value.toInt();
-  final milliseconds = raw.abs() < 100000000000 ? raw * 1000 : raw;
-  return DateTime.fromMillisecondsSinceEpoch(milliseconds, isUtc: true);
 }
 
 String _normalizeVehicleType(String value) {

@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -74,6 +76,80 @@ void main() {
       );
     },
   );
+  for (final role in UserRole.values.where((r) => r != UserRole.unknown)) {
+    test(
+      'offline startup preserves the $role login and retries verification',
+      () async {
+        final user = _user.copyWith(role: role);
+        await storage.saveSessionForRole(
+          role: role,
+          accessToken: 'saved-access',
+          refreshToken: 'saved-refresh',
+          currentUserJson: jsonEncode(user.toJson()),
+        );
+        service.profileError = DioException(
+          requestOptions: RequestOptions(path: '/profile'),
+          type: DioExceptionType.connectionTimeout,
+        );
+        await controller.restoreSession();
+        expect(controller.state.isRealSession, true);
+        expect(controller.state.role, role);
+        expect(controller.state.user?.accessLoaded, false);
+        expect(
+          (await storage.getActiveSession())?.refreshToken,
+          'saved-refresh',
+        );
+        service.profileError = null;
+        await controller.refreshAccess();
+        expect(controller.state.role, role);
+        expect(controller.state.user?.accessLoaded, true);
+        expect(storage.cachedActiveUser?.accessLoaded, true);
+      },
+    );
+  }
+
+  test(
+    'temporary profile permission denial retains login and fails closed',
+    () async {
+      await controller.setSession(_login);
+      service.profileError = DioException(
+        requestOptions: RequestOptions(path: '/profile'),
+        type: DioExceptionType.badResponse,
+        response: Response(
+          requestOptions: RequestOptions(path: '/profile'),
+          statusCode: 403,
+        ),
+      );
+      await controller.refreshAccess();
+      expect(controller.state.isAuthenticated, true);
+      expect(controller.state.user?.accessLoaded, false);
+      expect(await storage.getActiveSession(), isNotNull);
+    },
+  );
+
+  test(
+    'confirmed server revocation returns to Login without recreating a session',
+    () async {
+      await controller.setSession(_login);
+      final session = (await storage.getActiveSession())!;
+      await storage.clearSessionIfCurrent(session, storage.sessionGeneration);
+      service.profileError = DioException(
+        requestOptions: RequestOptions(
+          path: '/auth/refresh-token',
+          extra: {'sessionInvalidated': true},
+        ),
+        type: DioExceptionType.badResponse,
+        response: Response(
+          requestOptions: RequestOptions(path: '/auth/refresh-token'),
+          statusCode: 401,
+        ),
+      );
+      await controller.refreshAccess();
+      expect(controller.state.status, AuthStatus.unauthenticated);
+      expect(await storage.getActiveSession(), isNull);
+    },
+  );
+
   test('cancel MFA clears the in-memory challenge', () async {
     service.needsMfa = true;
     await controller.login(identifier: 'driver', password: 'example');
@@ -98,6 +174,7 @@ const _login = LoginResponse(
 class _AuthService extends AuthService {
   _AuthService() : super(ApiClient(Dio()));
   bool needsMfa = false;
+  Object? profileError;
   Completer<CurrentUser>? profile;
   final profileStarted = Completer<void>();
   @override
@@ -121,6 +198,7 @@ class _AuthService extends AuthService {
   @override
   Future<CurrentUser> getProfile(CurrentUser user) {
     if (!profileStarted.isCompleted) profileStarted.complete();
+    if (profileError != null) return Future.error(profileError!);
     return profile?.future ?? Future.value(user);
   }
 }

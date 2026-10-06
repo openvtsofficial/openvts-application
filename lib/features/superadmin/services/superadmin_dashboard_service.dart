@@ -36,7 +36,7 @@ class SuperadminDashboardService {
               'label': 'May\'26',
               'vehicles': 10,
               'users': 9,
-              'licenses': 2914018
+              'licenses': 2914018,
             },
           ],
           'vehicleStatus': <String, dynamic>{
@@ -205,10 +205,7 @@ class SuperadminDashboardService {
 
     final results = await Future.wait<dynamic>([
       _fetchDashboardOverview(refreshKey),
-      _fetchActivityLogs(
-        limit: activityLogPageSize,
-        refreshKey: refreshKey,
-      ),
+      _fetchActivityLogs(limit: activityLogPageSize, refreshKey: refreshKey),
       _fetchAdminList(),
     ]);
 
@@ -245,9 +242,7 @@ class SuperadminDashboardService {
   Future<dynamic> _fetchDashboardOverview(String refreshKey) async {
     final response = await _apiClient.get<dynamic>(
       ApiEndpoints.superadmin.dashboardOverview,
-      queryParameters: <String, dynamic>{
-        'rk': refreshKey,
-      },
+      queryParameters: <String, dynamic>{'rk': refreshKey},
       parser: (json) => json,
     );
     return response.data;
@@ -269,25 +264,23 @@ class SuperadminDashboardService {
     DateTime? to,
     String? refreshKey,
   }) async {
-    final queryParameters = <String, dynamic>{
-      'limit': limit,
-    };
+    final queryParameters = <String, dynamic>{'limit': limit.clamp(5, 50)};
 
-    if (cursorId != null) {
+    if (cursorId != null && cursorId > 0) {
       queryParameters['cursorId'] = cursorId;
-    } else {
-      if (actorId != null) {
-        queryParameters['actorId'] = actorId;
-      }
-      if (from != null) {
-        queryParameters['from'] = from.toUtc().toIso8601String();
-      }
-      if (to != null) {
-        queryParameters['to'] = to.toUtc().toIso8601String();
-      }
-      queryParameters['rk'] =
-          refreshKey ?? DateTime.now().millisecondsSinceEpoch.toString();
     }
+    // Cursor only selects the next page; it must never change the filter set.
+    if (actorId != null && actorId > 0) {
+      queryParameters['actorId'] = actorId;
+    }
+    if (from != null) {
+      queryParameters['from'] = from.toUtc().toIso8601String();
+    }
+    if (to != null) {
+      queryParameters['to'] = to.toUtc().toIso8601String();
+    }
+    queryParameters['rk'] =
+        refreshKey ?? DateTime.now().millisecondsSinceEpoch.toString();
 
     final response = await _apiClient.get<dynamic>(
       ApiEndpoints.superadmin.dashboardActivityLogs,

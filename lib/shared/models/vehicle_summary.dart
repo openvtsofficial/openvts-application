@@ -1,5 +1,7 @@
 import 'dart:math' as math;
 
+import '../../core/utils/telemetry_timestamp.dart';
+
 class VehicleSummary {
   const VehicleSummary({
     required this.id,
@@ -14,6 +16,9 @@ class VehicleSummary {
     this.hasValidLocation = true,
     this.updatedAt,
     this.distanceKm,
+    this.browserDayKey,
+    this.browserDayStart,
+    this.browserDayBaseOdometer,
     this.odometerKm,
     this.engineHoursToday,
     this.engineHours,
@@ -24,6 +29,14 @@ class VehicleSummary {
     this.acc,
     this.deviceConnectionStatus,
     this.lastSeenAt,
+    this.serverTime,
+    this.deviceTime,
+    this.vehicleTypeSlug,
+    this.licenseBlocked = false,
+    this.motionState,
+    this.motionStateSince,
+    this.pendingMotionState,
+    this.pendingMotionStateSince,
   });
 
   final String id;
@@ -38,6 +51,9 @@ class VehicleSummary {
   final bool hasValidLocation;
   final DateTime? updatedAt;
   final double? distanceKm;
+  final String? browserDayKey;
+  final DateTime? browserDayStart;
+  final double? browserDayBaseOdometer;
   final double? odometerKm;
   final double? engineHoursToday;
   final double? engineHours;
@@ -48,12 +64,21 @@ class VehicleSummary {
   final bool? acc;
   final String? deviceConnectionStatus;
   final DateTime? lastSeenAt;
+  final DateTime? serverTime;
+  final DateTime? deviceTime;
+  final String? vehicleTypeSlug;
+  final bool licenseBlocked;
+  final String? motionState;
+  final DateTime? motionStateSince;
+  final String? pendingMotionState;
+  final DateTime? pendingMotionStateSince;
 
   factory VehicleSummary.fromJson(Map<String, dynamic> json) {
     final latitude = (json['latitude'] as num?)?.toDouble();
     final longitude = (json['longitude'] as num?)?.toDouble();
     final hasValidLocation = _isValidCoordinatePair(latitude, longitude);
-    final plateNumber = json['plateNumber']?.toString() ??
+    final plateNumber =
+        json['plateNumber']?.toString() ??
         json['plate_number']?.toString() ??
         '';
     final name = json['name']?.toString().trim() ?? '';
@@ -63,12 +88,12 @@ class VehicleSummary {
     final deviceMap = json['device'];
     final deviceTypeViaDevice = deviceMap is Map
         ? (deviceMap['type'] is Map
-            ? deviceMap['type']
-            : (deviceMap['deviceType'] is Map
-                ? deviceMap['deviceType']
-                : (deviceMap['device_type'] is Map
-                    ? deviceMap['device_type']
-                    : null)))
+              ? deviceMap['type']
+              : (deviceMap['deviceType'] is Map
+                    ? deviceMap['deviceType']
+                    : (deviceMap['device_type'] is Map
+                          ? deviceMap['device_type']
+                          : null)))
         : null;
     final deviceTypeId = _asInt(
       json['deviceTypeId'] ??
@@ -83,7 +108,8 @@ class VehicleSummary {
 
     return VehicleSummary(
       id: json['id']?.toString() ?? '',
-      imei: json['imei']?.toString() ??
+      imei:
+          json['imei']?.toString() ??
           json['deviceImei']?.toString() ??
           json['device_imei']?.toString() ??
           json['trackerImei']?.toString() ??
@@ -98,23 +124,45 @@ class VehicleSummary {
       deviceTypeId: deviceTypeId,
       hasValidLocation: hasValidLocation,
       updatedAt: _asDateTime(
-        json['updatedAt'] ??
-            json['updated_at'] ??
-            json['lastUpdate'] ??
-            json['last_update'] ??
+        json['serverTime'] ??
+            json['server_time'] ??
+            json['serverTimeMs'] ??
+            json['server_time_ms'] ??
             json['lastUpdatedAt'] ??
             json['last_updated_at'] ??
             json['lastUpdatedAtMs'] ??
             json['last_updated_at_ms'] ??
-            json['timestamp'] ??
-            json['deviceTime'] ??
-            json['device_time'] ??
-            json['gpsTime'] ??
-            json['gps_time'] ??
-            json['serverTime'] ??
+            json['updatedAt'] ??
+            json['updated_at'] ??
+            json['timestamp'],
+      ),
+      serverTime: _asDateTime(
+        json['serverTime'] ??
             json['server_time'] ??
             json['serverTimeMs'] ??
-            json['server_time_ms'],
+            json['server_time_ms'] ??
+            json['timestamp'],
+      ),
+      deviceTime: _asDateTime(
+        json['deviceTime'] ??
+            json['device_time'] ??
+            json['gpsTime'] ??
+            json['gps_time'],
+      ),
+      vehicleTypeSlug:
+          json['vehicleTypeSlug']?.toString() ??
+          (json['vehicleType'] is Map
+              ? json['vehicleType']['slug']?.toString()
+              : null),
+      licenseBlocked:
+          _asBool(json['licenseBlocked'] ?? json['license_blocked']) ?? false,
+      motionState: json['motionState']?.toString(),
+      motionStateSince: _asDateTime(json['motionStateSince']),
+      pendingMotionState:
+          json['pendingMotionState']?.toString() ??
+          (json['pendingStopSince'] != null ? 'stop' : null),
+      pendingMotionStateSince: _asDateTime(
+        json['pendingMotionStateSince'] ?? json['pendingStopSince'],
       ),
       distanceKm: _asDouble(
         json['distanceToday'] ??
@@ -122,17 +170,11 @@ class VehicleSummary {
             json['todayDistance'] ??
             json['today_distance'] ??
             json['dailyDistance'] ??
-            json['daily_distance'] ??
-            json['tripDistance'] ??
-            json['trip_distance'] ??
-            json['travelDistance'] ??
-            json['travel_distance'] ??
-            json['coveredDistance'] ??
-            json['covered_distance'] ??
-            json['distance'] ??
-            json['distanceKm'] ??
-            json['distance_km'],
+            json['daily_distance'],
       ),
+      browserDayKey: json['browserDayKey']?.toString(),
+      browserDayStart: _asDateTime(json['browserDayStart']),
+      browserDayBaseOdometer: _asDouble(json['browserDayBaseOdometer']),
       odometerKm: _firstOdometerKm(json, const [
         'odometer',
         'odometerKm',
@@ -206,7 +248,8 @@ class VehicleSummary {
             json['accessoryOn'] ??
             json['accessory_on'],
       ),
-      deviceConnectionStatus: json['deviceConnectionStatus']?.toString() ??
+      deviceConnectionStatus:
+          json['deviceConnectionStatus']?.toString() ??
           json['device_connection_status']?.toString() ??
           json['connectionStatus']?.toString() ??
           json['connection_status']?.toString(),
@@ -234,6 +277,9 @@ class VehicleSummary {
     bool? hasValidLocation,
     Object? updatedAt = _unset,
     Object? distanceKm = _unset,
+    Object? browserDayKey = _unset,
+    Object? browserDayStart = _unset,
+    Object? browserDayBaseOdometer = _unset,
     Object? odometerKm = _unset,
     Object? engineHoursToday = _unset,
     Object? engineHours = _unset,
@@ -244,6 +290,14 @@ class VehicleSummary {
     Object? acc = _unset,
     Object? deviceConnectionStatus = _unset,
     Object? lastSeenAt = _unset,
+    Object? serverTime = _unset,
+    Object? deviceTime = _unset,
+    Object? vehicleTypeSlug = _unset,
+    bool? licenseBlocked,
+    Object? motionState = _unset,
+    Object? motionStateSince = _unset,
+    Object? pendingMotionState = _unset,
+    Object? pendingMotionStateSince = _unset,
   }) {
     return VehicleSummary(
       id: id ?? this.id,
@@ -264,6 +318,15 @@ class VehicleSummary {
       distanceKm: identical(distanceKm, _unset)
           ? this.distanceKm
           : distanceKm as double?,
+      browserDayKey: identical(browserDayKey, _unset)
+          ? this.browserDayKey
+          : browserDayKey as String?,
+      browserDayStart: identical(browserDayStart, _unset)
+          ? this.browserDayStart
+          : browserDayStart as DateTime?,
+      browserDayBaseOdometer: identical(browserDayBaseOdometer, _unset)
+          ? this.browserDayBaseOdometer
+          : browserDayBaseOdometer as double?,
       odometerKm: identical(odometerKm, _unset)
           ? this.odometerKm
           : odometerKm as double?,
@@ -276,8 +339,9 @@ class VehicleSummary {
       totalEngineHours: identical(totalEngineHours, _unset)
           ? this.totalEngineHours
           : totalEngineHours as double?,
-      satellites:
-          identical(satellites, _unset) ? this.satellites : satellites as int?,
+      satellites: identical(satellites, _unset)
+          ? this.satellites
+          : satellites as int?,
       headingDegrees: identical(headingDegrees, _unset)
           ? this.headingDegrees
           : headingDegrees as double?,
@@ -286,10 +350,109 @@ class VehicleSummary {
       deviceConnectionStatus: identical(deviceConnectionStatus, _unset)
           ? this.deviceConnectionStatus
           : deviceConnectionStatus as String?,
+      serverTime: identical(serverTime, _unset)
+          ? this.serverTime
+          : serverTime as DateTime?,
+      deviceTime: identical(deviceTime, _unset)
+          ? this.deviceTime
+          : deviceTime as DateTime?,
+      vehicleTypeSlug: identical(vehicleTypeSlug, _unset)
+          ? this.vehicleTypeSlug
+          : vehicleTypeSlug as String?,
+      licenseBlocked: licenseBlocked ?? this.licenseBlocked,
+      motionState: identical(motionState, _unset)
+          ? this.motionState
+          : motionState as String?,
+      motionStateSince: identical(motionStateSince, _unset)
+          ? this.motionStateSince
+          : motionStateSince as DateTime?,
+      pendingMotionState: identical(pendingMotionState, _unset)
+          ? this.pendingMotionState
+          : pendingMotionState as String?,
+      pendingMotionStateSince: identical(pendingMotionStateSince, _unset)
+          ? this.pendingMotionStateSince
+          : pendingMotionStateSince as DateTime?,
       lastSeenAt: identical(lastSeenAt, _unset)
           ? this.lastSeenAt
           : lastSeenAt as DateTime?,
     );
+  }
+
+  /// Update only device-local "Today" analytics, retaining live coordinates.
+  /// Owner/server-day socket counters must not replace the requested local-day
+  /// baseline. Reset counters invalidate that baseline until HTTP recalculates.
+  VehicleSummary withTodayDistanceFrom(
+    VehicleSummary incoming, {
+    DateTime? now,
+    bool authoritativeBaseline = false,
+  }) {
+    final localNow = (now ?? DateTime.now()).toLocal();
+    final dayStart = DateTime(localNow.year, localNow.month, localNow.day);
+    final dayKey =
+        '${localNow.year.toString().padLeft(4, '0')}-'
+        '${localNow.month.toString().padLeft(2, '0')}-'
+        '${localNow.day.toString().padLeft(2, '0')}';
+    final currentTime = serverTime ?? updatedAt;
+    final incomingTime = incoming.serverTime ?? incoming.updatedAt;
+    final stale =
+        currentTime != null &&
+        incomingTime != null &&
+        incomingTime.isBefore(currentTime);
+    final incomingOdometer = incoming.odometerKm;
+    final acceptedOdometer =
+        !stale &&
+            incomingOdometer != null &&
+            incomingOdometer.isFinite &&
+            incomingOdometer >= 0
+        ? incomingOdometer
+        : odometerKm;
+
+    if (authoritativeBaseline && incoming.browserDayKey == dayKey) {
+      final baseline = incoming.browserDayBaseOdometer;
+      final distance =
+          baseline != null &&
+              baseline.isFinite &&
+              acceptedOdometer != null &&
+              acceptedOdometer.isFinite
+          ? math.max(0.0, acceptedOdometer - baseline)
+          : incoming.distanceKm;
+      return copyWith(
+        distanceKm: distance,
+        odometerKm: acceptedOdometer,
+        browserDayKey: dayKey,
+        browserDayStart: incoming.browserDayStart ?? dayStart,
+        browserDayBaseOdometer: baseline,
+      );
+    }
+    if (browserDayKey != dayKey) {
+      return copyWith(
+        distanceKm: null,
+        odometerKm: acceptedOdometer,
+        browserDayKey: dayKey,
+        browserDayStart: dayStart,
+        browserDayBaseOdometer: null,
+      );
+    }
+    if (!stale &&
+        incomingOdometer != null &&
+        odometerKm != null &&
+        incomingOdometer < odometerKm!) {
+      return copyWith(
+        distanceKm: null,
+        odometerKm: acceptedOdometer,
+        browserDayBaseOdometer: null,
+      );
+    }
+    final baseline = browserDayBaseOdometer;
+    final distance =
+        baseline != null &&
+            baseline.isFinite &&
+            acceptedOdometer != null &&
+            acceptedOdometer.isFinite
+        ? math.max(0.0, acceptedOdometer - baseline)
+        : distanceKm;
+    if (distance == distanceKm && acceptedOdometer == odometerKm) return this;
+    return copyWith(distanceKm: distance, odometerKm: acceptedOdometer);
   }
 }
 
@@ -303,7 +466,7 @@ double? _firstOdometerKm(Map<String, dynamic> source, List<String> keys) {
     }
 
     final normalizedValue = _normalizeOdometerKm(key, value);
-    if (normalizedValue.isFinite && normalizedValue > 0) {
+    if (normalizedValue.isFinite && normalizedValue >= 0) {
       return normalizedValue;
     }
   }
@@ -413,50 +576,20 @@ String _normalizeTelemetryMetricKey(String key) {
   return key.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
 }
 
-DateTime? _asDateTime(Object? value) {
-  if (value is DateTime) {
-    return value;
-  }
-
-  if (value is num) {
-    return _dateFromEpoch(value);
-  }
-
-  if (value is String) {
-    final trimmed = value.trim();
-    if (trimmed.isEmpty) {
-      return null;
-    }
-
-    final parsed = DateTime.tryParse(trimmed);
-    if (parsed != null) {
-      return parsed;
-    }
-
-    final numeric = num.tryParse(trimmed);
-    if (numeric != null) {
-      return _dateFromEpoch(numeric);
-    }
-  }
-
-  return null;
-}
+DateTime? _asDateTime(Object? value) => parseTelemetryTimestamp(value);
 
 bool _isValidCoordinatePair(double? latitude, double? longitude) {
   if (latitude == null || longitude == null) {
     return false;
   }
 
-  return latitude >= -90 &&
+  return latitude.isFinite &&
+      longitude.isFinite &&
+      !(latitude == 0 && longitude == 0) &&
+      latitude >= -90 &&
       latitude <= 90 &&
       longitude >= -180 &&
       longitude <= 180;
-}
-
-DateTime _dateFromEpoch(num value) {
-  final raw = value.toInt();
-  final milliseconds = raw.abs() < 100000000000 ? raw * 1000 : raw;
-  return DateTime.fromMillisecondsSinceEpoch(milliseconds, isUtc: true);
 }
 
 double? _asDouble(Object? value) {
@@ -501,13 +634,25 @@ bool? _asBool(Object? value) {
       return null;
     }
 
-    if (const <String>{'true', '1', 'yes', 'on', 'active', 'connected'}
-        .contains(normalized)) {
+    if (const <String>{
+      'true',
+      '1',
+      'yes',
+      'on',
+      'active',
+      'connected',
+    }.contains(normalized)) {
       return true;
     }
 
-    if (const <String>{'false', '0', 'no', 'off', 'inactive', 'disconnected'}
-        .contains(normalized)) {
+    if (const <String>{
+      'false',
+      '0',
+      'no',
+      'off',
+      'inactive',
+      'disconnected',
+    }.contains(normalized)) {
       return false;
     }
   }

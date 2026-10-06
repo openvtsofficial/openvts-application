@@ -9015,4 +9015,81 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get validationFieldSimNumber => 'SIM नंबर';
+
+  @override
+  String get mobileDataBackup => 'डेटा बैकअप';
+
+  @override
+  String get mobileEffectiveRetention => 'लागू डेटा संरक्षण अवधि';
+
+  @override
+  String get mobileAdministratorLimit => 'व्यवस्थापक की सीमा';
+
+  @override
+  String get mobilePolicySource => 'नीति का स्रोत';
+
+  @override
+  String mobileUseAdministratorPolicy(String value1) {
+    return 'व्यवस्थापक की नीति इस्तेमाल करें ($value1)';
+  }
+
+  @override
+  String get mobileRetentionCleanupNotice =>
+      'निर्धारित सफाई में संरक्षण अवधि से पुराने ट्रैकिंग डेटा हटा दिए जाते हैं। अवधि बढ़ाने से हटाया गया डेटा वापस नहीं आता।';
+
+  @override
+  String mobileRetentionLimitError(String value1) {
+    return 'डेटा संरक्षण अवधि $value1 दिनों से अधिक नहीं हो सकती।';
+  }
+
+  @override
+  String get mobileRetentionLoadError => 'डेटा संरक्षण नीति लोड नहीं हो सकी';
+
+  @override
+  String get mobileRetentionSaveError => 'डेटा संरक्षण नीति सहेजी नहीं जा सकी';
+
+  @override
+  String get mobileRetentionSaved => 'डेटा संरक्षण नीति अपडेट हो गई';
+
+  @override
+  String get mobileRetentionUnsupported =>
+      'सर्वर ने असमर्थित डेटा संरक्षण नीति भेजी है। संपादन बंद है।';
+
+  @override
+  String get mobileDiscardDetailChanges => 'बदलाव खो जाएंगे। जारी रखें?';
+
+  @override
+  String get mobileLiveTrackingReconnecting =>
+      'लाइव ट्रैकिंग फिर से कनेक्ट हो रही है…';
+
+  @override
+  String get mobileLastConnection => 'पिछला कनेक्शन';
+
+  @override
+  String get mobileTeamLoadError => 'टीम सदस्य का विवरण लोड नहीं हो सका।';
+
+  @override
+  String get mobilePermissionsLoadError => 'अनुमतियाँ लोड नहीं हो सकीं।';
+
+  @override
+  String get mobileActivityLoadError => 'गतिविधि लोड नहीं हो सकी।';
+
+  @override
+  String get mobilePermissionsRetryError =>
+      'अनुमतियाँ लोड या सहेजी नहीं जा सकीं। फिर से कोशिश करें।';
+
+  @override
+  String get mobilePermissionMaps => 'नक्शे';
+
+  @override
+  String get mobilePermissionLandmarks => 'स्थल चिह्न';
+
+  @override
+  String get mobilePermissionShareTracking => 'ट्रैकिंग लिंक साझा करें';
+
+  @override
+  String get mobilePrivacyPolicyLink => 'गोपनीयता नीति';
+
+  @override
+  String get mobilePageLinkError => 'यह पेज नहीं खुल सका। फिर से कोशिश करें।';
 }

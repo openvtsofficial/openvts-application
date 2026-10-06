@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../../core/theme/open_vts_colors.dart';
 import '../../core/theme/open_vts_radius.dart';
 import '../../core/theme/open_vts_spacing.dart';
 import '../../core/theme/open_vts_typography.dart';
@@ -72,6 +71,8 @@ class OpenVtsDateTimeRangeField extends StatelessWidget {
     this.title,
     this.hintText,
     this.now,
+    this.errorText,
+    this.rangeValidator,
     super.key,
   });
 
@@ -85,6 +86,8 @@ class OpenVtsDateTimeRangeField extends StatelessWidget {
   final String? title;
   final String? hintText;
   final DateTime? now;
+  final String? errorText;
+  final String? Function(OpenVtsDateTimeRange range)? rangeValidator;
 
   @override
   Widget build(BuildContext context) {
@@ -96,26 +99,32 @@ class OpenVtsDateTimeRangeField extends StatelessWidget {
       children: [
         Text(label, style: OpenVtsTypography.label),
         const SizedBox(height: OpenVtsSpacing.xs),
-        InkWell(
-          borderRadius: BorderRadius.circular(OpenVtsRadius.md),
-          onTap: enabled ? () => _openSelector(context) : null,
-          child: InputDecorator(
-            decoration: InputDecoration(
-              enabled: enabled,
-              suffixIcon: Icon(
-                Icons.calendar_month_outlined,
-                size: 18,
-                color: scheme.onSurfaceVariant,
+        Semantics(
+          button: true,
+          enabled: enabled,
+          label: label,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(OpenVtsRadius.md),
+            onTap: enabled ? () => _openSelector(context) : null,
+            child: InputDecorator(
+              decoration: InputDecoration(
+                enabled: enabled,
+                errorText: errorText,
+                errorMaxLines: 3,
+                suffixIcon: Icon(
+                  Icons.calendar_month_outlined,
+                  size: 18,
+                  color: scheme.onSurfaceVariant,
+                ),
               ),
-            ),
-            child: Text(
-              displayValue ?? hintText ?? context.widgetL10n.dateRangeSelect,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: OpenVtsTypography.body.copyWith(
-                color: displayValue == null
-                    ? scheme.onSurfaceVariant
-                    : scheme.onSurface,
+              child: Text(
+                displayValue ?? hintText ?? context.widgetL10n.dateRangeSelect,
+                maxLines: null,
+                style: OpenVtsTypography.body.copyWith(
+                  color: displayValue == null
+                      ? scheme.onSurfaceVariant
+                      : scheme.onSurface,
+                ),
               ),
             ),
           ),
@@ -133,9 +142,10 @@ class OpenVtsDateTimeRangeField extends StatelessWidget {
       lastDate: lastDate,
       title: title,
       now: now,
+      rangeValidator: rangeValidator,
     );
 
-    if (result != null) {
+    if (context.mounted && result != null) {
       onChanged(result);
     }
   }
@@ -173,6 +183,7 @@ class OpenVtsDateTimeRangeSelector extends StatefulWidget {
     this.onClear,
     this.onCancel,
     this.scrollController,
+    this.rangeValidator,
     super.key,
   });
 
@@ -186,6 +197,7 @@ class OpenVtsDateTimeRangeSelector extends StatefulWidget {
   final VoidCallback? onClear;
   final VoidCallback? onCancel;
   final ScrollController? scrollController;
+  final String? Function(OpenVtsDateTimeRange range)? rangeValidator;
 
   static Future<OpenVtsDateTimeRange?> show({
     required BuildContext context,
@@ -195,6 +207,7 @@ class OpenVtsDateTimeRangeSelector extends StatefulWidget {
     DateTime? lastDate,
     String? title,
     DateTime? now,
+    String? Function(OpenVtsDateTimeRange range)? rangeValidator,
   }) {
     return showModalBottomSheet<OpenVtsDateTimeRange>(
       context: context,
@@ -254,6 +267,7 @@ class OpenVtsDateTimeRangeSelector extends StatefulWidget {
                             lastDate: lastDate,
                             title: title,
                             now: now,
+                            rangeValidator: rangeValidator,
                             scrollController: scrollController,
                             onApply: (range) =>
                                 Navigator.of(context).pop(range),
@@ -290,7 +304,12 @@ class _OpenVtsDateTimeRangeSelectorState
   late DateTime _endDate;
   late TimeOfDay _startTime;
   late TimeOfDay _endTime;
+  Duration _startSubMinute = Duration.zero;
+  Duration _endSubMinute = Duration.zero;
+  DateTime? _startOriginal;
+  DateTime? _endOriginal;
   _RangePresetType _selectedPreset = _RangePresetType.custom;
+  bool _awaitingEndDate = false;
 
   @override
   void initState() {
@@ -317,8 +336,14 @@ class _OpenVtsDateTimeRangeSelectorState
         ? const TimeOfDay(hour: 0, minute: 0)
         : TimeOfDay.fromDateTime(normalized.start!.toLocal());
     _endTime = normalized.end == null
-        ? const TimeOfDay(hour: 0, minute: 0)
+        ? const TimeOfDay(hour: 23, minute: 59)
         : TimeOfDay.fromDateTime(normalized.end!.toLocal());
+    _startOriginal = normalized.start?.toLocal();
+    _endOriginal = normalized.end?.toLocal();
+    _startSubMinute = _subMinute(normalized.start);
+    _endSubMinute = normalized.end == null
+        ? const Duration(seconds: 59, milliseconds: 999)
+        : _subMinute(normalized.end);
     _focusedMonth = DateTime(_endDate.year, _endDate.month);
   }
 
@@ -356,7 +381,7 @@ class _OpenVtsDateTimeRangeSelectorState
               onClose: widget.onCancel ?? () {},
               compact: isCompact,
             ),
-            const Divider(height: 1, color: OpenVtsColors.divider),
+            const Divider(height: 1),
             Expanded(
               child: SingleChildScrollView(
                 controller: widget.scrollController,
@@ -390,6 +415,7 @@ class _OpenVtsDateTimeRangeSelectorState
                           ? () => _moveFocusedMonth(1)
                           : null,
                       onDateSelected: _selectDate,
+                      onChooseDate: _pickCalendarDate,
                       compact: isCompact,
                     ),
                     SizedBox(height: sectionSpacing),
@@ -403,10 +429,21 @@ class _OpenVtsDateTimeRangeSelectorState
                       _TimeRangeFields(
                         startTime: _startTime,
                         endTime: _endTime,
-                        isValid: _isCurrentRangeValid,
+                        isValid: !_currentRange.end!.isBefore(
+                          _currentRange.start!,
+                        ),
                         compact: isCompact,
                         onStartTap: _pickStartTime,
                         onEndTap: _pickEndTime,
+                      ),
+                    ],
+                    if (_rangeValidationError != null) ...[
+                      SizedBox(height: sectionSpacing),
+                      Text(
+                        _rangeValidationError!,
+                        style: OpenVtsTypography.meta.copyWith(
+                          color: Theme.of(context).colorScheme.error,
+                        ),
                       ),
                     ],
                     if (scrollActions) ...[
@@ -447,6 +484,7 @@ class _OpenVtsDateTimeRangeSelectorState
     setState(() {
       _selectedPreset = _RangePresetType.custom;
       _startTime = selected;
+      _startSubMinute = Duration.zero;
     });
   }
 
@@ -462,6 +500,7 @@ class _OpenVtsDateTimeRangeSelectorState
     setState(() {
       _selectedPreset = _RangePresetType.custom;
       _endTime = selected;
+      _endSubMinute = Duration.zero;
     });
   }
 
@@ -520,14 +559,30 @@ class _OpenVtsDateTimeRangeSelectorState
     final range = _currentRange;
     final start = range.start;
     final end = range.end;
-    return start != null && end != null && !end.isBefore(start);
+    return start != null &&
+        end != null &&
+        !end.isBefore(start) &&
+        _rangeValidationError == null;
   }
+
+  String? get _rangeValidationError =>
+      widget.rangeValidator?.call(_currentRange);
 
   OpenVtsDateTimeRange get _currentRange {
     if (widget.dateTimeEnabled) {
       return OpenVtsDateTimeRange(
-        start: _combineDateAndTime(_startDate, _startTime),
-        end: _combineDateAndTime(_endDate, _endTime),
+        start: _combineDateAndTime(
+          _startDate,
+          _startTime,
+          _startSubMinute,
+          _startOriginal,
+        ),
+        end: _combineDateAndTime(
+          _endDate,
+          _endTime,
+          _endSubMinute,
+          _endOriginal,
+        ),
       );
     }
 
@@ -555,10 +610,15 @@ class _OpenVtsDateTimeRangeSelectorState
 
     setState(() {
       _selectedPreset = preset.type;
+      _awaitingEndDate = false;
       _startDate = _clampDate(DateUtils.dateOnly(start));
       _endDate = _clampDate(DateUtils.dateOnly(end));
       _startTime = TimeOfDay.fromDateTime(start.toLocal());
       _endTime = TimeOfDay.fromDateTime(end.toLocal());
+      _startOriginal = start.toLocal();
+      _endOriginal = end.toLocal();
+      _startSubMinute = _subMinute(start);
+      _endSubMinute = _subMinute(end);
       _focusedMonth = DateTime(_endDate.year, _endDate.month);
     });
   }
@@ -566,22 +626,37 @@ class _OpenVtsDateTimeRangeSelectorState
   void _selectDate(DateTime date) {
     setState(() {
       _selectedPreset = _RangePresetType.custom;
-      final selectedDate = DateUtils.dateOnly(date);
-      final hasCompletedRange = !DateUtils.isSameDay(_startDate, _endDate);
-
-      if (hasCompletedRange) {
+      final selectedDate = _clampDate(DateUtils.dateOnly(date));
+      if (!_awaitingEndDate) {
+        // Every custom range begins with one explicit date. Inferring selection
+        // progress from equal dates misread an earlier first click as a range
+        // ending today, so the next click incorrectly restarted the selection.
         _startDate = selectedDate;
         _endDate = selectedDate;
-        return;
-      }
-
-      if (selectedDate.isBefore(_startDate)) {
-        _endDate = _startDate;
-        _startDate = selectedDate;
+        _awaitingEndDate = true;
       } else {
-        _endDate = selectedDate;
+        if (selectedDate.isBefore(_startDate)) {
+          _endDate = _startDate;
+          _startDate = selectedDate;
+        } else {
+          _endDate = selectedDate;
+        }
+        _awaitingEndDate = false;
       }
     });
+  }
+
+  Future<void> _pickCalendarDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _clampDate(_focusedMonth),
+      firstDate: _firstDate,
+      lastDate: _lastDate,
+      initialDatePickerMode: DatePickerMode.year,
+    );
+    if (picked == null || !mounted) return;
+    _selectDate(picked);
+    setState(() => _focusedMonth = DateTime(picked.year, picked.month));
   }
 
   void _moveFocusedMonth(int amount) {
@@ -614,8 +689,41 @@ class _OpenVtsDateTimeRangeSelectorState
     return date;
   }
 
-  DateTime _combineDateAndTime(DateTime date, TimeOfDay time) {
-    return DateTime(date.year, date.month, date.day, time.hour, time.minute);
+  Duration _subMinute(DateTime? date) => date == null
+      ? Duration.zero
+      : Duration(
+          seconds: date.second,
+          milliseconds: date.millisecond,
+          microseconds: date.microsecond,
+        );
+
+  DateTime _combineDateAndTime(
+    DateTime date,
+    TimeOfDay time,
+    Duration subMinute,
+    DateTime? original,
+  ) {
+    // Reapplying an unchanged instant must retain the original offset during
+    // a repeated DST clock hour, rather than reconstructing the first occurrence.
+    if (original != null &&
+        original.year == date.year &&
+        original.month == date.month &&
+        original.day == date.day &&
+        original.hour == time.hour &&
+        original.minute == time.minute &&
+        _subMinute(original) == subMinute) {
+      return original;
+    }
+    return DateTime(
+      date.year,
+      date.month,
+      date.day,
+      time.hour,
+      time.minute,
+      subMinute.inSeconds,
+      subMinute.inMilliseconds.remainder(1000),
+      subMinute.inMicroseconds.remainder(1000),
+    );
   }
 }
 
@@ -634,7 +742,7 @@ class _SelectorHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final iconSize = compact ? 18.0 : 22.0;
-    const actionSize = 44.0;
+    const actionSize = 48.0;
 
     return Padding(
       padding: EdgeInsets.fromLTRB(
@@ -691,11 +799,9 @@ class _PresetGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (compact) {
-      final isDark = Theme.of(context).brightness == Brightness.dark;
-      final outerBackgroundColor = isDark ? Colors.black : Colors.white;
-      final outerBorderColor = isDark
-          ? Colors.white
-          : Colors.black.withValues(alpha: 0.2);
+      final scheme = Theme.of(context).colorScheme;
+      final outerBackgroundColor = scheme.surfaceContainer;
+      final outerBorderColor = scheme.outlineVariant;
 
       return Container(
         height: (MediaQuery.textScalerOf(context).scale(12) + 24).clamp(
@@ -781,9 +887,9 @@ class _PresetTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final foregroundColor = isSelected ? scheme.surface : scheme.onSurface;
-    final backgroundColor = isSelected ? scheme.onSurface : scheme.surface;
-    final borderColor = isSelected ? scheme.onSurface : scheme.outlineVariant;
+    final foregroundColor = isSelected ? scheme.onPrimary : scheme.onSurface;
+    final backgroundColor = isSelected ? scheme.primary : scheme.surface;
+    final borderColor = isSelected ? scheme.primary : scheme.outlineVariant;
 
     return Material(
       color: backgroundColor,
@@ -840,45 +946,45 @@ class _PresetCompactChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final backgroundColor = isSelected
-        ? (isDark ? Colors.black : Colors.white)
-        : Colors.transparent;
-    final textColor = isDark ? Colors.white : Colors.black;
-    final borderColor = isDark
-        ? Colors.white
-        : Colors.black.withValues(alpha: 0.2);
+    final scheme = Theme.of(context).colorScheme;
+    final backgroundColor = isSelected ? scheme.primary : Colors.transparent;
+    final textColor = isSelected ? scheme.onPrimary : scheme.onSurface;
+    final borderColor = isSelected ? scheme.primary : scheme.outlineVariant;
 
-    return Material(
-      color: backgroundColor,
-      borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
-      child: InkWell(
+    return Semantics(
+      selected: isSelected,
+      button: true,
+      child: Material(
+        color: backgroundColor,
         borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: OpenVtsSpacing.sm,
-            vertical: OpenVtsSpacing.xs,
-          ),
-          decoration: isSelected
-              ? BoxDecoration(
-                  borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
-                  border: Border.all(color: borderColor, width: 1),
-                )
-              : null,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(preset.icon, size: 16, color: textColor),
-              const SizedBox(width: OpenVtsSpacing.xxs),
-              Text(
-                preset.label(context),
-                style: OpenVtsTypography.meta.copyWith(
-                  color: textColor,
-                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
+          onTap: onTap,
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: OpenVtsSpacing.sm,
+              vertical: OpenVtsSpacing.xs,
+            ),
+            decoration: isSelected
+                ? BoxDecoration(
+                    borderRadius: BorderRadius.circular(OpenVtsRadius.pill),
+                    border: Border.all(color: borderColor, width: 1),
+                  )
+                : null,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(preset.icon, size: 16, color: textColor),
+                const SizedBox(width: OpenVtsSpacing.xxs),
+                Text(
+                  preset.label(context),
+                  style: OpenVtsTypography.meta.copyWith(
+                    color: textColor,
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -896,6 +1002,7 @@ class _MonthCalendar extends StatelessWidget {
     required this.onPreviousMonth,
     required this.onNextMonth,
     required this.onDateSelected,
+    required this.onChooseDate,
     required this.compact,
   });
 
@@ -907,6 +1014,7 @@ class _MonthCalendar extends StatelessWidget {
   final VoidCallback? onPreviousMonth;
   final VoidCallback? onNextMonth;
   final ValueChanged<DateTime> onDateSelected;
+  final VoidCallback onChooseDate;
   final bool compact;
 
   @override
@@ -936,12 +1044,21 @@ class _MonthCalendar extends StatelessWidget {
                 compact: compact,
               ),
               Expanded(
-                child: Text(
-                  DateFormat.yMMMM(locale).format(focusedMonth),
-                  textAlign: TextAlign.center,
-                  style: OpenVtsTypography.titleSmall.copyWith(
-                    color: scheme.onSurface,
-                    fontSize: compact ? 14 : null,
+                child: InkWell(
+                  onTap: onChooseDate,
+                  borderRadius: BorderRadius.circular(OpenVtsRadius.md),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(minHeight: 48),
+                    child: Center(
+                      child: Text(
+                        DateFormat.yMMMM(locale).format(focusedMonth),
+                        textAlign: TextAlign.center,
+                        style: OpenVtsTypography.titleSmall.copyWith(
+                          color: scheme.onSurface,
+                          fontSize: compact ? 14 : null,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -954,59 +1071,96 @@ class _MonthCalendar extends StatelessWidget {
             ],
           ),
           SizedBox(height: compact ? OpenVtsSpacing.xs : OpenVtsSpacing.sm),
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: 7,
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 7,
-              mainAxisExtent: textScaler.scale(compact ? 11 : 12) + 16,
-            ),
-            itemBuilder: (calendarContext, index) => Center(
-              child: Text(
-                localizations.narrowWeekdays[(firstWeekday + index) % 7],
-                style: OpenVtsTypography.meta.copyWith(
-                  color: scheme.onSurfaceVariant,
-                  fontWeight: FontWeight.w600,
-                  fontSize: compact ? 11 : null,
+          if (textScaler.scale(14) > 24)
+            _largeTextDates(context)
+          else ...[
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: 7,
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 7,
+                mainAxisExtent: textScaler.scale(compact ? 11 : 12) + 16,
+              ),
+              itemBuilder: (calendarContext, index) => Center(
+                child: Text(
+                  localizations.narrowWeekdays[(firstWeekday + index) % 7],
+                  style: OpenVtsTypography.meta.copyWith(
+                    color: scheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w600,
+                    fontSize: compact ? 11 : null,
+                  ),
                 ),
               ),
             ),
-          ),
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: days.length,
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 7,
-              mainAxisExtent: (textScaler.scale(compact ? 12 : 14) + 20).clamp(
-                44,
-                100,
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: days.length,
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 7,
+                mainAxisExtent: (textScaler.scale(compact ? 12 : 14) + 20)
+                    .clamp(48, 100),
               ),
-            ),
-            itemBuilder: (context, index) {
-              final day = days[index];
-              final isOutsideMonth = day.month != focusedMonth.month;
-              final isDisabled =
-                  day.isBefore(firstDate) || day.isAfter(lastDate);
-              final isStart = DateUtils.isSameDay(day, startDate);
-              final isEnd = DateUtils.isSameDay(day, endDate);
-              final isInRange =
-                  !day.isBefore(startDate) && !day.isAfter(endDate);
+              itemBuilder: (context, index) {
+                final day = days[index];
+                final isOutsideMonth = day.month != focusedMonth.month;
+                final isDisabled =
+                    day.isBefore(firstDate) || day.isAfter(lastDate);
+                final isStart = DateUtils.isSameDay(day, startDate);
+                final isEnd = DateUtils.isSameDay(day, endDate);
+                final isInRange =
+                    !day.isBefore(startDate) && !day.isAfter(endDate);
 
-              return _CalendarDayCell(
-                day: day,
-                isOutsideMonth: isOutsideMonth,
-                isDisabled: isDisabled,
-                isSelected: isStart || isEnd,
-                isInRange: isInRange,
-                compact: compact,
-                onTap: isDisabled ? null : () => onDateSelected(day),
-              );
-            },
-          ),
+                return _CalendarDayCell(
+                  key: ValueKey(
+                    'range-day-${day.year}-${day.month}-${day.day}',
+                  ),
+                  day: day,
+                  isOutsideMonth: isOutsideMonth,
+                  isDisabled: isDisabled,
+                  isSelected: isStart || isEnd,
+                  isInRange: isInRange,
+                  compact: compact,
+                  onTap: isDisabled ? null : () => onDateSelected(day),
+                );
+              },
+            ),
+          ],
         ],
       ),
+    );
+  }
+
+  Widget _largeTextDates(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final count = DateUtils.getDaysInMonth(
+      focusedMonth.year,
+      focusedMonth.month,
+    );
+    return Column(
+      children: List.generate(count, (index) {
+        final day = DateTime(focusedMonth.year, focusedMonth.month, index + 1);
+        final enabled = !day.isBefore(firstDate) && !day.isAfter(lastDate);
+        final selected =
+            DateUtils.isSameDay(day, startDate) ||
+            DateUtils.isSameDay(day, endDate);
+        final inRange = !day.isBefore(startDate) && !day.isAfter(endDate);
+        return Material(
+          color: Colors.transparent,
+          child: ListTile(
+            key: ValueKey('range-day-${day.year}-${day.month}-${day.day}'),
+            enabled: enabled,
+            selected: selected,
+            selectedTileColor: scheme.primaryContainer,
+            selectedColor: scheme.onPrimaryContainer,
+            tileColor: inRange ? scheme.surfaceContainer : null,
+            title: Text(MaterialLocalizations.of(context).formatFullDate(day)),
+            trailing: selected ? const Icon(Icons.check_rounded) : null,
+            onTap: enabled ? () => onDateSelected(day) : null,
+          ),
+        );
+      }),
     );
   }
 
@@ -1042,7 +1196,7 @@ class _CalendarNavButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    const dimension = 44.0;
+    const dimension = 48.0;
 
     return SizedBox.square(
       dimension: dimension,
@@ -1070,6 +1224,7 @@ class _CalendarDayCell extends StatelessWidget {
     required this.isInRange,
     required this.compact,
     required this.onTap,
+    super.key,
   });
 
   final DateTime day;
@@ -1084,7 +1239,7 @@ class _CalendarDayCell extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final dayColor = isSelected
-        ? scheme.surface
+        ? scheme.onPrimary
         : isDisabled || isOutsideMonth
         ? scheme.onSurfaceVariant
         : scheme.onSurface;
@@ -1112,7 +1267,7 @@ class _CalendarDayCell extends StatelessWidget {
             constraints: const BoxConstraints(minHeight: 40, minWidth: 36),
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: isSelected ? scheme.onSurface : Colors.transparent,
+              color: isSelected ? scheme.primary : Colors.transparent,
               borderRadius: BorderRadius.circular(OpenVtsRadius.sm),
             ),
             child: Text(
@@ -1349,7 +1504,9 @@ class _TimeRangeFields extends StatelessWidget {
           const SizedBox(height: OpenVtsSpacing.xs),
           Text(
             context.widgetL10n.dateRangeInvalidTime,
-            style: OpenVtsTypography.meta.copyWith(color: OpenVtsColors.error),
+            style: OpenVtsTypography.meta.copyWith(
+              color: Theme.of(context).colorScheme.error,
+            ),
           ),
         ],
       ],
@@ -1677,7 +1834,7 @@ class _RangePreset {
       return DateUtils.dateOnly(date);
     }
 
-    return DateTime(date.year, date.month, date.day, 23, 59);
+    return DateTime(date.year, date.month, date.day, 23, 59, 59, 999);
   }
 }
 

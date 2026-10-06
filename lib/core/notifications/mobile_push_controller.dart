@@ -22,10 +22,10 @@ class MobilePushController extends StateNotifier<MobilePushState> {
     required MobilePushService service,
     required LocalCache localCache,
     required TokenStorage tokenStorage,
-  })  : _service = service,
-        _localCache = localCache,
-        _tokenStorage = tokenStorage,
-        super(_initialState(localCache)) {
+  }) : _service = service,
+       _localCache = localCache,
+       _tokenStorage = tokenStorage,
+       super(_initialState(localCache)) {
     _tokenRefreshSubscription = _service.tokenRefreshes.listen(
       (token) => unawaited(handleTokenRefresh(token)),
       onError: (Object error) => unawaited(_rememberError(_safeError(error))),
@@ -323,7 +323,7 @@ class MobilePushController extends StateNotifier<MobilePushState> {
       );
       _syncCachedState(fcmToken: token);
 
-      if (!registered && !_isAlreadyRegisteredForSession(token, session)) {
+      if (!registered) {
         await _rememberTestFailure(
           'FCM token generated but backend registration failed.',
         );
@@ -416,7 +416,8 @@ class MobilePushController extends StateNotifier<MobilePushState> {
 
     final result = await _service.initialize();
     final pendingRestart = result.status == MobilePushInitStatus.pendingRestart;
-    final initialized = result.status == MobilePushInitStatus.initialized ||
+    final initialized =
+        result.status == MobilePushInitStatus.initialized ||
         (pendingRestart && _service.hasFirebaseApp);
     final failed = result.status == MobilePushInitStatus.failed;
 
@@ -426,7 +427,8 @@ class MobilePushController extends StateNotifier<MobilePushState> {
         isInitialized: initialized,
         isInitializing: false,
         platform: result.platform,
-        configVersion: result.configVersion ??
+        configVersion:
+            result.configVersion ??
             _localCache.getString(StorageKeys.mobilePushFirebaseConfigVersion),
         lastError: failed || pendingRestart ? result.message : null,
         pendingReinitializeOnNextLaunch: pendingRestart,
@@ -437,8 +439,8 @@ class MobilePushController extends StateNotifier<MobilePushState> {
       failed
           ? 'push_init fail'
           : pendingRestart
-              ? 'push_init pending_restart'
-              : 'push_init ok',
+          ? 'push_init pending_restart'
+          : 'push_init ok',
     );
   }
 
@@ -446,66 +448,97 @@ class MobilePushController extends StateNotifier<MobilePushState> {
     String? token,
     bool force = false,
   }) async {
-    if (!_canUsePush) {
-      _syncCachedState(fcmToken: token);
-      return false;
-    }
-
-    final session = await _tokenStorage.getActiveSession();
-    if (session == null) {
-      return false;
-    }
-
-    await initializeCore();
-    if (!_service.hasFirebaseApp) {
-      return false;
-    }
-
-    final tokenToRegister = _firstNonEmpty([
-      token,
-      await _service.getCurrentToken(),
-      _localCache.getString(StorageKeys.mobilePushFcmToken),
-    ]);
-    if (tokenToRegister == null) {
-      _syncCachedState();
-      return false;
-    }
-
-    _syncCachedState(fcmToken: tokenToRegister);
-    if (_isAlreadyRegisteredForSession(tokenToRegister, session)) {
-      // Already registered for this session/device. Do NOT fetch diagnostics
-      // here — that runs only when the Notification Settings/Diagnostics card
-      // is opened or when the Test Mobile Push flow validates registration.
-      return true;
-    }
+    if (!_canUsePush || !_authAllowsRegistration || !mounted) return false;
     if (_registrationInFlight || _isRegistrationCooldownActive(force: force)) {
       return false;
     }
-
     _registrationInFlight = true;
     _lastRegistrationAttemptAt = DateTime.now();
+    final generation = _tokenStorage.sessionGeneration;
 
     try {
+      final session = await _tokenStorage.getActiveSession();
+      if (session == null ||
+          !await _registrationSessionIsCurrent(session, generation)) {
+        return false;
+      }
+      await initializeCore();
+      if (!_service.hasFirebaseApp ||
+          !await _registrationSessionIsCurrent(session, generation)) {
+        return false;
+      }
+
+      // Cached permission is only a startup hint. Always query the OS silently
+      // before generating a token or trusting a previous backend registration.
+      final permission = await _service.getNotificationSettings();
+      if (permission == null) {
+        _emit(state.copyWith(isPermissionGranted: false));
+        return false;
+      }
+      _applyPermissionSettings(permission);
+      await _localCache.setString(
+        StorageKeys.mobilePushLastPermissionStatus,
+        permission.authorizationStatus.name,
+      );
+      if (!await _registrationSessionIsCurrent(session, generation)) {
+        return false;
+      }
+      if (!_isGranted(permission.authorizationStatus)) {
+        await deregisterCurrentToken();
+        return false;
+      }
+
+      final tokenToRegister = _firstNonEmpty([
+        token,
+        await _service.getCurrentToken(),
+        _localCache.getString(StorageKeys.mobilePushFcmToken),
+      ]);
+      if (tokenToRegister == null ||
+          !await _registrationSessionIsCurrent(session, generation)) {
+        return false;
+      }
+      _syncCachedState(fcmToken: tokenToRegister);
+      if (_isAlreadyRegisteredForSession(tokenToRegister, session)) {
+        _lastRegistrationAttemptAt = null;
+        return true;
+      }
       final registered = await _service.registerCurrentToken(
         token: tokenToRegister,
       );
+      if (!await _registrationSessionIsCurrent(session, generation)) {
+        return false;
+      }
       _syncCachedState(fcmToken: tokenToRegister);
       if (registered) {
         _lastRegistrationAttemptAt = null;
         await clearError();
-        // Diagnostics fetch intentionally omitted on the hot startup path.
-        // It runs only from Notification Settings/Diagnostics or Test Push.
         return true;
       }
-
       await _rememberError('Push token registration failed.');
       return false;
     } catch (error) {
-      await _rememberError('Push token registration failed.');
+      await _rememberError(_safeError(error));
       return false;
     } finally {
       _registrationInFlight = false;
     }
+  }
+
+  Future<bool> _registrationSessionIsCurrent(
+    RoleSession expected,
+    int generation,
+  ) async {
+    if (!mounted ||
+        !_authAllowsRegistration ||
+        generation != _tokenStorage.sessionGeneration) {
+      return false;
+    }
+    final active = await _tokenStorage.getActiveSession();
+    return mounted &&
+        _authAllowsRegistration &&
+        generation == _tokenStorage.sessionGeneration &&
+        active?.user.id == expected.user.id &&
+        active?.role == expected.role;
   }
 
   bool _isAlreadyRegisteredForSession(String token, RoleSession session) {
@@ -589,12 +622,7 @@ class MobilePushController extends StateNotifier<MobilePushState> {
       StorageKeys.mobilePushLastInitError,
       normalized,
     );
-    _emit(
-      state.copyWith(
-        isInitializing: false,
-        lastError: normalized,
-      ),
-    );
+    _emit(state.copyWith(isInitializing: false, lastError: normalized));
   }
 
   Future<void> _rememberTestFailure(String message) async {

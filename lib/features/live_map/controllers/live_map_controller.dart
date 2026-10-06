@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/socket/socket_service.dart';
 import '../../../shared/models/vehicle_summary.dart';
+import '../../../shared/utils/live_vehicle_presentation.dart';
 import '../../notifications/models/app_notification.dart';
 import '../models/live_map_role_config.dart';
 import '../models/live_map_state.dart';
@@ -13,37 +15,37 @@ import '../services/live_map_vehicle_service.dart';
 
 /// Role-aware live-map controller.
 ///
-/// This is a direct port of the working `SuperadminMapLiveController` with
-/// two differences:
-///
-/// 1. All endpoints (REST baseline, alerts) come from [LiveMapRoleConfig],
-///    so admin/user sessions never touch a superadmin route.
-/// 2. Socket subscription messages are role-shaped:
+/// A complete HTTP baseline establishes authorized membership; sockets patch
+/// those existing identities while lifecycle recovery catches missed updates.
+/// All endpoints come from [LiveMapRoleConfig], so Admin/User sessions never
+/// touch a Superadmin route. Socket subscription messages are role-shaped:
 ///    * superadmin → explicit scope subscriptions with HTTP-seed snapshots
 ///      disabled; live telemetry arrives in bounded batches.
 ///    * admin / user → chunked `telemetry:subscribe { imeis: [...] }` and
 ///      `notif:subscribe { imeis: [...] }`, built from the REST baseline.
 ///
-/// The merge / dedupe / monotonic / 120 ms batch / 300-alert cap logic is
-/// preserved byte-for-byte.
-class LiveMapController extends StateNotifier<LiveMapState> {
+/// Telemetry publishes in a bounded 120 ms batch; alert dedupe retains the
+/// newest 300 records. Status classification is shared with marker rendering.
+class LiveMapController extends StateNotifier<LiveMapState>
+    with WidgetsBindingObserver {
   LiveMapController({
     required LiveMapVehicleService vehicleService,
     required LiveMapEventsService mapEventsService,
     required SocketService socketService,
     required LiveMapRoleConfig config,
-  })  : _vehicleService = vehicleService,
-        _mapEventsService = mapEventsService,
-        _socketService = socketService,
-        _config = config,
-        super(const LiveMapState.initial());
+    DateTime Function()? now,
+  }) : _vehicleService = vehicleService,
+       _mapEventsService = mapEventsService,
+       _socketService = socketService,
+       _config = config,
+       _now = now ?? DateTime.now,
+       super(const LiveMapState.initial());
 
   static const String _superadminScope = 'superadmin';
   static const String _demoScope = 'demo';
   static const int _maxImeisPerSocketSubscription = 5000;
   static const int _alertBootstrapLimit = 50;
   static const int _maxAlerts = 300;
-  static const Duration _inactiveStatusThreshold = Duration(hours: 48);
   static const Duration _liveUpdateBatchWindow = Duration(milliseconds: 120);
   static const double _minCoordinateMoveMeters = 2;
   static const double _stationaryDriftSpeedKph = 5;
@@ -54,6 +56,18 @@ class LiveMapController extends StateNotifier<LiveMapState> {
   final LiveMapEventsService _mapEventsService;
   final SocketService _socketService;
   final LiveMapRoleConfig _config;
+  final DateTime Function() _now;
+  Timer? _maintenanceTimer;
+  Future<bool>? _baselineRequest;
+  DateTime? _lastBaselineAttempt;
+  String? _lastBaselineAttemptDay;
+  DateTime? _lastTelemetryPacket;
+  bool _initialized = false;
+  bool _isForeground = true;
+  bool _hasConnectedTelemetry = false;
+  bool _isConnectingTelemetry = false;
+  bool _isConnectingNotifications = false;
+  final Map<String, DateTime> _deviceStatusTimes = <String, DateTime>{};
 
   SocketConnection? _telemetryConnection;
   SocketConnection? _notificationsConnection;
@@ -65,7 +79,6 @@ class LiveMapController extends StateNotifier<LiveMapState> {
       <String, dynamic>{};
   Timer? _liveTelemetryPublishTimer;
   bool _hasPendingTelemetryPublish = false;
-  bool _isBootstrappingTelemetry = false;
   bool _didSeedTelemetry = false;
   bool _hasTelemetryBaseline = false;
 
@@ -78,9 +91,57 @@ class LiveMapController extends StateNotifier<LiveMapState> {
   LiveMapRoleConfig get config => _config;
 
   void initialize() {
+    if (_initialized) return;
+    _initialized = true;
+    WidgetsBinding.instance.addObserver(this);
+    _maintenanceTimer = Timer.periodic(
+      const Duration(seconds: 5),
+      (_) => _maintainTelemetry(),
+    );
     unawaited(_initializeTelemetry());
     unawaited(_bootstrapAlerts());
     unawaited(_connectNotificationsSocket());
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _isForeground = state == AppLifecycleState.resumed;
+    if (_isForeground && mounted) {
+      unawaited(refreshTelemetry());
+      unawaited(_connectNotificationsSocket());
+    }
+  }
+
+  /// Reconcile the authorized fleet after resume, reconnect, or retry. A
+  /// failed page keeps the last complete baseline, never a partial fleet.
+  Future<void> refreshTelemetry() async {
+    final loaded = await _bootstrapTelemetrySeed(force: true);
+    if (loaded && mounted) {
+      await _connectTelemetrySocket(replaceDisconnected: true);
+      await _connectNotificationsSocket(replaceDisconnected: true);
+    }
+  }
+
+  void _maintainTelemetry() {
+    if (!mounted || !_isForeground) return;
+    // Classification ages without packets (pending stop, stale, inactive).
+    // Publish only changed status/counts so an idle fleet does not repaint.
+    if (_hasTelemetryBaseline) _publishMergedTelemetry(onlyIfChanged: true);
+    final now = _now();
+    final silent =
+        _lastTelemetryPacket == null ||
+        now.difference(_lastTelemetryPacket!) >= const Duration(seconds: 30);
+    final interval = state.isTelemetryConnected && !silent
+        ? const Duration(seconds: 60)
+        : const Duration(seconds: 30);
+    if (_lastBaselineAttempt == null ||
+        _lastBaselineAttemptDay != _localDayKey(now) ||
+        now.difference(_lastBaselineAttempt!) >= interval) {
+      unawaited(refreshTelemetry());
+    }
+    if (_notificationsConnection == null) {
+      unawaited(_connectNotificationsSocket());
+    }
   }
 
   Future<void> _initializeTelemetry() async {
@@ -92,61 +153,97 @@ class LiveMapController extends StateNotifier<LiveMapState> {
     await _connectTelemetrySocket();
   }
 
-  Future<bool> _bootstrapTelemetrySeed() async {
-    if (_didSeedTelemetry) {
-      return true;
-    }
+  Future<bool> _bootstrapTelemetrySeed({bool force = false}) {
+    if (_didSeedTelemetry && !force) return Future<bool>.value(true);
+    final active = _baselineRequest;
+    if (active != null) return active;
+    final request = _loadTelemetryBaseline();
+    _baselineRequest = request;
+    return request.whenComplete(() {
+      if (identical(_baselineRequest, request)) _baselineRequest = null;
+    });
+  }
 
-    if (_isBootstrappingTelemetry) {
-      return false;
-    }
-
-    _isBootstrappingTelemetry = true;
-
+  Future<bool> _loadTelemetryBaseline() async {
+    _lastBaselineAttempt = _now();
+    _lastBaselineAttemptDay = _localDayKey(_lastBaselineAttempt!);
     try {
       final telemetry = await _vehicleService.getMapTelemetry();
-      if (!mounted) {
-        return false;
-      }
+      if (!mounted) return false;
 
+      final previous = _vehiclesByKey.values.toList(growable: false);
+      final previousImeis = _baselineImeis.toSet();
       _didSeedTelemetry = true;
       _hasTelemetryBaseline = true;
       _replaceBaselineVehicles(telemetry.vehicles);
-      _rebuildBaselineImeis();
-      final didApplyPending = _applyPendingLiveUpdates();
-
-      if (_vehiclesByKey.isNotEmpty || didApplyPending) {
-        _publishMergedTelemetry();
-      } else {
-        _publishTelemetry(telemetry);
+      // HTTP governs membership. Preserve newer socket state only for
+      // identities that remain in the complete authorized response.
+      for (final live in previous) {
+        final key = _resolveStorageKey(
+          _vehiclesByKey,
+          _vehicleKeyByAlias,
+          aliases: _identityAliasesForVehicle(live),
+          allowCreate: false,
+        );
+        final fresh = key == null ? null : _vehiclesByKey[key];
+        final liveTime = liveVehicleReceiveTime(live);
+        final freshTime = fresh == null ? null : liveVehicleReceiveTime(fresh);
+        if (fresh != null &&
+            !fresh.licenseBlocked &&
+            liveTime != null &&
+            freshTime != null &&
+            liveTime.isAfter(freshTime)) {
+          _upsertVehicle(
+            _vehiclesByKey,
+            _vehicleKeyByAlias,
+            live,
+            aliases: _identityAliasesForVehicle(live),
+            allowCreate: false,
+          );
+        }
       }
+      _rebuildBaselineImeis();
+      _deviceStatusTimes.removeWhere(
+        (key, _) => !_vehiclesByKey.containsKey(key),
+      );
+      _applyPendingLiveUpdates();
+      _publishMergedTelemetry();
 
-      // If telemetry socket is already up (e.g. baseline reload), make sure
-      // the new IMEI hash is applied.
+      if (previousImeis.difference(_baselineImeis.toSet()).isNotEmpty) {
+        // There is no unsubscribe contract. Recreate subscriptions to drop
+        // rooms for removed assignments, rather than accumulating access.
+        _telemetryConnection?.disconnect();
+        _telemetryConnection = null;
+        _notificationsConnection?.disconnect();
+        _notificationsConnection = null;
+        _lastSentTelemetrySubscriptionHash = null;
+        _lastSentNotificationSubscriptionHash = null;
+        unawaited(_connectNotificationsSocket());
+      }
       _sendTelemetrySubscriptionIfNeeded();
       _sendNotificationSubscriptionIfNeeded();
-
       return true;
     } catch (error) {
-      if (!mounted) {
-        return false;
+      if (mounted) {
+        state = state.copyWith(
+          isInitialLoading: false,
+          errorMessage: _formatError(error),
+        );
       }
-
-      state = state.copyWith(
-        isInitialLoading: false,
-        errorMessage: _formatError(error),
-      );
       return false;
-    } finally {
-      _isBootstrappingTelemetry = false;
     }
   }
 
-  Future<void> _connectTelemetrySocket() async {
-    if (_telemetryConnection != null) {
-      return;
+  Future<void> _connectTelemetrySocket({
+    bool replaceDisconnected = false,
+  }) async {
+    if (_isConnectingTelemetry) return;
+    if (replaceDisconnected && _telemetryConnection?.isConnected == false) {
+      _telemetryConnection?.disconnect();
+      _telemetryConnection = null;
     }
-
+    if (_telemetryConnection != null) return;
+    _isConnectingTelemetry = true;
     try {
       final connection = await _socketService.connect(
         _config.telemetryNamespace,
@@ -158,15 +255,28 @@ class LiveMapController extends StateNotifier<LiveMapState> {
       }
 
       _telemetryConnection = connection;
-      connection.onConnect(_handleTelemetryConnected);
-      connection.onDisconnect(_handleTelemetryDisconnected);
-      connection.onError(_handleTelemetrySocketError);
-      connection.on('telemetry:snapshot', _handleTelemetrySnapshot);
-      connection.on('telemetry:snapshot:chunk', _handleTelemetrySnapshotChunk);
-      connection.on('telemetry:update', _handleTelemetryUpdate);
-      connection.on('telemetry:update:batch', _handleTelemetryUpdateBatch);
-      connection.on('devicestatus:update', _handleDeviceStatusUpdate);
-      connection.on('telemetry:error', _handleTelemetrySocketError);
+      bool active() => mounted && identical(_telemetryConnection, connection);
+      void listen(String event, SocketEventHandler handler) {
+        connection.on(event, (data) {
+          if (active()) handler(data);
+        });
+      }
+
+      connection.onConnect(() {
+        if (active()) _handleTelemetryConnected();
+      });
+      connection.onDisconnect((data) {
+        if (active()) _handleTelemetryDisconnected(data);
+      });
+      connection.onError((error) {
+        if (active()) _handleTelemetrySocketError(error);
+      });
+      listen('telemetry:snapshot', _handleTelemetrySnapshot);
+      listen('telemetry:snapshot:chunk', _handleTelemetrySnapshotChunk);
+      listen('telemetry:update', _handleTelemetryUpdate);
+      listen('telemetry:update:batch', _handleTelemetryUpdateBatch);
+      listen('devicestatus:update', _handleDeviceStatusUpdate);
+      listen('telemetry:error', _handleTelemetrySocketError);
 
       if (connection.isConnected) {
         _handleTelemetryConnected();
@@ -180,10 +290,20 @@ class LiveMapController extends StateNotifier<LiveMapState> {
         isTelemetryConnected: false,
         errorMessage: _formatError(error),
       );
+    } finally {
+      _isConnectingTelemetry = false;
     }
   }
 
-  Future<void> _connectNotificationsSocket() async {
+  Future<void> _connectNotificationsSocket({
+    bool replaceDisconnected = false,
+  }) async {
+    if (_isConnectingNotifications) return;
+    if (replaceDisconnected && _notificationsConnection?.isConnected == false) {
+      _notificationsConnection?.disconnect();
+      _notificationsConnection = null;
+    }
+    if (_notificationsConnection != null) return;
     final namespace = _config.notificationNamespace;
     if (namespace == null ||
         _config.notificationSubscribeMode ==
@@ -191,6 +311,7 @@ class LiveMapController extends StateNotifier<LiveMapState> {
       return;
     }
 
+    _isConnectingNotifications = true;
     try {
       final connection = await _socketService.connect(
         namespace,
@@ -202,11 +323,23 @@ class LiveMapController extends StateNotifier<LiveMapState> {
       }
 
       _notificationsConnection = connection;
-      connection.onConnect(_handleNotificationsConnected);
-      connection.onDisconnect(_handleNotificationsDisconnected);
-      connection.onError(_handleNotificationsSocketError);
-      connection.on('notif:new', _handleNotificationNew);
-      connection.on('notif:error', _handleNotificationsSocketError);
+      bool active() =>
+          mounted && identical(_notificationsConnection, connection);
+      connection.onConnect(() {
+        if (active()) _handleNotificationsConnected();
+      });
+      connection.onDisconnect((data) {
+        if (active()) _handleNotificationsDisconnected(data);
+      });
+      connection.onError((error) {
+        if (active()) _handleNotificationsSocketError(error);
+      });
+      connection.on('notif:new', (data) {
+        if (active()) _handleNotificationNew(data);
+      });
+      connection.on('notif:error', (error) {
+        if (active()) _handleNotificationsSocketError(error);
+      });
 
       if (connection.isConnected) {
         _handleNotificationsConnected();
@@ -220,6 +353,8 @@ class LiveMapController extends StateNotifier<LiveMapState> {
         isNotificationsConnected: false,
         errorMessage: _formatError(error),
       );
+    } finally {
+      _isConnectingNotifications = false;
     }
   }
 
@@ -233,10 +368,7 @@ class LiveMapController extends StateNotifier<LiveMapState> {
       }
 
       state = state.copyWith(
-        alerts: _mergeAlerts(
-          current: state.alerts,
-          incoming: page.items,
-        ),
+        alerts: _mergeAlerts(current: state.alerts, incoming: page.items),
         isAlertsLoading: false,
       );
     } catch (error) {
@@ -256,14 +388,14 @@ class LiveMapController extends StateNotifier<LiveMapState> {
       return;
     }
 
-    state = state.copyWith(
-      isTelemetryConnected: true,
-      errorMessage: null,
-    );
+    state = state.copyWith(isTelemetryConnected: true, errorMessage: null);
 
     // Force re-send on every connect (server lost any prior subscription).
     _lastSentTelemetrySubscriptionHash = null;
     _sendTelemetrySubscriptionIfNeeded();
+    final reconnect = _hasConnectedTelemetry;
+    _hasConnectedTelemetry = true;
+    if (reconnect && _isForeground) unawaited(refreshTelemetry());
   }
 
   void _handleTelemetryDisconnected(dynamic _) {
@@ -279,7 +411,7 @@ class LiveMapController extends StateNotifier<LiveMapState> {
     if (!mounted) {
       return;
     }
-
+    _lastSentTelemetrySubscriptionHash = null;
     state = state.copyWith(
       isTelemetryConnected: false,
       errorMessage: _formatError(error),
@@ -287,22 +419,16 @@ class LiveMapController extends StateNotifier<LiveMapState> {
   }
 
   void _handleTelemetrySnapshot(dynamic data) {
-    if (!_hasTelemetryBaseline) {
+    _lastTelemetryPacket = _now();
+    if (!mounted || !_hasTelemetryBaseline) {
       return;
     }
 
-    final telemetry = _vehicleService.parseMapTelemetryPayload(data);
-    if (telemetry.vehicles.isEmpty) {
-      return;
+    var didChange = false;
+    for (final record in _telemetryRecords(data)) {
+      didChange = _applyTelemetryUpdate(record) || didChange;
     }
-
-    final didChange = _mergeVehicles(
-      telemetry.vehicles,
-      allowCreate: false,
-    );
-    if (didChange) {
-      _scheduleMergedTelemetryPublish();
-    }
+    if (didChange) _scheduleMergedTelemetryPublish();
   }
 
   void _handleTelemetrySnapshotChunk(dynamic data) {
@@ -313,6 +439,8 @@ class LiveMapController extends StateNotifier<LiveMapState> {
   }
 
   void _handleTelemetryUpdate(dynamic data) {
+    if (!mounted) return;
+    _lastTelemetryPacket = _now();
     if (!_hasTelemetryBaseline) {
       _bufferPendingTelemetryUpdate(data);
       return;
@@ -324,6 +452,8 @@ class LiveMapController extends StateNotifier<LiveMapState> {
   }
 
   void _handleTelemetryUpdateBatch(dynamic data) {
+    if (!mounted) return;
+    _lastTelemetryPacket = _now();
     final records = _telemetryRecords(data);
     if (records.isEmpty) {
       return;
@@ -361,6 +491,7 @@ class LiveMapController extends StateNotifier<LiveMapState> {
   }
 
   void _handleDeviceStatusUpdate(dynamic data) {
+    if (!mounted) return;
     if (!_hasTelemetryBaseline) {
       _bufferPendingDeviceStatusUpdate(data);
       return;
@@ -377,15 +508,16 @@ class LiveMapController extends StateNotifier<LiveMapState> {
     }
 
     var didChange = false;
-    final pendingTelemetry =
-        _pendingTelemetryUpdatesByAlias.values.toList(growable: false);
+    final pendingTelemetry = _pendingTelemetryUpdatesByAlias.values.toList(
+      growable: false,
+    );
     _pendingTelemetryUpdatesByAlias.clear();
     for (final update in pendingTelemetry) {
       didChange = _applyTelemetryUpdate(update) || didChange;
     }
 
-    final pendingDeviceStatuses =
-        _pendingDeviceStatusUpdatesByAlias.values.toList(growable: false);
+    final pendingDeviceStatuses = _pendingDeviceStatusUpdatesByAlias.values
+        .toList(growable: false);
     _pendingDeviceStatusUpdatesByAlias.clear();
     for (final update in pendingDeviceStatuses) {
       didChange = _applyDeviceStatusUpdate(update) || didChange;
@@ -399,10 +531,7 @@ class LiveMapController extends StateNotifier<LiveMapState> {
       data,
       requireCoordinates: false,
     );
-    final aliases = _identityAliasesForPayload(
-      data,
-      fallbackVehicle: vehicle,
-    );
+    final aliases = _identityAliasesForPayload(data, fallbackVehicle: vehicle);
     if (aliases.isEmpty) {
       return;
     }
@@ -420,7 +549,7 @@ class LiveMapController extends StateNotifier<LiveMapState> {
   }
 
   bool _applyTelemetryUpdate(dynamic data) {
-    final vehicle = _vehicleService.parseTelemetryVehiclePayload(
+    var vehicle = _vehicleService.parseTelemetryVehiclePayload(
       data,
       requireCoordinates: false,
     );
@@ -428,30 +557,74 @@ class LiveMapController extends StateNotifier<LiveMapState> {
       return false;
     }
 
-    final aliases = _identityAliasesForPayload(
-      data,
-      fallbackVehicle: vehicle,
-    );
+    final aliases = _identityAliasesForPayload(data, fallbackVehicle: vehicle);
     if (aliases.isEmpty) {
       return false;
     }
 
-    final updatedVehicles = Map<String, VehicleSummary>.from(_vehiclesByKey);
-    final updatedAliases = Map<String, String>.from(_vehicleKeyByAlias);
-    final didChange = _upsertVehicle(
-      updatedVehicles,
-      updatedAliases,
+    final currentKey = _resolveStorageKey(
+      _vehiclesByKey,
+      _vehicleKeyByAlias,
+      aliases: aliases,
+      allowCreate: false,
+    );
+    final current = currentKey == null ? null : _vehiclesByKey[currentKey];
+    if (current == null || current.licenseBlocked) return false;
+    final source = _asMap(data);
+    final telemetrySource = _asMap(source['telemetry']);
+    bool hasField(List<String> keys) => keys.any(
+      (key) => source.containsKey(key) || telemetrySource.containsKey(key),
+    );
+    // Socket payloads are telemetry patches, not vehicle records. Missing
+    // values must not erase names, permissions, speed, or state. Explicit
+    // zero/false/null remains an update where the field is present.
+    vehicle = vehicle.copyWith(
+      id: current.id,
+      name: hasField(const ['name', 'vehicleName', 'vehicle_name'])
+          ? vehicle.name
+          : current.name,
+      plateNumber: hasField(const ['plateNumber', 'plate_number'])
+          ? vehicle.plateNumber
+          : current.plateNumber,
+      speed: hasField(const ['speed', 'speedKph', 'speed_kph'])
+          ? vehicle.speed
+          : current.speed,
+      serverTime: vehicle.serverTime ?? current.serverTime,
+      deviceTime: vehicle.deviceTime ?? current.deviceTime,
+      updatedAt: vehicle.updatedAt ?? current.updatedAt,
+      motionState: hasField(const ['motionState', 'motion_state'])
+          ? vehicle.motionState
+          : current.motionState,
+      motionStateSince:
+          hasField(const ['motionStateSince', 'motion_state_since'])
+          ? vehicle.motionStateSince
+          : current.motionStateSince,
+      pendingMotionState:
+          hasField(const [
+            'pendingMotionState',
+            'pendingMotionStateSince',
+            'pendingStopSince',
+          ])
+          ? vehicle.pendingMotionState
+          : current.pendingMotionState,
+      pendingMotionStateSince:
+          hasField(const [
+            'pendingMotionState',
+            'pendingMotionStateSince',
+            'pendingStopSince',
+          ])
+          ? vehicle.pendingMotionStateSince
+          : current.pendingMotionStateSince,
+    );
+    // These indexes are private and never published. Mutating one entry
+    // avoids copying the entire fleet for every packet in a coalesced batch.
+    return _upsertVehicle(
+      _vehiclesByKey,
+      _vehicleKeyByAlias,
       vehicle,
       aliases: aliases,
       allowCreate: false,
     );
-    if (!didChange) {
-      return false;
-    }
-
-    _vehiclesByKey = updatedVehicles;
-    _vehicleKeyByAlias = updatedAliases;
-    return true;
   }
 
   bool _applyDeviceStatusUpdate(dynamic data) {
@@ -497,21 +670,46 @@ class LiveMapController extends StateNotifier<LiveMapState> {
       'serverTime',
       'server_time',
     ]);
-    final resolvedLastSeenAt = lastSeenAt ?? current.lastSeenAt;
+    final previousDeviceStatusTime = _deviceStatusTimes[storageKey];
+    if (deviceStatusUpdatedAt != null &&
+        previousDeviceStatusTime != null &&
+        deviceStatusUpdatedAt.isBefore(previousDeviceStatusTime)) {
+      return false;
+    }
+    if (deviceStatusUpdatedAt != null) {
+      _deviceStatusTimes[storageKey] = deviceStatusUpdatedAt;
+    }
+    final resolvedLastSeenAt =
+        current.lastSeenAt != null &&
+            lastSeenAt != null &&
+            lastSeenAt.isBefore(current.lastSeenAt!)
+        ? current.lastSeenAt
+        : lastSeenAt ?? current.lastSeenAt;
+    Object? motionValue(String key, Object? previous) =>
+        source.containsKey(key) ? source[key]?.toString() : previous;
+    Object? motionDate(String key, DateTime? previous) =>
+        source.containsKey(key) ? _asDateTime(source[key]) : previous;
     final updatedVehicle = current.copyWith(
-      status: _deriveStatusForDeviceConnection(
-        current,
-        connectionStatus: connectionStatus,
-        lastSeenAt: resolvedLastSeenAt,
-        statusUpdatedAt: deviceStatusUpdatedAt,
-      ),
-      deviceConnectionStatus: connectionStatus,
+      deviceConnectionStatus:
+          connectionStatus ?? current.deviceConnectionStatus,
       lastSeenAt: resolvedLastSeenAt,
+      motionState: motionValue('motionState', current.motionState),
+      motionStateSince: motionDate(
+        'motionStateSince',
+        current.motionStateSince,
+      ),
+      pendingMotionState: motionValue(
+        'pendingMotionState',
+        current.pendingMotionState,
+      ),
+      pendingMotionStateSince: motionDate(
+        'pendingMotionStateSince',
+        current.pendingMotionStateSince,
+      ),
     );
+    if (_isSameVehicleSnapshot(current, updatedVehicle)) return false;
 
-    _vehiclesByKey = Map<String, VehicleSummary>.from(_vehiclesByKey)
-      ..[storageKey] = updatedVehicle;
-    _vehicleKeyByAlias = Map<String, String>.from(_vehicleKeyByAlias);
+    _vehiclesByKey[storageKey] = updatedVehicle;
     for (final alias in _identityAliasesForVehicle(updatedVehicle)) {
       _vehicleKeyByAlias[alias] = storageKey;
     }
@@ -523,10 +721,7 @@ class LiveMapController extends StateNotifier<LiveMapState> {
       return;
     }
 
-    state = state.copyWith(
-      isNotificationsConnected: true,
-      errorMessage: null,
-    );
+    state = state.copyWith(isNotificationsConnected: true, errorMessage: null);
 
     _lastSentNotificationSubscriptionHash = null;
     _sendNotificationSubscriptionIfNeeded();
@@ -545,7 +740,7 @@ class LiveMapController extends StateNotifier<LiveMapState> {
     if (!mounted) {
       return;
     }
-
+    _lastSentNotificationSubscriptionHash = null;
     state = state.copyWith(
       isNotificationsConnected: false,
       errorMessage: _formatError(error),
@@ -570,10 +765,7 @@ class LiveMapController extends StateNotifier<LiveMapState> {
       return;
     }
 
-    state = state.copyWith(
-      alerts: alerts,
-      isAlertsLoading: false,
-    );
+    state = state.copyWith(alerts: alerts, isAlertsLoading: false);
   }
 
   // -------------------------------------------------------------------------
@@ -607,13 +799,10 @@ class LiveMapController extends StateNotifier<LiveMapState> {
         if (hash == _lastSentTelemetrySubscriptionHash) {
           return;
         }
-        connection.emit(
-          'telemetry:subscribe',
-          const <String, dynamic>{
-            'scope': _superadminScope,
-            'snapshot': false,
-          },
-        );
+        connection.emit('telemetry:subscribe', const <String, dynamic>{
+          'scope': _superadminScope,
+          'snapshot': false,
+        });
         _lastSentTelemetrySubscriptionHash = hash;
         return;
       case LiveMapTelemetrySubscribeMode.imeis:
@@ -621,22 +810,22 @@ class LiveMapController extends StateNotifier<LiveMapState> {
         if (hash == _lastSentTelemetrySubscriptionHash) {
           return;
         }
-        for (var offset = 0;
-            offset < _baselineImeis.length;
-            offset += _maxImeisPerSocketSubscription) {
+        for (
+          var offset = 0;
+          offset < _baselineImeis.length;
+          offset += _maxImeisPerSocketSubscription
+        ) {
           final end = math.min(
             offset + _maxImeisPerSocketSubscription,
             _baselineImeis.length,
           );
-          connection.emit(
-            'telemetry:subscribe',
-            <String, dynamic>{
-              'imeis': _baselineImeis.sublist(offset, end),
-              // REST already supplied the current snapshot. Requesting a
-              // socket copy multiplies memory/network cost on large fleets.
-              'snapshot': false,
-            },
-          );
+          connection.emit('telemetry:subscribe', <String, dynamic>{
+            'imeis': _baselineImeis.sublist(offset, end),
+            // REST already supplied the current snapshot. Requesting a
+            // socket copy multiplies memory/network cost on large fleets.
+            'snapshot': false,
+            'delivery': 'batch',
+          });
         }
         _lastSentTelemetrySubscriptionHash = hash;
         return;
@@ -645,10 +834,9 @@ class LiveMapController extends StateNotifier<LiveMapState> {
         if (hash == _lastSentTelemetrySubscriptionHash) {
           return;
         }
-        connection.emit(
-          'telemetry:subscribe',
-          const <String, dynamic>{'scope': _demoScope},
-        );
+        connection.emit('telemetry:subscribe', const <String, dynamic>{
+          'scope': _demoScope,
+        });
         _lastSentTelemetrySubscriptionHash = hash;
     }
   }
@@ -665,10 +853,9 @@ class LiveMapController extends StateNotifier<LiveMapState> {
         if (hash == _lastSentNotificationSubscriptionHash) {
           return;
         }
-        connection.emit(
-          'notif:subscribe',
-          const <String, dynamic>{'scope': _superadminScope},
-        );
+        connection.emit('notif:subscribe', const <String, dynamic>{
+          'scope': _superadminScope,
+        });
         _lastSentNotificationSubscriptionHash = hash;
         return;
       case LiveMapNotificationSubscribeMode.imeis:
@@ -681,19 +868,18 @@ class LiveMapController extends StateNotifier<LiveMapState> {
         if (hash == _lastSentNotificationSubscriptionHash) {
           return;
         }
-        for (var offset = 0;
-            offset < _baselineImeis.length;
-            offset += _maxImeisPerSocketSubscription) {
+        for (
+          var offset = 0;
+          offset < _baselineImeis.length;
+          offset += _maxImeisPerSocketSubscription
+        ) {
           final end = math.min(
             offset + _maxImeisPerSocketSubscription,
             _baselineImeis.length,
           );
-          connection.emit(
-            'notif:subscribe',
-            <String, dynamic>{
-              'imeis': _baselineImeis.sublist(offset, end),
-            },
-          );
+          connection.emit('notif:subscribe', <String, dynamic>{
+            'imeis': _baselineImeis.sublist(offset, end),
+          });
         }
         _lastSentNotificationSubscriptionHash = hash;
         return;
@@ -793,10 +979,7 @@ class LiveMapController extends StateNotifier<LiveMapState> {
     return keys;
   }
 
-  int _compareAlertsNewestFirst(
-    AppNotification left,
-    AppNotification right,
-  ) {
+  int _compareAlertsNewestFirst(AppNotification left, AppNotification right) {
     final leftCreatedAt = left.createdAt;
     final rightCreatedAt = right.createdAt;
     if (leftCreatedAt != null && rightCreatedAt != null) {
@@ -834,29 +1017,6 @@ class LiveMapController extends StateNotifier<LiveMapState> {
     _vehicleKeyByAlias = updatedAliases;
   }
 
-  bool _mergeVehicles(
-    Iterable<VehicleSummary> vehicles, {
-    required bool allowCreate,
-  }) {
-    var didChange = false;
-    final updatedVehicles = Map<String, VehicleSummary>.from(_vehiclesByKey);
-    final updatedAliases = Map<String, String>.from(_vehicleKeyByAlias);
-    for (final vehicle in vehicles) {
-      didChange = _upsertVehicle(
-            updatedVehicles,
-            updatedAliases,
-            vehicle,
-            aliases: _identityAliasesForVehicle(vehicle),
-            allowCreate: allowCreate,
-          ) ||
-          didChange;
-    }
-
-    _vehiclesByKey = updatedVehicles;
-    _vehicleKeyByAlias = updatedAliases;
-    return didChange;
-  }
-
   bool _upsertVehicle(
     Map<String, VehicleSummary> vehiclesByKey,
     Map<String, String> vehicleKeyByAlias,
@@ -876,8 +1036,9 @@ class LiveMapController extends StateNotifier<LiveMapState> {
     }
 
     final current = vehiclesByKey[storageKey];
-    final mergedVehicle =
-        current == null ? vehicle : _mergeVehicle(current, vehicle);
+    final mergedVehicle = current == null
+        ? vehicle
+        : _mergeVehicle(current, vehicle);
 
     if (current != null && _isSameVehicleSnapshot(current, mergedVehicle)) {
       for (final alias in stableAliases) {
@@ -913,13 +1074,6 @@ class LiveMapController extends StateNotifier<LiveMapState> {
       }
     }
 
-    for (final entry in vehiclesByKey.entries) {
-      final currentAliases = _identityAliasesForVehicle(entry.value);
-      if (_sharesIdentityAlias(currentAliases, stableAliases)) {
-        return entry.key;
-      }
-    }
-
     if (!allowCreate || stableAliases.isEmpty) {
       return null;
     }
@@ -927,41 +1081,29 @@ class LiveMapController extends StateNotifier<LiveMapState> {
     return stableAliases.first;
   }
 
-  bool _sharesIdentityAlias(
-    List<String> leftAliases,
-    List<String> rightAliases,
-  ) {
-    if (leftAliases.isEmpty || rightAliases.isEmpty) {
-      return false;
-    }
-
-    final rightAliasSet = rightAliases.toSet();
-    for (final alias in leftAliases) {
-      if (rightAliasSet.contains(alias)) {
-        return true;
-      }
-    }
-
-    return false;
-  }
-
   VehicleSummary _mergeVehicle(
     VehicleSummary current,
     VehicleSummary incoming,
   ) {
+    if (current.licenseBlocked) return current;
+    final currentTime = liveVehicleReceiveTime(current);
+    final incomingTime = liveVehicleReceiveTime(incoming);
+    if (currentTime != null &&
+        incomingTime != null &&
+        incomingTime.isBefore(currentTime)) {
+      return current;
+    }
     final useIncomingLocation = _shouldUseIncomingLocation(current, incoming);
-    final resolvedUpdatedAt = _resolveMonotonicUpdatedAt(
-      current: current,
-      incoming: incoming,
-      useIncomingLocation: useIncomingLocation,
-    );
+    final today = current.withTodayDistanceFrom(incoming, now: _now());
     return current.copyWith(
-      id: incoming.id.isNotEmpty ? incoming.id : current.id,
+      id: current.id.isNotEmpty ? current.id : incoming.id,
       imei: incoming.imei.isNotEmpty ? incoming.imei : current.imei,
       name: incoming.name.trim().isEmpty ? current.name : incoming.name,
       plateNumber: incoming.plateNumber.isNotEmpty
           ? incoming.plateNumber
           : current.plateNumber,
+      deviceTypeId: incoming.deviceTypeId ?? current.deviceTypeId,
+      vehicleTypeSlug: current.vehicleTypeSlug ?? incoming.vehicleTypeSlug,
       status: incoming.status == 'unknown' ? current.status : incoming.status,
       speed: incoming.speed,
       latitude: useIncomingLocation ? incoming.latitude : current.latitude,
@@ -969,9 +1111,16 @@ class LiveMapController extends StateNotifier<LiveMapState> {
       hasValidLocation: useIncomingLocation
           ? incoming.hasValidLocation
           : current.hasValidLocation,
-      updatedAt: resolvedUpdatedAt,
-      distanceKm: incoming.distanceKm ?? current.distanceKm,
-      odometerKm: incoming.odometerKm ?? current.odometerKm,
+      // Never fabricate a timestamp to animate a location. A stationary
+      // packet must update its receive/device times and speed immediately.
+      updatedAt: incoming.updatedAt ?? current.updatedAt,
+      serverTime: incoming.serverTime ?? current.serverTime,
+      deviceTime: incoming.deviceTime ?? current.deviceTime,
+      distanceKm: today.distanceKm,
+      browserDayKey: today.browserDayKey,
+      browserDayStart: today.browserDayStart,
+      browserDayBaseOdometer: today.browserDayBaseOdometer,
+      odometerKm: today.odometerKm,
       engineHoursToday: incoming.engineHoursToday ?? current.engineHoursToday,
       engineHours: incoming.engineHours ?? current.engineHours,
       totalEngineHours: incoming.totalEngineHours ?? current.totalEngineHours,
@@ -981,7 +1130,16 @@ class LiveMapController extends StateNotifier<LiveMapState> {
       acc: incoming.acc ?? current.acc,
       deviceConnectionStatus:
           incoming.deviceConnectionStatus ?? current.deviceConnectionStatus,
-      lastSeenAt: incoming.lastSeenAt ?? current.lastSeenAt,
+      lastSeenAt:
+          current.lastSeenAt != null &&
+              incoming.lastSeenAt != null &&
+              incoming.lastSeenAt!.isBefore(current.lastSeenAt!)
+          ? current.lastSeenAt
+          : incoming.lastSeenAt ?? current.lastSeenAt,
+      motionState: incoming.motionState,
+      motionStateSince: incoming.motionStateSince,
+      pendingMotionState: incoming.pendingMotionState,
+      pendingMotionStateSince: incoming.pendingMotionStateSince,
     );
   }
 
@@ -1013,8 +1171,8 @@ class LiveMapController extends StateNotifier<LiveMapState> {
       return false;
     }
 
-    final currentTime = current.updatedAt ?? current.lastSeenAt;
-    final incomingTime = incoming.updatedAt ?? incoming.lastSeenAt;
+    final currentTime = liveVehicleReceiveTime(current);
+    final incomingTime = liveVehicleReceiveTime(incoming);
     if (currentTime != null && incomingTime != null) {
       if (incomingTime.isBefore(currentTime)) {
         return false;
@@ -1032,33 +1190,7 @@ class LiveMapController extends StateNotifier<LiveMapState> {
     return true;
   }
 
-  DateTime? _resolveMonotonicUpdatedAt({
-    required VehicleSummary current,
-    required VehicleSummary incoming,
-    required bool useIncomingLocation,
-  }) {
-    final currentTime = current.updatedAt ?? current.lastSeenAt;
-    final incomingTime = incoming.updatedAt ?? incoming.lastSeenAt;
-
-    if (!useIncomingLocation) {
-      return incoming.updatedAt ?? current.updatedAt;
-    }
-
-    if (currentTime == null) {
-      return incomingTime ?? DateTime.now().toUtc();
-    }
-
-    if (incomingTime == null || !incomingTime.isAfter(currentTime)) {
-      return currentTime.add(const Duration(milliseconds: 250));
-    }
-
-    return incomingTime;
-  }
-
-  bool _isSameVehicleSnapshot(
-    VehicleSummary left,
-    VehicleSummary right,
-  ) {
+  bool _isSameVehicleSnapshot(VehicleSummary left, VehicleSummary right) {
     return left.id == right.id &&
         left.imei == right.imei &&
         left.name == right.name &&
@@ -1070,6 +1202,9 @@ class LiveMapController extends StateNotifier<LiveMapState> {
         left.hasValidLocation == right.hasValidLocation &&
         left.updatedAt == right.updatedAt &&
         left.distanceKm == right.distanceKm &&
+        left.browserDayKey == right.browserDayKey &&
+        left.browserDayStart == right.browserDayStart &&
+        left.browserDayBaseOdometer == right.browserDayBaseOdometer &&
         left.odometerKm == right.odometerKm &&
         left.engineHoursToday == right.engineHoursToday &&
         left.engineHours == right.engineHours &&
@@ -1079,7 +1214,16 @@ class LiveMapController extends StateNotifier<LiveMapState> {
         left.ignition == right.ignition &&
         left.acc == right.acc &&
         left.deviceConnectionStatus == right.deviceConnectionStatus &&
-        left.lastSeenAt == right.lastSeenAt;
+        left.lastSeenAt == right.lastSeenAt &&
+        left.serverTime == right.serverTime &&
+        left.deviceTime == right.deviceTime &&
+        left.motionState == right.motionState &&
+        left.motionStateSince == right.motionStateSince &&
+        left.pendingMotionState == right.pendingMotionState &&
+        left.pendingMotionStateSince == right.pendingMotionStateSince &&
+        left.licenseBlocked == right.licenseBlocked &&
+        left.vehicleTypeSlug == right.vehicleTypeSlug &&
+        left.deviceTypeId == right.deviceTypeId;
   }
 
   List<String> _identityAliasesForPayload(
@@ -1135,46 +1279,46 @@ class LiveMapController extends StateNotifier<LiveMapState> {
     return <String>[...imeiAliases, ...idAliases];
   }
 
-  String _deriveStatusForDeviceConnection(
-    VehicleSummary vehicle, {
-    required String? connectionStatus,
-    required DateTime? lastSeenAt,
-    required DateTime? statusUpdatedAt,
-  }) {
-    final normalized = connectionStatus?.trim().toUpperCase() ?? '';
-    if (normalized == 'CONNECTED' || normalized == 'ONLINE') {
-      if (vehicle.speed > 0) {
-        return 'running';
-      }
-
-      if (vehicle.ignition == true || vehicle.acc == true) {
-        return 'idle';
-      }
-
-      return 'stop';
+  void _publishMergedTelemetry({bool onlyIfChanged = false}) {
+    final now = _now();
+    final vehicles = <VehicleSummary>[];
+    for (final entry in _vehiclesByKey.entries) {
+      final today = entry.value.withTodayDistanceFrom(entry.value, now: now);
+      final status = classifyLiveVehicle(today, now: now).name;
+      final vehicle = today.status == status
+          ? today
+          : today.copyWith(status: status);
+      // Reuse unchanged immutable vehicle objects on maintenance ticks.
+      _vehiclesByKey[entry.key] = vehicle;
+      vehicles.add(vehicle);
     }
-
-    if (normalized == 'DISCONNECTED' || normalized == 'OFFLINE') {
-      final referenceTime = lastSeenAt ?? statusUpdatedAt ?? vehicle.updatedAt;
-      if (referenceTime == null) {
-        return 'no_data';
-      }
-
-      final age = DateTime.now().toUtc().difference(referenceTime.toUtc());
-      if (age >= _inactiveStatusThreshold) {
-        return 'inactive';
-      }
-
-      return 'stop';
-    }
-
-    return vehicle.status;
-  }
-
-  void _publishMergedTelemetry() {
-    final telemetry = _vehicleService.buildTelemetryFromVehicles(
-      _vehiclesByKey.values.toList(growable: false),
+    final running = vehicles
+        .where((vehicle) => vehicle.status == 'running')
+        .length;
+    final inactive = vehicles
+        .where((vehicle) => vehicle.status == 'inactive')
+        .length;
+    final telemetry = LiveMapTelemetry(
+      allCount: vehicles.length,
+      runningCount: running,
+      stopCount: vehicles.length - running - inactive,
+      inactiveCount: inactive,
+      vehicles: vehicles,
     );
+    if (onlyIfChanged &&
+        telemetry.allCount == state.telemetry.allCount &&
+        telemetry.runningCount == state.telemetry.runningCount &&
+        telemetry.stopCount == state.telemetry.stopCount &&
+        telemetry.inactiveCount == state.telemetry.inactiveCount &&
+        telemetry.vehicles.length == state.telemetry.vehicles.length &&
+        Iterable<int>.generate(telemetry.vehicles.length).every(
+          (index) => _isSameVehicleSnapshot(
+            telemetry.vehicles[index],
+            state.telemetry.vehicles[index],
+          ),
+        )) {
+      return;
+    }
     _publishTelemetry(telemetry);
   }
 
@@ -1222,9 +1366,7 @@ class LiveMapController extends StateNotifier<LiveMapState> {
     }
 
     if (value is Map) {
-      return value.map(
-        (key, item) => MapEntry(key.toString(), item),
-      );
+      return value.map((key, item) => MapEntry(key.toString(), item));
     }
 
     return const <String, dynamic>{};
@@ -1303,11 +1445,13 @@ class LiveMapController extends StateNotifier<LiveMapState> {
     final deltaLongitude = _degreesToRadians(toLongitude - fromLongitude);
     final startLatitudeRadians = _degreesToRadians(fromLatitude);
     final endLatitudeRadians = _degreesToRadians(toLatitude);
-    final haversine = math.pow(math.sin(deltaLatitude / 2), 2) +
+    final haversine =
+        math.pow(math.sin(deltaLatitude / 2), 2) +
         math.cos(startLatitudeRadians) *
             math.cos(endLatitudeRadians) *
             math.pow(math.sin(deltaLongitude / 2), 2);
-    final arc = 2 *
+    final arc =
+        2 *
         math.atan2(
           math.sqrt(haversine.toDouble()),
           math.sqrt(1 - haversine.toDouble()),
@@ -1317,6 +1461,13 @@ class LiveMapController extends StateNotifier<LiveMapState> {
 
   double _degreesToRadians(double degrees) {
     return degrees * (math.pi / 180);
+  }
+
+  String _localDayKey(DateTime instant) {
+    final local = instant.toLocal();
+    return '${local.year.toString().padLeft(4, '0')}-'
+        '${local.month.toString().padLeft(2, '0')}-'
+        '${local.day.toString().padLeft(2, '0')}';
   }
 
   String _formatError(Object? error) {
@@ -1330,6 +1481,8 @@ class LiveMapController extends StateNotifier<LiveMapState> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _maintenanceTimer?.cancel();
     _liveTelemetryPublishTimer?.cancel();
     _telemetryConnection?.disconnect();
     _notificationsConnection?.disconnect();

@@ -269,6 +269,7 @@ final adminUserDetailsControllerProvider = StateNotifierProvider.autoDispose
       ref,
       userId,
     ) {
+      ref.watch(workspaceDataScopeProvider);
       return AdminUserDetailsController(
         userId: userId,
         service: ref.watch(adminUserDetailsServiceProvider),

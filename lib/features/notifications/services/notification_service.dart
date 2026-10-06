@@ -18,15 +18,22 @@ abstract class NotificationService {
   String get readAllEndpoint;
   String get roleLabel;
 
+  /// Only Admin's endpoint accepts category. The shared Superadmin/User DTO
+  /// rejects extra query fields with forbidNonWhitelisted enabled.
+  bool get supportsCategoryFilter => false;
+
   Future<NotificationPage> getNotifications({
     int limit = AppConstants.defaultPageSize,
     int? beforeId,
     bool unreadOnly = false,
     String? category,
   }) async {
+    // All three role endpoints cap pages at 30. Parse hasMore against the
+    // effective server limit so a full page is never mistaken for the last one.
+    final normalizedLimit = limit.clamp(1, 30);
     if (AppConfig.useMockData) {
       return _buildMockPage(
-        limit: limit,
+        limit: normalizedLimit,
         beforeId: beforeId,
         unreadOnly: unreadOnly,
         category: category,
@@ -36,16 +43,16 @@ abstract class NotificationService {
     final response = await _apiClient.get<NotificationPage>(
       listEndpoint,
       queryParameters: <String, dynamic>{
-        'limit': limit.toString(),
+        'limit': normalizedLimit.toString(),
         if (beforeId != null) 'beforeId': beforeId.toString(),
         if (unreadOnly) 'unreadOnly': 'true',
-        if (category != null && category.trim().isNotEmpty)
+        if (supportsCategoryFilter &&
+            category != null &&
+            category.trim().isNotEmpty)
           'category': category.trim(),
       },
-      parser: (json) => NotificationPage.fromDynamic(
-        json,
-        requestedLimit: limit,
-      ),
+      parser: (json) =>
+          NotificationPage.fromDynamic(json, requestedLimit: normalizedLimit),
     );
 
     return response.data;
@@ -116,10 +123,8 @@ abstract class NotificationService {
               'unreadOnly': 'true',
             },
             options: options,
-            parser: (json) => NotificationPage.fromDynamic(
-              json,
-              requestedLimit: badgeLimit,
-            ),
+            parser: (json) =>
+                NotificationPage.fromDynamic(json, requestedLimit: badgeLimit),
           );
 
           final page = response.data;
@@ -186,8 +191,9 @@ abstract class NotificationService {
     }
 
     if (unreadOnly) {
-      notifications =
-          notifications.where((item) => !item.isRead).toList(growable: false);
+      notifications = notifications
+          .where((item) => !item.isRead)
+          .toList(growable: false);
     }
 
     if (beforeId != null) {
@@ -196,8 +202,9 @@ abstract class NotificationService {
           .toList(growable: false);
     }
 
-    final unreadCount =
-        _buildMockNotifications().where((item) => !item.isRead).length;
+    final unreadCount = _buildMockNotifications()
+        .where((item) => !item.isRead)
+        .length;
     final hasMore = notifications.length > limit;
     final pageItems = notifications.take(limit).toList(growable: false);
 
@@ -277,16 +284,15 @@ abstract class NotificationService {
       ),
     ];
 
-    return notifications.map((item) {
-      if (!_mockReadIds.contains(item.id)) {
-        return item;
-      }
+    return notifications
+        .map((item) {
+          if (!_mockReadIds.contains(item.id)) {
+            return item;
+          }
 
-      return item.copyWith(
-        isRead: true,
-        readAt: item.readAt ?? now,
-      );
-    }).toList(growable: false)
+          return item.copyWith(isRead: true, readAt: item.readAt ?? now);
+        })
+        .toList(growable: false)
       ..sort((left, right) => right.id.compareTo(left.id));
   }
 

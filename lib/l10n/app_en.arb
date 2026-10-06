@@ -4828,5 +4828,42 @@
   "validationStandardVin": "VIN must be 17 alphanumeric characters (excluding I, O, Q)",
   "validationVinAlphanumeric": "VIN must contain only letters and numbers",
   "validationThisField": "This field",
-  "validationFieldSimNumber": "SIM number"
+  "validationFieldSimNumber": "SIM number",
+  "mobileDataBackup": "Data Backup",
+  "mobileEffectiveRetention": "Effective retention",
+  "mobileAdministratorLimit": "Administrator limit",
+  "mobilePolicySource": "Policy source",
+  "mobileUseAdministratorPolicy": "Use administrator policy ({value1})",
+  "@mobileUseAdministratorPolicy": {
+    "placeholders": {
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "mobileRetentionCleanupNotice": "Historical telemetry older than the retention period is removed by scheduled cleanup. Increasing retention does not restore deleted data.",
+  "mobileRetentionLimitError": "The retention period cannot exceed {value1} days.",
+  "@mobileRetentionLimitError": {
+    "placeholders": {
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "mobileRetentionLoadError": "Unable to load data retention",
+  "mobileRetentionSaveError": "Unable to save data retention",
+  "mobileRetentionSaved": "Data retention updated",
+  "mobileRetentionUnsupported": "The server returned an unsupported retention policy. Editing is disabled.",
+  "mobileDiscardDetailChanges": "Changes will be lost. Continue?",
+  "mobileLiveTrackingReconnecting": "Live tracking reconnecting…",
+  "mobileLastConnection": "Last connection",
+  "mobileTeamLoadError": "Team could not be loaded.",
+  "mobilePermissionsLoadError": "Permissions could not be loaded.",
+  "mobileActivityLoadError": "Activity could not be loaded.",
+  "mobilePermissionsRetryError": "Unable to load or save permissions. Please try again.",
+  "mobilePermissionMaps": "Maps",
+  "mobilePermissionLandmarks": "Landmarks",
+  "mobilePermissionShareTracking": "Share tracking link",
+  "mobilePrivacyPolicyLink": "Privacy policy",
+  "mobilePageLinkError": "Unable to open this page. Please try again."
 }

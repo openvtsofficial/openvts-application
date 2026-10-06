@@ -6,6 +6,7 @@ import '../../../core/api/api_endpoints.dart';
 import '../../../core/api/api_options.dart';
 import '../../../shared/models/user_role.dart';
 import '../models/admin_payments_model.dart';
+import '../models/admin_subscription_policy.dart';
 import '../models/admin_users_model.dart';
 
 class AdminPaymentsService {
@@ -116,6 +117,7 @@ class AdminPaymentsService {
   Future<AdminPaymentTransaction?> renewVehicles(
     AdminRenewPaymentRequest request,
   ) async {
+    AdminSubscriptionPolicy.requireRenewalsAllowed();
     final response = await _apiClient.post<dynamic>(
       ApiEndpoints.admin.renewVehiclesPayment,
       data: {

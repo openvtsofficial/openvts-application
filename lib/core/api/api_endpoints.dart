@@ -260,6 +260,7 @@ class _AdminEndpoints {
   String driverUnlinkedUsers(String driverId) =>
       '/admin/drivers/unlinkedusers/${Uri.encodeComponent(driverId)}';
   String get teams => '/admin/teams';
+  String teamById(String id) => '/admin/teams/${Uri.encodeComponent(id)}';
   String get pricingPlans => '/admin/pricingplans';
   String pricingPlanById(String id) =>
       '/admin/pricingplans/${Uri.encodeComponent(id)}';
@@ -366,11 +367,15 @@ class _UserEndpoints {
       '/user/drivers/${Uri.encodeComponent(id)}/logs';
   String driverDocuments(String id) =>
       '/user/drivers/${Uri.encodeComponent(id)}/documents';
-  String driverDocumentById(
-          {required String driverId, required String docId}) =>
+  String driverDocumentById({
+    required String driverId,
+    required String docId,
+  }) =>
       '/user/drivers/${Uri.encodeComponent(driverId)}/documents/${Uri.encodeComponent(docId)}';
   String get subusers => '/user/subusers';
   String subuserById(String id) => '/user/subusers/${Uri.encodeComponent(id)}';
+  String subuserPermissions(String id) =>
+      '/user/subusers/${Uri.encodeComponent(id)}/permissions';
   String subuserVehicles(String id) =>
       '/user/subusers/${Uri.encodeComponent(id)}/vehicles';
   String assignSubuserVehicles(String id) =>
@@ -432,8 +437,9 @@ class AuthSecurityEndpoints {
   static bool isPublicAuthenticationRequest(String value) {
     final path = Uri.tryParse(value)?.path ?? value.split('?').first;
     return RegExp(r'/demo(?:/|$)').hasMatch(path) ||
-        RegExp(r'/auth/(?:login|login-options|refresh-token|forgot-password|reset-password|google/login|mfa/verify-login)$')
-            .hasMatch(path);
+        RegExp(
+          r'/auth/(?:login|login-options|refresh-token|forgot-password|reset-password|google/login|mfa/verify-login)$',
+        ).hasMatch(path);
   }
 
   static const verifyLogin = '/auth/mfa/verify-login';
@@ -464,6 +470,8 @@ class AdminExtendedEndpoints {
       '/admin/teams/${Uri.encodeComponent(id)}/activitylogs';
   static String userPermissions(String id) =>
       '/admin/users/${Uri.encodeComponent(id)}/permissions';
+  static String userDataRetention(String id) =>
+      '/admin/users/${Uri.encodeComponent(id)}/data-retention';
   static String vehicleService(String id) =>
       '/admin/vehicle-service/vehicles/${Uri.encodeComponent(id)}';
   static String annualRenew(String id) => '${vehicleService(id)}/annual-renew';
@@ -717,66 +725,67 @@ class TeamApiEndpointRules {
   static final patterns = <(RegExp, String Function(RegExpMatch))>[
     (
       RegExp(r'^/(devices|simcards)/([^/]+)$'),
-      (m) => '/team/inventory/${m[1]}/${m[2]}'
+      (m) => '/team/inventory/${m[1]}/${m[2]}',
     ),
     (
       RegExp(
-          r'^/vehicles/by-imei/([^/]+)/(details|logs|events|history|replay|sensors)$'),
-      (m) => '/team/map/vehicles/by-imei/${m[1]}/${m[2]}'
+        r'^/vehicles/by-imei/([^/]+)/(details|logs|events|history|replay|sensors)$',
+      ),
+      (m) => '/team/map/vehicles/by-imei/${m[1]}/${m[2]}',
     ),
     (RegExp(r'^/userlogin/([^/]+)$'), (m) => '/team/users/${m[1]}/login'),
     (
       RegExp(r'^/updateuserpassword/([^/]+)$'),
-      (m) => '/team/users/${m[1]}/password'
+      (m) => '/team/users/${m[1]}/password',
     ),
     (
       RegExp(r'^/companydetails/([^/]+)$'),
-      (m) => '/team/users/${m[1]}/company'
+      (m) => '/team/users/${m[1]}/company',
     ),
     (
       RegExp(r'^/linkvehicles/([^/]+)$'),
-      (m) => '/team/users/${m[1]}/vehicles/linked'
+      (m) => '/team/users/${m[1]}/vehicles/linked',
     ),
     (
       RegExp(r'^/unlinkvehicles/([^/]+)$'),
-      (m) => '/team/users/${m[1]}/vehicles/available'
+      (m) => '/team/users/${m[1]}/vehicles/available',
     ),
     (
       RegExp(r'^/linkusers/([^/]+)$'),
-      (m) => '/team/vehicles/${m[1]}/users/linked'
+      (m) => '/team/vehicles/${m[1]}/users/linked',
     ),
     (
       RegExp(r'^/unlinkusers/([^/]+)$'),
-      (m) => '/team/vehicles/${m[1]}/users/available'
+      (m) => '/team/vehicles/${m[1]}/users/available',
     ),
     (
       RegExp(r'^/users/linkeddrivers/([^/]+)$'),
-      (m) => '/team/users/${m[1]}/drivers/linked'
+      (m) => '/team/users/${m[1]}/drivers/linked',
     ),
     (
       RegExp(r'^/users/unlinkeddrivers/([^/]+)$'),
-      (m) => '/team/users/${m[1]}/drivers/available'
+      (m) => '/team/users/${m[1]}/drivers/available',
     ),
     (
       RegExp(r'^/drivers/linkedusers/([^/]+)$'),
-      (m) => '/team/drivers/${m[1]}/users/linked'
+      (m) => '/team/drivers/${m[1]}/users/linked',
     ),
     (
       RegExp(r'^/drivers/unlinkedusers/([^/]+)$'),
-      (m) => '/team/drivers/${m[1]}/users/available'
+      (m) => '/team/drivers/${m[1]}/users/available',
     ),
     (
       RegExp(r'^/documents/vehicle/([^/]+)$'),
-      (m) => '/team/vehicles/${m[1]}/documents'
+      (m) => '/team/vehicles/${m[1]}/documents',
     ),
     (
       RegExp(r'^/documents/driver/([^/]+)$'),
-      (m) => '/team/drivers/${m[1]}/documents'
+      (m) => '/team/drivers/${m[1]}/documents',
     ),
     (RegExp(r'^/documents/([^/]+)$'), (m) => '/team/users/${m[1]}/documents'),
     (
       RegExp(r'^/(tickets|mytickets)/(.+)$'),
-      (m) => '/team/support/${m[1]}/${m[2]}'
+      (m) => '/team/support/${m[1]}/${m[2]}',
     ),
   ];
 }

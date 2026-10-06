@@ -50,7 +50,8 @@ class AdminUserListItem {
     final companies =
         _firstList(source, const ['companies']) ?? const <dynamic>[];
     final firstCompany = companies.isEmpty ? null : _asMap(companies.first);
-    final mobilePrefix = _firstString(source, const [
+    final mobilePrefix =
+        _firstString(source, const [
           'mobilePrefix',
           'mobile_prefix',
           'mobileprefix',
@@ -58,7 +59,8 @@ class AdminUserListItem {
           'phone_prefix',
         ]) ??
         '';
-    final mobileNumber = _firstString(source, const [
+    final mobileNumber =
+        _firstString(source, const [
           'mobileNumber',
           'mobile_number',
           'mobile',
@@ -67,8 +69,12 @@ class AdminUserListItem {
           'phone',
         ]) ??
         '';
-    final companyName = _firstString(firstCompany ?? const <String, dynamic>{},
-            const ['name', 'companyName', 'company_name']) ??
+    final companyName =
+        _firstString(firstCompany ?? const <String, dynamic>{}, const [
+          'name',
+          'companyName',
+          'company_name',
+        ]) ??
         _firstString(source, const [
           'companyName',
           'company_name',
@@ -79,7 +85,8 @@ class AdminUserListItem {
         '-';
 
     return AdminUserListItem(
-      id: _firstString(source, const [
+      id:
+          _firstString(source, const [
             'uid',
             'id',
             '_id',
@@ -87,7 +94,8 @@ class AdminUserListItem {
             'user_id',
           ]) ??
           '',
-      name: _firstString(source, const [
+      name:
+          _firstString(source, const [
             'name',
             'Name',
             'fullName',
@@ -96,14 +104,16 @@ class AdminUserListItem {
             'display_name',
           ]) ??
           '',
-      username: _firstString(source, const [
+      username:
+          _firstString(source, const [
             'username',
             'userName',
             'user_name',
             'login',
           ]) ??
           '',
-      email: _firstString(source, const [
+      email:
+          _firstString(source, const [
             'email',
             'Email',
             'mail',
@@ -113,14 +123,16 @@ class AdminUserListItem {
           '',
       mobilePrefix: mobilePrefix,
       mobileNumber: mobileNumber,
-      mobileDisplay: _firstString(source, const [
+      mobileDisplay:
+          _firstString(source, const [
             'mobileDisplay',
             'mobile_display',
             'phoneDisplay',
             'phone_display',
           ]) ??
           _composeMobileDisplay(mobilePrefix, mobileNumber),
-      isEmailVerified: _parseBool(
+      isEmailVerified:
+          _parseBool(
             _firstValue(source, const [
               'isEmailVerified',
               'is_email_verified',
@@ -134,7 +146,8 @@ class AdminUserListItem {
             ]),
           ) ??
           false,
-      isActive: _parseBool(
+      isActive:
+          _parseBool(
             _firstValue(source, const [
               'isActive',
               'is_active',
@@ -145,7 +158,8 @@ class AdminUserListItem {
           ) ??
           true,
       companyName: companyName,
-      location: _firstString(address, const [
+      location:
+          _firstString(address, const [
             'fullAddress',
             'full_address',
             'addressLine',
@@ -158,7 +172,8 @@ class AdminUserListItem {
             'address',
           ]) ??
           '-',
-      countryCode: _firstString(source, const [
+      countryCode:
+          _firstString(source, const [
             'countryCode',
             'country_code',
             'country',
@@ -169,18 +184,12 @@ class AdminUserListItem {
             'country',
           ]) ??
           '',
-      stateCode: _firstString(source, const [
-            'stateCode',
-            'state_code',
-            'state',
-          ]) ??
-          _firstString(address, const [
-            'stateCode',
-            'state_code',
-            'state',
-          ]) ??
+      stateCode:
+          _firstString(source, const ['stateCode', 'state_code', 'state']) ??
+          _firstString(address, const ['stateCode', 'state_code', 'state']) ??
           '',
-      city: _firstString(source, const [
+      city:
+          _firstString(source, const [
             'city',
             'cityName',
             'city_name',
@@ -195,7 +204,8 @@ class AdminUserListItem {
             'city_id',
           ]) ??
           '',
-      pincode: _firstString(source, const [
+      pincode:
+          _firstString(source, const [
             'pincode',
             'pinCode',
             'pin_code',
@@ -212,7 +222,8 @@ class AdminUserListItem {
             'zip',
           ]) ??
           '',
-      vehicleCount: _firstInt(source, const [
+      vehicleCount:
+          _firstInt(source, const [
             'totalvehicles',
             'totalVehicles',
             'vehicleCount',
@@ -374,10 +385,7 @@ class AdminUserDetails extends AdminUserListItem {
 }
 
 class AdminUserCountryOption {
-  const AdminUserCountryOption({
-    required this.value,
-    required this.label,
-  });
+  const AdminUserCountryOption({required this.value, required this.label});
 
   final String value;
   final String label;
@@ -398,17 +406,19 @@ class AdminUserCountryOption {
             return const AdminUserCountryOption(value: '', label: '');
           }
 
-          final value = (_firstString(itemMap, const [
-                    'isoCode',
-                    'countryCode',
-                    'country_code',
-                    'code',
-                    'iso2',
-                    'country',
-                  ]) ??
-                  '')
-              .toUpperCase();
-          final label = _firstString(itemMap, const [
+          final value =
+              (_firstString(itemMap, const [
+                        'isoCode',
+                        'countryCode',
+                        'country_code',
+                        'code',
+                        'iso2',
+                        'country',
+                      ]) ??
+                      '')
+                  .toUpperCase();
+          final label =
+              _firstString(itemMap, const [
                 'name',
                 'countryName',
                 'country_name',
@@ -458,14 +468,15 @@ class AdminUserMobilePrefixOption {
             );
           }
 
-          final countryCode = (_firstString(itemMap, const [
-                    'countryCode',
-                    'country_code',
-                    'country',
-                    'iso2',
-                  ]) ??
-                  '')
-              .toUpperCase();
+          final countryCode =
+              (_firstString(itemMap, const [
+                        'countryCode',
+                        'country_code',
+                        'country',
+                        'iso2',
+                      ]) ??
+                      '')
+                  .toUpperCase();
           final value = _normalizeDialCode(
             _firstString(itemMap, const [
                   'mobilePrefix',
@@ -503,10 +514,7 @@ class AdminUserMobilePrefixOption {
 }
 
 class AdminUserStateOption {
-  const AdminUserStateOption({
-    required this.value,
-    required this.label,
-  });
+  const AdminUserStateOption({required this.value, required this.label});
 
   final String value;
   final String label;
@@ -527,18 +535,20 @@ class AdminUserStateOption {
             return const AdminUserStateOption(value: '', label: '');
           }
 
-          final value = (_firstString(itemMap, const [
-                    'isoCode',
-                    'stateCode',
-                    'state_code',
-                    'code',
-                    'iso2',
-                    'state',
-                    'value',
-                  ]) ??
-                  '')
-              .toUpperCase();
-          final label = _firstString(itemMap, const [
+          final value =
+              (_firstString(itemMap, const [
+                        'isoCode',
+                        'stateCode',
+                        'state_code',
+                        'code',
+                        'iso2',
+                        'state',
+                        'value',
+                      ]) ??
+                      '')
+                  .toUpperCase();
+          final label =
+              _firstString(itemMap, const [
                 'name',
                 'stateName',
                 'state_name',
@@ -556,10 +566,7 @@ class AdminUserStateOption {
 }
 
 class AdminUserCityOption {
-  const AdminUserCityOption({
-    required this.value,
-    required this.label,
-  });
+  const AdminUserCityOption({required this.value, required this.label});
 
   final String value;
   final String label;
@@ -577,7 +584,8 @@ class AdminUserCityOption {
             return const AdminUserCityOption(value: '', label: '');
           }
 
-          final value = _firstString(itemMap, const [
+          final value =
+              _firstString(itemMap, const [
                 'value',
                 'cityId',
                 'city_id',
@@ -588,7 +596,8 @@ class AdminUserCityOption {
                 'city',
               ]) ??
               '';
-          final label = _firstString(itemMap, const [
+          final label =
+              _firstString(itemMap, const [
                 'name',
                 'cityName',
                 'city_name',
@@ -638,17 +647,17 @@ class AdminCreateUserRequest {
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
       'name': name.trim(),
-      'email': email.trim(),
+      if (email.trim().isNotEmpty) 'email': email.trim(),
       'mobilePrefix': mobilePrefix.trim(),
       'mobileNumber': mobileNumber.trim(),
       'username': username.trim(),
       'password': password,
-      'companyName': companyName.trim(),
+      if (companyName.trim().isNotEmpty) 'companyName': companyName.trim(),
       'address': address.trim(),
       'countryCode': countryCode.trim().toUpperCase(),
-      'stateCode': stateCode.trim(),
-      'city': city.trim(),
-      'pincode': pincode.trim(),
+      if (stateCode.trim().isNotEmpty) 'stateCode': stateCode.trim(),
+      if (city.trim().isNotEmpty) 'city': city.trim(),
+      if (pincode.trim().isNotEmpty) 'pincode': pincode.trim(),
     };
   }
 }
@@ -715,65 +724,62 @@ class AdminUserLoginResult {
     required this.token,
     required this.refreshToken,
     required this.user,
+    this.settings = const {},
   });
 
   final String token;
   final String refreshToken;
   final CurrentUser user;
+  final Map<String, dynamic> settings;
 
-  bool get hasSession => token.trim().isNotEmpty;
+  // The generic Admin User endpoint is intentionally limited to USER accounts.
+  // Team/Driver/Subuser use their own backend contracts or direct sign-in.
+  bool get hasSession =>
+      token.trim().isNotEmpty &&
+      refreshToken.trim().isNotEmpty &&
+      user.id.isNotEmpty &&
+      user.role == UserRole.user;
 
   factory AdminUserLoginResult.fromJson(dynamic json) {
     final map = _asMap(json);
-    final nested = _firstMap(map, const ['data', 'result', 'session']) ??
+    final nested =
+        _firstMap(map, const ['data', 'result', 'session']) ??
         const <String, dynamic>{};
-    final tokens = _firstMap(map, const ['tokens', 'auth']) ??
+    final tokens =
+        _firstMap(map, const ['tokens', 'auth']) ??
         _firstMap(nested, const ['tokens', 'auth']) ??
         const <String, dynamic>{};
-    final userJson = _firstMap(map, const ['user', 'profile', 'account']) ??
+    final userJson =
+        _firstMap(map, const ['user', 'profile', 'account']) ??
         _firstMap(nested, const ['user', 'profile', 'account']) ??
         const <String, dynamic>{};
-    final normalizedUserJson = <String, dynamic>{
-      ...userJson,
-      'role': userJson['role'] ?? 'user',
-    };
-
+    const accessKeys = ['token', 'accessToken', 'access_token', 'jwt'];
+    const refreshKeys = ['refresh_token', 'refreshToken'];
     return AdminUserLoginResult(
-      token: _firstString(map, const [
-            'token',
-            'accessToken',
-            'access_token',
-            'jwt',
-          ]) ??
-          _firstString(tokens, const [
-            'token',
-            'accessToken',
-            'access_token',
-            'jwt',
-          ]) ??
+      token:
+          _firstString(map, accessKeys) ??
+          _firstString(nested, accessKeys) ??
+          _firstString(tokens, accessKeys) ??
           '',
-      refreshToken: _firstString(map, const [
-            'refresh_token',
-            'refreshToken',
-          ]) ??
-          _firstString(tokens, const [
-            'refresh_token',
-            'refreshToken',
-          ]) ??
+      refreshToken:
+          _firstString(map, refreshKeys) ??
+          _firstString(nested, refreshKeys) ??
+          _firstString(tokens, refreshKeys) ??
           '',
-      user: CurrentUser.fromJson(normalizedUserJson).copyWith(
-        role: UserRole.user,
-      ),
+      user: CurrentUser.fromJson(userJson),
+      settings:
+          _firstMap(map, const ['settings']) ??
+          _firstMap(nested, const ['settings']) ??
+          const {},
     );
   }
 
-  LoginResponse toLoginResponse() {
-    return LoginResponse(
-      accessToken: token,
-      refreshToken: refreshToken,
-      user: user,
-    );
-  }
+  LoginResponse toLoginResponse() => LoginResponse(
+    accessToken: token,
+    refreshToken: refreshToken,
+    user: user,
+    settings: settings,
+  );
 }
 
 void _putIfNotNull(Map<String, dynamic> payload, String key, Object? value) {
@@ -913,10 +919,7 @@ Map<String, dynamic> _asMap(dynamic value) {
   return const <String, dynamic>{};
 }
 
-Map<String, dynamic>? _firstMap(
-  Map<String, dynamic> map,
-  List<String> keys,
-) {
+Map<String, dynamic>? _firstMap(Map<String, dynamic> map, List<String> keys) {
   for (final key in keys) {
     final value = map[key];
     final nested = _asMap(value);
@@ -928,10 +931,7 @@ Map<String, dynamic>? _firstMap(
   return null;
 }
 
-List<dynamic>? _firstList(
-  Map<String, dynamic> map,
-  List<String> keys,
-) {
+List<dynamic>? _firstList(Map<String, dynamic> map, List<String> keys) {
   for (final key in keys) {
     final value = map[key];
     if (value is List) {
@@ -1061,8 +1061,9 @@ DateTime? _parseDate(dynamic value) {
 
   if (value is num) {
     final intValue = value.toInt();
-    final milliseconds =
-        intValue.abs() < 10000000000 ? intValue * 1000 : intValue;
+    final milliseconds = intValue.abs() < 10000000000
+        ? intValue * 1000
+        : intValue;
     return DateTime.fromMillisecondsSinceEpoch(milliseconds);
   }
 

@@ -226,11 +226,13 @@ class AdminSettingsService {
     final details = error.details;
     final root = details is Map ? details : const <dynamic, dynamic>{};
     final nestedValue = root['data'];
-    final nested =
-        nestedValue is Map ? nestedValue : const <dynamic, dynamic>{};
+    final nested = nestedValue is Map
+        ? nestedValue
+        : const <dynamic, dynamic>{};
     final payloadValue = nested['data'];
-    final payload =
-        payloadValue is Map ? payloadValue : const <dynamic, dynamic>{};
+    final payload = payloadValue is Map
+        ? payloadValue
+        : const <dynamic, dynamic>{};
     final action = nested['action'] ?? root['action'];
     final code = payload['code'] ?? nested['code'] ?? root['code'];
     final message = nested['message'] ?? root['message'] ?? error.message;
@@ -372,7 +374,7 @@ class AdminSettingsService {
   Future<void> testSmtp(String email) async {
     await _apiClient.post<void>(
       ApiEndpoints.admin.testSmtp,
-      data: email.trim(),
+      data: {'email': email.trim()},
       options: _mutationOptions,
       parser: (_) {},
     );

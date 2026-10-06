@@ -8,6 +8,8 @@ enum AdminUserDetailsTab {
   tickets,
   payments,
   logs,
+  permissions,
+  dataBackup,
 }
 
 class AdminUserDetailsState {

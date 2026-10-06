@@ -1,105 +1,101 @@
-OPEN VTS MOBILE — UI, LANGUAGE AND OPERATIONS REVISION
-5 October 2026
+OPEN VTS MOBILE — TRACKING, PERMISSIONS AND SESSION REPAIR
+6 October 2026
 
-This is the complete revised mobile source, including the previous API/MFA/role
-upgrade. It is source code, not an APK/AAB/IPA. The web/backend/listener are not
-modified by this mobile delivery.
+This revision modifies the latest uploaded mobile source only. The supplied web,
+backend and listener remain reference sources. This is source, not an APK/AAB/IPA.
 
-INPUTS
-Previously delivered mobile: openvts-application-master(2).zip
-SHA-256: 187c0319d43f08bb8e32f7493238f53aeeaa8edfb628713fc0a5b13e4fbc6463
-Reference web/backend: openVTS-main(20261002-095331).zip
+EXACT INPUT
+Mobile: openvts-application-master(3).zip
+SHA-256: db6b1ec1456add35a015a1efed4fdd92812ba7c8e4d31db07a35acc03fcd18e6
+Patch baseline commit: c14e7523fb1e05d9ea38cf742c22e8d3632dc68b
+Provided web: 01-openVTS-main-workflow-zero-config-production-20260811.zip
+SHA-256: aa3bc4b89f801f58c65d8563fc7f09d9da551ff077475012fc104eb810a66df2
+Current contract reference: openVTS-main(20261002-095331).zip
 SHA-256: eeb238f6c0f1b3f6ca9e9a98746e0b48972e4e193e4303d3d1390aea7a7a6083
-Revision patch baseline commit: 0f8bb7b7446ca9629117d00135e180411c3c0b82
 
 IMPLEMENTED
-- Original launcher icon design and layout restored; permission filtering kept.
-- Header order: Language, theme, notifications, profile. Language persists and
-  switches immediately. Arabic RTL is supported.
-- English, Arabic, Spanish, French, Hindi and Portuguese: 2,715 matching message
-  keys per catalog. Forms, selectors, dialogs, validation, feedback and display
-  dates use the chosen language. API identifiers, password bytes, user content,
-  backend messages and wire-format dates remain unchanged.
-- Security is a Settings tab for all six roles. Legacy Security links redirect
-  there. Team personal Settings use Team APIs through a dedicated controller.
-- Operations/Landmarks share route creation: POI, geofence, map and coordinates;
-  stop editing/reordering, via points and round trips; actual road geometry,
-  distance and duration; current route POST/PATCH payloads. Invalid/unavailable
-  road results do not save a fabricated straight-line path.
-- Stop order optimization retains fixed endpoints. It uses geographic distance
-  (exact up to 12 stops, bounded heuristic above that), followed by road routing;
-  it is not a global road-time optimization guarantee.
-- Saved routes return to retained trip drafts. Planning supports eligibility,
-  account timezones, schedule variants, recurring versions, skip dates and
-  warnings. Calendar drilldown, event acknowledgment, proofs and unsaved-change
-  protection were reviewed and improved.
-- Shared buttons, inputs, dropdown sheets, dialogs, tabs, calendars and save
-  bars have consistent themes, accessible targets and narrow-screen/large-text
-  handling. Calendar cache isolation follows account and permission scope.
-- Prior MFA, six role logins, dynamic permissions, Admin Transactions and Driver
-  workflows remain included. Admin Roles and the requested web-only pages remain
-  excluded. No in-app checkout is added.
+- Admin User detail Permissions and Data Backup (telemetry retention) tabs.
+- Team row detail Profile, Permissions and Activity Logs, with current scopes.
+- User Accounts/Subuser detail Permissions with inherited feature/report rights.
+- Six-role login/profile verification; removal of the Auth/API dependency cycle
+  behind Admin Vehicles, Drivers, Tickets and Payments errors.
+- Complete authorized fleet pagination, shared by all live-map role scopes.
+- Reconnect/resume catch-up, membership reconciliation, full subscriptions,
+  out-of-order protection, sparse updates and bounded packet publishing.
+- Web-compatible status counts/icons, speed/freshness thresholds and stop debounce;
+  zero-speed stationary updates can change status without changing position.
+- Separate GPS/receive/connection times, correct device-local display and logs
+  with seconds. Today distance follows the requested device-local-day baseline.
+- Common report date/date-time/range calendar and full-day request boundaries.
+- Operations shared controls, responsive translated layouts and existing routing.
+- Session refresh and login-generation guards; temporary outages/ordinary permission
+  denials keep session identity while permission-dependent access waits for verification.
+- Current SMTP, optional User fields, geofence/Driver/POI/bulk payloads, notification
+  page cap/role filters and activity cursor-filter contracts.
+- Silent push registration checks current OS permission and catches lifecycle errors.
+- Native iOS renewal policy enforced; payment history accessible; renewal retries
+  retain idempotency keys. No checkout introduced.
+- Adaptive Cupertino icon-font asset dependency included; compiler font warning resolved.
 
-See docs/MOBILE_UX_REVISION_2026-10-05.md for behavior, maintenance guidance and
-rendered previews; docs/MOBILE_UPGRADE_2026-10-05.md records the earlier API and
-page-by-page review.
+The original launcher/icon layout, Language/theme/notifications/profile header,
+Security inside Settings, six languages, MFA and existing mobile exclusions remain.
+See docs/MOBILE_TRACKING_PERMISSIONS_FIXES_2026-10-06.md for behavior and maintenance.
+Older dated notes are historical; this file records the current verification.
 
 FINAL AUTOMATED VERIFICATION
-Environment: Flutter 3.47.6 / Dart 3.13.5, Linux.
-Commands used CI=true and FLUTTER_SUPPRESS_ANALYTICS=true.
-- dart analyze --format machine lib test tool: passed; 0 errors, 0 warnings,
-  0 informational diagnostics.
-- flutter --no-version-check test --no-pub --reporter expanded: 2,183 tests
-  passed, zero failures.
-- flutter --no-version-check build web --release --no-pub: passed (JavaScript
-  release compiler check; not evidence of native or WebAssembly readiness).
-- Localization contract: passed; 4,520 static calls, 26 reviewed dynamic calls,
-  2,687 registered source messages. Catalog/placeholder and six-locale validation
-  coverage are included in the full test suite.
+Environment: Flutter 3.47.6 / Dart 3.13.5 on Linux.
+Commands set CI=true and FLUTTER_SUPPRESS_ANALYTICS=true.
+- dart analyze lib test tool: passed, zero errors/warnings/informational diagnostics.
+- flutter --no-version-check test --no-pub --reporter expanded:
+  2,352 tests passed, zero failures.
+- flutter --no-version-check build web --release --no-pub
+  --no-web-resources-cdn --no-wasm-dry-run: passed (JavaScript compiler check).
+- dart tool/mobile_localization_contract.dart: passed.
+  Localization: 4634 static calls, 26 dynamic calls, 2710 registered sources.
+- All six catalogs have 2,738 matching message keys. Catalog/placeholder,
+  locale, RTL and narrow-layout coverage is included in the full suite.
 - git diff --check: passed.
-- Rendered launcher/calendar previews inspected in light/dark and narrow sizes.
-  Widget tests cover key changed flows, large text, keyboard-safe dropdowns,
-  RTL, stale results, exact credentials and account changes with controlled data.
+- Frozen source consistency: 1,136 compiler/test inputs
+  unchanged across final gates; aggregate SHA-256 eb53fbea570aa7221672796b92d384b098e471640af72e4e3a500a8d5891f747.
+
+Tests cover controlled 220-vehicle pagination across scopes, large subscriptions,
+reconnect/resume, stale/sparse packets, stationary status changes, timezones,
+seconds in logs, the Auth/API graph, session races, permission/retention payloads,
+scope changes, backend envelopes, and narrow Arabic calendars/planning controls.
+They do not establish production end-to-end behavior against your live database.
 
 ARCHITECTURE CHECK
-The repository-wide architecture guard still fails on existing migration debt.
-The same corrected identifier-matching checker finds 87 files in the delivered
-baseline and 87 in this revision, with no newly violating file paths
-(305 baseline / 305 revised matching lines). No broad allowlist was introduced.
-Examples include legacy Dio types in feature layers, PDF font downloads and an
-older API FutureBuilder. New routing transport is under core/api; Team Settings
-API actions now go through its controller. This is not a passing global gate.
+The repository-wide architecture guard fails on existing migration debt.
+The unchanged checker found 90 violating file paths in the exact uploaded
+baseline and 88 in this revision, with zero newly violating paths.
+Matching lines: 314 baseline / 306 revised.
+Resolved paths: lib/core/widgets/app_legal_links.dart, lib/features/auth/widgets/account_closure_card.dart.
+No broad allowlist or extra analyzer exclusions were introduced. This global
+architecture gate is not claimed as passing.
 
-DEPLOYMENT LIMITS AND REMAINING VALIDATION
-No Android/iOS SDK, signing identities, physical devices or live role credentials
-were available. No signed native build was produced. Tests use controlled
-transports and do not prove production end-to-end behavior. Validate on staging:
-six real roles, MFA/recovery, permission revocation, account/server switching,
-real routing, recurring scheduling/timezones, private files, driver transitions,
-telemetry/sockets and native notifications.
+SESSION POLICY AND RELEASE LIMITS
+The supplied backend defaults to access tokens of 24 hours and refresh tokens
+of seven days, renewed on successful refresh. Normal use/outages do not trigger
+premature logout; inactivity or offline time beyond refresh expiry needs login.
+Password/MFA changes, revocation, account deactivation and role changes are honored.
+Changing the server expiry policy requires a backend configuration change.
 
-The default OSRM routing service matches the web. Configure your intended
-compatible production provider with --dart-define=OSRM_BASE_URL=https://your-host.
-Provider availability/capacity affects route calculation; failure preserves the
-draft. The road provider is not sent backend credentials.
+Android/iOS SDKs, signing identities, physical devices and live credentials were
+unavailable. No signed native build is supplied. Validate staging with six real
+roles, actual fleet membership, live stop/start, time displays, permissions,
+retention, MFA, refresh/rotation, reports and native integrations before release.
+Native Driver FCM remains withheld because the supplied push-token schema uses
+User identities while Driver identities are separate; backend support is required.
+Route-provider availability still affects road routing; a failed request preserves
+the draft and does not save a fabricated straight-line route.
 
-Driver in-app notifications are implemented. Native driver FCM registration
-remains withheld because the supplied backend token schema references User IDs
-and drivers have a separate identity table; backend support is still required.
-These constraints are not hidden by the successful source/compiler checks.
-
-USING THE SOURCE ZIP
-Extract openvts-application-master(2).zip, open its project folder, use the
-validated SDK, run flutter pub get, then flutter run. The included non-secret
-.env retains the original default server and USE_MOCK_DATA=false. Configure your
-deployment using Server URL at sign-in and supply platform build/signing setup.
-
-USING THE REVISION PATCH
-The patch is an alternative to the complete source ZIP. Apply only to a CLEAN
-extraction of the PREVIOUSLY DELIVERED mobile ZIP with the input SHA-256 above,
-not to the original legacy mobile source and not to this newly revised ZIP:
-  git apply --check /absolute/path/OpenVTS_Mobile_UI_Operations_Revision_2026-10-05.patch
-  git apply /absolute/path/OpenVTS_Mobile_UI_Operations_Revision_2026-10-05.patch
-
-The accompanying delivery verification adds final ZIP/patch SHA-256 values,
-archive integrity and exact patch reconstruction results after packaging.
+USING THIS DELIVERY
+Extract the complete revised source ZIP; run flutter pub get using the validated
+SDK, configure your deployment through Server URL at sign-in, and build/run with
+your platform setup. The nonsecret .env is restored from the uploaded .env.example;
+USE_MOCK_DATA=false. The patch is an alternative to extracting the revised ZIP.
+Apply it only to a CLEAN extraction of the exact uploaded (3) ZIP above:
+  git apply --check /absolute/path/OpenVTS_Mobile_Tracking_Permissions_2026-10-06.patch
+  git apply /absolute/path/OpenVTS_Mobile_Tracking_Permissions_2026-10-06.patch
+Do not apply it to the older (2) ZIP or to this already revised source.
+The accompanying report appends package integrity and exact reconstruction results.

@@ -8,13 +8,14 @@ import '../../../../../core/theme/open_vts_typography.dart';
 import '../../../../../core/utils/date_time_formatter.dart';
 import '../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../shared/helpers/toast_helper.dart';
+import '../../../../../shared/models/user_role.dart';
 import '../../../../../shared/widgets/open_vts_bottom_sheet.dart';
+import '../../../../auth/controllers/auth_controller.dart';
 import '../../../controllers/admin_providers.dart';
 import '../../../models/admin_team_model.dart';
+import '../admin_team_details_screen.dart';
 import 'admin_change_password_sheet.dart';
 import 'admin_create_team_sheet.dart';
-import 'admin_team_activity_sheet.dart';
-import 'admin_team_permissions_sheet.dart';
 
 const DateTimeFormatter _cardDateFormatter = DateTimeFormatter();
 
@@ -26,6 +27,7 @@ class AdminTeamCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return _RoundedSurface(
+      onTap: () => _openTeamDetails(context, ref, team.id),
       padding: const EdgeInsets.all(OpenVtsSpacing.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -229,21 +231,19 @@ class _TeamCardMenu extends ConsumerWidget {
     WidgetRef ref,
     String action,
   ) async {
+    final auth = ref.read(authControllerProvider);
+    if (!auth.isRealSession || auth.user?.role != UserRole.admin) return;
     final controller = ref.read(adminTeamControllerProvider.notifier);
 
     switch (action) {
       case 'edit':
         _showEditTeamSheet(context, ref);
       case 'permissions':
-        await OpenVtsBottomSheet.show<void>(
-          context: context,
-          title: context.mobileText("{value1} · Permissions", {
-            'value1': (team.teamName).toString(),
-          }),
-          initialChildSize: .9,
-          minChildSize: .5,
-          maxChildSize: .96,
-          child: AdminTeamPermissionsSheet(memberId: team.id),
+        await _openTeamDetails(
+          context,
+          ref,
+          team.id,
+          initialTab: AdminTeamDetailsTab.permissions,
         );
       case 'password':
         _showPasswordSheet(context, ref);
@@ -278,7 +278,12 @@ class _TeamCardMenu extends ConsumerWidget {
           }
         }
       case 'logs':
-        _showActivityLogsSheet(context);
+        await _openTeamDetails(
+          context,
+          ref,
+          team.id,
+          initialTab: AdminTeamDetailsTab.activity,
+        );
     }
   }
 
@@ -328,16 +333,6 @@ class _TeamCardMenu extends ConsumerWidget {
       },
     );
   }
-
-  Future<void> _showActivityLogsSheet(BuildContext context) =>
-      OpenVtsBottomSheet.show<void>(
-        context: context,
-        title: context.mobileText('Team activity'),
-        initialChildSize: .85,
-        minChildSize: .5,
-        maxChildSize: .96,
-        child: AdminTeamActivitySheet(memberId: team.id),
-      );
 }
 
 // ---------------------------------------------------------------------------
@@ -554,24 +549,28 @@ class _MetricCell extends StatelessWidget {
 class _RoundedSurface extends StatelessWidget {
   const _RoundedSurface({
     required this.child,
+    this.onTap,
     this.padding = const EdgeInsets.all(OpenVtsSpacing.md),
   });
 
   final Widget child;
+  final VoidCallback? onTap;
   final EdgeInsetsGeometry padding;
 
   @override
   Widget build(BuildContext context) {
     final radius = BorderRadius.circular(OpenVtsRadius.lg);
-    return Container(
-      width: double.infinity,
-      padding: padding,
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+    return Material(
+      color: Theme.of(context).colorScheme.surface,
+      shape: RoundedRectangleBorder(
         borderRadius: radius,
-        border: Border.all(color: _softBorderColor(context)),
+        side: BorderSide(color: _softBorderColor(context)),
       ),
-      child: child,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(padding: padding, child: child),
+      ),
     );
   }
 }
@@ -651,4 +650,24 @@ String _createdLabel(DateTime? value) {
   }
   final local = value.toLocal();
   return _cardDateFormatter.formatDate(local);
+}
+
+Future<void> _openTeamDetails(
+  BuildContext context,
+  WidgetRef ref,
+  String memberId, {
+  AdminTeamDetailsTab initialTab = AdminTeamDetailsTab.profile,
+}) async {
+  final auth = ref.read(authControllerProvider);
+  if (!auth.isRealSession ||
+      auth.user?.role != UserRole.admin ||
+      memberId.trim().isEmpty) {
+    return;
+  }
+  await Navigator.of(context).push<void>(
+    MaterialPageRoute(
+      builder: (_) =>
+          AdminTeamDetailsScreen(memberId: memberId, initialTab: initialTab),
+    ),
+  );
 }

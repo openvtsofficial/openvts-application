@@ -464,11 +464,8 @@ class MobilePushService {
       await _clearLastInitError();
       _startListeners();
 
-      try {
-        await getCurrentToken();
-      } catch (error) {
-        await _rememberLastInitError(_safeError(error));
-      }
+      // Token generation is deferred to the controller after a fresh OS
+      // permission check. Initialization itself never prompts or trusts cache.
 
       final initialMessage =
           await FirebaseMessaging.instance.getInitialMessage();

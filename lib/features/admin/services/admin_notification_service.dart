@@ -17,4 +17,7 @@ class AdminNotificationService extends NotificationService {
 
   @override
   String get roleLabel => 'Admin';
+
+  @override
+  bool get supportsCategoryFilter => true;
 }

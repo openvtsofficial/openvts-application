@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-import '../../features/auth/controllers/auth_controller.dart';
 import '../api/api_client.dart';
 import '../api/interceptors/auth_interceptor.dart';
 import '../api/interceptors/error_interceptor.dart';
@@ -78,6 +77,7 @@ final dioProvider = Provider<Dio>((ref) {
   );
   dio.interceptors.add(ApiErrorInterceptor());
   dio.interceptors.add(SafeLoggingInterceptor());
+  ref.onDispose(() => dio.close(force: true));
 
   return dio;
 });
@@ -100,13 +100,7 @@ final Provider<ApiClient> apiClientProvider = Provider<ApiClient>((ref) {
   return ApiClient(
     ref.watch(dioProvider),
     demoPolicy: DemoApiPolicy(isDemoMode: () => demoModeStore.isEnabled),
-    activeUser: () {
-      final stored = ref.read(tokenStorageProvider).cachedActiveSession?.user;
-      final current = ref.read(authControllerProvider).user;
-      return current?.id == stored?.id && current?.role == stored?.role
-          ? current
-          : stored;
-    },
+    activeUser: () => ref.read(tokenStorageProvider).cachedActiveUser,
   );
 });
 
@@ -135,10 +129,12 @@ final mobilePushControllerProvider =
     });
 
 final socketServiceProvider = Provider<SocketService>((ref) {
-  return SocketService(
+  final service = SocketService(
     ref.watch(tokenStorageProvider),
     apiBaseUrl: ref.watch(apiBaseUrlProvider),
   );
+  ref.onDispose(service.dispose);
+  return service;
 });
 
 class ThemeModeController extends StateNotifier<ThemeMode> {

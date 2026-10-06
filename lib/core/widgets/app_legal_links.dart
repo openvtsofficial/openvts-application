@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../shared/helpers/mobile_text.dart';
+import '../../shared/helpers/toast_helper.dart';
 import '../config/app_config.dart';
 
 /// Available before sign-in and in account settings.
@@ -19,8 +21,9 @@ class AppLegalLinks extends StatelessWidget {
       }
     } catch (_) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Unable to open this page. Please try again.')),
+      ToastHelper.showError(
+        context.mobileText('Unable to open this page. Please try again.'),
+        context: context,
       );
     }
   }
@@ -33,11 +36,11 @@ class AppLegalLinks extends StatelessWidget {
       children: [
         TextButton(
           onPressed: () => _open(context, AppConfig.privacyPolicyUrl),
-          child: const Text('Privacy policy'),
+          child: Text(context.mobileText('Privacy policy')),
         ),
         TextButton(
           onPressed: () => _open(context, AppConfig.supportUrl),
-          child: const Text('Support'),
+          child: Text(context.mobileText('Support')),
         ),
       ],
     );

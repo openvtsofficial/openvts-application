@@ -90,22 +90,8 @@ class _ApiBaseUrlSettingsScreenState
     }
   }
 
-  String? _validateUrl(String? value) {
-    final trimmed = value?.trim() ?? '';
-    if (trimmed.isEmpty) return 'Enter a server URL';
-
-    final uri = Uri.tryParse(trimmed);
-    final hasValidScheme = uri?.scheme == 'http' || uri?.scheme == 'https';
-
-    if (uri == null || !uri.isAbsolute || !hasValidScheme || uri.host.isEmpty) {
-      return 'Enter a valid URL (e.g. http://192.168.1.10:3000/api)';
-    }
-
-    if (uri.userInfo.isNotEmpty || uri.hasQuery || uri.hasFragment) {
-      return 'Enter a server URL without credentials, query parameters or a fragment.';
-    }
-    return null;
-  }
+  String? _validateUrl(String? value) =>
+      AppConfig.validateApiBaseUrl(value ?? '');
 
   @override
   Widget build(BuildContext context) {

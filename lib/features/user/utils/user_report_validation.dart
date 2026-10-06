@@ -93,8 +93,7 @@ Map<String, String> validateReportQuery({
       } else if (!from.isBefore(to)) {
         errors['startDate'] = 'reportsValidationStartBeforeEnd';
       } else {
-        final dayCount = to.difference(from).inDays + 1;
-        if (dayCount > reportKey.maxDays) {
+        if (to.difference(from) > Duration(days: reportKey.maxDays)) {
           errors['dateRange'] = 'reportsValidationRangeTooLong';
         }
       }
@@ -135,7 +134,7 @@ DateTime? _parseDate(String s) {
 }
 
 /// Build the default date range for a report key.
-/// dateOnly reports default to today; dateTime reports default to today 00:01–23:59 local.
+/// dateOnly reports default to today; dateTime reports default to today 00:00–23:59:59.999 local.
 ReportDateRange buildDefaultDateRange(UserReportKey key) {
   final now = DateTime.now();
   if (key.usesDateOnly) {
@@ -143,8 +142,8 @@ ReportDateRange buildDefaultDateRange(UserReportKey key) {
         '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
     return ReportDateRange.dateOnly(startDate: today, endDate: today);
   } else {
-    final start = DateTime(now.year, now.month, now.day, 0, 1);
-    final end = DateTime(now.year, now.month, now.day, 23, 59);
+    final start = DateTime(now.year, now.month, now.day);
+    final end = DateTime(now.year, now.month, now.day, 23, 59, 59, 999);
     return ReportDateRange.dateTime(
       from: start.toUtc().toIso8601String(),
       to: end.toUtc().toIso8601String(),

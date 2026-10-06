@@ -40,25 +40,34 @@ class DateTimeFormatter {
       return DateFormat(
         '$_globalDatePattern, $_globalTimePattern',
         _globalDisplayLocale,
-      ).format(value);
+      ).format(value.toLocal());
     } catch (_) {
-      return DateFormat('dd MMM yyyy, hh:mm a', 'en_US').format(value);
+      return DateFormat(
+        'dd MMM yyyy, hh:mm a',
+        'en_US',
+      ).format(value.toLocal());
     }
   }
 
   String formatDate(DateTime value) {
     try {
-      return DateFormat(_globalDatePattern, _globalDisplayLocale).format(value);
+      return DateFormat(
+        _globalDatePattern,
+        _globalDisplayLocale,
+      ).format(value.toLocal());
     } catch (_) {
-      return DateFormat('dd MMM yyyy', 'en_US').format(value);
+      return DateFormat('dd MMM yyyy', 'en_US').format(value.toLocal());
     }
   }
 
   String formatTime(DateTime value) {
     try {
-      return DateFormat(_globalTimePattern, _globalDisplayLocale).format(value);
+      return DateFormat(
+        _globalTimePattern,
+        _globalDisplayLocale,
+      ).format(value.toLocal());
     } catch (_) {
-      return DateFormat('hh:mm a', 'en_US').format(value);
+      return DateFormat('hh:mm a', 'en_US').format(value.toLocal());
     }
   }
 }
@@ -85,13 +94,9 @@ class AppDateFormatter {
 
   String get _timePattern => use24Hour ? 'HH:mm' : 'hh:mm a';
 
-  /// Convert UTC DateTime to target timezone if specified
-  DateTime _applyTimezone(DateTime value) {
-    if (timezone.isEmpty) return value;
-    final duration = _parseTimezoneOffset(timezone);
-    if (duration == null) return value;
-    return value.add(duration);
-  }
+  /// Web display follows the browser/device timezone. The saved account
+  /// timezone is retained for scheduling/settings, never added to a local date.
+  DateTime _applyTimezone(DateTime value) => value.toLocal();
 
   String formatDateTime(DateTime? value) {
     if (value == null) return '';
@@ -126,6 +131,22 @@ class AppDateFormatter {
     }
   }
 
+  String formatTimeWithSeconds(DateTime? value) {
+    if (value == null) return '';
+    final adjusted = _applyTimezone(value);
+    final pattern = use24Hour ? 'HH:mm:ss' : 'hh:mm:ss a';
+    try {
+      return DateFormat(pattern, locale).format(adjusted);
+    } catch (_) {
+      return DateFormat(pattern, 'en_US').format(adjusted);
+    }
+  }
+
+  String formatDateTimeWithSeconds(DateTime? value) {
+    if (value == null) return '';
+    return '${formatDate(value)}, ${formatTimeWithSeconds(value)}';
+  }
+
   /// Format relative time (e.g., "2h ago") falling back to date for older timestamps.
   String formatRelativeOrDate(DateTime? value) {
     if (value == null) return '';
@@ -147,31 +168,15 @@ class AppDateFormatter {
   }
 
   static String _fallbackDateTime(DateTime value) {
-    return DateFormat('dd MMM yyyy, hh:mm a', 'en_US').format(value);
+    return DateFormat('dd MMM yyyy, hh:mm a', 'en_US').format(value.toLocal());
   }
 
   static String _fallbackDate(DateTime value) {
-    return DateFormat('dd MMM yyyy', 'en_US').format(value);
+    return DateFormat('dd MMM yyyy', 'en_US').format(value.toLocal());
   }
 
   static String _fallbackTime(DateTime value) {
-    return DateFormat('hh:mm a', 'en_US').format(value);
-  }
-
-  /// Parse timezone offset like "+05:30", "-08:00" to Duration
-  static Duration? _parseTimezoneOffset(String offset) {
-    if (offset.trim().isEmpty) return null;
-    final normalized = offset.trim();
-    try {
-      final sign = normalized.startsWith('-') ? -1 : 1;
-      final parts = normalized.replaceAll(RegExp(r'[+-]'), '').split(':');
-      if (parts.length != 2) return null;
-      final hours = int.parse(parts[0]);
-      final minutes = int.parse(parts[1]);
-      return Duration(hours: sign * hours, minutes: sign * minutes);
-    } catch (_) {
-      return null;
-    }
+    return DateFormat('hh:mm a', 'en_US').format(value.toLocal());
   }
 }
 
@@ -184,7 +189,15 @@ class AppDateFormatter {
 /// Dart intl uses: yyyy, yy, MM, dd, HH, mm, ss, a
 String _toIntlPattern(String pattern) {
   if (pattern.trim().isEmpty) return 'dd MMM yyyy';
-  return pattern
+  final normalized = switch (pattern.trim()) {
+    'YYYY_MM_DD' => 'YYYY-MM-DD',
+    'DD_MMM_YYYY' => 'DD MMM YYYY',
+    'MMM_DD_YYYY' => 'MMM DD YYYY',
+    _ => pattern.trim(),
+  };
+  return normalized
+      .replaceAll('dddd', 'EEEE')
+      .replaceAll('ddd', 'EEE')
       .replaceAll('YYYY', 'yyyy')
       .replaceAll('YY', 'yy')
       .replaceAll('DD', 'dd')

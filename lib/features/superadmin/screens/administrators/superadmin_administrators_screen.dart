@@ -10,7 +10,6 @@ import '../../../../core/theme/open_vts_typography.dart';
 import '../../../../core/utils/date_time_formatter.dart';
 import '../../../../shared/helpers/mobile_text.dart';
 import '../../../../shared/helpers/toast_helper.dart';
-import '../../../../shared/models/user_role.dart';
 import '../../../../shared/widgets/open_vts_button.dart';
 import '../../../../shared/widgets/open_vts_empty_state.dart';
 import '../../../../shared/widgets/open_vts_error_view.dart';
@@ -312,7 +311,8 @@ class _SuperadminAdministratorsScreenState
         final session = LoginResponse(
           accessToken: accessToken,
           refreshToken: outcome.refreshToken?.trim() ?? '',
-          user: CurrentUser.fromJson(userJson).copyWith(role: UserRole.admin),
+          user: CurrentUser.fromJson(userJson),
+          settings: outcome.settings,
         );
 
         await ref.read(authControllerProvider.notifier).setSession(session);

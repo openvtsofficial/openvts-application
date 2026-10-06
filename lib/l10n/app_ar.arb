@@ -2738,5 +2738,42 @@
   "validationStandardVin": "يجب أن يتكون VIN من 17 حرفًا ورقمًا، باستثناء I وO وQ",
   "validationVinAlphanumeric": "يجب أن يحتوي VIN على أحرف وأرقام فقط",
   "validationThisField": "هذا الحقل",
-  "validationFieldSimNumber": "رقم SIM"
+  "validationFieldSimNumber": "رقم SIM",
+  "mobileDataBackup": "نسخ البيانات احتياطيًا",
+  "mobileEffectiveRetention": "مدة الاحتفاظ الفعلية",
+  "mobileAdministratorLimit": "حد المسؤول",
+  "mobilePolicySource": "مصدر السياسة",
+  "mobileUseAdministratorPolicy": "استخدام سياسة المسؤول ({value1})",
+  "@mobileUseAdministratorPolicy": {
+    "placeholders": {
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "mobileRetentionCleanupNotice": "تُحذف بيانات التتبع الأقدم من مدة الاحتفاظ أثناء التنظيف المجدول. زيادة مدة الاحتفاظ لا تستعيد البيانات المحذوفة.",
+  "mobileRetentionLimitError": "لا يمكن أن تتجاوز مدة الاحتفاظ {value1} يومًا.",
+  "@mobileRetentionLimitError": {
+    "placeholders": {
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "mobileRetentionLoadError": "تعذر تحميل سياسة الاحتفاظ بالبيانات",
+  "mobileRetentionSaveError": "تعذر حفظ سياسة الاحتفاظ بالبيانات",
+  "mobileRetentionSaved": "تم تحديث سياسة الاحتفاظ بالبيانات",
+  "mobileRetentionUnsupported": "أعاد الخادم سياسة احتفاظ غير مدعومة. التعديل معطل.",
+  "mobileDiscardDetailChanges": "ستُفقد التغييرات. هل تريد المتابعة؟",
+  "mobileLiveTrackingReconnecting": "جارٍ إعادة الاتصال بالتتبع المباشر…",
+  "mobileLastConnection": "آخر اتصال",
+  "mobileTeamLoadError": "تعذر تحميل بيانات عضو الفريق.",
+  "mobilePermissionsLoadError": "تعذر تحميل الأذونات.",
+  "mobileActivityLoadError": "تعذر تحميل سجل النشاط.",
+  "mobilePermissionsRetryError": "تعذر تحميل الأذونات أو حفظها. يُرجى المحاولة مرة أخرى.",
+  "mobilePermissionMaps": "الخرائط",
+  "mobilePermissionLandmarks": "المعالم",
+  "mobilePermissionShareTracking": "مشاركة رابط التتبع",
+  "mobilePrivacyPolicyLink": "سياسة الخصوصية",
+  "mobilePageLinkError": "تعذر فتح هذه الصفحة. يُرجى المحاولة مرة أخرى."
 }

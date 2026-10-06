@@ -8,6 +8,7 @@ import '../../../core/api/api_endpoints.dart';
 import '../../../core/api/api_options.dart';
 import '../../../core/utils/permission_helper.dart';
 import '../../../shared/models/user_role.dart';
+import '../models/admin_subscription_policy.dart';
 import '../models/admin_user_details_model.dart';
 
 class AdminUserDetailsService {
@@ -391,6 +392,7 @@ class AdminUserDetailsService {
   Future<AdminRenewVehiclesPaymentResult> renewVehiclesPayment(
     AdminRenewVehiclesPaymentRequest request,
   ) async {
+    AdminSubscriptionPolicy.requireRenewalsAllowed();
     if (request.vehicleIds.isEmpty) {
       throw ArgumentError('Select at least one vehicle.');
     }

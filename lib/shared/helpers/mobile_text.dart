@@ -7,7 +7,9 @@ import '../../l10n/app_localizations_en.dart';
 
 extension MobileText on BuildContext {
   String mobileText(String source, [Map<String, Object> values = const {}]) {
-    final l10n = Localizations.of<AppLocalizations>(this, AppLocalizations) ?? AppLocalizationsEn();
+    final l10n =
+        Localizations.of<AppLocalizations>(this, AppLocalizations) ??
+        AppLocalizationsEn();
     return switch (source) {
       'Date' => l10n.date,
       'Time' => l10n.time,
@@ -73,13 +75,17 @@ extension MobileText on BuildContext {
       'No data available' => l10n.noData,
       'Retry' => l10n.retry,
       'Discard unsaved changes?' => l10n.confirmDiscard,
-      '{tab} has unsaved edits. Discarding will lose these changes.' => l10n.confirmDiscardMessage((values['tab'] ?? '').toString()),
+      '{tab} has unsaved edits. Discarding will lose these changes.' =>
+        l10n.confirmDiscardMessage((values['tab'] ?? '').toString()),
       'Reports' => l10n.reportsTitle,
       'Search reports…' => l10n.reportsSearchHint,
-      'No reports found for "{query}"' => l10n.reportsNoResultsFor(values['query'] ?? ''),
+      'No reports found for "{query}"' => l10n.reportsNoResultsFor(
+        values['query'] ?? '',
+      ),
       'Generate Report' => l10n.reportsGenerate,
       'Generating…' => l10n.reportsGenerating,
-      'Configure your report above and tap Generate.' => l10n.reportsConfigureHint,
+      'Configure your report above and tap Generate.' =>
+        l10n.reportsConfigureHint,
       'No results found for the selected filters.' => l10n.reportsNoResults,
       '{count} rows loaded' => l10n.reportsRowCount(values['count'] ?? ''),
       'Load More' => l10n.reportsLoadMore,
@@ -101,24 +107,33 @@ extension MobileText on BuildContext {
       'Search by name, plate or IMEI…' => l10n.reportsScopeSearchHint,
       'Select all visible' => l10n.reportsScopeSelectAll,
       'Done' => l10n.reportsScopeDone,
-      '{count} vehicles selected' => l10n.reportsScopeNVehiclesSelected(values['count'] ?? ''),
+      '{count} vehicles selected' => l10n.reportsScopeNVehiclesSelected(
+        values['count'] ?? '',
+      ),
       'Start date' => l10n.reportsDateStart,
       'End date' => l10n.reportsDateEnd,
       'Start' => l10n.reportsDateFrom,
       'End' => l10n.reportsDateTo,
-      'Max {days} days for this report type' => l10n.reportsDateMaxDays(values['days'] ?? ''),
-      'Please select at least one vehicle.' => l10n.reportsValidationScopeRequired,
+      'Max {days} days for this report type' => l10n.reportsDateMaxDays(
+        values['days'] ?? '',
+      ),
+      'Please select at least one vehicle.' =>
+        l10n.reportsValidationScopeRequired,
       'Start date is required.' => l10n.reportsValidationStartRequired,
       'End date is required.' => l10n.reportsValidationEndRequired,
       'Start must be before end.' => l10n.reportsValidationStartBeforeEnd,
-      'Date range exceeds the {days}-day limit for this report.' => l10n.reportsValidationMaxDays(values['days'] ?? ''),
-      'Please select a vehicle for the sensor report.' => l10n.reportsValidationSensorVehicleRequired,
+      'Date range exceeds the {days}-day limit for this report.' =>
+        l10n.reportsValidationMaxDays(values['days'] ?? ''),
+      'Please select a vehicle for the sensor report.' =>
+        l10n.reportsValidationSensorVehicleRequired,
       'Please select a sensor.' => l10n.reportsValidationSensorRequired,
-      'Select at least one state (Running or Stopped).' => l10n.reportsValidationTimelineStateRequired,
+      'Select at least one state (Running or Stopped).' =>
+        l10n.reportsValidationTimelineStateRequired,
       'Speed limit (km/h)' => l10n.reportsFilterSpeedLimit,
       'Custom limit…' => l10n.reportsFilterSpeedCustom,
       'Search geofences…' => l10n.reportsFilterGeofenceHint,
-      'No selection includes all geofences.' => l10n.reportsFilterGeofenceAllNote,
+      'No selection includes all geofences.' =>
+        l10n.reportsFilterGeofenceAllNote,
       'Alert type' => l10n.reportsFilterAlertType,
       'Severity' => l10n.reportsFilterAlertSeverity,
       'Acknowledgement' => l10n.reportsFilterAlertAck,
@@ -132,22 +147,31 @@ extension MobileText on BuildContext {
       'Stopped' => l10n.reportsFilterTimelineStopped,
       'Sensor' => l10n.reportsFilterSensorSensor,
       'Distance' => l10n.reportsCatalogDistanceTitle,
-      'Total distance driven per vehicle per day with engine hours and odometer readings.' => l10n.reportsCatalogDistanceDesc,
+      'Total distance driven per vehicle per day with engine hours and odometer readings.' =>
+        l10n.reportsCatalogDistanceDesc,
       'Driven Days' => l10n.reportsCatalogDrivenTitle,
-      'Daily distance matrix — which vehicles moved on which days and how far.' => l10n.reportsCatalogDrivenDesc,
+      'Daily distance matrix — which vehicles moved on which days and how far.' =>
+        l10n.reportsCatalogDrivenDesc,
       'Vehicle Details' => l10n.reportsCatalogDetailsTitle,
-      'Fleet summary: total distance, engine hours, active days, last known location per vehicle.' => l10n.reportsCatalogDetailsDesc,
+      'Fleet summary: total distance, engine hours, active days, last known location per vehicle.' =>
+        l10n.reportsCatalogDetailsDesc,
       'Overspeed' => l10n.reportsCatalogOverspeedTitle,
-      'Speeding events with observed speed, configured limit, excess, duration, and location.' => l10n.reportsCatalogOverspeedDesc,
+      'Speeding events with observed speed, configured limit, excess, duration, and location.' =>
+        l10n.reportsCatalogOverspeedDesc,
       'Geofence' => l10n.reportsCatalogGeofenceTitle,
-      'Entry and exit events for selected geofences with timestamps and dwell duration.' => l10n.reportsCatalogGeofenceDesc,
+      'Entry and exit events for selected geofences with timestamps and dwell duration.' =>
+        l10n.reportsCatalogGeofenceDesc,
       'Alerts' => l10n.reportsCatalogAlertsTitle,
-      'Alert events by type and severity with acknowledgement status.' => l10n.reportsCatalogAlertsDesc,
-      'Time-series readings for a specific sensor on a single vehicle with chart visualisation.' => l10n.reportsCatalogSensorDesc,
+      'Alert events by type and severity with acknowledgement status.' =>
+        l10n.reportsCatalogAlertsDesc,
+      'Time-series readings for a specific sensor on a single vehicle with chart visualisation.' =>
+        l10n.reportsCatalogSensorDesc,
       'Device Logs' => l10n.reportsCatalogLogsTitle,
-      'Raw communication logs from vehicle devices grouped by category and level.' => l10n.reportsCatalogLogsDesc,
+      'Raw communication logs from vehicle devices grouped by category and level.' =>
+        l10n.reportsCatalogLogsDesc,
       'Timeline' => l10n.reportsCatalogTimelineTitle,
-      'Running and stopped segments with duration, distance, and GPS map trace per segment.' => l10n.reportsCatalogTimelineDesc,
+      'Running and stopped segments with duration, distance, and GPS map trace per segment.' =>
+        l10n.reportsCatalogTimelineDesc,
       'Total Distance' => l10n.reportsKpiTotalDistance,
       'Engine Hours' => l10n.reportsKpiEngineHours,
       'Active Vehicles' => l10n.reportsKpiActiveVehicles,
@@ -176,11 +200,14 @@ extension MobileText on BuildContext {
       'Raw Payload' => l10n.reportsDetailRawPayload,
       'Copied' => l10n.reportsDetailCopied,
       'Copy' => l10n.reportsDetailCopy,
-      'Payload truncated for display. Export for full data.' => l10n.reportsDetailTruncated,
+      'Payload truncated for display. Export for full data.' =>
+        l10n.reportsDetailTruncated,
       'View Map' => l10n.reportsRowDetailsViewMap,
       'Hide Map' => l10n.reportsRowDetailsHideMap,
       'No GPS data available for this segment.' => l10n.reportsRowDetailsNoGps,
-      'Warning: {message}' => l10n.reportsWarningBanner(values['message'] ?? ''),
+      'Warning: {message}' => l10n.reportsWarningBanner(
+        values['message'] ?? '',
+      ),
       'Source: {source}' => l10n.reportsSourceLabel(values['source'] ?? ''),
       'Admin' => l10n.adminRole,
       'Users' => l10n.users,
@@ -195,13 +222,16 @@ extension MobileText on BuildContext {
       'Plans' => l10n.plans,
       'Roles' => l10n.roles,
       'SMTP' => l10n.smtp,
-      'Manage profile, localization and SMTP settings.' => l10n.settingsDescription,
-      'Language, date/time, units, and default map focus.' => l10n.localizationDescription,
+      'Manage profile, localization and SMTP settings.' =>
+        l10n.settingsDescription,
+      'Language, date/time, units, and default map focus.' =>
+        l10n.localizationDescription,
       'White Label' => l10n.whiteLabel,
       'Save changes' => l10n.saveChanges,
       'Text direction' => l10n.textDirection,
       'Language & Direction' => l10n.languageAndDirection,
-      'Interface language and text direction.' => l10n.languageAndDirectionSubtitle,
+      'Interface language and text direction.' =>
+        l10n.languageAndDirectionSubtitle,
       'Date & Time' => l10n.dateAndTime,
       'Date format, time style, and timezone.' => l10n.dateAndTimeSubtitle,
       'Units & Theme' => l10n.unitsAndTheme,
@@ -211,7 +241,8 @@ extension MobileText on BuildContext {
       'Could not load localization.' => l10n.couldNotLoadLocalization,
       'Localization saved' => l10n.localizationSaved,
       'Quick presets' => l10n.quickPresets,
-      'Profile, branding, mail, localization, and platform preferences.' => l10n.settingsHeaderSubtitle,
+      'Profile, branding, mail, localization, and platform preferences.' =>
+        l10n.settingsHeaderSubtitle,
       'Localization Preview' => l10n.localizationPreview,
       'Latitude' => l10n.latitude,
       'Longitude' => l10n.longitude,
@@ -228,9 +259,11 @@ extension MobileText on BuildContext {
       'Map zoom is required.' => l10n.mapZoomRequired,
       'Enter a valid zoom level.' => l10n.validMapZoom,
       'Map zoom must be between 1 and 22.' => l10n.mapZoomRange,
-      'The saved language is not available in the app. Select a supported language; English is used for now.' => l10n.unsupportedLanguageFallback,
+      'The saved language is not available in the app. Select a supported language; English is used for now.' =>
+        l10n.unsupportedLanguageFallback,
       '{role} workspace' => l10n.homeWorkspace(values['role'] ?? ''),
-      'Workspace access could not be refreshed. Pull down to retry.' => l10n.homeAccessUnavailable,
+      'Workspace access could not be refreshed. Pull down to retry.' =>
+        l10n.homeAccessUnavailable,
       '© 2026 Open VTS All rights reserved.' => l10n.homeCopyright,
       'Light mode' => l10n.lightMode,
       'Dark mode' => l10n.darkMode,
@@ -253,57 +286,76 @@ extension MobileText on BuildContext {
       'Edit route' => l10n.routeBuilderEdit,
       'Route name' => l10n.routeBuilderName,
       'For example, morning deliveries' => l10n.routeBuilderNameHint,
-      'Enter a route name with at least 2 characters.' => l10n.routeBuilderNameError,
+      'Enter a route name with at least 2 characters.' =>
+        l10n.routeBuilderNameError,
       'Stops' => l10n.routeBuilderStops,
       'Add stop' => l10n.routeBuilderAddStop,
       'Edit stop' => l10n.routeBuilderEditStop,
       'Stop name' => l10n.routeBuilderStopName,
-      'Enter a name between 1 and 160 characters.' => l10n.routeBuilderStopNameError,
+      'Enter a name between 1 and 160 characters.' =>
+        l10n.routeBuilderStopNameError,
       'Address (optional)' => l10n.routeBuilderAddress,
       'Coordinates' => l10n.routeBuilderCoordinates,
-      'Enter a valid latitude (−90 to 90) and longitude (−180 to 180).' => l10n.routeBuilderCoordinateError,
+      'Enter a valid latitude (−90 to 90) and longitude (−180 to 180).' =>
+        l10n.routeBuilderCoordinateError,
       'Choose on map' => l10n.routeBuilderMap,
       'Tap the map to choose a stop location.' => l10n.routeBuilderMapHint,
       'Use location' => l10n.routeBuilderUseLocation,
       'Point of interest' => l10n.routeBuilderPoi,
       'Search saved landmarks' => l10n.routeBuilderLandmarkSearch,
-      'No matching landmarks with valid coordinates.' => l10n.routeBuilderNoLandmarks,
-      'Could not load saved landmarks. Please try again.' => l10n.routeBuilderLandmarkError,
-      'A route can contain up to 100 stops, including the return stop.' => l10n.routeBuilderStopLimit,
+      'No matching landmarks with valid coordinates.' =>
+        l10n.routeBuilderNoLandmarks,
+      'Could not load saved landmarks. Please try again.' =>
+        l10n.routeBuilderLandmarkError,
+      'A route can contain up to 100 stops, including the return stop.' =>
+        l10n.routeBuilderStopLimit,
       'Add at least 2 distinct stops.' => l10n.routeBuilderMinimumStops,
       'Return to start' => l10n.routeBuilderRoundTrip,
-      'Add the starting point as the final destination.' => l10n.routeBuilderRoundTripHint,
+      'Add the starting point as the final destination.' =>
+        l10n.routeBuilderRoundTripHint,
       'Optimize order' => l10n.routeBuilderOptimize,
-      'Reorders stops using geographic distance, keeping your start and destination. Road distance is calculated separately.' => l10n.routeBuilderOptimizeHint,
+      'Reorders stops using geographic distance, keeping your start and destination. Road distance is calculated separately.' =>
+        l10n.routeBuilderOptimizeHint,
       'Preview road path' => l10n.routeBuilderRoadPath,
       'Calculating driving route…' => l10n.routeBuilderRouting,
-      'No driving route is available. Check the stop locations or your connection, then try again.' => l10n.routeBuilderRoutingError,
+      'No driving route is available. Check the stop locations or your connection, then try again.' =>
+        l10n.routeBuilderRoutingError,
       'Driving route ready' => l10n.routeBuilderReady,
-      'Stops changed. Preview the new driving route before saving.' => l10n.routeBuilderChanged,
-      'Could not save the route. Please try again.' => l10n.routeBuilderSaveError,
-      'You do not have permission to create or edit routes.' => l10n.routeBuilderAccessDenied,
+      'Stops changed. Preview the new driving route before saving.' =>
+        l10n.routeBuilderChanged,
+      'Could not save the route. Please try again.' =>
+        l10n.routeBuilderSaveError,
+      'You do not have permission to create or edit routes.' =>
+        l10n.routeBuilderAccessDenied,
       'Destination' => l10n.routeBuilderDestination,
       'Stop' => l10n.routeBuilderWaypoint,
       'Route shape' => l10n.routeBuilderShapePoint,
       'Move earlier' => l10n.routeBuilderMoveUp,
       'Move later' => l10n.routeBuilderMoveDown,
       'Remove stop' => l10n.routeBuilderRemove,
-      'Add your starting point and destination, then any stops along the way.' => l10n.routeBuilderNoStops,
+      'Add your starting point and destination, then any stops along the way.' =>
+        l10n.routeBuilderNoStops,
       'Saved route path' => l10n.routeBuilderSavedGeometry,
-      'Could not load the complete route. Go back and try again.' => l10n.routeBuilderEditingLoadError,
+      'Could not load the complete route. Go back and try again.' =>
+        l10n.routeBuilderEditingLoadError,
       'Discard route changes?' => l10n.routeBuilderDiscardTitle,
-      'Your unsaved route changes will be lost.' => l10n.routeBuilderDiscardMessage,
+      'Your unsaved route changes will be lost.' =>
+        l10n.routeBuilderDiscardMessage,
       'Discard' => l10n.routeBuilderDiscard,
       'Keep editing' => l10n.routeBuilderKeepEditing,
       'Try again' => l10n.routeBuilderRetry,
-      '© OpenStreetMap contributors · Routing: OSRM' => l10n.routeBuilderMapAttribution,
+      '© OpenStreetMap contributors · Routing: OSRM' =>
+        l10n.routeBuilderMapAttribution,
       'Route details' => l10n.routeBuilderRouteDetails,
       'min' => l10n.routeBuilderMinutes,
       'km' => l10n.routeBuilderDistanceUnit,
       'Add a stop from' => l10n.routeBuilderChooseSource,
-      'Saved landmarks require the Landmarks permission.' => l10n.routeBuilderLandmarksPermission,
-      'Shape points guide the road path. They are not delivery stops. Optimizing removes shape points.' => l10n.routeBuilderShapeHint,
-      'Uses the geofence centre. Confirm that it is reachable by road.' => l10n.routeBuilderGeofenceHint,
+      'Saved landmarks require the Landmarks permission.' =>
+        l10n.routeBuilderLandmarksPermission,
+      'Shape points guide the road path. They are not delivery stops. Optimizing removes shape points.' =>
+        l10n.routeBuilderShapeHint,
+      'Uses the geofence centre. Confirm that it is reachable by road.' =>
+        l10n.routeBuilderGeofenceHint,
       'Select {field}' => l10n.selectField(values['field'] ?? ''),
       'Search {field}' => l10n.searchField(values['field'] ?? ''),
       'No matching {field}' => l10n.noMatchingField(values['field'] ?? ''),
@@ -314,28 +366,36 @@ extension MobileText on BuildContext {
       'Select' => l10n.select,
       'Unable to load' => l10n.unableToLoad,
       'API token' => l10n.mobileApiToken,
-      'This token is shown only once. Store it securely. Anyone with it can access the selected API permissions.' => l10n.mobileTokenOnce,
+      'This token is shown only once. Store it securely. Anyone with it can access the selected API permissions.' =>
+        l10n.mobileTokenOnce,
       'Save your recovery codes' => l10n.mobileSaveRecovery,
-      'Each code works once if you lose your authenticator. These replace previous recovery codes. Keep them in a safe place.' => l10n.mobileRecoveryHelp,
+      'Each code works once if you lose your authenticator. These replace previous recovery codes. Keep them in a safe place.' =>
+        l10n.mobileRecoveryHelp,
       'Copied. Store this securely.' => l10n.mobileCopiedSecurely,
       'I have saved this securely' => l10n.mobileSavedSecurely,
       'Revoke API token?' => l10n.mobileRevokeTokenQuestion,
-      '{name} will stop working immediately.' => l10n.mobileTokenStops(values['name'] ?? ''),
+      '{name} will stop working immediately.' => l10n.mobileTokenStops(
+        values['name'] ?? '',
+      ),
       'Revoke' => l10n.mobileRevoke,
       'Multi-factor authentication' => l10n.mobileMfa,
       'MFA is on' => l10n.mobileMfaOn,
       'MFA is off' => l10n.mobileMfaOff,
       'Protect sign-in with your authenticator app.' => l10n.mobileMfaHelp,
-      'Security changes sign out other sessions and invalidate existing API tokens.' => l10n.mobileSecuritySessions,
+      'Security changes sign out other sessions and invalidate existing API tokens.' =>
+        l10n.mobileSecuritySessions,
       'Added {date}' => l10n.mobileAddedDate(values['date'] ?? ''),
       'Remove authenticator' => l10n.mobileRemoveAuthenticator,
       'Add authenticator' => l10n.mobileAddAuthenticator,
       'Set up MFA' => l10n.mobileSetupMfa,
-      '{count} unused recovery codes' => l10n.mobileRecoveryRemaining(values['count'] ?? ''),
+      '{count} unused recovery codes' => l10n.mobileRecoveryRemaining(
+        values['count'] ?? '',
+      ),
       'Replace recovery codes' => l10n.mobileReplaceRecovery,
       'Turn off MFA' => l10n.mobileTurnOffMfa,
       'API access' => l10n.mobileApiAccess,
-      'Create credentials for integrations with the permissions of your account.' => l10n.mobileApiHelp,
+      'Create credentials for integrations with the permissions of your account.' =>
+        l10n.mobileApiHelp,
       'Read and write' => l10n.mobileReadWrite,
       'Read only' => l10n.mobileReadOnly,
       'Expires' => l10n.mobileExpires,
@@ -343,11 +403,15 @@ extension MobileText on BuildContext {
       'Revoke token' => l10n.mobileRevokeToken,
       'Create API token' => l10n.mobileCreateToken,
       'Delete account' => l10n.mobileDeleteAccount,
-      'Delete your account and its workspace access, including subusers. All sessions will end. This action cannot be undone in the app.' => l10n.mobileDeleteWorkspaceHelp,
-      'Delete your account and end its sessions. This action cannot be undone in the app.' => l10n.mobileDeleteSelfHelp,
+      'Delete your account and its workspace access, including subusers. All sessions will end. This action cannot be undone in the app.' =>
+        l10n.mobileDeleteWorkspaceHelp,
+      'Delete your account and end its sessions. This action cannot be undone in the app.' =>
+        l10n.mobileDeleteSelfHelp,
       'Delete my account' => l10n.mobileDeleteMyAccount,
-      'Future sign-ins will need only your password.' => l10n.mobilePasswordOnly,
-      'Your previous recovery codes will stop working.' => l10n.mobileRecoveryReplaced,
+      'Future sign-ins will need only your password.' =>
+        l10n.mobilePasswordOnly,
+      'Your previous recovery codes will stop working.' =>
+        l10n.mobileRecoveryReplaced,
       'Token name' => l10n.mobileTokenName,
       'Authenticator name' => l10n.mobileAuthenticatorName,
       'Enter a name.' => l10n.mobileEnterName,
@@ -358,18 +422,21 @@ extension MobileText on BuildContext {
       'Enter your password.' => l10n.mobileEnterPassword,
       'Authenticator or recovery code' => l10n.mobileAuthenticatorOrRecovery,
       'Enter your verification code.' => l10n.mobileEnterVerification,
-      'I understand that my account and workspace access will be deleted.' => l10n.mobileDeleteConfirmation,
+      'I understand that my account and workspace access will be deleted.' =>
+        l10n.mobileDeleteConfirmation,
       'Continue' => l10n.mobileContinue,
       'Enter all six digits.' => l10n.mobileSixDigits,
       'Connect your authenticator' => l10n.mobileConnectAuthenticator,
-      'Scan the QR code on another device, or copy the setup key into your authenticator app. Setup expires in 10 minutes.' => l10n.mobileScanQrHelp,
+      'Scan the QR code on another device, or copy the setup key into your authenticator app. Setup expires in 10 minutes.' =>
+        l10n.mobileScanQrHelp,
       'Copy setup key' => l10n.mobileCopySetup,
       'New authenticator code' => l10n.mobileNewAuthenticatorCode,
       'Verifying…' => l10n.mobileVerifying,
       'Confirm' => l10n.mobileConfirm,
       'Verify your sign-in' => l10n.mobileVerifySignIn,
       'Enter one of your unused recovery codes.' => l10n.mobileUnusedRecovery,
-      'Enter the six-digit code from your authenticator app.' => l10n.mobileAuthenticatorInstructions,
+      'Enter the six-digit code from your authenticator app.' =>
+        l10n.mobileAuthenticatorInstructions,
       'Recovery code' => l10n.mobileRecoveryCode,
       'Authenticator code' => l10n.mobileAuthenticatorCode,
       'Enter a complete recovery code.' => l10n.mobileCompleteRecovery,
@@ -388,7 +455,8 @@ extension MobileText on BuildContext {
       'Change password' => l10n.mobileChangePassword,
       'This field is required.' => l10n.mobileRequired,
       'Enter a valid English email address.' => l10n.mobileValidEmail,
-      'Changing your password signs you out of all sessions.' => l10n.mobilePasswordSessions,
+      'Changing your password signs you out of all sessions.' =>
+        l10n.mobilePasswordSessions,
       'New password' => l10n.mobileNewPassword,
       'Use 6–72 English characters.' => l10n.mobilePasswordCharacters,
       'Choose a different password.' => l10n.mobileDifferentPassword,
@@ -408,10 +476,12 @@ extension MobileText on BuildContext {
       'Time zone offset' => l10n.mobileTimeOffset,
       'Language code' => l10n.mobileLanguageCode,
       'Save preferences' => l10n.mobileSavePreferences,
-      'Account access changed. Reopen this trip proof.' => l10n.mobileProofAccountChanged,
+      'Account access changed. Reopen this trip proof.' =>
+        l10n.mobileProofAccountChanged,
       'Activity' => l10n.mobileActivity,
       'All statuses' => l10n.mobileAllStatuses,
-      'Approximate stop sequence • numbered stops' => l10n.mobileApproximateRoute,
+      'Approximate stop sequence • numbered stops' =>
+        l10n.mobileApproximateRoute,
       'Attention' => l10n.mobileAttention,
       'Choose a route' => l10n.mobileChooseRoute,
       'Choose a valid schedule.' => l10n.mobileValidSchedule,
@@ -419,12 +489,14 @@ extension MobileText on BuildContext {
       'Choose a vehicle' => l10n.mobileChooseVehicle,
       'Choose a vehicle and route.' => l10n.mobileChooseVehicleRoute,
       'Choose an eligible vehicle' => l10n.mobileChooseEligibleVehicle,
-      'Choose an end date on or after the start date.' => l10n.mobileEndDateAfterStart,
+      'Choose an end date on or after the start date.' =>
+        l10n.mobileEndDateAfterStart,
       'Choose at least one weekday.' => l10n.mobileChooseWeekday,
       'Choose date' => l10n.mobileChooseDate,
       'Choose date range' => l10n.mobileChooseDateRange,
       'Choose day' => l10n.mobileChooseDay,
-      'Choose the start and completion date and time for a multi-day trip.' => l10n.mobileMultiDayHelp,
+      'Choose the start and completion date and time for a multi-day trip.' =>
+        l10n.mobileMultiDayHelp,
       'Choose today or a later date.' => l10n.mobileFutureDate,
       'Completed' => l10n.mobileCompleted,
       'Completion must be after the start.' => l10n.mobileCompletionAfterStart,
@@ -440,21 +512,26 @@ extension MobileText on BuildContext {
       'End time' => l10n.mobileEndTime,
       'End time must be later than start time.' => l10n.mobileEndTimeAfterStart,
       'Ends (optional)' => l10n.mobileEndsOptional,
-      'Enter a title between 2 and 120 characters.' => l10n.mobileTripTitleLength,
+      'Enter a title between 2 and 120 characters.' =>
+        l10n.mobileTripTitleLength,
       'Enter at least 2 characters' => l10n.mobileAtLeastTwo,
       'Enter at least 3 characters' => l10n.mobileAtLeastThree,
       'Expand route map' => l10n.mobileExpandRoute,
       'Fit route' => l10n.mobileFitRoute,
-      'GPS is not linked. The trip can be planned, but live tracking will be unavailable.' => l10n.mobileNoGpsPlanning,
+      'GPS is not linked. The trip can be planned, but live tracking will be unavailable.' =>
+        l10n.mobileNoGpsPlanning,
       'Keep schedule' => l10n.mobileKeepSchedule,
       'Last known vehicle position' => l10n.mobileLastKnownPosition,
       'Latest start time' => l10n.mobileLatestStart,
       'Next month' => l10n.mobileNextMonth,
       'No eligible vehicle is available.' => l10n.mobileNoEligible,
-      'No eligible vehicle is available. Assign an active driver to an active vehicle before planning.' => l10n.mobileNoEligibleHelp,
+      'No eligible vehicle is available. Assign an active driver to an active vehicle before planning.' =>
+        l10n.mobileNoEligibleHelp,
       'No records for this view.' => l10n.mobileNoRecordsView,
-      'No route or GPS coordinates are available for this trip.' => l10n.mobileNoRouteGps,
-      'Numbered stops • route geometry unavailable' => l10n.mobileStopsWithoutGeometry,
+      'No route or GPS coordinates are available for this trip.' =>
+        l10n.mobileNoRouteGps,
+      'Numbered stops • route geometry unavailable' =>
+        l10n.mobileStopsWithoutGeometry,
       'Pause' => l10n.mobilePause,
       'Plan trip' => l10n.mobilePlanTrip,
       'Planned route • numbered stops' => l10n.mobilePlannedNumbered,
@@ -477,24 +554,33 @@ extension MobileText on BuildContext {
       'Search routes' => l10n.mobileSearchRoutes,
       'Search vehicle, plate or driver' => l10n.mobileSearchVehicleDriver,
       'Skip dates (optional)' => l10n.mobileSkipDates,
-      'Skip dates must be inside the schedule date range.' => l10n.mobileSkipDatesRange,
+      'Skip dates must be inside the schedule date range.' =>
+        l10n.mobileSkipDatesRange,
       'Start time' => l10n.mobileStartTime,
       'Starts' => l10n.mobileStarts,
       'Status' => l10n.mobileStatus,
       'Submitted proofs' => l10n.mobileSubmittedProofs,
-      'The driver can start any time on the selected day.' => l10n.mobileAnyTimeDay,
-      'The driver can start within this time window. The end of the window is not the trip completion time.' => l10n.mobileStartWindowHelp,
-      'The request could not be completed. Please refresh and try again.' => l10n.mobileRequestFailed,
-      'The saved route is unavailable for planning. Refresh routes and try again.' => l10n.mobileRouteUnavailable,
-      'The trip starts at a specific time in the account timezone.' => l10n.mobileAccountTimeHelp,
-      'This PDF could not be previewed. Use Save or share to open it in another app.' => l10n.mobilePdfPreviewFailed,
-      'This image could not be previewed. Use Save or share to open it in another app.' => l10n.mobileImagePreviewFailed,
+      'The driver can start any time on the selected day.' =>
+        l10n.mobileAnyTimeDay,
+      'The driver can start within this time window. The end of the window is not the trip completion time.' =>
+        l10n.mobileStartWindowHelp,
+      'The request could not be completed. Please refresh and try again.' =>
+        l10n.mobileRequestFailed,
+      'The saved route is unavailable for planning. Refresh routes and try again.' =>
+        l10n.mobileRouteUnavailable,
+      'The trip starts at a specific time in the account timezone.' =>
+        l10n.mobileAccountTimeHelp,
+      'This PDF could not be previewed. Use Save or share to open it in another app.' =>
+        l10n.mobilePdfPreviewFailed,
+      'This image could not be previewed. Use Save or share to open it in another app.' =>
+        l10n.mobileImagePreviewFailed,
       'Today' => l10n.mobileToday,
       'Trip created' => l10n.mobileTripCreated,
       'Trip details' => l10n.mobileTripDetails,
       'Trip route' => l10n.mobileTripRoute,
       'Trip title' => l10n.mobileTripTitle,
-      'Unable to share this proof. Please try again.' => l10n.mobileProofShareFailed,
+      'Unable to share this proof. Please try again.' =>
+        l10n.mobileProofShareFailed,
       'Unavailable vehicles' => l10n.mobileUnavailableVehicles,
       'Use at most 100 skip dates' => l10n.mobileMaxSkipDates,
       'Use at most 600 characters for the remark.' => l10n.mobileRemarkLength,
@@ -504,20 +590,33 @@ extension MobileText on BuildContext {
       'Vehicle and route' => l10n.mobileVehicleRoute,
       'View trip' => l10n.mobileViewTrip,
       'YYYY-MM-DD, one date per line' => l10n.mobileDatesPerLine,
-      'Your unsaved planning changes will be lost. Saved routes will remain available.' => l10n.mobileDiscardPlanningHelp,
-      'Times use {timezone}.' => l10n.mobileTimesTimezone(values['timezone'] ?? ''),
+      'Your unsaved planning changes will be lost. Saved routes will remain available.' =>
+        l10n.mobileDiscardPlanningHelp,
+      'Times use {timezone}.' => l10n.mobileTimesTimezone(
+        values['timezone'] ?? '',
+      ),
       '{count} stops' => l10n.mobileStopsCount(values['count'] ?? ''),
       '{count} trips' => l10n.mobileTripsCount(values['count'] ?? ''),
-      'Load more ({loaded} of {total})' => l10n.mobileLoadMoreCount(values['loaded'] ?? '', values['total'] ?? ''),
+      'Load more ({loaded} of {total})' => l10n.mobileLoadMoreCount(
+        values['loaded'] ?? '',
+        values['total'] ?? '',
+      ),
       'Scheduled: {date}' => l10n.mobileScheduledDate(values['date'] ?? ''),
       'Ends: {date}' => l10n.mobileEndsDate(values['date'] ?? ''),
       'Next: {date}' => l10n.mobileNextDate(values['date'] ?? ''),
       'Vehicle GPS: {status}' => l10n.mobileGpsStatus(values['status'] ?? ''),
       'Last position: {date}' => l10n.mobileLastPosition(values['date'] ?? ''),
-      'Actual distance: {distance} km' => l10n.mobileActualDistance(values['distance'] ?? ''),
+      'Actual distance: {distance} km' => l10n.mobileActualDistance(
+        values['distance'] ?? '',
+      ),
       'Trip score: {value}' => l10n.mobileTripScore(values['value'] ?? ''),
-      '{completed}/{total} stops' => l10n.mobileStopsProgress(values['completed'] ?? '', values['total'] ?? ''),
-      '{action} recurring schedule?' => l10n.mobileScheduleAction(values['action'] ?? ''),
+      '{completed}/{total} stops' => l10n.mobileStopsProgress(
+        values['completed'] ?? '',
+        values['total'] ?? '',
+      ),
+      '{action} recurring schedule?' => l10n.mobileScheduleAction(
+        values['action'] ?? '',
+      ),
       'Select date range' => l10n.dateRangeSelect,
       'Choose Date Range' => l10n.dateRangeChoose,
       'Choose Date & Time Range' => l10n.dateTimeRangeChoose,
@@ -552,7 +651,8 @@ extension MobileText on BuildContext {
       '6–35 characters' => l10n.legacyUi3994dbd48e,
       '7 to 15 digits' => l10n.legacyUi250e268e83,
       '7-Day Usage' => l10n.legacyUie69a9a5ee9,
-      'A sub user can only use features and reports available to your account. Settings and account security remain available.' => l10n.legacyUib8cee60c75,
+      'A sub user can only use features and reports available to your account. Settings and account security remain available.' =>
+        l10n.legacyUib8cee60c75,
       'Access restricted' => l10n.legacyUif0ee13e963,
       'Account Status' => l10n.legacyUi6e702cb4e0,
       'Account access' => l10n.legacyUi6d6eba9279,
@@ -605,7 +705,8 @@ extension MobileText on BuildContext {
       'All users' => l10n.legacyUice832d9b31,
       'Allow History' => l10n.legacyUie512a2f10a,
       'Allow route history access.' => l10n.legacyUif8f993b052,
-      'Allow visitors to log in to a demo workspace.' => l10n.legacyUi1ffee134b1,
+      'Allow visitors to log in to a demo workspace.' =>
+        l10n.legacyUi1ffee134b1,
       'Allowed range: 10–300' => l10n.legacyUie5d30dc481,
       'Altitude' => l10n.legacyUi22786d42cc,
       'Amount' => l10n.legacyUi43dc8532f7,
@@ -614,8 +715,10 @@ extension MobileText on BuildContext {
       'Amount must be between 0.01 and 9999999.99' => l10n.legacyUi7d66157b06,
       'Amount override' => l10n.legacyUib34440b2cd,
       'Amount supports up to 2 decimal places' => l10n.legacyUib757c50159,
-      'Analytics will appear once payments are available.' => l10n.legacyUic8c3ba95bb,
-      'Analytics will appear once transactions are available.' => l10n.legacyUif6c665f4fe,
+      'Analytics will appear once payments are available.' =>
+        l10n.legacyUic8c3ba95bb,
+      'Analytics will appear once transactions are available.' =>
+        l10n.legacyUif6c665f4fe,
       'Apply Filters' => l10n.legacyUi6b2a78a8f7,
       'Assign' => l10n.legacyUi2444928438,
       'Assign Driver' => l10n.legacyUi561f6317fe,
@@ -623,14 +726,20 @@ extension MobileText on BuildContext {
       'Assign User' => l10n.legacyUi5e97289597,
       'Assign Vehicle' => l10n.legacyUib8db201262,
       'Assign Vehicles' => l10n.legacyUi20b5675c39,
-      'Assign one or more vehicles to this sub user.' => l10n.legacyUic403a13c66,
+      'Assign one or more vehicles to this sub user.' =>
+        l10n.legacyUic403a13c66,
       'Assign users to this driver.' => l10n.legacyUie12261bf18,
       'Assign users to this vehicle.' => l10n.legacyUi41c90cdeef,
-      'Assign vehicles to configure basic notifications.' => l10n.legacyUi32265d6dad,
-      'Assign vehicles to configure duration notifications.' => l10n.legacyUi117326ffd2,
-      'Assign vehicles to configure geofence notifications.' => l10n.legacyUi74dfd6593f,
-      'Assign vehicles to configure overspeed notifications.' => l10n.legacyUi8c6586176a,
-      'Assign vehicles to configure route notifications.' => l10n.legacyUi086854873d,
+      'Assign vehicles to configure basic notifications.' =>
+        l10n.legacyUi32265d6dad,
+      'Assign vehicles to configure duration notifications.' =>
+        l10n.legacyUi117326ffd2,
+      'Assign vehicles to configure geofence notifications.' =>
+        l10n.legacyUi74dfd6593f,
+      'Assign vehicles to configure overspeed notifications.' =>
+        l10n.legacyUi8c6586176a,
+      'Assign vehicles to configure route notifications.' =>
+        l10n.legacyUi086854873d,
       'Assigned' => l10n.legacyUie24e824b68,
       'Assigned vehicles' => l10n.legacyUie94ba984c3,
       'Assignment' => l10n.legacyUie55df441e8,
@@ -667,7 +776,8 @@ extension MobileText on BuildContext {
       'Cafe' => l10n.legacyUi37efa8a990,
       'Cancel renewal request?' => l10n.legacyUi26b937c51d,
       'Cancel request' => l10n.legacyUi84837a2168,
-      'Cannot load commands without vehicle details.' => l10n.legacyUi2738a0a1db,
+      'Cannot load commands without vehicle details.' =>
+        l10n.legacyUi2738a0a1db,
       'Card' => l10n.legacyUi4d4ce73b15,
       'Cash' => l10n.legacyUi758ec54e43,
       'Categories' => l10n.legacyUi6ccb60071b,
@@ -675,8 +785,10 @@ extension MobileText on BuildContext {
       'Change status' => l10n.legacyUi6fc0529f2d,
       'Choose Date Time Range' => l10n.legacyUica5df1dad1,
       'Choose Replay Range' => l10n.legacyUid2174d8075,
-      'Choose a plan, registration date and reason of 5–500 characters.' => l10n.legacyUi66542fe55c,
-      'Choose vehicles, expiry, and sharing options.' => l10n.legacyUi7db804aa37,
+      'Choose a plan, registration date and reason of 5–500 characters.' =>
+        l10n.legacyUi66542fe55c,
+      'Choose vehicles, expiry, and sharing options.' =>
+        l10n.legacyUi7db804aa37,
       'City (optional)' => l10n.legacyUi037c5eba86,
       'City is required.' => l10n.legacyUief153831d1,
       'Cleanup completed' => l10n.legacyUi8da6bb0466,
@@ -686,7 +798,8 @@ extension MobileText on BuildContext {
       'Clear expiry' => l10n.legacyUi1bf7452cd6,
       'Clear expiry date' => l10n.legacyUi40b66a41b8,
       'Clear replay' => l10n.legacyUi92e60a4db3,
-      'Client revenue will appear after payments are recorded.' => l10n.legacyUi53dde4f2c0,
+      'Client revenue will appear after payments are recorded.' =>
+        l10n.legacyUi53dde4f2c0,
       'Close drawer' => l10n.legacyUide4e7f6fad,
       'Close map' => l10n.legacyUi3dc631324c,
       'Cluster' => l10n.legacyUid75dc68bbd,
@@ -744,37 +857,54 @@ extension MobileText on BuildContext {
       'Create Ticket' => l10n.legacyUiafe9a7ae15,
       'Create User' => l10n.legacyUib25c91fe61,
       'Create Vehicle' => l10n.legacyUi705b0946b2,
-      'Create a dashboard from the web application to view it here.' => l10n.legacyUi22a6b9d964,
-      'Create a public track link to share live vehicle tracking.' => l10n.legacyUi769479a4d5,
+      'Create a dashboard from the web application to view it here.' =>
+        l10n.legacyUi22a6b9d964,
+      'Create a public track link to share live vehicle tracking.' =>
+        l10n.legacyUi769479a4d5,
       'Create a sensor for this vehicle.' => l10n.legacyUi50aab1f7b5,
       'Create administrator' => l10n.legacyUi0d2cd08b59,
       'Create at least one item before exporting.' => l10n.legacyUi6f876ff9c0,
       'Create device without leaving this form' => l10n.legacyUic42adee4d7,
       'Create driver' => l10n.legacyUiaba922c9b5,
-      'Create drivers, manage assigned vehicles, documents, and driver activity.' => l10n.legacyUi6efd8652f4,
-      'Create geofences to configure geofence notifications.' => l10n.legacyUiba98384ac3,
-      'Create points of interest with category, icon, color, and tolerance radius.' => l10n.legacyUif7b868f7d4,
-      'Create pricing plan without leaving this form' => l10n.legacyUie42ed33e33,
-      'Create route lines manually or from source and destination where supported.' => l10n.legacyUie40f966076,
-      'Create routes to configure route deviation notifications.' => l10n.legacyUi567e040ce2,
-      'Create sub users and control which vehicles they can access.' => l10n.legacyUica09bbf34d,
+      'Create drivers, manage assigned vehicles, documents, and driver activity.' =>
+        l10n.legacyUi6efd8652f4,
+      'Create geofences to configure geofence notifications.' =>
+        l10n.legacyUiba98384ac3,
+      'Create points of interest with category, icon, color, and tolerance radius.' =>
+        l10n.legacyUif7b868f7d4,
+      'Create pricing plan without leaving this form' =>
+        l10n.legacyUie42ed33e33,
+      'Create route lines manually or from source and destination where supported.' =>
+        l10n.legacyUie40f966076,
+      'Create routes to configure route deviation notifications.' =>
+        l10n.legacyUi567e040ce2,
+      'Create sub users and control which vehicles they can access.' =>
+        l10n.legacyUica09bbf34d,
       'Create ticket' => l10n.legacyUi3afcbed7e6,
       'Create user' => l10n.legacyUibdbcfa0af0,
-      'Create user without leaving this vehicle form' => l10n.legacyUie7358de58e,
+      'Create user without leaving this vehicle form' =>
+        l10n.legacyUie7358de58e,
       'Create vehicle' => l10n.legacyUi505a950fbb,
-      'Create your first driver to start assignments.' => l10n.legacyUi1ef0c932b3,
-      'Create your first geofence to define operational boundaries.' => l10n.legacyUi7d3ca14313,
-      'Create your first place to track operational points.' => l10n.legacyUi60a39e1fde,
-      'Create your first sub user to share selected access.' => l10n.legacyUi4fbf4f09cd,
+      'Create your first driver to start assignments.' =>
+        l10n.legacyUi1ef0c932b3,
+      'Create your first geofence to define operational boundaries.' =>
+        l10n.legacyUi7d3ca14313,
+      'Create your first place to track operational points.' =>
+        l10n.legacyUi60a39e1fde,
+      'Create your first sub user to share selected access.' =>
+        l10n.legacyUi4fbf4f09cd,
       'Created' => l10n.legacyUiaccf40c89b,
       'Created : ' => l10n.legacyUia5682ef199,
       'Created At' => l10n.legacyUi5db1542e68,
       'Created at' => l10n.legacyUif1c69716be,
       'Credentials' => l10n.legacyUidd097a2297,
-      'Credentials the administrator will use to sign into OpenVTS.' => l10n.legacyUi9f58b9e39b,
-      'Credentials the user will use to sign into OpenVTS.' => l10n.legacyUiec535bab6f,
+      'Credentials the administrator will use to sign into OpenVTS.' =>
+        l10n.legacyUi9f58b9e39b,
+      'Credentials the user will use to sign into OpenVTS.' =>
+        l10n.legacyUiec535bab6f,
       'Credit' => l10n.legacyUi8a45d339a6,
-      'Credit, payment, or billing updates will appear here.' => l10n.legacyUic3dc6e3ef9,
+      'Credit, payment, or billing updates will appear here.' =>
+        l10n.legacyUic3dc6e3ef9,
       'Credits' => l10n.legacyUibfac50d642,
       'Currency' => l10n.legacyUie070de2244,
       'Current State' => l10n.legacyUiea4b114ac6,
@@ -792,10 +922,12 @@ extension MobileText on BuildContext {
       'Customer service expires' => l10n.legacyUi0c919bd08d,
       'Custom…' => l10n.legacyUidce04fd315,
       'Cutoff' => l10n.legacyUi118de3988f,
-      'Daily revenue points are not available for this range.' => l10n.legacyUi5c487cb2d8,
+      'Daily revenue points are not available for this range.' =>
+        l10n.legacyUi5c487cb2d8,
       'Dark Logo' => l10n.legacyUi99c0019cc6,
       'Dark logo updated' => l10n.legacyUia167278399,
-      'Database and live telemetry logs will appear here.' => l10n.legacyUi2b197ef6be,
+      'Database and live telemetry logs will appear here.' =>
+        l10n.legacyUi2b197ef6be,
       'Date Range' => l10n.legacyUi6bb4b674b3,
       'Date Time Range' => l10n.legacyUie3d06ca6a1,
       'Date range' => l10n.legacyUic65ea4ae01,
@@ -835,7 +967,8 @@ extension MobileText on BuildContext {
       'Description' => l10n.legacyUi55f8ebc805,
       'Description (optional)' => l10n.legacyUi388de6fa3a,
       'Description is required.' => l10n.legacyUi763630a9ce,
-      'Description must contain at least one letter or number.' => l10n.legacyUi8a96cce5e5,
+      'Description must contain at least one letter or number.' =>
+        l10n.legacyUi8a96cce5e5,
       'Details' => l10n.legacyUidc3decbb93,
       'Device' => l10n.legacyUia5a74a6df0,
       'Device + SIM' => l10n.legacyUid69ba8a9eb,
@@ -873,15 +1006,19 @@ extension MobileText on BuildContext {
       'Domain and brand color saved' => l10n.legacyUi8b58eea04e,
       'Domain, logos, favicon, and brand color.' => l10n.legacyUi0ec2ae5cda,
       'Draw' => l10n.legacyUibfa50c7a38,
-      'Draw circles, polygons, rectangles, and line boundaries on the map.' => l10n.legacyUi2e617aeb36,
-      'Draw your first route corridor to start tracking.' => l10n.legacyUid952b9d3da,
+      'Draw circles, polygons, rectangles, and line boundaries on the map.' =>
+        l10n.legacyUi2e617aeb36,
+      'Draw your first route corridor to start tracking.' =>
+        l10n.legacyUid952b9d3da,
       'Driven' => l10n.legacyUi0ecf1d5bc0,
       'Driver Profile' => l10n.legacyUi845a6bd3ab,
       'Driver actions' => l10n.legacyUi450d68e4fe,
       'Driver assigned.' => l10n.legacyUid1ba6aea38,
-      'Driver assignment and profile activity will appear here.' => l10n.legacyUifbaa386fbc,
+      'Driver assignment and profile activity will appear here.' =>
+        l10n.legacyUifbaa386fbc,
       'Driver created.' => l10n.legacyUi017bb97653,
-      'Driver creation or driver updates will appear here.' => l10n.legacyUif8acdd5348,
+      'Driver creation or driver updates will appear here.' =>
+        l10n.legacyUif8acdd5348,
       'Driver deleted.' => l10n.legacyUib057fefdc2,
       'Driver name' => l10n.legacyUi63a7342acd,
       'Driver unassigned.' => l10n.legacyUi8d30cc59a1,
@@ -919,17 +1056,21 @@ extension MobileText on BuildContext {
       'Engine' => l10n.legacyUic1f65ddb75,
       'Engine hours' => l10n.legacyUi49dda3d71a,
       'Enter 6-digit code' => l10n.legacyUi4c9c7856d1,
-      'Enter a decimal amount with at most 2 decimal places' => l10n.legacyUibc96ad8350,
+      'Enter a decimal amount with at most 2 decimal places' =>
+        l10n.legacyUibc96ad8350,
       'Enter a valid amount.' => l10n.legacyUib0e59c93d7,
       'Enter an override reason of 5–500 characters' => l10n.legacyUi6d59e6aee7,
-      'Enter an override reason of 5–500 characters.' => l10n.legacyUi571c7347b7,
+      'Enter an override reason of 5–500 characters.' =>
+        l10n.legacyUi571c7347b7,
       'Enter command text' => l10n.legacyUi18b809c9fb,
       'Enter credit amount' => l10n.legacyUid5cd51c7b9,
       'Enter state or territory' => l10n.legacyUibe7572b6c5,
       'Enter the 6-digit code' => l10n.legacyUid148321ad7,
       'Enter the 6-digit code we sent you' => l10n.legacyUi0d639c50f1,
-      'Enter the OTP sent to your registered contact.' => l10n.legacyUi6d1e849865,
-      'Enter the email address or username used to sign in. If the account exists, we will send a time-limited reset link.' => l10n.legacyUied634c4edc,
+      'Enter the OTP sent to your registered contact.' =>
+        l10n.legacyUi6d1e849865,
+      'Enter the email address or username used to sign in. If the account exists, we will send a time-limited reset link.' =>
+        l10n.legacyUied634c4edc,
       'Enter your password' => l10n.legacyUi1378167d52,
       'Enter your username or email' => l10n.legacyUib6334ab817,
       'Entity' => l10n.legacyUic7fb317725,
@@ -1001,27 +1142,33 @@ extension MobileText on BuildContext {
       'Geofences' => l10n.legacyUi5cdf1dbd7e,
       'Get Replay' => l10n.legacyUic09b487feb,
       'GitHub' => l10n.legacyUi5442e2b64f,
-      'Group nearby vehicles into clusters at lower zoom' => l10n.legacyUi1efbf15894,
+      'Group nearby vehicles into clusters at lower zoom' =>
+        l10n.legacyUi1efbf15894,
       'Growth Chart' => l10n.legacyUiac69db7d02,
       'Gym' => l10n.legacyUibc4359231d,
       'Header copied' => l10n.legacyUifa8a6b01e3,
       'Higher precision uses more lookups.' => l10n.legacyUi071c1366b0,
       'History' => l10n.legacyUi90ccd64974,
-      'History needs a vehicle with an IMEI from live telemetry.' => l10n.legacyUic3669ffe53,
+      'History needs a vehicle with an IMEI from live telemetry.' =>
+        l10n.legacyUic3669ffe53,
       'History values are not numeric.' => l10n.legacyUi8d4a22ea2b,
       'Hospital' => l10n.legacyUidbb927867e,
       'Host' => l10n.legacyUi3960ec4ca5,
       'Host, port and encryption.' => l10n.legacyUiadd03be31a,
       'Hotel' => l10n.legacyUi9c4ba7d047,
-      'How long historical data is kept before cleanup.' => l10n.legacyUi1e3beed01c,
-      'How the administrator will be identified on the platform.' => l10n.legacyUi2635a51635,
-      'How the user will be identified on the platform.' => l10n.legacyUi0f053057ee,
+      'How long historical data is kept before cleanup.' =>
+        l10n.legacyUi1e3beed01c,
+      'How the administrator will be identified on the platform.' =>
+        l10n.legacyUi2635a51635,
+      'How the user will be identified on the platform.' =>
+        l10n.legacyUi0f053057ee,
       'I already have a reset link' => l10n.legacyUi077f5f9dad,
       'ICCID (optional)' => l10n.legacyUibff7cfa991,
       'IMEI is required to load telemetry logs.' => l10n.legacyUidc7458a51a,
       'IMEI is required to load vehicle events.' => l10n.legacyUif4c88fb92e,
       'IMEI is required to send commands.' => l10n.legacyUi7e77081c51,
-      'IMEI is unavailable for this vehicle. Showing the live map summary only.' => l10n.legacyUif44426c787,
+      'IMEI is unavailable for this vehicle. Showing the live map summary only.' =>
+        l10n.legacyUif44426c787,
       'IMEI missing' => l10n.legacyUi8a4b9cf4a9,
       'IMSI (optional)' => l10n.legacyUi11da2cb7f0,
       'Icon' => l10n.legacyUi716f63b96e,
@@ -1033,7 +1180,8 @@ extension MobileText on BuildContext {
       'Import CSV' => l10n.legacyUieeec98db23,
       'Inactive - 48H' => l10n.legacyUieebd26ef51,
       'Info' => l10n.legacyUi4b631f6984,
-      'Initial credit balance assigned to this administrator account.' => l10n.legacyUi29981bf033,
+      'Initial credit balance assigned to this administrator account.' =>
+        l10n.legacyUi29981bf033,
       'Initial credits' => l10n.legacyUi58984ab1ac,
       'Instagram' => l10n.legacyUi5721bbef40,
       'Insufficient account credits' => l10n.legacyUi9b5ca633e8,
@@ -1068,7 +1216,8 @@ extension MobileText on BuildContext {
       'Light logo updated' => l10n.legacyUi6a1c6c8807,
       'Limit' => l10n.legacyUi24d948e4bd,
       'Link copied.' => l10n.legacyUied1ed2b68d,
-      'Link the vehicle to a primary user, GPS device, and pricing plan.' => l10n.legacyUi36d1b59b88,
+      'Link the vehicle to a primary user, GPS device, and pricing plan.' =>
+        l10n.legacyUi36d1b59b88,
       'LinkedIn' => l10n.legacyUi6b6390a441,
       'Load earlier messages' => l10n.legacyUi4ac08d16b8,
       'Load more' => l10n.legacyUidfe60ca92e,
@@ -1084,7 +1233,8 @@ extension MobileText on BuildContext {
       'Log Details' => l10n.legacyUi2350df02c2,
       'Log ID' => l10n.legacyUiaacbd6aa68,
       'Login as User' => l10n.legacyUia3d749050e,
-      'Login, password, or account status changes will appear here.' => l10n.legacyUi31a519ee99,
+      'Login, password, or account status changes will appear here.' =>
+        l10n.legacyUi31a519ee99,
       'Logs unavailable' => l10n.legacyUi16b583cf21,
       'London' => l10n.legacyUi4c57f0c88d,
       'Mark read' => l10n.legacyUi3bf98fa618,
@@ -1132,7 +1282,8 @@ extension MobileText on BuildContext {
       'No Device' => l10n.legacyUi3de93f521b,
       'No POIs yet' => l10n.legacyUi79858167e6,
       'No Provider' => l10n.legacyUia434e9985c,
-      'No active assignment. New trips appear here when dispatch assigns them.' => l10n.legacyUi7094ba4f01,
+      'No active assignment. New trips appear here when dispatch assigns them.' =>
+        l10n.legacyUi7094ba4f01,
       'No activity logs' => l10n.legacyUia9206f399a,
       'No activity logs found' => l10n.legacyUi8bd5b910e5,
       'No activity matches your filters.' => l10n.legacyUic38a37a193,
@@ -1160,15 +1311,18 @@ extension MobileText on BuildContext {
       'No documents' => l10n.legacyUi8386fe15ef,
       'No documents uploaded' => l10n.legacyUi017ce6604c,
       'No documents uploaded yet.' => l10n.legacyUiec7eb3c93e,
-      'No documents yet. Upload your first document using the upload button.' => l10n.legacyUi54e1079e44,
+      'No documents yet. Upload your first document using the upload button.' =>
+        l10n.legacyUi54e1079e44,
       'No driver activity found.' => l10n.legacyUia419748e62,
-      'No driver document types are configured. Ask your administrator to add one.' => l10n.legacyUi98e6629503,
+      'No driver document types are configured. Ask your administrator to add one.' =>
+        l10n.legacyUi98e6629503,
       'No driver documents' => l10n.legacyUi36f5cbf894,
       'No drivers' => l10n.legacyUic5dc9718a6,
       'No drivers available' => l10n.legacyUi7a127d70b3,
       'No drivers found' => l10n.legacyUi9c8198d34d,
       'No event detail found' => l10n.legacyUi208ffc64d1,
-      'No events exist for the selected date range and filters.' => l10n.legacyUiec11a02374,
+      'No events exist for the selected date range and filters.' =>
+        l10n.legacyUiec11a02374,
       'No events found' => l10n.legacyUia48cbba615,
       'No events yet' => l10n.legacyUi81ab95b9f0,
       'No file available.' => l10n.legacyUi774a252215,
@@ -1188,7 +1342,8 @@ extension MobileText on BuildContext {
       'No matching records' => l10n.legacyUi748bd377da,
       'No matching routes' => l10n.legacyUi6590e5eab8,
       'No matching sub users' => l10n.legacyUid17e9558cf,
-      'No matching vehicles found. Try a different search or filter.' => l10n.legacyUif1d8690cd7,
+      'No matching vehicles found. Try a different search or filter.' =>
+        l10n.legacyUif1d8690cd7,
       'No messages yet' => l10n.legacyUic04921f8d9,
       'No mode data' => l10n.legacyUi2449a03436,
       'No notification settings found' => l10n.legacyUi50806db52e,
@@ -1227,10 +1382,12 @@ extension MobileText on BuildContext {
       'No users available' => l10n.legacyUi3b614a59c7,
       'No users found' => l10n.legacyUi612eb3c64c,
       'No users found.' => l10n.legacyUie611ef5702,
-      'No valid GPS path or stop markers were returned.' => l10n.legacyUif800dfd722,
+      'No valid GPS path or stop markers were returned.' =>
+        l10n.legacyUif800dfd722,
       'No vehicle activity found.' => l10n.legacyUib96ee669b0,
       'No vehicles' => l10n.legacyUi748eafd21d,
-      'No vehicles are visible on the map right now.' => l10n.legacyUi8fbc8deb7a,
+      'No vehicles are visible on the map right now.' =>
+        l10n.legacyUi8fbc8deb7a,
       'No vehicles assigned yet.' => l10n.legacyUi72ed5bbcdf,
       'No vehicles assigned.' => l10n.legacyUi7223e6b8cb,
       'No vehicles available' => l10n.legacyUiac0e4dbd5b,
@@ -1280,7 +1437,8 @@ extension MobileText on BuildContext {
       'Password changed' => l10n.legacyUi092a16e7af,
       'Password changed.' => l10n.legacyUi47fa528931,
       'Password updated.' => l10n.legacyUi3efdbb2011,
-      'Paste the complete reset link or token from your email. Reset links are single-use and expire automatically.' => l10n.legacyUi8ac0c75d5e,
+      'Paste the complete reset link or token from your email. Reset links are single-use and expire automatically.' =>
+        l10n.legacyUi8ac0c75d5e,
       'Payload JSON' => l10n.legacyUi5616b61bb7,
       'Payload must be valid JSON object.' => l10n.legacyUif8c3596eab,
       'Payment Mode' => l10n.legacyUi23b35c414a,
@@ -1289,7 +1447,8 @@ extension MobileText on BuildContext {
       'Payment Type' => l10n.legacyUia629fd8a2e,
       'Payment activity will appear here.' => l10n.legacyUi43f8c9c90f,
       'Payment mode' => l10n.legacyUi8fbf2ec0dd,
-      'Payment mode breakdown is not available for this range.' => l10n.legacyUi653c04fc42,
+      'Payment mode breakdown is not available for this range.' =>
+        l10n.legacyUi653c04fc42,
       'Payment recorded' => l10n.legacyUidbc3c0ca72,
       'Payment reference' => l10n.legacyUi197b45d161,
       'Pending' => l10n.legacyUi96f608c16c,
@@ -1316,8 +1475,10 @@ extension MobileText on BuildContext {
       'Plate number' => l10n.legacyUif2ce282e2d,
       'Plate number (optional)' => l10n.legacyUi09d9c23846,
       'Platform' => l10n.legacyUi123a7f2fcc,
-      'Platform behavior, signup, geocoding, and retention.' => l10n.legacyUi16596c477e,
-      'Please fix the highlighted fields before continuing.' => l10n.legacyUid095e279b3,
+      'Platform behavior, signup, geocoding, and retention.' =>
+        l10n.legacyUi16596c477e,
+      'Please fix the highlighted fields before continuing.' =>
+        l10n.legacyUid095e279b3,
       'Please select an administrator.' => l10n.legacyUi51668149ea,
       'Port' => l10n.legacyUife035157cd,
       'Ports' => l10n.legacyUi16c2eb4dbb,
@@ -1334,13 +1495,15 @@ extension MobileText on BuildContext {
       'Primary color' => l10n.legacyUia1055f11a9,
       'Primary color (hex)' => l10n.legacyUic1ee865b42,
       'Primary user' => l10n.legacyUi0554f68465,
-      'Primary user, device, vehicle type, and pricing plan are required.' => l10n.legacyUi1e5947a051,
+      'Primary user, device, vehicle type, and pricing plan are required.' =>
+        l10n.legacyUi1e5947a051,
       'Priority' => l10n.legacyUi886cbff9d9,
       'Profile not loaded yet.' => l10n.legacyUi7e7302bb73,
       'Profile photo updated' => l10n.legacyUi5049e8f42b,
       'Profile settings unavailable' => l10n.legacyUi49ba5b4d7b,
       'Profile updated.' => l10n.legacyUibcf7629607,
-      'Profile, company, or configuration changes will appear here.' => l10n.legacyUibda244507b,
+      'Profile, company, or configuration changes will appear here.' =>
+        l10n.legacyUibda244507b,
       'Projected' => l10n.legacyUi204be1a53a,
       'Proof type' => l10n.legacyUi5c620cdb78,
       'Protocol' => l10n.legacyUi1ed77c3f7f,
@@ -1349,7 +1512,8 @@ extension MobileText on BuildContext {
       'Provider coverage expires' => l10n.legacyUi8d80f9c731,
       'Public URL is not available.' => l10n.legacyUi8a87202949,
       'Public signup and welcome credits.' => l10n.legacyUi411c13db3b,
-      'Pull to refresh and try loading your profile again.' => l10n.legacyUicf0a64d03d,
+      'Pull to refresh and try loading your profile again.' =>
+        l10n.legacyUicf0a64d03d,
       'Pull to refresh or add a new driver.' => l10n.legacyUic8f58b21ae,
       'Pull to refresh or create a new sub user.' => l10n.legacyUi011bc421c2,
       'Queued' => l10n.legacyUi6a599877d7,
@@ -1361,14 +1525,17 @@ extension MobileText on BuildContext {
       'Read' => l10n.legacyUi852b438f91,
       'Read all' => l10n.legacyUid14d593883,
       'Reason for adjustment' => l10n.legacyUi00db810078,
-      'Reason for amount override (5–500 characters)' => l10n.legacyUid4835a2d13,
+      'Reason for amount override (5–500 characters)' =>
+        l10n.legacyUid4835a2d13,
       'Recent Alerts' => l10n.legacyUi03c3ccd3ff,
       'Recent Payments' => l10n.legacyUi3abf211c93,
       'Recent Users' => l10n.legacyUi93c62de33f,
       'Recent Vehicles' => l10n.legacyUi6b33999078,
-      'Recent activity will appear here once the backend returns it.' => l10n.legacyUi790a1b9e7b,
+      'Recent activity will appear here once the backend returns it.' =>
+        l10n.legacyUi790a1b9e7b,
       'Recent service activity' => l10n.legacyUic1541851a1,
-      'Recent users will appear here when the dashboard overview returns them.' => l10n.legacyUi204110a010,
+      'Recent users will appear here when the dashboard overview returns them.' =>
+        l10n.legacyUi204110a010,
       'Recenter' => l10n.legacyUida67fde0f7,
       'Recipient email' => l10n.legacyUi7df7c0bb40,
       'Recipient/User' => l10n.legacyUi8ee92c936a,
@@ -1413,8 +1580,10 @@ extension MobileText on BuildContext {
       'Renew up to 100 vehicles at a time.' => l10n.legacyUi714c2b126f,
       'Renewal requests' => l10n.legacyUibb47b991fe,
       'Replay speed' => l10n.legacyUiac2377c0dd,
-      'Replies will appear here once the conversation starts.' => l10n.legacyUi5cc45fda55,
-      'Replies will appear here once the ticket conversation starts.' => l10n.legacyUid7a41420c8,
+      'Replies will appear here once the conversation starts.' =>
+        l10n.legacyUi5cc45fda55,
+      'Replies will appear here once the ticket conversation starts.' =>
+        l10n.legacyUid7a41420c8,
       'Reply is too long.' => l10n.legacyUi1f21d9edca,
       'Reply message is required.' => l10n.legacyUi4c7c79f6a9,
       'Reply sent successfully.' => l10n.legacyUic9e8dd4159,
@@ -1486,7 +1655,8 @@ extension MobileText on BuildContext {
       'Search logs' => l10n.legacyUi48225af1f4,
       'Search name, IMEI, SIM, type' => l10n.legacyUi20f28ed35b,
       'Search name, plate or IMEI' => l10n.legacyUic60723c651,
-      'Search name, username, email, mobile, vehicle, plate...' => l10n.legacyUi3dadc5cddf,
+      'Search name, username, email, mobile, vehicle, plate...' =>
+        l10n.legacyUi3dadc5cddf,
       'Search name, username, email, mobile...' => l10n.legacyUi0417c5f97b,
       'Search place or address...' => l10n.legacyUi5196e5c8da,
       'Search place...' => l10n.legacyUic3290fb221,
@@ -1517,7 +1687,8 @@ extension MobileText on BuildContext {
       'Select a range to load history.' => l10n.legacyUi400a58f1cc,
       'Select a user first.' => l10n.legacyUie216b735f0,
       'Select a vehicle first.' => l10n.legacyUie965317576,
-      'Select a vehicle, stop threshold, and date time range.' => l10n.legacyUia72bd23c12,
+      'Select a vehicle, stop threshold, and date time range.' =>
+        l10n.legacyUia72bd23c12,
       'Select administrator' => l10n.legacyUi29c9360313,
       'Select at least one renewable vehicle' => l10n.legacyUi8a152d2c3f,
       'Select at least one vehicle.' => l10n.legacyUi5573da8514,
@@ -1553,7 +1724,8 @@ extension MobileText on BuildContext {
       'Sensors' => l10n.legacyUi711bf35988,
       'Sensors unavailable' => l10n.legacyUi48380dd0e2,
       'Sent' => l10n.legacyUi35f49dcfbf,
-      'Sent commands and device responses appear here.' => l10n.legacyUi2d7bb03171,
+      'Sent commands and device responses appear here.' =>
+        l10n.legacyUi2d7bb03171,
       'Server URL' => l10n.legacyUi1d5d1effa9,
       'Server Uptime' => l10n.legacyUif85e6f1bdc,
       'Server time' => l10n.legacyUi10802e852c,
@@ -1571,9 +1743,12 @@ extension MobileText on BuildContext {
       'Show more' => l10n.legacyUi25911d48e0,
       'Show points of interest markers' => l10n.legacyUi50b47f1483,
       'Show route trail' => l10n.legacyUib7f93469b9,
-      'Show vehicle name next to the icon on the map' => l10n.legacyUi510904927e,
-      'Shown on dark backgrounds. PNG, JPG, SVG, WEBP. Max 5 MB.' => l10n.legacyUi6e61e47d5c,
-      'Shown on light backgrounds. PNG, JPG, SVG, WEBP. Max 5 MB.' => l10n.legacyUi39e4052ecf,
+      'Show vehicle name next to the icon on the map' =>
+        l10n.legacyUi510904927e,
+      'Shown on dark backgrounds. PNG, JPG, SVG, WEBP. Max 5 MB.' =>
+        l10n.legacyUi6e61e47d5c,
+      'Shown on light backgrounds. PNG, JPG, SVG, WEBP. Max 5 MB.' =>
+        l10n.legacyUi39e4052ecf,
       'Signup' => l10n.legacyUi894bc414e6,
       'Skip end' => l10n.legacyUi69c2037890,
       'Skip start' => l10n.legacyUia8522e4c9d,
@@ -1598,7 +1773,8 @@ extension MobileText on BuildContext {
       'State (optional)' => l10n.legacyUi4e5c9805af,
       'State is required.' => l10n.legacyUic01247416e,
       'Status : ' => l10n.legacyUiedde30a0b6,
-      'Status distribution is not available for this range.' => l10n.legacyUia0539c7e7a,
+      'Status distribution is not available for this range.' =>
+        l10n.legacyUia0539c7e7a,
       'Stop Minutes' => l10n.legacyUie4fe064446,
       'Stoppage marker' => l10n.legacyUif32715a2f1,
       'Street, building, area…' => l10n.legacyUi5ca845e914,
@@ -1609,14 +1785,16 @@ extension MobileText on BuildContext {
       'Sub user name' => l10n.legacyUi2cc74ff5c3,
       'Sub user updated.' => l10n.legacyUie44d50f72d,
       'Subject is required.' => l10n.legacyUibd3159ff21,
-      'Subject must contain at least one letter or number.' => l10n.legacyUi6844979e4f,
+      'Subject must contain at least one letter or number.' =>
+        l10n.legacyUi6844979e4f,
       'Subscribe' => l10n.legacyUid6981f7476,
       'Subscribed to email updates' => l10n.legacyUia547aab586,
       'Successful' => l10n.legacyUid7932a2917,
       'Support Ticket' => l10n.legacyUib879505819,
       'Tags' => l10n.legacyUi848eed0fbd,
       'Tags (comma separated)' => l10n.legacyUi8c7e01ee22,
-      'Tap the map or enter coordinates to place the POI.' => l10n.legacyUi1df356a49e,
+      'Tap the map or enter coordinates to place the POI.' =>
+        l10n.legacyUi1df356a49e,
       'Target' => l10n.legacyUi61ad50a9b9,
       'Team activated.' => l10n.legacyUi78560d88ef,
       'Team activity' => l10n.legacyUid8f82f6030,
@@ -1630,18 +1808,27 @@ extension MobileText on BuildContext {
       'Template' => l10n.legacyUi3ec1ae061c,
       'Test Mobile Push' => l10n.legacyUi7200f86ae5,
       'Test Push' => l10n.legacyUi8b9bbdf230,
-      'The customer can create a fresh request. No vehicle service is extended.' => l10n.legacyUi8135cd8fa3,
+      'The customer can create a fresh request. No vehicle service is extended.' =>
+        l10n.legacyUi8135cd8fa3,
       'The link expires automatically.' => l10n.legacyUidc46c2859b,
-      'The organisation this administrator manages within OpenVTS.' => l10n.legacyUic77eaa41ef,
-      'The organisation this user belongs to within OpenVTS.' => l10n.legacyUi461197e42e,
-      'The overview response does not include chart points yet.' => l10n.legacyUia491398fbb,
-      'The overview response does not include recent vehicles yet.' => l10n.legacyUi214cddfadb,
-      'The permission catalog is unavailable. Editing is disabled.' => l10n.legacyUi9e4a7b1c4c,
-      'The server returned an unsupported permission catalog. Editing is disabled.' => l10n.legacyUiac4a475bbb,
-      'The upload finished, but the new profile photo was not returned by the server.' => l10n.legacyUi8895c1d4b6,
+      'The organisation this administrator manages within OpenVTS.' =>
+        l10n.legacyUic77eaa41ef,
+      'The organisation this user belongs to within OpenVTS.' =>
+        l10n.legacyUi461197e42e,
+      'The overview response does not include chart points yet.' =>
+        l10n.legacyUia491398fbb,
+      'The overview response does not include recent vehicles yet.' =>
+        l10n.legacyUi214cddfadb,
+      'The permission catalog is unavailable. Editing is disabled.' =>
+        l10n.legacyUi9e4a7b1c4c,
+      'The server returned an unsupported permission catalog. Editing is disabled.' =>
+        l10n.legacyUiac4a475bbb,
+      'The upload finished, but the new profile photo was not returned by the server.' =>
+        l10n.legacyUi8895c1d4b6,
       'There are no alerts available right now.' => l10n.legacyUidbc2f6bd85,
       'There are no events on this day' => l10n.legacyUi9b519b14b9,
-      'These changes grant global or delete access. Apply them to this team member?' => l10n.legacyUi354cfe028c,
+      'These changes grant global or delete access. Apply them to this team member?' =>
+        l10n.legacyUi354cfe028c,
       'This Month' => l10n.legacyUi0f6cc3a89c,
       'This Year' => l10n.legacyUi77528c94d9,
       'This action cannot be undone.' => l10n.legacyUi951f495b34,
@@ -1649,7 +1836,8 @@ extension MobileText on BuildContext {
       'This month' => l10n.legacyUi1b4785331d,
       'This saved dashboard has no widgets yet.' => l10n.legacyUi0e606e3993,
       'This ticket is closed.' => l10n.legacyUi1e191e95f4,
-      'This uses one account credit when the vehicle is eligible.' => l10n.legacyUi8866cb1e0a,
+      'This uses one account credit when the vehicle is eligible.' =>
+        l10n.legacyUi8866cb1e0a,
       'This week' => l10n.legacyUi7b72883e07,
       'Ticket Conversation' => l10n.legacyUi261bd2f51b,
       'Ticket created.' => l10n.legacyUie1b858991f,
@@ -1676,7 +1864,8 @@ extension MobileText on BuildContext {
       'Track link deleted.' => l10n.legacyUi070fb0b6ea,
       'Transaction Details' => l10n.legacyUief1f899cb2,
       'Transaction ID' => l10n.legacyUi06d8ffe653,
-      'Transaction activity will appear here when available.' => l10n.legacyUi105b1510d9,
+      'Transaction activity will appear here when available.' =>
+        l10n.legacyUi105b1510d9,
       'Transaction details' => l10n.legacyUid016e453e5,
       'Transitions' => l10n.legacyUiab39260fea,
       'Transport' => l10n.legacyUic10d76c9a4,
@@ -1685,14 +1874,16 @@ extension MobileText on BuildContext {
       'Try a different search or filter.' => l10n.legacyUi4e653834fa,
       'Try a different search term' => l10n.legacyUi39d6420eaa,
       'Try a different search term.' => l10n.legacyUi0ba628a33e,
-      'Try adjusting the current filters or search query.' => l10n.legacyUi10239b38b5,
+      'Try adjusting the current filters or search query.' =>
+        l10n.legacyUi10239b38b5,
       'Try adjusting your filters.' => l10n.legacyUi2253479cff,
       'Try another name or plate number.' => l10n.legacyUie3f4c649b5,
       'Try changing filters or search query.' => l10n.legacyUi10f570e880,
       'Try changing filters.' => l10n.legacyUif28432df1f,
       'Try changing search or filters.' => l10n.legacyUi3c86b09439,
       'Try clearing search or status filters.' => l10n.legacyUi0ba0bd18bf,
-      'Try refreshing. If this persists, your account may not have notification preferences yet.' => l10n.legacyUi7a2fe508f6,
+      'Try refreshing. If this persists, your account may not have notification preferences yet.' =>
+        l10n.legacyUi7a2fe508f6,
       'Twitter / X' => l10n.legacyUia0b470cb00,
       'Twitter/X' => l10n.legacyUi8981df4d6a,
       'Type' => l10n.legacyUi3deb745651,
@@ -1725,7 +1916,8 @@ extension MobileText on BuildContext {
       'Unit' => l10n.legacyUif6b935ab33,
       'Unread' => l10n.legacyUi07b032b56f,
       'Unsupported file type.' => l10n.legacyUi100cb4d890,
-      'Unsupported format. Use PNG, JPG, JPEG or WEBP.' => l10n.legacyUicb9925a338,
+      'Unsupported format. Use PNG, JPG, JPEG or WEBP.' =>
+        l10n.legacyUicb9925a338,
       'Unsupported widget' => l10n.legacyUi99974d3476,
       'Unverified' => l10n.legacyUieb27a190c0,
       'Update Password' => l10n.legacyUi61dcf34e70,
@@ -1737,11 +1929,13 @@ extension MobileText on BuildContext {
       'Upload a document to get started.' => l10n.legacyUidcad7d982a,
       'Upload document' => l10n.legacyUi73183a7050,
       'Upload documents for this vehicle.' => l10n.legacyUid714896782,
-      'Upload driver files like license or identity proofs.' => l10n.legacyUi4b87ccd949,
+      'Upload driver files like license or identity proofs.' =>
+        l10n.legacyUi4b87ccd949,
       'Uptime' => l10n.legacyUi6aafa80cab,
       'Use a strong, unique password' => l10n.legacyUif1f71137de,
       'Use all' => l10n.legacyUid81b6af542,
-      'Used for regional defaults like currency, timezone, and routing.' => l10n.legacyUi5895bc72eb,
+      'Used for regional defaults like currency, timezone, and routing.' =>
+        l10n.legacyUi5895bc72eb,
       'User Tickets' => l10n.legacyUi81c9245d46,
       'User actions' => l10n.legacyUi81939432dd,
       'User assigned.' => l10n.legacyUi0abfc13cb8,
@@ -1765,17 +1959,20 @@ extension MobileText on BuildContext {
       'Vehicle Expiry' => l10n.legacyUi4d461104bf,
       'Vehicle IMEI is required to load events.' => l10n.legacyUi9e47ccbff4,
       'Vehicle IMEI is required to load sensors.' => l10n.legacyUi2b51e72835,
-      'Vehicle IMEI is required to load telemetry logs.' => l10n.legacyUief04c2235a,
+      'Vehicle IMEI is required to load telemetry logs.' =>
+        l10n.legacyUief04c2235a,
       'Vehicle Label' => l10n.legacyUi62dc158d0e,
       'Vehicle Meta' => l10n.legacyUicb4e4154e4,
       'Vehicle Name' => l10n.legacyUi92dc53a1bc,
       'Vehicle Selection' => l10n.legacyUi441399c250,
       'Vehicle Type' => l10n.legacyUi2d6ca00998,
       'Vehicle actions' => l10n.legacyUi5c931770ef,
-      'Vehicle activity and system logs will appear here.' => l10n.legacyUi6ac26355c9,
+      'Vehicle activity and system logs will appear here.' =>
+        l10n.legacyUi6ac26355c9,
       'Vehicle and Plan' => l10n.legacyUi4e4942337f,
       'Vehicle assigned.' => l10n.legacyUi6ec60a25f7,
-      'Vehicle assignment or vehicle updates will appear here.' => l10n.legacyUia31471cef9,
+      'Vehicle assignment or vehicle updates will appear here.' =>
+        l10n.legacyUia31471cef9,
       'Vehicle deleted.' => l10n.legacyUib7975a2537,
       'Vehicle details' => l10n.legacyUiff47117f38,
       'Vehicle details are unavailable.' => l10n.legacyUia1fbfba50c,
@@ -1791,10 +1988,12 @@ extension MobileText on BuildContext {
       'Vehicle renewal recorded.' => l10n.legacyUie1071916e2,
       'Vehicle scope' => l10n.legacyUibf31403ac2,
       'Vehicle service' => l10n.legacyUi3c760a5151,
-      'Vehicle service revision unavailable. Reload before editing.' => l10n.legacyUi9aafada9ec,
+      'Vehicle service revision unavailable. Reload before editing.' =>
+        l10n.legacyUi9aafada9ec,
       'Vehicle service updated' => l10n.legacyUia0d9ad9324,
       'Vehicle services' => l10n.legacyUi97d4120359,
-      'Vehicle telemetry updates progress automatically. Manual completion is available for the current stop only.' => l10n.legacyUif9709ba7c4,
+      'Vehicle telemetry updates progress automatically. Manual completion is available for the current stop only.' =>
+        l10n.legacyUif9709ba7c4,
       'Vehicle type' => l10n.legacyUi9644381920,
       'Vehicle type filter' => l10n.legacyUi8b26242493,
       'Vehicle unassigned.' => l10n.legacyUi2a37343d0a,
@@ -1827,8 +2026,10 @@ extension MobileText on BuildContext {
       'Write a reply...' => l10n.legacyUi126cd2cd36,
       'You are all caught up.' => l10n.legacyUib58c0082b4,
       'YouTube' => l10n.legacyUi558865a16f,
-      'Your account does not have permission to view this section.' => l10n.legacyUid3639ca4df,
-      'Your changes will be lost. This action cannot be undone.' => l10n.legacyUice100fe123,
+      'Your account does not have permission to view this section.' =>
+        l10n.legacyUid3639ca4df,
+      'Your changes will be lost. This action cannot be undone.' =>
+        l10n.legacyUice100fe123,
       'Zoom' => l10n.legacyUi9b3cbed5c4,
       'Zoom in' => l10n.legacyUi4fc05f2763,
       'Zoom out' => l10n.legacyUia4ae4b24a1,
@@ -1850,7 +2051,8 @@ extension MobileText on BuildContext {
       'Needs attention' => l10n.legacyUia126722ec0,
       'Dispatcher actions' => l10n.legacyUi51eab2420d,
       'No activity yet.' => l10n.legacyUi8bdea32153,
-      'The schedule was saved, but some trips could not be generated.' => l10n.legacyUi05e3a866c3,
+      'The schedule was saved, but some trips could not be generated.' =>
+        l10n.legacyUi05e3a866c3,
       'Date Only' => l10n.legacyUi2924d70976,
       'Fixed Time' => l10n.legacyUi63f39eeeb7,
       'Time Slot' => l10n.legacyUi6930391c64,
@@ -1903,8 +2105,10 @@ extension MobileText on BuildContext {
       'On Time Completed Trips' => l10n.legacyUie9fab1cf3a,
       'On Time Percent' => l10n.legacyUibbb47a7157,
       'Distance Km' => l10n.legacyUi944b223791,
-      'A short message will be sent using the current SMTP config.' => l10n.legacyUi7c9352eed6,
-      'ACC means wire/ACC. MOTION means motion fallback.' => l10n.legacyUid173234df0,
+      'A short message will be sent using the current SMTP config.' =>
+        l10n.legacyUi7c9352eed6,
+      'ACC means wire/ACC. MOTION means motion fallback.' =>
+        l10n.legacyUid173234df0,
       'Access permissions' => l10n.legacyUi598ed2889b,
       'Active account' => l10n.legacyUi9a6d95b0c5,
       'Activity, vehicle event, and telemetry logs' => l10n.legacyUi8d00c06a55,
@@ -1915,34 +2119,49 @@ extension MobileText on BuildContext {
       'Adoption & Growth' => l10n.legacyUi23a75918ab,
       'Advanced Cleanup' => l10n.legacyUi80643ec204,
       'Advanced Filters' => l10n.legacyUicf963e5241,
-      'Advanced reporting features are not available in the public demo. Sign in with an OpenVTS account to run, page, visualise, and export fleet reports.' => l10n.legacyUi3aea7b29d9,
+      'Advanced reporting features are not available in the public demo. Sign in with an OpenVTS account to run, page, visualise, and export fleet reports.' =>
+        l10n.legacyUi3aea7b29d9,
       'Alerts by Severity' => l10n.legacyUi056677c12f,
       'All actors' => l10n.legacyUif89ae580e8,
       'All alerts' => l10n.legacyUiaeae2d71be,
       'All sources' => l10n.legacyUic0e8e58c1a,
       'Allowed deviation' => l10n.legacyUic1cbbe0c5d,
-      'Annual coverage and customer service are separate.' => l10n.legacyUi826499f6b1,
+      'Annual coverage and customer service are separate.' =>
+        l10n.legacyUi826499f6b1,
       'Assigned Vehicle' => l10n.legacyUi40e69b5db3,
       'Attachments' => l10n.legacyUi6771ade6e8,
-      'Briefly describe the issue and attach files if needed.' => l10n.legacyUi52b258c824,
+      'Briefly describe the issue and attach files if needed.' =>
+        l10n.legacyUi52b258c824,
       'Browse' => l10n.legacyUi2f3b5c55bc,
       'CSV template' => l10n.legacyUi00189ab9b2,
-      'Change your password to secure account access.' => l10n.legacyUi19db82215d,
+      'Change your password to secure account access.' =>
+        l10n.legacyUi19db82215d,
       'Choose a new password' => l10n.legacyUi3f657f29e6,
-      'Choose how vehicle alerts, overspeed events, and geofence events reach you.' => l10n.legacyUicbd1538094,
-      'Choose the pages and reports available to this user. Changes also limit the access they can grant to subusers.' => l10n.legacyUic7cd13c042,
-      'Choose what this member can view, edit and delete. Own applies to their records; Global applies across your account.' => l10n.legacyUibe10f5c042,
-      'Choose where alerts are delivered for this notification group.' => l10n.legacyUi7834f4a6f4,
+      'Choose how vehicle alerts, overspeed events, and geofence events reach you.' =>
+        l10n.legacyUicbd1538094,
+      'Choose the pages and reports available to this user. Changes also limit the access they can grant to subusers.' =>
+        l10n.legacyUic7cd13c042,
+      'Choose what this member can view, edit and delete. Own applies to their records; Global applies across your account.' =>
+        l10n.legacyUibe10f5c042,
+      'Choose where alerts are delivered for this notification group.' =>
+        l10n.legacyUi7834f4a6f4,
       'Command details' => l10n.legacyUic23350ccde,
-      'Complete the sections below. Required fields are marked with an asterisk (*).' => l10n.legacyUib2c253ba1c,
-      'Completed trips by service date. Upcoming assignments are available in Trips.' => l10n.legacyUia2b4ac96b2,
+      'Complete the sections below. Required fields are marked with an asterisk (*).' =>
+        l10n.legacyUib2c253ba1c,
+      'Completed trips by service date. Upcoming assignments are available in Trips.' =>
+        l10n.legacyUia2b4ac96b2,
       'Configure your report' => l10n.legacyUib3feb31fcb,
       'Confirm cleanup' => l10n.legacyUi878b163022,
-      'Contact your administrator to assign vehicles.' => l10n.legacyUi9041d3c666,
-      'Create a compact login profile with controlled access.' => l10n.legacyUi8e2fc0ffdc,
-      'Create and manage geofences, points of interest, and routes.' => l10n.legacyUi93c1ed632d,
-      'Create and manage operational route corridors.' => l10n.legacyUie4781f0bde,
-      'Create secure public links for live vehicle tracking.' => l10n.legacyUi6571e94148,
+      'Contact your administrator to assign vehicles.' =>
+        l10n.legacyUi9041d3c666,
+      'Create a compact login profile with controlled access.' =>
+        l10n.legacyUi8e2fc0ffdc,
+      'Create and manage geofences, points of interest, and routes.' =>
+        l10n.legacyUi93c1ed632d,
+      'Create and manage operational route corridors.' =>
+        l10n.legacyUie4781f0bde,
+      'Create secure public links for live vehicle tracking.' =>
+        l10n.legacyUi6571e94148,
       'Created: ' => l10n.legacyUie09271eeb7,
       'Current assignment' => l10n.legacyUidb0d2488de,
       'Daily Distance Totals' => l10n.legacyUif8ece934c7,
@@ -1977,11 +2196,13 @@ extension MobileText on BuildContext {
       'Important' => l10n.legacyUi4b6d6a3015,
       'Inactive routes stay archived but visible.' => l10n.legacyUic5288872fd,
       'Inbox' => l10n.legacyUi44caf74675,
-      'Include the full path, e.g. http://192.168.1.10:3000/api' => l10n.legacyUi3f33f2e865,
+      'Include the full path, e.g. http://192.168.1.10:3000/api' =>
+        l10n.legacyUi3f33f2e865,
       'Last login: ' => l10n.legacyUi1919090902,
       'Latest Server Action' => l10n.legacyUi1c747b4f98,
       'Latest period' => l10n.legacyUi9e1bba7129,
-      'Live coordinates are unavailable for this vehicle.' => l10n.legacyUi72da77c7b7,
+      'Live coordinates are unavailable for this vehicle.' =>
+        l10n.legacyUi72da77c7b7,
       'Loading device types and providers...' => l10n.legacyUi3e893cdfd5,
       'Loading document types…' => l10n.legacyUi93fe7c05af,
       'Loading history' => l10n.legacyUi75e940ee30,
@@ -1992,25 +2213,34 @@ extension MobileText on BuildContext {
       'Login as admin' => l10n.legacyUif4e14815b1,
       'Logs by Category' => l10n.legacyUi353bd1ef01,
       'Logs by Level' => l10n.legacyUib2af2f11de,
-      'Manage drivers and sub users linked to your fleet.' => l10n.legacyUi8c97e4f07d,
-      'Manage drivers, assignments, documents, and activity.' => l10n.legacyUi41948edc3a,
-      'Manage important places and operational points.' => l10n.legacyUi93b23afae0,
+      'Manage drivers and sub users linked to your fleet.' =>
+        l10n.legacyUi8c97e4f07d,
+      'Manage drivers, assignments, documents, and activity.' =>
+        l10n.legacyUi41948edc3a,
+      'Manage important places and operational points.' =>
+        l10n.legacyUi93b23afae0,
       'Manage sub users and vehicle access.' => l10n.legacyUi68669149c0,
       'Manage subscription pricing plans.' => l10n.legacyUi9fcd87c64d,
-      'Manage transactions and renew vehicle subscriptions' => l10n.legacyUi274ef56d8e,
-      'Manage users, login access, contacts, and assigned vehicles.' => l10n.legacyUiff92dafaaf,
-      'Manual payments update transactions and analytics after successful submission.' => l10n.legacyUib42578bf99,
+      'Manage transactions and renew vehicle subscriptions' =>
+        l10n.legacyUi274ef56d8e,
+      'Manage users, login access, contacts, and assigned vehicles.' =>
+        l10n.legacyUiff92dafaaf,
+      'Manual payments update transactions and analytics after successful submission.' =>
+        l10n.legacyUib42578bf99,
       'Map data © Google' => l10n.legacyUi421878a774,
       'Map details' => l10n.legacyUi2cf55e0f5b,
       'Map type' => l10n.legacyUi9a3aa11de5,
       'Max 10MB. Blocked: exe, js, html, htm.' => l10n.legacyUi09d3670056,
       'Mobile Push Diagnostics' => l10n.legacyUife0c6bc7dd,
-      'Monitor uptime, dependencies, and safe service actions' => l10n.legacyUif6f444180f,
+      'Monitor uptime, dependencies, and safe service actions' =>
+        l10n.legacyUif6f444180f,
       'New Link' => l10n.legacyUi1a63cbf994,
       'New support ticket' => l10n.legacyUia40ad15529,
       'No USER document types configured.' => l10n.legacyUi9f2d2d7331,
-      'No active geofences — all geofences included.' => l10n.legacyUi9ec5ec0752,
-      'No administrators available. Pull to refresh and try again.' => l10n.legacyUi0a181de203,
+      'No active geofences — all geofences included.' =>
+        l10n.legacyUi9ec5ec0752,
+      'No administrators available. Pull to refresh and try again.' =>
+        l10n.legacyUi0a181de203,
       'No contact information' => l10n.legacyUi43f32b9b9d,
       'No geofences to preview' => l10n.legacyUie55a0728f0,
       'No groups found' => l10n.legacyUi115fe0fac7,
@@ -2036,12 +2266,15 @@ extension MobileText on BuildContext {
       'Nudge 10 m' => l10n.legacyUi0049196b0b,
       'One vehicle' => l10n.legacyUia49d76ddc1,
       'Open VTS' => l10n.legacyUi0080aaa977,
-      'Open a support ticket to review the full conversation.' => l10n.legacyUi032a6dcfd8,
+      'Open a support ticket to review the full conversation.' =>
+        l10n.legacyUi032a6dcfd8,
       'Open in Navigation' => l10n.legacyUi50f8c47b2b,
       'Other document' => l10n.legacyUi89202c7fd8,
       'Outgoing mail uses this server when active.' => l10n.legacyUi27b4bf6d1b,
-      'Payment will appear immediately in transaction list.' => l10n.legacyUi619d7adc2c,
-      'Permanently remove historical rows older than the retention period.' => l10n.legacyUidc32a816e9,
+      'Payment will appear immediately in transaction list.' =>
+        l10n.legacyUi619d7adc2c,
+      'Permanently remove historical rows older than the retention period.' =>
+        l10n.legacyUidc32a816e9,
       'Please select a file.' => l10n.legacyUic2ff2762ca,
       'Preserve current expiry' => l10n.legacyUi3585d74456,
       'Primary' => l10n.legacyUia9a96ec019,
@@ -2051,18 +2284,22 @@ extension MobileText on BuildContext {
       'Recent activity' => l10n.legacyUi72d5617f3f,
       'Recover your account' => l10n.legacyUi255e5788a2,
       'Refreshing' => l10n.legacyUi505dddc915,
-      'Refreshing will replace your current unsaved notification edits with the latest server settings.' => l10n.legacyUi54dd5046d0,
+      'Refreshing will replace your current unsaved notification edits with the latest server settings.' =>
+        l10n.legacyUi54dd5046d0,
       'Report access' => l10n.legacyUi199ed09ba9,
       'Report an issue' => l10n.legacyUibd7b4f006d,
       'Reports are restricted in demo mode' => l10n.legacyUi8115c55b47,
-      'Request and confirm OTP to verify email and WhatsApp number.' => l10n.legacyUi6b5890ba0b,
+      'Request and confirm OTP to verify email and WhatsApp number.' =>
+        l10n.legacyUi6b5890ba0b,
       'Requests' => l10n.legacyUif7194e6a0d,
       'Revenue Forecast' => l10n.legacyUif25bbab45d,
       'Revenue Trend' => l10n.legacyUiec40affa3e,
-      'Review customer renewal requests. Confirm only payments actually received outside the app.' => l10n.legacyUic53c3605a0,
+      'Review customer renewal requests. Confirm only payments actually received outside the app.' =>
+        l10n.legacyUic53c3605a0,
       'Route stops' => l10n.legacyUiffbfe1e822,
       'Run Result' => l10n.legacyUi50eec1a359,
-      'Running cleanup deletes data permanently. Always preview first.' => l10n.legacyUi339225895f,
+      'Running cleanup deletes data permanently. Always preview first.' =>
+        l10n.legacyUi339225895f,
       'Running vs Stopped' => l10n.legacyUifee1dff0c6,
       'Samples' => l10n.legacyUi0fb59422f6,
       'Select Date Range' => l10n.legacyUide6472b8d3,
@@ -2071,13 +2308,16 @@ extension MobileText on BuildContext {
       'Select Vehicle' => l10n.legacyUifea7a520f3,
       'Select a ticket' => l10n.legacyUi70037936c0,
       'Select a vehicle first' => l10n.legacyUieeaf903bb8,
-      'Select an administrator, describe the issue, and attach files if needed.' => l10n.legacyUiad7a8a1750,
+      'Select an administrator, describe the issue, and attach files if needed.' =>
+        l10n.legacyUiad7a8a1750,
       'Select at least one state' => l10n.legacyUi9bb7b69035,
       'Select dashboard' => l10n.legacyUifcfe92e583,
-      'Select vehicles, date range, and filters, then generate to view results.' => l10n.legacyUif9f50c1c30,
+      'Select vehicles, date range, and filters, then generate to view results.' =>
+        l10n.legacyUif9f50c1c30,
       'Selected vehicles' => l10n.legacyUi0e40d8b0bf,
       'Server Health Monitoring' => l10n.legacyUi43e146fb62,
-      'Service expiry controls live tracking. Contact your administrator for renewal. A renewal request does not extend service until payment is confirmed.' => l10n.legacyUi644899c565,
+      'Service expiry controls live tracking. Contact your administrator for renewal. A renewal request does not extend service until payment is confirmed.' =>
+        l10n.legacyUi644899c565,
       'Services' => l10n.legacyUi5cbd584046,
       'Set Active' => l10n.legacyUi758d7f7281,
       'Set Inactive' => l10n.legacyUi7c9275ee4b,
@@ -2090,7 +2330,8 @@ extension MobileText on BuildContext {
       'State Filter' => l10n.legacyUicb672694bb,
       'Status Distribution' => l10n.legacyUi511404ce3b,
       'Stoppage' => l10n.legacyUie54e98e0cb,
-      'Stopping Frontend/Backend/Listener can lock you out of the application. This page allows Start and Restart for those services, but Stop is disabled.' => l10n.legacyUie48d04b2b6,
+      'Stopping Frontend/Backend/Listener can lock you out of the application. This page allows Start and Restart for those services, but Stop is disabled.' =>
+        l10n.legacyUie48d04b2b6,
       'Success, pending, and failed share' => l10n.legacyUi16b45ef102,
       'Summary' => l10n.legacyUi12b71c3e0f,
       'System Metrics' => l10n.legacyUied9177cab1,
@@ -2098,14 +2339,22 @@ extension MobileText on BuildContext {
       'Target Vehicle' => l10n.legacyUiac8b906fca,
       'Telemetry Log' => l10n.legacyUib644561145,
       'Telemetry log' => l10n.legacyUi7840676a23,
-      'This action cannot be undone. The driver and related assignments will be removed.' => l10n.legacyUi4ee3736ca6,
-      'This action permanently removes the sub user and revokes vehicle access. This cannot be undone.' => l10n.legacyUi3575c0aec8,
-      'This link cannot be deleted because its id is missing.' => l10n.legacyUi7f3d98b829,
-      'This permanently deletes data older than the retention period. It cannot be undone.' => l10n.legacyUi4e81e87c37,
-      'This public tracking link will stop working immediately. This action cannot be undone.' => l10n.legacyUid8b029df5c,
-      'This report is not available for your account.' => l10n.legacyUida735ce16c,
-      'This ticket is closed or resolved. Replies are disabled.' => l10n.legacyUidf3e8a5fdd,
-      'This ticket is closed. Reply may reopen or move it to In Progress based on backend behavior.' => l10n.legacyUif9c732c3c6,
+      'This action cannot be undone. The driver and related assignments will be removed.' =>
+        l10n.legacyUi4ee3736ca6,
+      'This action permanently removes the sub user and revokes vehicle access. This cannot be undone.' =>
+        l10n.legacyUi3575c0aec8,
+      'This link cannot be deleted because its id is missing.' =>
+        l10n.legacyUi7f3d98b829,
+      'This permanently deletes data older than the retention period. It cannot be undone.' =>
+        l10n.legacyUi4e81e87c37,
+      'This public tracking link will stop working immediately. This action cannot be undone.' =>
+        l10n.legacyUid8b029df5c,
+      'This report is not available for your account.' =>
+        l10n.legacyUida735ce16c,
+      'This ticket is closed or resolved. Replies are disabled.' =>
+        l10n.legacyUidf3e8a5fdd,
+      'This ticket is closed. Reply may reopen or move it to In Progress based on backend behavior.' =>
+        l10n.legacyUif9c732c3c6,
       'Total Revenue' => l10n.legacyUif3a8370f38,
       'Totals by currency' => l10n.legacyUie273941b29,
       'Transaction history' => l10n.legacyUiaa7d3d7dd9,
@@ -2120,9 +2369,11 @@ extension MobileText on BuildContext {
       'Unable to load profile' => l10n.legacyUi5db77ece1a,
       'Unable to load tickets' => l10n.legacyUi081863e321,
       'Update company identity and social links.' => l10n.legacyUi11f14b7638,
-      'Update personal and address details. Changes are saved only when you confirm.' => l10n.legacyUieb58c61a89,
+      'Update personal and address details. Changes are saved only when you confirm.' =>
+        l10n.legacyUieb58c61a89,
       'Updated: ' => l10n.legacyUid19cf73ae1,
-      'Use the live map vehicle list, then choose the stop threshold and date time range.' => l10n.legacyUi9db8e8ec0b,
+      'Use the live map vehicle list, then choose the stop threshold and date time range.' =>
+        l10n.legacyUi9db8e8ec0b,
       'Variable Preview' => l10n.legacyUid337d1a0d6,
       'Vehicle Information' => l10n.legacyUi63dfad55e0,
       'Vehicle Live Status' => l10n.legacyUi7f4567c8c2,
@@ -2131,14 +2382,17 @@ extension MobileText on BuildContext {
       'Vehicle-Geofence Matrix' => l10n.legacyUid3aee04e65,
       'View All' => l10n.legacyUiefd8355920,
       'View Vehicle' => l10n.legacyUi50ad3280e1,
-      'View payments, credits, debits, and billing records.' => l10n.legacyUi2c3c7c93f8,
+      'View payments, credits, debits, and billing records.' =>
+        l10n.legacyUi2c3c7c93f8,
       'Visibility' => l10n.legacyUi7d9ff4f0de,
       'Visible to admin' => l10n.legacyUi79c6a6033a,
       'Visible to user' => l10n.legacyUied0069155f,
-      'Web browsers require the server to allow cross-origin requests (CORS). If login fails with a connection error, enable CORS on your server.' => l10n.legacyUia56d85fb20,
+      'Web browsers require the server to allow cross-origin requests (CORS). If login fails with a connection error, enable CORS on your server.' =>
+        l10n.legacyUia56d85fb20,
       'Whole trip' => l10n.legacyUi4dd079044f,
       'Your day' => l10n.legacyUi4515b6c7b7,
-      'Your documents and documents shared by your fleet manager.' => l10n.legacyUi50f19ac0b4,
+      'Your documents and documents shared by your fleet manager.' =>
+        l10n.legacyUi50f19ac0b4,
       'Your transactions with the software owner.' => l10n.legacyUi4e697d55ce,
       '— payload truncated for display —' => l10n.legacyUi678830983a,
       'Loading {value1}' => l10n.legacyUi1e22f79cd9(values['value1'] ?? ''),
@@ -2148,8 +2402,14 @@ extension MobileText on BuildContext {
       '{value1} points' => l10n.legacyUiabd4cd39b9(values['value1'] ?? ''),
       '{value1} stops' => l10n.legacyUi90eaac7e8b(values['value1'] ?? ''),
       '{value1} overspeed' => l10n.legacyUi865d65baea(values['value1'] ?? ''),
-      '{value1} {value2} max' => l10n.legacyUi7326be7e87(values['value1'] ?? '', values['value2'] ?? ''),
-      '{value1} {value2} avg' => l10n.legacyUi5fd7f54937(values['value1'] ?? '', values['value2'] ?? ''),
+      '{value1} {value2} max' => l10n.legacyUi7326be7e87(
+        values['value1'] ?? '',
+        values['value2'] ?? '',
+      ),
+      '{value1} {value2} avg' => l10n.legacyUi5fd7f54937(
+        values['value1'] ?? '',
+        values['value2'] ?? '',
+      ),
       '{value1} running' => l10n.legacyUi5f2ee53a4c(values['value1'] ?? ''),
       '{value1} stopped' => l10n.legacyUi5c24a04874(values['value1'] ?? ''),
       'Duration: {value1}' => l10n.legacyUi2b4b82c8bb(values['value1'] ?? ''),
@@ -2158,15 +2418,23 @@ extension MobileText on BuildContext {
       'Play' => l10n.legacyUi5d12bd5355,
       'Note (optional)' => l10n.legacyUi4e39567064,
       'Title (optional)' => l10n.legacyUi932fc13e7f,
-      'File exceeds {value1} MB limit' => l10n.legacyUi2c904359f5(values['value1'] ?? ''),
-      'Unsupported format. Allowed: {value1}' => l10n.legacyUi66db457b99(values['value1'] ?? ''),
+      'File exceeds {value1} MB limit' => l10n.legacyUi2c904359f5(
+        values['value1'] ?? '',
+      ),
+      'Unsupported format. Allowed: {value1}' => l10n.legacyUi66db457b99(
+        values['value1'] ?? '',
+      ),
       'Replace' => l10n.legacyUia7cf7b25a7,
-      'Test email sent to {value1}' => l10n.legacyUidf1d5f2730(values['value1'] ?? ''),
+      'Test email sent to {value1}' => l10n.legacyUidf1d5f2730(
+        values['value1'] ?? '',
+      ),
       'Show password' => l10n.legacyUi044b852f30,
       'Hide password' => l10n.legacyUie40123b4e7,
       'Email verified' => l10n.legacyUi82f47c3d4d,
       'WhatsApp verified' => l10n.legacyUib1a273086c,
-      'Logged out from {value1}' => l10n.legacyUi908e5c8ce5(values['value1'] ?? ''),
+      'Logged out from {value1}' => l10n.legacyUi908e5c8ce5(
+        values['value1'] ?? '',
+      ),
       'Loading…' => l10n.legacyUi33ce417454,
       'Failed to load — retry' => l10n.legacyUi71ae0ec96e,
       'Not applicable' => l10n.legacyUi67c4d0506a,
@@ -2179,7 +2447,9 @@ extension MobileText on BuildContext {
       'From {value1}' => l10n.legacyUi8cf58d99c1(values['value1'] ?? ''),
       'To {value1}' => l10n.legacyUif41a1a65a6(values['value1'] ?? ''),
       '{value1} deleted.' => l10n.legacyUia801634da8(values['value1'] ?? ''),
-      'Signed in as {value1}.' => l10n.legacyUi73f15343e6(values['value1'] ?? ''),
+      'Signed in as {value1}.' => l10n.legacyUi73f15343e6(
+        values['value1'] ?? '',
+      ),
       'Deactivate administrator' => l10n.legacyUi48138f08cd,
       'Activate administrator' => l10n.legacyUif9494a277e,
       'Administrator activated.' => l10n.legacyUi13a84a7390,
@@ -2199,26 +2469,50 @@ extension MobileText on BuildContext {
       'Credits added.' => l10n.legacyUif6769b696e,
       'Credits deducted.' => l10n.legacyUib16dd3b790,
       'No transactions match your filters' => l10n.legacyUie890b12b34,
-      'No payments found for this admin. Try clearing filters.' => l10n.legacyUib71113c83a,
+      'No payments found for this admin. Try clearing filters.' =>
+        l10n.legacyUib71113c83a,
       'Record a manual payment to get started.' => l10n.legacyUi472af48c6d,
       '{value1} copied' => l10n.legacyUi46f7e02bd0(values['value1'] ?? ''),
-      'Subject must be {value1} characters or less.' => l10n.legacyUi70d9eead51(values['value1'] ?? ''),
-      'Description must be {value1} characters or less.' => l10n.legacyUifee6584f1b(values['value1'] ?? ''),
-      'You can upload up to {value1} files.' => l10n.legacyUi830e676993(values['value1'] ?? ''),
-      'Blocked file removed: {value1}' => l10n.legacyUi4e5f407ec5(values['value1'] ?? ''),
-      'Unsupported file removed: {value1}' => l10n.legacyUib5d0b873d0(values['value1'] ?? ''),
-      'File exceeds 5MB: {value1}' => l10n.legacyUid1740cec1d(values['value1'] ?? ''),
-      'Reply must be {value1} characters or less.' => l10n.legacyUie33e0ec27a(values['value1'] ?? ''),
-      'Ticket status is already {value1}.' => l10n.legacyUid9e484645b(values['value1'] ?? ''),
-      'From: {value1}{value2}' => l10n.legacyUiebbf66ef0e(values['value1'] ?? '', values['value2'] ?? ''),
+      'Subject must be {value1} characters or less.' => l10n.legacyUi70d9eead51(
+        values['value1'] ?? '',
+      ),
+      'Description must be {value1} characters or less.' =>
+        l10n.legacyUifee6584f1b(values['value1'] ?? ''),
+      'You can upload up to {value1} files.' => l10n.legacyUi830e676993(
+        values['value1'] ?? '',
+      ),
+      'Blocked file removed: {value1}' => l10n.legacyUi4e5f407ec5(
+        values['value1'] ?? '',
+      ),
+      'Unsupported file removed: {value1}' => l10n.legacyUib5d0b873d0(
+        values['value1'] ?? '',
+      ),
+      'File exceeds 5MB: {value1}' => l10n.legacyUid1740cec1d(
+        values['value1'] ?? '',
+      ),
+      'Reply must be {value1} characters or less.' => l10n.legacyUie33e0ec27a(
+        values['value1'] ?? '',
+      ),
+      'Ticket status is already {value1}.' => l10n.legacyUid9e484645b(
+        values['value1'] ?? '',
+      ),
+      'From: {value1}{value2}' => l10n.legacyUiebbf66ef0e(
+        values['value1'] ?? '',
+        values['value2'] ?? '',
+      ),
       'Created {value1}' => l10n.legacyUi94cf932307(values['value1'] ?? ''),
       'Updated {value1}' => l10n.legacyUib5ae5701b9(values['value1'] ?? ''),
       'Closed {value1}' => l10n.legacyUi1a150ff203(values['value1'] ?? ''),
       'Updating' => l10n.legacyUiec6952e09b,
-      'Some files are over 5MB and were removed{value1}.' => l10n.legacyUi190040d9d3(values['value1'] ?? ''),
-      'Local agent: {value1}' => l10n.legacyUi2a432bdd06(values['value1'] ?? ''),
+      'Some files are over 5MB and were removed{value1}.' =>
+        l10n.legacyUi190040d9d3(values['value1'] ?? ''),
+      'Local agent: {value1}' => l10n.legacyUi2a432bdd06(
+        values['value1'] ?? '',
+      ),
       'Create a team member to get started.' => l10n.legacyUi3adb8e50db,
-      '{value1} · Permissions' => l10n.legacyUiabad5c010f(values['value1'] ?? ''),
+      '{value1} · Permissions' => l10n.legacyUiabad5c010f(
+        values['value1'] ?? '',
+      ),
       'Update' => l10n.legacyUifb91e24fa5,
       'Unable to update permissions' => l10n.legacyUia9d4f0d3b6,
       'Show current password' => l10n.legacyUi918bffea2f,
@@ -2241,13 +2535,17 @@ extension MobileText on BuildContext {
       'Select GPS device' => l10n.legacyUieeed87c94b,
       'No plans available' => l10n.legacyUie5a3dc6c41,
       'Select pricing plan' => l10n.legacyUi509d83b55f,
-      'Vehicle "{value1}" created.' => l10n.legacyUi91c69c8c0d(values['value1'] ?? ''),
+      'Vehicle "{value1}" created.' => l10n.legacyUi91c69c8c0d(
+        values['value1'] ?? '',
+      ),
       'Vehicle deactivated.' => l10n.legacyUi048e2d12ad,
       'Vehicle activated.' => l10n.legacyUib042915cc0,
       'Create Sensor' => l10n.legacyUi3741f56c60,
       'Save Sensor' => l10n.legacyUi996e719712,
       'Service could not be updated' => l10n.legacyUiaa9bf6a127,
-      '{value1} annual coverage renewed' => l10n.legacyUif17fe09e18(values['value1'] ?? ''),
+      '{value1} annual coverage renewed' => l10n.legacyUif17fe09e18(
+        values['value1'] ?? '',
+      ),
       'Annual renewal failed' => l10n.legacyUid55d13471f,
       'Polling status...' => l10n.legacyUi2caa5892b7,
       'Edit Document' => l10n.legacyUid56ae084ba,
@@ -2269,14 +2567,18 @@ extension MobileText on BuildContext {
       'Search my tickets' => l10n.legacyUi3263ab8929,
       'User activated.' => l10n.legacyUi24cae41f13,
       'User deactivated.' => l10n.legacyUi48d348ab09,
-      'Minimum {value1} characters' => l10n.legacyUi515200de54(values['value1'] ?? ''),
+      'Minimum {value1} characters' => l10n.legacyUi515200de54(
+        values['value1'] ?? '',
+      ),
       'Select a country first' => l10n.legacyUiea03fca475,
       'No states available' => l10n.legacyUi01d9797a19,
       'Select a state' => l10n.legacyUic234150a07,
       'Select a state first' => l10n.legacyUida9ca145a1,
       'No cities available' => l10n.legacyUi12fb8b7d21,
       'Select a city' => l10n.legacyUia8ab373cf7,
-      'User "{value1}" created.' => l10n.legacyUi99c1db6636(values['value1'] ?? ''),
+      'User "{value1}" created.' => l10n.legacyUi99c1db6636(
+        values['value1'] ?? '',
+      ),
       'No assigned drivers' => l10n.legacyUi6ea66e7cf8,
       'No drivers match your search' => l10n.legacyUi6b4d2e8347,
       'License {value1}' => l10n.legacyUic7a9755928(values['value1'] ?? ''),
@@ -2285,7 +2587,9 @@ extension MobileText on BuildContext {
       'No tickets found' => l10n.legacyUia269afc99c,
       'No tickets match your search' => l10n.legacyUifd0ab9a284,
       'Last {value1}' => l10n.legacyUic93cd16b9b(values['value1'] ?? ''),
-      'Ticket is already {value1}.' => l10n.legacyUib68af38cf0(values['value1'] ?? ''),
+      'Ticket is already {value1}.' => l10n.legacyUib68af38cf0(
+        values['value1'] ?? '',
+      ),
       'Deactivate user' => l10n.legacyUi9ddc709693,
       'Activate user' => l10n.legacyUiaebaaf50f8,
       'Unable to save permissions' => l10n.legacyUi8ed321fdf0,
@@ -2302,14 +2606,20 @@ extension MobileText on BuildContext {
       'No SIM cards found' => l10n.legacyUi679d782d32,
       'Add inventory to get started.' => l10n.legacyUi613b9215a5,
       'Loading device types...' => l10n.legacyUi9f91b0dc33,
-      'Using safe defaults. {value1}' => l10n.legacyUi9ba6bfee17(values['value1'] ?? ''),
+      'Using safe defaults. {value1}' => l10n.legacyUi9ba6bfee17(
+        values['value1'] ?? '',
+      ),
       'Email pending' => l10n.legacyUi2919b3cdf5,
       'WhatsApp pending' => l10n.legacyUidfd4099c87,
-      'Switch to {value1} tab' => l10n.legacyUif0dd87cef8(values['value1'] ?? ''),
+      'Switch to {value1} tab' => l10n.legacyUif0dd87cef8(
+        values['value1'] ?? '',
+      ),
       '{value1} credits' => l10n.legacyUi364cdce6f9(values['value1'] ?? ''),
       'Uploading...' => l10n.legacyUi070e328ec8,
       'Change Avatar' => l10n.legacyUie8d33553f6,
-      'Apply preset {value1}' => l10n.legacyUi56b3825e50(values['value1'] ?? ''),
+      'Apply preset {value1}' => l10n.legacyUi56b3825e50(
+        values['value1'] ?? '',
+      ),
       'Resending...' => l10n.legacyUi28e40daab7,
       'Resend OTP' => l10n.legacyUib707b694b2,
       '{value1} picker' => l10n.legacyUia648c7bbe2(values['value1'] ?? ''),
@@ -2319,10 +2629,16 @@ extension MobileText on BuildContext {
       'Source unknown' => l10n.legacyUi12e7d6beac,
       'No operational vehicles available.' => l10n.legacyUifb2269d326,
       'No vehicles available.' => l10n.legacyUi9dd705b078,
-      '{value1} blocked vehicle{value2} excluded.' => l10n.mobilePluralBlockedVehicles(num.tryParse((values['value1'] ?? 0).toString()) ?? 0),
-      '{value1} assigned vehicles' => l10n.legacyUif039d146e6(values['value1'] ?? ''),
+      '{value1} blocked vehicle{value2} excluded.' =>
+        l10n.mobilePluralBlockedVehicles(
+          num.tryParse((values['value1'] ?? 0).toString()) ?? 0,
+        ),
+      '{value1} assigned vehicles' => l10n.legacyUif039d146e6(
+        values['value1'] ?? '',
+      ),
       'No matching vehicles' => l10n.legacyUi02b460b2cf,
-      'All vehicles are already assigned to this sub user.' => l10n.legacyUi537da7f70e,
+      'All vehicles are already assigned to this sub user.' =>
+        l10n.legacyUi537da7f70e,
       'Try a different search query.' => l10n.legacyUif614a2e6b5,
       'Sub user deactivated.' => l10n.legacyUi28516f977e,
       'Sub user activated.' => l10n.legacyUi7841e93192,
@@ -2352,19 +2668,34 @@ extension MobileText on BuildContext {
       'Select timezone' => l10n.legacyUi22e6340f2c,
       'Reload History' => l10n.legacyUicc4889261c,
       'Loading sensors…' => l10n.legacyUi9e8a1c5b7b,
-      'Select {value1} report range' => l10n.legacyUic0a743750e(values['value1'] ?? ''),
+      'Select {value1} report range' => l10n.legacyUic0a743750e(
+        values['value1'] ?? '',
+      ),
       'Running: {value1}' => l10n.legacyUi26362a69a0(values['value1'] ?? ''),
       'Stopped: {value1}' => l10n.legacyUicbbef93382(values['value1'] ?? ''),
       '{value1} — Overspeed' => l10n.legacyUic1d252d58b(values['value1'] ?? ''),
       'Day: {value1}' => l10n.legacyUidf3ab0c2d9(values['value1'] ?? ''),
       'Night: {value1}' => l10n.legacyUi20076143b6(values['value1'] ?? ''),
-      '{value1} trip{value2}' => l10n.mobilePluralTrips(num.tryParse((values['value1'] ?? 0).toString()) ?? 0),
+      '{value1} trip{value2}' => l10n.mobilePluralTrips(
+        num.tryParse((values['value1'] ?? 0).toString()) ?? 0,
+      ),
       'Max {value1} km/h' => l10n.legacyUib4c5c14ddb(values['value1'] ?? ''),
-      '{value1}: {value2} km' => l10n.legacyUi491fa657c5(values['value1'] ?? '', values['value2'] ?? ''),
-      'Distance by Vehicle (top {value1})' => l10n.legacyUia6587e8e7b(values['value1'] ?? ''),
+      '{value1}: {value2} km' => l10n.legacyUi491fa657c5(
+        values['value1'] ?? '',
+        values['value2'] ?? '',
+      ),
+      'Distance by Vehicle (top {value1})' => l10n.legacyUia6587e8e7b(
+        values['value1'] ?? '',
+      ),
       '{value1} km/h' => l10n.legacyUi6eca89289b(values['value1'] ?? ''),
-      'Geofence {value1} for {value2}' => l10n.legacyUib9a5d6824c(values['value1'] ?? '', values['value2'] ?? ''),
-      'Overspeed limit ({value1}) for {value2}' => l10n.legacyUi4d24bcb058(values['value1'] ?? '', values['value2'] ?? ''),
+      'Geofence {value1} for {value2}' => l10n.legacyUib9a5d6824c(
+        values['value1'] ?? '',
+        values['value2'] ?? '',
+      ),
+      'Overspeed limit ({value1}) for {value2}' => l10n.legacyUi4d24bcb058(
+        values['value1'] ?? '',
+        values['value2'] ?? '',
+      ),
       'Saving…' => l10n.legacyUi56a2285c5b,
       '{value1} toggle' => l10n.legacyUia1f38b12bb(values['value1'] ?? ''),
       '{value1} geofences' => l10n.legacyUic3b516d33c(values['value1'] ?? ''),
@@ -2397,17 +2728,26 @@ extension MobileText on BuildContext {
       'Switch to dark mode' => l10n.legacyUic29220f958,
       'No unread notifications' => l10n.legacyUi257616b8e4,
       'No notifications yet' => l10n.legacyUid2609b6af1,
-      'Everything is marked as read. New alerts will appear here as they arrive.' => l10n.legacyUi04d956a670,
-      'Vehicle alerts, system events, and operational updates will appear here.' => l10n.legacyUi7fe220bd95,
+      'Everything is marked as read. New alerts will appear here as they arrive.' =>
+        l10n.legacyUi04d956a670,
+      'Vehicle alerts, system events, and operational updates will appear here.' =>
+        l10n.legacyUi7fe220bd95,
       'All read' => l10n.legacyUib2f3a86e84,
       'Marking…' => l10n.legacyUicbf6939e9e,
       'Mark all read' => l10n.legacyUi8958e22c23,
-      'Showing {value1} of {value2}' => l10n.legacyUicb9ae54e8a(values['value1'] ?? '', values['value2'] ?? ''),
-      'Page {value1} of {value2}' => l10n.legacyUie5b28b8ae4(values['value1'] ?? '', values['value2'] ?? ''),
+      'Showing {value1} of {value2}' => l10n.legacyUicb9ae54e8a(
+        values['value1'] ?? '',
+        values['value2'] ?? '',
+      ),
+      'Page {value1} of {value2}' => l10n.legacyUie5b28b8ae4(
+        values['value1'] ?? '',
+        values['value2'] ?? '',
+      ),
       'No matching tickets' => l10n.legacyUic1d317a815,
       'No tickets' => l10n.legacyUiae9e814889,
       'Try a different search or status filter.' => l10n.legacyUicc80739f43,
-      'Create a ticket and the team will follow up here.' => l10n.legacyUib1ac2d29f2,
+      'Create a ticket and the team will follow up here.' =>
+        l10n.legacyUib1ac2d29f2,
       '{value1} rows' => l10n.legacyUia6864fdac8(values['value1'] ?? ''),
       'Loading' => l10n.legacyUi8f26c6520d,
       '{value1} events' => l10n.legacyUie7a93c340a(values['value1'] ?? ''),
@@ -2417,42 +2757,69 @@ extension MobileText on BuildContext {
       'No compatible commands' => l10n.legacyUif7933da683,
       'Select command' => l10n.legacyUi4be4430e57,
       'TIMELINE ({value1})' => l10n.legacyUi70ac5dd63e(values['value1'] ?? ''),
-      '{value1} {value2}x' => l10n.legacyUi24d8fbef9d(values['value1'] ?? '', values['value2'] ?? ''),
-      'Page {value1} of {value2} · {value3} trips' => l10n.legacyUibde2a7e880(values['value1'] ?? '', values['value2'] ?? '', values['value3'] ?? ''),
+      '{value1} {value2}x' => l10n.legacyUi24d8fbef9d(
+        values['value1'] ?? '',
+        values['value2'] ?? '',
+      ),
+      'Page {value1} of {value2} · {value3} trips' => l10n.legacyUibde2a7e880(
+        values['value1'] ?? '',
+        values['value2'] ?? '',
+        values['value3'] ?? '',
+      ),
       '{value1} remaining' => l10n.legacyUi08343b3fe7(values['value1'] ?? ''),
       'ETA {value1}' => l10n.legacyUi843b148bbc(values['value1'] ?? ''),
-      'Position updated {value1}' => l10n.legacyUi46d11990c5(values['value1'] ?? ''),
+      'Position updated {value1}' => l10n.legacyUi46d11990c5(
+        values['value1'] ?? '',
+      ),
       'Delete {value1}?' => l10n.legacyUiecd87f34a4(values['value1'] ?? ''),
       'Expires {value1}' => l10n.legacyUi666b616488(values['value1'] ?? ''),
       'Deleting…' => l10n.legacyUic7ac551ef0,
-      '{value1} unread · Latest {value2} notifications' => l10n.legacyUi27015ac78b(values['value1'] ?? '', values['value2'] ?? ''),
-      '{value1} / {value2} stops completed' => l10n.legacyUi46b0a7d4ca(values['value1'] ?? '', values['value2'] ?? ''),
+      '{value1} unread · Latest {value2} notifications' =>
+        l10n.legacyUi27015ac78b(values['value1'] ?? '', values['value2'] ?? ''),
+      '{value1} / {value2} stops completed' => l10n.legacyUi46b0a7d4ca(
+        values['value1'] ?? '',
+        values['value2'] ?? '',
+      ),
       'Date unavailable' => l10n.legacyUidc7f2c3785,
       'Upload trip proof' => l10n.legacyUib11b062b52,
       'PDF, JPG, PNG or WebP · Up to 5 MB' => l10n.legacyUi8f1a9ca44a,
-      'PDF, JPG, PNG, WebP, DOC or DOCX · Up to 5 MB' => l10n.legacyUi91df716a6b,
+      'PDF, JPG, PNG, WebP, DOC or DOCX · Up to 5 MB' =>
+        l10n.legacyUi91df716a6b,
       'Uploading…' => l10n.legacyUid921a79afa,
       'Last update {value1}' => l10n.legacyUiba9b85b92a(values['value1'] ?? ''),
-      'Distance today: {value1}' => l10n.legacyUib9f8dfe265(values['value1'] ?? ''),
+      'Distance today: {value1}' => l10n.legacyUib9f8dfe265(
+        values['value1'] ?? '',
+      ),
       '{value1} days' => l10n.legacyUif0ea529a1a(values['value1'] ?? ''),
-      '{value1}  ·  {value2} days' => l10n.legacyUi387c4ee271(values['value1'] ?? '', values['value2'] ?? ''),
+      '{value1}  ·  {value2} days' => l10n.legacyUi387c4ee271(
+        values['value1'] ?? '',
+        values['value2'] ?? '',
+      ),
       'Dry-run summary' => l10n.legacyUideba3e1d0f,
       'Last cleanup' => l10n.legacyUia7d0c36803,
       'Tables ({value1})' => l10n.legacyUia24243eb0c(values['value1'] ?? ''),
       'Checking status…' => l10n.legacyUic74a3012a0,
       'Status unknown' => l10n.legacyUie991a76914,
-      'Platform growth across users, vehicles, and licenses.' => l10n.legacyUia722bd6476,
-      'License peak {value1}' => l10n.legacyUi852c487a99(values['value1'] ?? ''),
-      'Remove {value1} from the platform? This action cannot be undone.' => l10n.legacyUic44efcae53(values['value1'] ?? ''),
+      'Platform growth across users, vehicles, and licenses.' =>
+        l10n.legacyUia722bd6476,
+      'License peak {value1}' => l10n.legacyUi852c487a99(
+        values['value1'] ?? '',
+      ),
+      'Remove {value1} from the platform? This action cannot be undone.' =>
+        l10n.legacyUic44efcae53(values['value1'] ?? ''),
       '{value1} Admin' => l10n.legacyUicac4f1ac56(values['value1'] ?? ''),
-      'Avg {value1} {value2} per transaction' => l10n.legacyUi68401f3c9e(values['value1'] ?? '', values['value2'] ?? ''),
+      'Avg {value1} {value2} per transaction' => l10n.legacyUi68401f3c9e(
+        values['value1'] ?? '',
+        values['value2'] ?? '',
+      ),
       'Unable to refresh vehicles.' => l10n.legacyUi526698fef7,
       'Documents ({value1})' => l10n.legacyUie9b7179dd3(values['value1'] ?? ''),
       'Unable to refresh documents.' => l10n.legacyUiefd8314874,
       'Document' => l10n.legacyUie214b8a299,
       'Balance {value1}' => l10n.legacyUidb4675bc22(values['value1'] ?? ''),
       'Vehicle {value1}' => l10n.legacyUi16be827cb6(values['value1'] ?? ''),
-      'Tracking is blocked by the software license limit.' => l10n.legacyUibd5caf1601,
+      'Tracking is blocked by the software license limit.' =>
+        l10n.legacyUibd5caf1601,
       'Last check: —' => l10n.legacyUid8663517be,
       'Own' => l10n.legacyUi1be0035c25,
       'Global' => l10n.legacyUi5f1184f7df,
@@ -2460,33 +2827,61 @@ extension MobileText on BuildContext {
       '{value1}% collected' => l10n.legacyUi8a9135d5ad(values['value1'] ?? ''),
       'Projected {value1}' => l10n.legacyUi3b0c54fa00(values['value1'] ?? ''),
       'Delta {value1}' => l10n.legacyUi16ff2e7fa9(values['value1'] ?? ''),
-      '{value1} veh · {value2}' => l10n.legacyUi4956298616(values['value1'] ?? '', values['value2'] ?? ''),
+      '{value1} veh · {value2}' => l10n.legacyUi4956298616(
+        values['value1'] ?? '',
+        values['value2'] ?? '',
+      ),
       'Paid {value1}' => l10n.legacyUi120d777276(values['value1'] ?? ''),
-      '{value1} of {value2} plans' => l10n.legacyUi617d0ebe3d(values['value1'] ?? '', values['value2'] ?? ''),
+      '{value1} of {value2} plans' => l10n.legacyUi617d0ebe3d(
+        values['value1'] ?? '',
+        values['value2'] ?? '',
+      ),
       'Untitled Vehicle' => l10n.legacyUi25422daedb,
-      'Annual coverage: {value1}' => l10n.legacyUicbbe928bb9(values['value1'] ?? ''),
-      'Customer service: {value1}' => l10n.legacyUiec60ebb81f(values['value1'] ?? ''),
-      'Account credits: {value1}' => l10n.legacyUiced28bc228(values['value1'] ?? ''),
+      'Annual coverage: {value1}' => l10n.legacyUicbbe928bb9(
+        values['value1'] ?? '',
+      ),
+      'Customer service: {value1}' => l10n.legacyUiec60ebb81f(
+        values['value1'] ?? '',
+      ),
+      'Account credits: {value1}' => l10n.legacyUiced28bc228(
+        values['value1'] ?? '',
+      ),
       'Live tracking active' => l10n.legacyUic1a90693df,
-      '{value1} · {value2} days' => l10n.legacyUi4bdc33e519(values['value1'] ?? '', values['value2'] ?? ''),
+      '{value1} · {value2} days' => l10n.legacyUi4bdc33e519(
+        values['value1'] ?? '',
+        values['value2'] ?? '',
+      ),
       'Choose date and time' => l10n.legacyUi889f282a7d,
       'Save service changes' => l10n.legacyUi83cbbbc297,
       'All dates' => l10n.legacyUi69feaaf8cd,
       'Optional' => l10n.legacyUi0c6c4102d4,
       'Status: {value1}' => l10n.legacyUic57882f9c9(values['value1'] ?? ''),
-      'Send this command to {value1}?' => l10n.legacyUiae3c1f8817(values['value1'] ?? ''),
-      'Assigned Users ({value1})' => l10n.legacyUic51f739b4e(values['value1'] ?? ''),
+      'Send this command to {value1}?' => l10n.legacyUiae3c1f8817(
+        values['value1'] ?? '',
+      ),
+      'Assigned Users ({value1})' => l10n.legacyUic51f739b4e(
+        values['value1'] ?? '',
+      ),
       'Unknown' => l10n.legacyUibc7819b34f,
-      'Remove {value1} from this vehicle?' => l10n.legacyUi46aece3259(values['value1'] ?? ''),
-      'Live Value: {value1} {value2}' => l10n.legacyUi3d2bb84b75(values['value1'] ?? '', values['value2'] ?? ''),
+      'Remove {value1} from this vehicle?' => l10n.legacyUi46aece3259(
+        values['value1'] ?? '',
+      ),
+      'Live Value: {value1} {value2}' => l10n.legacyUi3d2bb84b75(
+        values['value1'] ?? '',
+        values['value2'] ?? '',
+      ),
       'Code: {value1}' => l10n.legacyUieb3a3daafa(values['value1'] ?? ''),
-      'Document type: {value1}' => l10n.legacyUi93aa5178d6(values['value1'] ?? ''),
+      'Document type: {value1}' => l10n.legacyUi93aa5178d6(
+        values['value1'] ?? '',
+      ),
       'File: {value1}' => l10n.legacyUi0e12da1c5e(values['value1'] ?? ''),
       'Expiry: {value1}' => l10n.legacyUi3ce1585208(values['value1'] ?? ''),
       'Visibility: {value1}' => l10n.legacyUiaeafae8a12(values['value1'] ?? ''),
       'Tags: {value1}' => l10n.legacyUi39d7217391(values['value1'] ?? ''),
       'Created: {value1}' => l10n.legacyUi4439ddf5a2(values['value1'] ?? ''),
-      'Remove {value1} from this driver?' => l10n.legacyUid5c6adaee3(values['value1'] ?? ''),
+      'Remove {value1} from this driver?' => l10n.legacyUid5c6adaee3(
+        values['value1'] ?? '',
+      ),
       'Choose file' => l10n.legacyUieb7eb7a819,
       'Hidden from admin' => l10n.legacyUi8f8dd8dbd3,
       'Admin users can see this document' => l10n.legacyUi65d06317e9,
@@ -2494,120 +2889,252 @@ extension MobileText on BuildContext {
       'Attributes: {value1}' => l10n.legacyUi864cf8bc08(values['value1'] ?? ''),
       'Raw: {value1}' => l10n.legacyUi90d40c4249(values['value1'] ?? ''),
       'Vehicle Event' => l10n.legacyUia4d06ed284,
-      '{value1} • {value2} • sent {value3} • delivered {value4} • retry {value5}{value6}' => l10n.legacyUifba61e1a50(values['value1'] ?? '', values['value2'] ?? '', values['value3'] ?? '', values['value4'] ?? '', values['value5'] ?? '', values['value6'] ?? ''),
-      '{value1} of {value2} transactions' => l10n.legacyUi9c07a085f8(values['value1'] ?? '', values['value2'] ?? ''),
+      '{value1} • {value2} • sent {value3} • delivered {value4} • retry {value5}{value6}' =>
+        l10n.legacyUifba61e1a50(
+          values['value1'] ?? '',
+          values['value2'] ?? '',
+          values['value3'] ?? '',
+          values['value4'] ?? '',
+          values['value5'] ?? '',
+          values['value6'] ?? '',
+        ),
+      '{value1} of {value2} transactions' => l10n.legacyUi9c07a085f8(
+        values['value1'] ?? '',
+        values['value2'] ?? '',
+      ),
       '{value1} Retry' => l10n.legacyUi26b3b5dfb3(values['value1'] ?? ''),
-      'Plan: {value1} • {value2} {value3}' => l10n.legacyUi05563fda41(values['value1'] ?? '', values['value2'] ?? '', values['value3'] ?? ''),
-      '{value1} vehicle{value2} selected' => l10n.mobilePluralSelectedVehicles(num.tryParse((values['value1'] ?? 0).toString()) ?? 0),
-      'Auto Total: {value1} {value2}' => l10n.legacyUi8f4ab245d3(values['value1'] ?? '', values['value2'] ?? ''),
+      'Plan: {value1} • {value2} {value3}' => l10n.legacyUi05563fda41(
+        values['value1'] ?? '',
+        values['value2'] ?? '',
+        values['value3'] ?? '',
+      ),
+      '{value1} vehicle{value2} selected' => l10n.mobilePluralSelectedVehicles(
+        num.tryParse((values['value1'] ?? 0).toString()) ?? 0,
+      ),
+      'Auto Total: {value1} {value2}' => l10n.legacyUi8f4ab245d3(
+        values['value1'] ?? '',
+        values['value2'] ?? '',
+      ),
       'Quote expired' => l10n.legacyUi493de0b548,
-      '{value1} · {value2} · {value3} days' => l10n.legacyUi78218dbd5f(values['value1'] ?? '', values['value2'] ?? '', values['value3'] ?? ''),
+      '{value1} · {value2} · {value3} days' => l10n.legacyUi78218dbd5f(
+        values['value1'] ?? '',
+        values['value2'] ?? '',
+        values['value3'] ?? '',
+      ),
       'I received {value1}' => l10n.legacyUi13e7357d18(values['value1'] ?? ''),
       'Hide payment filters' => l10n.legacyUi7e72a446c4,
       'Show payment filters' => l10n.legacyUi8f642c1d28,
-      'Transaction ID: {value1}' => l10n.legacyUi184c3f0cbb(values['value1'] ?? ''),
+      'Transaction ID: {value1}' => l10n.legacyUi184c3f0cbb(
+        values['value1'] ?? '',
+      ),
       'Amount: {value1}' => l10n.legacyUi281961b9ee(values['value1'] ?? ''),
-      'Payment Type: {value1}' => l10n.legacyUib40416c0af(values['value1'] ?? ''),
-      'Payment Mode: {value1}' => l10n.legacyUia0d65517a6(values['value1'] ?? ''),
+      'Payment Type: {value1}' => l10n.legacyUib40416c0af(
+        values['value1'] ?? '',
+      ),
+      'Payment Mode: {value1}' => l10n.legacyUia0d65517a6(
+        values['value1'] ?? '',
+      ),
       'Reference: {value1}' => l10n.legacyUic2d62e9f71(values['value1'] ?? ''),
       'Provider: {value1}' => l10n.legacyUib0f627962a(values['value1'] ?? ''),
-      'Provider Ref: {value1}' => l10n.legacyUie802a1b0a0(values['value1'] ?? ''),
+      'Provider Ref: {value1}' => l10n.legacyUie802a1b0a0(
+        values['value1'] ?? '',
+      ),
       'From: {value1}' => l10n.legacyUi2751887374(values['value1'] ?? ''),
       'To: {value1}' => l10n.legacyUi250106ee83(values['value1'] ?? ''),
-      'Recorded By: {value1}' => l10n.legacyUi5ff8e9357b(values['value1'] ?? ''),
+      'Recorded By: {value1}' => l10n.legacyUi5ff8e9357b(
+        values['value1'] ?? '',
+      ),
       'Vehicle: {value1}' => l10n.legacyUi7565bbdff9(values['value1'] ?? ''),
       'IMEI: {value1}' => l10n.legacyUi2b542f8050(values['value1'] ?? ''),
       'Plan: {value1}' => l10n.legacyUi76e24a00cf(values['value1'] ?? ''),
-      'Failure Code: {value1}' => l10n.legacyUi972db7d65e(values['value1'] ?? ''),
-      'Failure Message: {value1}' => l10n.legacyUif147c11396(values['value1'] ?? ''),
-      'Create a ticket to start a support conversation.' => l10n.legacyUic3146cdbec,
-      'Remove {value1} from this administrator account?' => l10n.legacyUi2cbdc50885(values['value1'] ?? ''),
-      '{value1} assigned - {value2} available' => l10n.legacyUi073ab8a05c(values['value1'] ?? '', values['value2'] ?? ''),
+      'Failure Code: {value1}' => l10n.legacyUi972db7d65e(
+        values['value1'] ?? '',
+      ),
+      'Failure Message: {value1}' => l10n.legacyUif147c11396(
+        values['value1'] ?? '',
+      ),
+      'Create a ticket to start a support conversation.' =>
+        l10n.legacyUic3146cdbec,
+      'Remove {value1} from this administrator account?' =>
+        l10n.legacyUi2cbdc50885(values['value1'] ?? ''),
+      '{value1} assigned - {value2} available' => l10n.legacyUi073ab8a05c(
+        values['value1'] ?? '',
+        values['value2'] ?? '',
+      ),
       'Select {value1}' => l10n.legacyUidcc59f9fcf(values['value1'] ?? ''),
       'No options available' => l10n.legacyUi7a19b6deae,
       '1 ticket' => l10n.legacyUif28cfb8eb0,
-      'Optional files, up to {value1}.' => l10n.legacyUidf08f563b7(values['value1'] ?? ''),
+      'Optional files, up to {value1}.' => l10n.legacyUidf08f563b7(
+        values['value1'] ?? '',
+      ),
       '1 payment' => l10n.legacyUi5f2b4010d1,
       'Renewal — 1 vehicle' => l10n.legacyUi876081608a,
-      'Estimated total {value1}' => l10n.legacyUia034f3f5e5(values['value1'] ?? ''),
-      'Renewed Vehicles ({value1})' => l10n.legacyUic07d143675(values['value1'] ?? ''),
-      'Remove {value1} from this user?' => l10n.legacyUiff384c8aa4(values['value1'] ?? ''),
-      '{value1} files - {value2} user types' => l10n.legacyUicb6d241451(values['value1'] ?? '', values['value2'] ?? ''),
+      'Estimated total {value1}' => l10n.legacyUia034f3f5e5(
+        values['value1'] ?? '',
+      ),
+      'Renewed Vehicles ({value1})' => l10n.legacyUic07d143675(
+        values['value1'] ?? '',
+      ),
+      'Remove {value1} from this user?' => l10n.legacyUiff384c8aa4(
+        values['value1'] ?? '',
+      ),
+      '{value1} files - {value2} user types' => l10n.legacyUicb6d241451(
+        values['value1'] ?? '',
+        values['value2'] ?? '',
+      ),
       'Loading user types' => l10n.legacyUif63f04564a,
       'Choose a file' => l10n.legacyUi74b1d89d85,
       'Shown in user documents' => l10n.legacyUi62783d600b,
       'Hidden from user' => l10n.legacyUi38fc177e28,
-      '{value1} User{value2}' => l10n.mobilePluralUsers(num.tryParse((values['value1'] ?? 0).toString()) ?? 0),
+      '{value1} User{value2}' => l10n.mobilePluralUsers(
+        num.tryParse((values['value1'] ?? 0).toString()) ?? 0,
+      ),
       'Change dates' => l10n.legacyUi674b652fca,
       'Loading transactions…' => l10n.legacyUi08d0e4f72a,
       'No transactions match these filters.' => l10n.legacyUib3a56d64d2,
       'Working...' => l10n.legacyUi049ac820da,
       'Joined {value1}' => l10n.legacyUie783127bc1(values['value1'] ?? ''),
-      'Profile updated {value1}' => l10n.legacyUieb587f7802(values['value1'] ?? ''),
-      'Country and mobile prefix references are unavailable. You can still edit manually.' => l10n.legacyUi1dfc507715,
-      'You are subscribed to profile email notifications.' => l10n.legacyUia7c1498ab2,
-      'Subscribe to receive profile and account email updates.' => l10n.legacyUi77653a7db4,
+      'Profile updated {value1}' => l10n.legacyUieb587f7802(
+        values['value1'] ?? '',
+      ),
+      'Country and mobile prefix references are unavailable. You can still edit manually.' =>
+        l10n.legacyUi1dfc507715,
+      'You are subscribed to profile email notifications.' =>
+        l10n.legacyUia7c1498ab2,
+      'Subscribe to receive profile and account email updates.' =>
+        l10n.legacyUi77653a7db4,
       'Options unavailable.' => l10n.legacyUid3b8add13e,
       'Driven {value1}' => l10n.legacyUi08b544b680(values['value1'] ?? ''),
-      'Showing 10 of {value1} latest alerts' => l10n.legacyUi6c783ae69f(values['value1'] ?? ''),
+      'Showing 10 of {value1} latest alerts' => l10n.legacyUi6c783ae69f(
+        values['value1'] ?? '',
+      ),
       'No message provided.' => l10n.legacyUi45ef37a941,
       'Channel unknown' => l10n.legacyUia2ae39a298,
       'Sending' => l10n.legacyUiceafde86d6,
       'Send command' => l10n.legacyUi46cefb25e2,
       'Day window: {value1}' => l10n.legacyUib3d1704245(values['value1'] ?? ''),
       'type: {value1}' => l10n.legacyUi735f148a9a(values['value1'] ?? ''),
-      '{value1} of {value2} vehicles • {value3} selected' => l10n.legacyUi828a91effc(values['value1'] ?? '', values['value2'] ?? '', values['value3'] ?? ''),
-      '{value1} visible • {value2}/{value3} loaded' => l10n.legacyUia0ebdc2307(values['value1'] ?? '', values['value2'] ?? '', values['value3'] ?? ''),
-      'Remove {value1} from this sub user?' => l10n.legacyUi1d483a1343(values['value1'] ?? ''),
-      '{value1} available to assign' => l10n.legacyUi02b84d460d(values['value1'] ?? ''),
+      '{value1} of {value2} vehicles • {value3} selected' =>
+        l10n.legacyUi828a91effc(
+          values['value1'] ?? '',
+          values['value2'] ?? '',
+          values['value3'] ?? '',
+        ),
+      '{value1} visible • {value2}/{value3} loaded' => l10n.legacyUia0ebdc2307(
+        values['value1'] ?? '',
+        values['value2'] ?? '',
+        values['value3'] ?? '',
+      ),
+      'Remove {value1} from this sub user?' => l10n.legacyUi1d483a1343(
+        values['value1'] ?? '',
+      ),
+      '{value1} available to assign' => l10n.legacyUi02b84d460d(
+        values['value1'] ?? '',
+      ),
       'Plate unavailable' => l10n.legacyUi65ad788d45,
       'Sub user can access assigned vehicles' => l10n.legacyUi7bb4f2808b,
       'Sub user is disabled' => l10n.legacyUi26b21a0d91,
-      '{value1} files - {value2} document types' => l10n.legacyUibceb1630f0(values['value1'] ?? '', values['value2'] ?? ''),
+      '{value1} files - {value2} document types' => l10n.legacyUibceb1630f0(
+        values['value1'] ?? '',
+        values['value2'] ?? '',
+      ),
       'Loading driver types' => l10n.legacyUi107b9056eb,
-      '{value1} of {value2} drivers' => l10n.legacyUifd7e37cf51(values['value1'] ?? '', values['value2'] ?? ''),
-      '{value1} of {value2} vehicles' => l10n.legacyUi14b274c7ae(values['value1'] ?? '', values['value2'] ?? ''),
+      '{value1} of {value2} drivers' => l10n.legacyUifd7e37cf51(
+        values['value1'] ?? '',
+        values['value2'] ?? '',
+      ),
+      '{value1} of {value2} vehicles' => l10n.legacyUi14b274c7ae(
+        values['value1'] ?? '',
+        values['value2'] ?? '',
+      ),
       'Remove {value1}?' => l10n.legacyUi79a100acf7(values['value1'] ?? ''),
-      '{value1} files - {value2} vehicle types' => l10n.legacyUi26875fe2e3(values['value1'] ?? '', values['value2'] ?? ''),
-      '{value1} could not be loaded.' => l10n.legacyUi7970bd3e0b(values['value1'] ?? ''),
+      '{value1} files - {value2} vehicle types' => l10n.legacyUi26875fe2e3(
+        values['value1'] ?? '',
+        values['value2'] ?? '',
+      ),
+      '{value1} could not be loaded.' => l10n.legacyUi7970bd3e0b(
+        values['value1'] ?? '',
+      ),
       'Loading vehicle types' => l10n.legacyUi5eaf2646c3,
       'Shown in vehicle documents' => l10n.legacyUi6ca60537ae,
       'Hidden from users' => l10n.legacyUi4e3d045a97,
       'Sensor history' => l10n.legacyUid3ce77345e,
-      '{value1} numeric points' => l10n.legacyUi5aba89cd2f(values['value1'] ?? ''),
+      '{value1} numeric points' => l10n.legacyUi5aba89cd2f(
+        values['value1'] ?? '',
+      ),
       'All geofences' => l10n.legacyUie86a33f16a,
       'Source: {value1}' => l10n.legacyUi5321a316d0(values['value1'] ?? ''),
-      'Use {value1} selected' => l10n.legacyUifabeb88d9c(values['value1'] ?? ''),
-      'Events by Geofence (top {value1})' => l10n.legacyUi343ceded71(values['value1'] ?? ''),
-      'Alert Types (top {value1})' => l10n.legacyUide36170209(values['value1'] ?? ''),
-      '{value1} km/h (limit {value2})' => l10n.legacyUi019e5212ef(values['value1'] ?? '', values['value2'] ?? ''),
-      '{value1} active day{value2}' => l10n.mobilePluralActiveDays(num.tryParse((values['value1'] ?? 0).toString()) ?? 0),
-      '{value1} result{value2}' => l10n.mobilePluralResults(num.tryParse((values['value1'] ?? 0).toString()) ?? 0),
-      'Generated at {value1}' => l10n.legacyUi15b175bbc9(values['value1'] ?? ''),
-      'Export {value1} Report' => l10n.legacyUi92a50db48d(values['value1'] ?? ''),
-      'All {value1} vehicles will be included' => l10n.legacyUida6472ea1a(values['value1'] ?? ''),
+      'Use {value1} selected' => l10n.legacyUifabeb88d9c(
+        values['value1'] ?? '',
+      ),
+      'Events by Geofence (top {value1})' => l10n.legacyUi343ceded71(
+        values['value1'] ?? '',
+      ),
+      'Alert Types (top {value1})' => l10n.legacyUide36170209(
+        values['value1'] ?? '',
+      ),
+      '{value1} km/h (limit {value2})' => l10n.legacyUi019e5212ef(
+        values['value1'] ?? '',
+        values['value2'] ?? '',
+      ),
+      '{value1} active day{value2}' => l10n.mobilePluralActiveDays(
+        num.tryParse((values['value1'] ?? 0).toString()) ?? 0,
+      ),
+      '{value1} result{value2}' => l10n.mobilePluralResults(
+        num.tryParse((values['value1'] ?? 0).toString()) ?? 0,
+      ),
+      'Generated at {value1}' => l10n.legacyUi15b175bbc9(
+        values['value1'] ?? '',
+      ),
+      'Export {value1} Report' => l10n.legacyUi92a50db48d(
+        values['value1'] ?? '',
+      ),
+      'All {value1} vehicles will be included' => l10n.legacyUida6472ea1a(
+        values['value1'] ?? '',
+      ),
       'Select a vehicle group' => l10n.legacyUib0c379b2f8,
       'Select Vehicles' => l10n.legacyUi23d6943e8b,
       'Done ({value1})' => l10n.legacyUi47b7508acb(values['value1'] ?? ''),
-      'Select all visible ({value1})' => l10n.legacyUid495bed9d8(values['value1'] ?? ''),
-      '{value1} vehicle{value2}' => l10n.mobilePluralVehicles(num.tryParse((values['value1'] ?? 0).toString()) ?? 0),
-      'Max {value1} days for this report type' => l10n.legacyUie003b8a491(values['value1'] ?? ''),
+      'Select all visible ({value1})' => l10n.legacyUid495bed9d8(
+        values['value1'] ?? '',
+      ),
+      '{value1} vehicle{value2}' => l10n.mobilePluralVehicles(
+        num.tryParse((values['value1'] ?? 0).toString()) ?? 0,
+      ),
+      'Max {value1} days for this report type' => l10n.legacyUie003b8a491(
+        values['value1'] ?? '',
+      ),
       'Clear ({value1})' => l10n.legacyUif386fe6e70(values['value1'] ?? ''),
       'Select a sensor' => l10n.legacyUi706049c6a9,
-      'No reports found for "{value1}"' => l10n.legacyUi2841c7f501(values['value1'] ?? ''),
+      'No reports found for "{value1}"' => l10n.legacyUi2841c7f501(
+        values['value1'] ?? '',
+      ),
       'Times use {value1}.' => l10n.legacyUi8002c1aa36(values['value1'] ?? ''),
       '{value1} enabled' => l10n.legacyUieaa190f343(values['value1'] ?? ''),
-      'Speed limit must be at least 1 {value1}.' => l10n.legacyUidc179fe07f(values['value1'] ?? ''),
-      '{value1} Delivery Channels' => l10n.legacyUi11003e8471(values['value1'] ?? ''),
+      'Speed limit must be at least 1 {value1}.' => l10n.legacyUidc179fe07f(
+        values['value1'] ?? '',
+      ),
+      '{value1} Delivery Channels' => l10n.legacyUi11003e8471(
+        values['value1'] ?? '',
+      ),
       'Last saved {value1}' => l10n.legacyUidc7454d672(values['value1'] ?? ''),
       'Code -' => l10n.legacyUi7968beb979,
-      '{value1} of {value2} links' => l10n.legacyUi0528ad37c9(values['value1'] ?? '', values['value2'] ?? ''),
+      '{value1} of {value2} links' => l10n.legacyUi0528ad37c9(
+        values['value1'] ?? '',
+        values['value2'] ?? '',
+      ),
       'No activity yet' => l10n.legacyUiac2a036e38,
-      '"{value1}" will be permanently removed.' => l10n.legacyUi3a4361ec75(values['value1'] ?? ''),
+      '"{value1}" will be permanently removed.' => l10n.legacyUi3a4361ec75(
+        values['value1'] ?? '',
+      ),
       'Untitled geofence' => l10n.legacyUi50a9e13fce,
-      '{value1} point{value2}' => l10n.mobilePluralPoints(num.tryParse((values['value1'] ?? 0).toString()) ?? 0),
+      '{value1} point{value2}' => l10n.mobilePluralPoints(
+        num.tryParse((values['value1'] ?? 0).toString()) ?? 0,
+      ),
       'Remove #{value1}' => l10n.legacyUifa6e784713(values['value1'] ?? ''),
-      'Fine-adjust ({value1} m)' => l10n.legacyUi27a25269f5(values['value1'] ?? ''),
+      'Fine-adjust ({value1} m)' => l10n.legacyUi27a25269f5(
+        values['value1'] ?? '',
+      ),
       'No geometry yet' => l10n.legacyUi39706b5a17,
       'Geometry ready' => l10n.legacyUi1bf6cb6c45,
       'Events will trigger for this geofence.' => l10n.legacyUi5d437ca98b,
@@ -2619,24 +3146,45 @@ extension MobileText on BuildContext {
       '{value1}min' => l10n.legacyUicde59da67c(values['value1'] ?? ''),
       'Untitled route' => l10n.legacyUi4bd1e22ea7,
       'Vertex {value1}' => l10n.legacyUi198f442dfb(values['value1'] ?? ''),
-      'Row {value1}: {value2}' => l10n.legacyUibae08b3767(values['value1'] ?? '', values['value2'] ?? ''),
+      'Row {value1}: {value2}' => l10n.legacyUibae08b3767(
+        values['value1'] ?? '',
+        values['value2'] ?? '',
+      ),
       'Not set' => l10n.legacyUi93039e609d,
       'Pick on map' => l10n.legacyUid33a96e366,
       'Visible on live map and proximity alerts.' => l10n.legacyUiecd575d434,
       'Hidden from alerts; stays in the list.' => l10n.legacyUi92a172ce15,
       'Untitled POI' => l10n.legacyUi8019307fe5,
       'Live tracking available' => l10n.legacyUid14e0c02a9,
-      'Service starts: {value1}' => l10n.legacyUic814ea2b6e(values['value1'] ?? ''),
-      'Customer service expires: {value1}' => l10n.legacyUic926abedfd(values['value1'] ?? ''),
-      'Provider coverage expires: {value1}' => l10n.legacyUiae0052da76(values['value1'] ?? ''),
-      '{value1} • {value2} days' => l10n.legacyUi633ec01c21(values['value1'] ?? '', values['value2'] ?? ''),
+      'Service starts: {value1}' => l10n.legacyUic814ea2b6e(
+        values['value1'] ?? '',
+      ),
+      'Customer service expires: {value1}' => l10n.legacyUic926abedfd(
+        values['value1'] ?? '',
+      ),
+      'Provider coverage expires: {value1}' => l10n.legacyUiae0052da76(
+        values['value1'] ?? '',
+      ),
+      '{value1} • {value2} days' => l10n.legacyUi633ec01c21(
+        values['value1'] ?? '',
+        values['value2'] ?? '',
+      ),
       'Sending…' => l10n.legacyUicf765512cc,
       'Request renewal' => l10n.legacyUi50756f98a3,
       'Request #{value1}' => l10n.legacyUid52adacef9(values['value1'] ?? ''),
       'Expired request' => l10n.legacyUicfeb791a76,
-      '{value1}\n{value2} • {value3} days\n{value4} {value5}\n\nYour administrator must confirm payment before service is extended.' => l10n.legacyUif0d8958371(values['value1'] ?? '', values['value2'] ?? '', values['value3'] ?? '', values['value4'] ?? '', values['value5'] ?? ''),
+      '{value1}\n{value2} • {value3} days\n{value4} {value5}\n\nYour administrator must confirm payment before service is extended.' =>
+        l10n.legacyUif0d8958371(
+          values['value1'] ?? '',
+          values['value2'] ?? '',
+          values['value3'] ?? '',
+          values['value4'] ?? '',
+          values['value5'] ?? '',
+        ),
       'OpenVTS User' => l10n.legacyUifdb17036d5,
-      'Reset to default ({value1})' => l10n.legacyUif7e83b3f19(values['value1'] ?? ''),
+      'Reset to default ({value1})' => l10n.legacyUif7e83b3f19(
+        values['value1'] ?? '',
+      ),
       'Error: {value1}' => l10n.legacyUi54e519da7f(values['value1'] ?? ''),
       'Date & time' => l10n.legacyUi7eb29d3565,
       'Open Geofence' => l10n.legacyUib1deb07e61,
@@ -2659,7 +3207,8 @@ extension MobileText on BuildContext {
       'Contact dispatch for details.' => l10n.legacyUiec45717e13,
       'Assignment acknowledged.' => l10n.legacyUi8a783eb3d6,
       'Start trip' => l10n.legacyUi00e1e19595,
-      'Trips normally start from vehicle telemetry. Use this manual fallback only when beginning the trip.' => l10n.legacyUi0015b1903d,
+      'Trips normally start from vehicle telemetry. Use this manual fallback only when beginning the trip.' =>
+        l10n.legacyUi0015b1903d,
       'Add remark' => l10n.legacyUib20bd98ae2,
       'Unable to open navigation.' => l10n.legacyUi42477e82cf,
       'Complete stop' => l10n.legacyUiea0bd6ff3d,
@@ -2673,29 +3222,91 @@ extension MobileText on BuildContext {
       'Completed stops' => l10n.legacyUi28793a4155,
       'Pending stops' => l10n.legacyUi1683af6ce8,
       'just now' => l10n.relativeJustNow,
-      '{count}m ago' => l10n.relativeMinutesAgo(int.tryParse((values['count'] ?? '').toString()) ?? 0),
-      '{count}h ago' => l10n.relativeHoursAgo(int.tryParse((values['count'] ?? '').toString()) ?? 0),
-      '{count}d ago' => l10n.relativeDaysAgo(int.tryParse((values['count'] ?? '').toString()) ?? 0),
+      '{count}m ago' => l10n.relativeMinutesAgo(
+        int.tryParse((values['count'] ?? '').toString()) ?? 0,
+      ),
+      '{count}h ago' => l10n.relativeHoursAgo(
+        int.tryParse((values['count'] ?? '').toString()) ?? 0,
+      ),
+      '{count}d ago' => l10n.relativeDaysAgo(
+        int.tryParse((values['count'] ?? '').toString()) ?? 0,
+      ),
       'yesterday' => l10n.relativeYesterday,
-      'Saving {tab} changes...' => l10n.savingChangesForTab((values['tab'] ?? '').toString()),
-      'You have unsaved {tab} changes.' => l10n.unsavedChangesForTab((values['tab'] ?? '').toString()),
-      '{field} is required' => l10n.validationRequired((values['field'] ?? '').toString()),
-      '{field} must contain ASCII characters only' => l10n.validationAscii((values['field'] ?? '').toString()),
-      '{field} must be at least {count} characters' => l10n.validationMinCharacters((values['field'] ?? '').toString(), int.tryParse((values['count'] ?? '').toString()) ?? 0),
-      '{field} must be {count} characters or fewer' => l10n.validationMaxCharacters((values['field'] ?? '').toString(), int.tryParse((values['count'] ?? '').toString()) ?? 0),
-      '{field} must be at least {count} digits' => l10n.validationMinDigits((values['field'] ?? '').toString(), int.tryParse((values['count'] ?? '').toString()) ?? 0),
-      '{field} must be {count} digits or fewer' => l10n.validationMaxDigits((values['field'] ?? '').toString(), int.tryParse((values['count'] ?? '').toString()) ?? 0),
-      '{field} must be numeric' => l10n.validationNumeric((values['field'] ?? '').toString()),
-      'Minimum {count} characters' => l10n.validationMinimumCharacters(int.tryParse((values['count'] ?? '').toString()) ?? 0),
+      'Saving {tab} changes...' => l10n.savingChangesForTab(
+        (values['tab'] ?? '').toString(),
+      ),
+      'You have unsaved {tab} changes.' => l10n.unsavedChangesForTab(
+        (values['tab'] ?? '').toString(),
+      ),
+      '{field} is required' => l10n.validationRequired(
+        (values['field'] ?? '').toString(),
+      ),
+      '{field} must contain ASCII characters only' => l10n.validationAscii(
+        (values['field'] ?? '').toString(),
+      ),
+      '{field} must be at least {count} characters' =>
+        l10n.validationMinCharacters(
+          (values['field'] ?? '').toString(),
+          int.tryParse((values['count'] ?? '').toString()) ?? 0,
+        ),
+      '{field} must be {count} characters or fewer' =>
+        l10n.validationMaxCharacters(
+          (values['field'] ?? '').toString(),
+          int.tryParse((values['count'] ?? '').toString()) ?? 0,
+        ),
+      '{field} must be at least {count} digits' => l10n.validationMinDigits(
+        (values['field'] ?? '').toString(),
+        int.tryParse((values['count'] ?? '').toString()) ?? 0,
+      ),
+      '{field} must be {count} digits or fewer' => l10n.validationMaxDigits(
+        (values['field'] ?? '').toString(),
+        int.tryParse((values['count'] ?? '').toString()) ?? 0,
+      ),
+      '{field} must be numeric' => l10n.validationNumeric(
+        (values['field'] ?? '').toString(),
+      ),
+      'Minimum {count} characters' => l10n.validationMinimumCharacters(
+        int.tryParse((values['count'] ?? '').toString()) ?? 0,
+      ),
       'Enter a valid email address' => l10n.validationValidEmail,
       'Enter a valid number' => l10n.validationValidNumber,
       'Credits cannot be negative' => l10n.validationNonnegativeCredits,
       'Please confirm the password' => l10n.validationConfirmPassword,
       'Passwords do not match' => l10n.validationPasswordsMismatch,
-      'VIN must be 17 alphanumeric characters (excluding I, O, Q)' => l10n.validationStandardVin,
-      'VIN must contain only letters and numbers' => l10n.validationVinAlphanumeric,
+      'VIN must be 17 alphanumeric characters (excluding I, O, Q)' =>
+        l10n.validationStandardVin,
+      'VIN must contain only letters and numbers' =>
+        l10n.validationVinAlphanumeric,
       'This field' => l10n.validationThisField,
       'SIM number' => l10n.validationFieldSimNumber,
+      'Data Backup' => l10n.mobileDataBackup,
+      'Effective retention' => l10n.mobileEffectiveRetention,
+      'Administrator limit' => l10n.mobileAdministratorLimit,
+      'Policy source' => l10n.mobilePolicySource,
+      'Use administrator policy ({value1})' =>
+        l10n.mobileUseAdministratorPolicy((values['value1'] ?? '').toString()),
+      'Historical telemetry older than the retention period is removed by scheduled cleanup. Increasing retention does not restore deleted data.' =>
+        l10n.mobileRetentionCleanupNotice,
+      'The retention period cannot exceed {value1} days.' =>
+        l10n.mobileRetentionLimitError((values['value1'] ?? '').toString()),
+      'Unable to load data retention' => l10n.mobileRetentionLoadError,
+      'Unable to save data retention' => l10n.mobileRetentionSaveError,
+      'Data retention updated' => l10n.mobileRetentionSaved,
+      'The server returned an unsupported retention policy. Editing is disabled.' =>
+        l10n.mobileRetentionUnsupported,
+      'Changes will be lost. Continue?' => l10n.mobileDiscardDetailChanges,
+      'Live tracking reconnecting…' => l10n.mobileLiveTrackingReconnecting,
+      'Last connection' => l10n.mobileLastConnection,
+      'Team could not be loaded.' => l10n.mobileTeamLoadError,
+      'Permissions could not be loaded.' => l10n.mobilePermissionsLoadError,
+      'Activity could not be loaded.' => l10n.mobileActivityLoadError,
+      'Unable to load or save permissions. Please try again.' =>
+        l10n.mobilePermissionsRetryError,
+      'Maps' => l10n.mobilePermissionMaps,
+      'Landmarks' => l10n.mobilePermissionLandmarks,
+      'Share tracking link' => l10n.mobilePermissionShareTracking,
+      'Privacy policy' => l10n.mobilePrivacyPolicyLink,
+      'Unable to open this page. Please try again.' => l10n.mobilePageLinkError,
       _ => source,
     };
   }

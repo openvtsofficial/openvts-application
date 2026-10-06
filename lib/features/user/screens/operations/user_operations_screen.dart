@@ -7,7 +7,11 @@ import 'package:table_calendar/table_calendar.dart';
 
 import '../../../../core/access/workspace_scope_provider.dart';
 import '../../../../shared/helpers/toast_helper.dart';
+import '../../../../shared/widgets/open_vts_button.dart';
+import '../../../../shared/widgets/open_vts_card.dart';
+import '../../../../shared/widgets/open_vts_detail_tab_strip.dart';
 import '../../../../shared/widgets/open_vts_page_scaffold.dart';
+import '../../../../shared/widgets/open_vts_searchable_dropdown.dart';
 import '../../controllers/user_operations_providers.dart';
 import '../../models/user_operation_schedule.dart';
 import '../../services/user_operations_service.dart';
@@ -106,11 +110,11 @@ class _UserOperationsScreenState extends ConsumerState<UserOperationsScreen> {
         },
         child: Column(
           children: [
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
+            Padding(
               padding: const EdgeInsets.all(12),
-              child: Row(
-                children:
+              child: OpenVtsDetailTabStrip<String>(
+                selected: _tab,
+                tabs:
                     {
                           'today': context.operationText('Today'),
                           'calendar': context.operationText('Calendar'),
@@ -119,32 +123,28 @@ class _UserOperationsScreenState extends ConsumerState<UserOperationsScreen> {
                           'drivers': context.operationText('Drivers'),
                         }.entries
                         .map(
-                          (entry) => Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: ChoiceChip(
-                              label: Text(entry.value),
-                              selected: _tab == entry.key,
-                              onSelected: (_) {
-                                setState(() {
-                                  if (entry.key == 'calendar' &&
-                                      !_initializedMonth) {
-                                    _month = operationAccountNow(
-                                      '${_data['timezone'] ?? 'UTC'}',
-                                    );
-                                    _initializedMonth = true;
-                                  }
-                                  _tab = entry.key;
-                                  _status = null;
-                                  _search = '';
-                                  _searchController.clear();
-                                  _searchDebounce?.cancel();
-                                });
-                                _load();
-                              },
-                            ),
+                          (entry) => OpenVtsDetailTabOption(
+                            value: entry.key,
+                            label: entry.value,
                           ),
                         )
                         .toList(),
+                onChanged: (tab) {
+                  setState(() {
+                    if (tab == 'calendar' && !_initializedMonth) {
+                      _month = operationAccountNow(
+                        '${_data['timezone'] ?? 'UTC'}',
+                      );
+                      _initializedMonth = true;
+                    }
+                    _tab = tab;
+                    _status = null;
+                    _search = '';
+                    _searchController.clear();
+                    _searchDebounce?.cancel();
+                  });
+                  _load();
+                },
               ),
             ),
             if (_tab != 'calendar') ...[
@@ -189,28 +189,24 @@ class _UserOperationsScreenState extends ConsumerState<UserOperationsScreen> {
                 child: Row(
                   children: [
                     Expanded(
-                      child: DropdownButtonFormField<String>(
+                      child: OpenVtsSearchableDropdown<String>(
                         key: ValueKey('$_tab:${_status ?? ''}'),
-                        initialValue: _status ?? '',
-                        isExpanded: true,
-                        decoration: InputDecoration(
-                          labelText: context.operationText('Status'),
-                          isDense: true,
-                        ),
-                        items: [
-                          DropdownMenuItem(
+                        value: _status ?? '',
+                        label: context.operationText('Status'),
+                        options: [
+                          OpenVtsDropdownOption(
                             value: '',
-                            child: Text(context.operationText('All statuses')),
+                            label: context.operationText('All statuses'),
                           ),
                           ..._statuses.map(
-                            (s) => DropdownMenuItem(
-                              value: s,
-                              child: Text(operationLabel(context, s)),
+                            (status) => OpenVtsDropdownOption(
+                              value: status,
+                              label: operationLabel(context, status),
                             ),
                           ),
                         ],
-                        onChanged: (v) {
-                          setState(() => _status = v == '' ? null : v);
+                        onChanged: (value) {
+                          setState(() => _status = value == '' ? null : value);
                           _load();
                         },
                       ),
@@ -260,14 +256,14 @@ class _UserOperationsScreenState extends ConsumerState<UserOperationsScreen> {
                 '${_date != null ? operationDateKey(_date!) : _data['date']} • ${_data['timezone'] ?? context.operationText('Account timezone')}',
               ),
             if (_tab == 'trips' && _range != null)
-              TextButton(
+              OpenVtsButton(
+                label:
+                    '${operationDateKey(_range!.start)} – ${operationDateKey(_range!.end)}  ×',
                 onPressed: () {
                   setState(() => _range = null);
                   _load();
                 },
-                child: Text(
-                  '${operationDateKey(_range!.start)} – ${operationDateKey(_range!.end)}  ×',
-                ),
+                variant: OpenVtsButtonVariant.secondary,
               ),
             if (_loading) const LinearProgressIndicator(minHeight: 2),
             Expanded(
@@ -284,9 +280,10 @@ class _UserOperationsScreenState extends ConsumerState<UserOperationsScreen> {
                           child: Column(
                             children: [
                               Text(_error!),
-                              TextButton(
+                              OpenVtsButton(
+                                label: context.operationText('Retry'),
                                 onPressed: () => _load(),
-                                child: Text(context.operationText('Retry')),
+                                variant: OpenVtsButtonVariant.secondary,
                               ),
                             ],
                           ),
@@ -313,14 +310,13 @@ class _UserOperationsScreenState extends ConsumerState<UserOperationsScreen> {
                         ),
                       ..._items.map(_card),
                       if (_items.length < total)
-                        OutlinedButton(
-                          onPressed: _loading ? null : () => _load(more: true),
-                          child: Text(
-                            context.operationText(
-                              'Load more ({loaded} of {total})',
-                              {'loaded': _items.length, 'total': total},
-                            ),
+                        OpenVtsButton(
+                          label: context.operationText(
+                            'Load more ({loaded} of {total})',
+                            {'loaded': _items.length, 'total': total},
                           ),
+                          onPressed: _loading ? null : () => _load(more: true),
+                          variant: OpenVtsButtonVariant.secondary,
                         ),
                     ],
                   ],
@@ -435,7 +431,8 @@ class _UserOperationsScreenState extends ConsumerState<UserOperationsScreen> {
     final vehicle = operationMap(row['vehicle']);
     final driver = operationMap(row['driver']);
     if (_tab == 'drivers') {
-      return Card(
+      return OpenVtsCard(
+        padding: EdgeInsets.zero,
         child: ListTile(
           leading: const Icon(Icons.person_outline),
           title: Text('${row['name'] ?? driver['name'] ?? 'Driver'}'),
@@ -450,10 +447,9 @@ class _UserOperationsScreenState extends ConsumerState<UserOperationsScreen> {
         ),
       );
     }
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: OpenVtsCard(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -551,10 +547,11 @@ class _UserOperationsScreenState extends ConsumerState<UserOperationsScreen> {
                   style: TextStyle(color: Theme.of(context).colorScheme.error),
                 ),
               Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
+                alignment: AlignmentDirectional.centerEnd,
+                child: OpenVtsButton(
+                  label: context.operationText('View trip'),
                   onPressed: () => _details(row),
-                  child: Text(context.operationText('View trip')),
+                  variant: OpenVtsButtonVariant.secondary,
                 ),
               ),
             ],
@@ -618,13 +615,14 @@ class _UserOperationsScreenState extends ConsumerState<UserOperationsScreen> {
         ),
         content: Text('${row['title']}'),
         actions: [
-          TextButton(
+          OpenVtsButton(
+            label: context.operationText('Keep schedule'),
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text(context.operationText('Keep schedule')),
+            variant: OpenVtsButtonVariant.secondary,
           ),
-          FilledButton(
+          OpenVtsButton(
+            label: operationLabel(context, action),
             onPressed: () => Navigator.pop(ctx, true),
-            child: Text(operationLabel(context, action)),
           ),
         ],
       ),
@@ -692,10 +690,11 @@ class _DriverDashboard extends ConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(operationError(context, error)),
-                TextButton(
+                OpenVtsButton(
+                  label: context.operationText('Retry'),
                   onPressed: () =>
                       ref.invalidate(userOperationDriverProvider(id)),
-                  child: Text(context.operationText('Retry')),
+                  variant: OpenVtsButtonVariant.secondary,
                 ),
               ],
             ),

@@ -22,6 +22,8 @@ import '../../../shared/helpers/toast_helper.dart';
 import '../../../shared/helpers/validation_localizations.dart';
 import '../../../shared/models/vehicle_summary.dart';
 import '../../../shared/utils/command_catalogue_utils.dart';
+import '../../../shared/utils/live_vehicle_icon.dart';
+import '../../../shared/utils/live_vehicle_presentation.dart';
 import '../../../shared/widgets/open_vts_bottom_sheet.dart';
 import '../../../shared/widgets/open_vts_button.dart';
 import '../../../shared/widgets/open_vts_date_time_range_selector.dart';
@@ -44,7 +46,6 @@ const DateTimeFormatter _mapFmt = DateTimeFormatter();
 const double _mapDrawerMinChildSize = 0.28;
 const double _mapDrawerInitialChildSize = 0.42;
 const double _mapDrawerMaxChildSize = 0.78;
-const Duration _inactiveVehicleThreshold = Duration(hours: 48);
 const double _vehicleMarkerMinMoveMeters = 2;
 const double _vehicleMarkerStationaryDriftSpeedKph = 5;
 const double _vehicleMarkerStationaryDriftMeters = 25;
@@ -473,7 +474,9 @@ class _LiveMapState extends ConsumerState<_LiveMap>
   }
 
   List<VehicleSummary> _visibleVehicles() {
-    return _visibleVehiclesFor(widget.vehicles);
+    return _visibleVehiclesFor(
+      widget.vehicles,
+    ).map(effectiveLiveVehicle).toList(growable: false);
   }
 
   List<VehicleSummary> _visibleVehiclesFor(List<VehicleSummary> vehicles) {
@@ -1559,6 +1562,7 @@ class _LiveMapState extends ConsumerState<_LiveMap>
     final historyStopMarkers = replayActive
         ? const <_HistoryDerivedStopMarker>[]
         : _historyDerivedStopMarkers(history);
+    final liveState = ref.watch(liveMapControllerProvider);
     final overlayStatusItems = _overlayStatusItems(
       geofencesAsync: geofencesAsync,
       poisAsync: poisAsync,
@@ -1900,15 +1904,59 @@ class _LiveMapState extends ConsumerState<_LiveMap>
               ),
             ),
           ),
-        if (overlayStatusItems.isNotEmpty && !replayActive)
+        if (!replayActive &&
+            (overlayStatusItems.isNotEmpty ||
+                liveState.isInitialLoading ||
+                liveState.errorMessage != null ||
+                !liveState.isTelemetryConnected))
           Positioned.fill(
-            child: IgnorePointer(
-              child: SafeArea(
-                child: Align(
-                  alignment: Alignment.topLeft,
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 64, left: 12),
-                    child: _MapOverlayStatusPanel(items: overlayStatusItems),
+            child: SafeArea(
+              child: Align(
+                alignment: Alignment.topLeft,
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 64, left: 12, right: 12),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 300),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (liveState.isInitialLoading)
+                          _MapOverlayStatusPanel(
+                            items: [
+                              _MapOverlayStatusItem(
+                                message: context.mobileText(
+                                  'Loading vehicles…',
+                                ),
+                                kind: _MapOverlayStatusKind.loading,
+                              ),
+                            ],
+                          )
+                        else if (liveState.errorMessage != null ||
+                            !liveState.isTelemetryConnected)
+                          _VehicleDetailsNotice(
+                            message:
+                                liveState.telemetry.vehicles.isEmpty &&
+                                    liveState.errorMessage != null
+                                ? context.mobileText(
+                                    'Unable to load vehicles. Retry.',
+                                  )
+                                : context.mobileText(
+                                    'Live tracking reconnecting…',
+                                  ),
+                            icon: Icons.sync_rounded,
+                            onRetry: () => ref
+                                .read(liveMapControllerProvider.notifier)
+                                .refreshTelemetry(),
+                          ),
+                        if (overlayStatusItems.isNotEmpty)
+                          IgnorePointer(
+                            child: _MapOverlayStatusPanel(
+                              items: overlayStatusItems,
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -2073,10 +2121,12 @@ class _VehicleBottomDrawerState extends ConsumerState<_VehicleBottomDrawer>
     final liveVehicles = ref.watch(
       liveMapControllerProvider.select((state) => state.telemetry.vehicles),
     );
-    final liveVehicle = _resolveLiveVehicleSummary(
-      selectedImei: widget.selectedImei,
-      selectedVehicle: widget.initialVehicle,
-      liveVehicles: liveVehicles,
+    final liveVehicle = effectiveLiveVehicle(
+      _resolveLiveVehicleSummary(
+        selectedImei: widget.selectedImei,
+        selectedVehicle: widget.initialVehicle,
+        liveVehicles: liveVehicles,
+      ),
     );
 
     return Column(
@@ -2091,8 +2141,8 @@ class _VehicleBottomDrawerState extends ConsumerState<_VehicleBottomDrawer>
                   width: 10,
                   height: 10,
                   decoration: BoxDecoration(
-                    color: _vehicleRunningIndicatorColor(
-                      _isRunningVehicle(liveVehicle),
+                    color: _vehicleMarkerColor(
+                      _vehicleMarkerStatus(liveVehicle),
                     ),
                     shape: BoxShape.circle,
                   ),
@@ -6434,13 +6484,10 @@ class _VehicleDetailsContent extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final unitFormatter = ref.watch(unitFormatterProvider);
-    final liveStatusText = _resolveVehicleDetailsText(
-      vehicle.status,
-      '',
-      fallbackLabel: 'Unknown',
-    );
-    final liveSpeed = vehicle.speed;
-    final isRunning = _isRunningStatus(liveStatusText, speed: liveSpeed);
+    final dateFormatter = ref.watch(appDateFormatterProvider);
+    final liveStatus = classifyLiveVehicle(vehicle);
+    final statusColor = _vehicleMarkerColor(_vehicleMarkerStatus(vehicle));
+    final liveSpeed = effectiveLiveVehicle(vehicle).speed;
     final vehicleType = _firstVehicleDetailValue([
       _findVehicleDetailValue(details, const [
         'vehicletypename',
@@ -6523,10 +6570,13 @@ class _VehicleDetailsContent extends ConsumerWidget {
       fallback: liveSpeed,
       unitFormatter: unitFormatter,
     );
-    final statusLabel = _formatVehicleStatusLabel(
-      liveStatusText,
-      speed: liveSpeed,
-    );
+    final statusLabel = vehicle.licenseBlocked
+        ? context.mobileText('License Blocked')
+        : switch (liveStatus) {
+            LiveVehicleStatus.running => context.mobileText('Running'),
+            LiveVehicleStatus.stop => context.mobileText('Stopped'),
+            LiveVehicleStatus.inactive => context.mobileText('Inactive'),
+          };
 
     return ListView(
       controller: scrollController,
@@ -6536,7 +6586,7 @@ class _VehicleDetailsContent extends ConsumerWidget {
         if (notice != null) ...[notice!, const SizedBox(height: 10)],
         _VehicleDetailsHeroCard(
           statusLabel: statusLabel,
-          isRunning: isRunning,
+          statusColor: statusColor,
           vehicleType: vehicleType,
           vinNumber: vinNumber,
         ),
@@ -6596,7 +6646,7 @@ class _VehicleDetailsContent extends ConsumerWidget {
             _VehicleInfoRowData.status(
               label: context.mobileText('Status'),
               value: statusLabel,
-              isRunning: isRunning,
+              statusColor: statusColor,
             ),
             _VehicleInfoRowData(
               icon: Icons.key_rounded,
@@ -6612,6 +6662,30 @@ class _VehicleDetailsContent extends ConsumerWidget {
               icon: Icons.sensors_rounded,
               label: context.mobileText('Satellites'),
               value: satellites,
+            ),
+            _VehicleInfoRowData(
+              icon: Icons.schedule_rounded,
+              label: context.mobileText('Server time'),
+              value: _formatVehicleLogDateTime(
+                vehicle.serverTime,
+                dateFormatter,
+              ),
+            ),
+            _VehicleInfoRowData(
+              icon: Icons.gps_fixed_rounded,
+              label: context.mobileText('Device time'),
+              value: _formatVehicleLogDateTime(
+                vehicle.deviceTime,
+                dateFormatter,
+              ),
+            ),
+            _VehicleInfoRowData(
+              icon: Icons.link_rounded,
+              label: context.mobileText('Last connection'),
+              value: _formatVehicleLogDateTime(
+                vehicle.lastSeenAt ?? vehicle.serverTime,
+                dateFormatter,
+              ),
             ),
           ],
         ),
@@ -6636,13 +6710,13 @@ class _VehicleDetailsContent extends ConsumerWidget {
 class _VehicleDetailsHeroCard extends StatelessWidget {
   const _VehicleDetailsHeroCard({
     required this.statusLabel,
-    required this.isRunning,
+    required this.statusColor,
     required this.vehicleType,
     required this.vinNumber,
   });
 
   final String statusLabel;
-  final bool isRunning;
+  final Color statusColor;
   final String vehicleType;
   final String vinNumber;
 
@@ -6669,7 +6743,7 @@ class _VehicleDetailsHeroCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              _VehicleStatusChip(label: statusLabel, isRunning: isRunning),
+              _VehicleStatusChip(label: statusLabel, color: statusColor),
             ],
           ),
           const SizedBox(height: 10),
@@ -6917,10 +6991,10 @@ class _VehicleLocationCard extends StatelessWidget {
 }
 
 class _VehicleStatusChip extends StatelessWidget {
-  const _VehicleStatusChip({required this.label, required this.isRunning});
+  const _VehicleStatusChip({required this.label, required this.color});
 
   final String label;
-  final bool isRunning;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
@@ -6937,10 +7011,7 @@ class _VehicleStatusChip extends StatelessWidget {
           Container(
             width: 6,
             height: 6,
-            decoration: BoxDecoration(
-              color: _vehicleDetailsStatusColor(isRunning),
-              shape: BoxShape.circle,
-            ),
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
           ),
           const SizedBox(width: 5),
           Text(
@@ -7196,12 +7267,12 @@ class _VehicleInfoRowData {
     required this.label,
     required this.value,
   }) : isStatus = false,
-       isRunning = false;
+       statusColor = null;
 
   const _VehicleInfoRowData.status({
     required this.label,
     required this.value,
-    required this.isRunning,
+    required this.statusColor,
   }) : icon = Icons.radio_button_checked_rounded,
        isStatus = true;
 
@@ -7209,7 +7280,7 @@ class _VehicleInfoRowData {
   final String label;
   final String value;
   final bool isStatus;
-  final bool isRunning;
+  final Color? statusColor;
 }
 
 class _VehicleInfoRow extends StatelessWidget {
@@ -7252,7 +7323,7 @@ class _VehicleInfoRow extends StatelessWidget {
                   width: 6,
                   height: 6,
                   decoration: BoxDecoration(
-                    color: _vehicleDetailsStatusColor(data.isRunning),
+                    color: data.statusColor,
                     shape: BoxShape.circle,
                   ),
                 ),
@@ -7450,8 +7521,7 @@ class _VehicleListTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final scheme = Theme.of(context).colorScheme;
     final formatter = ref.watch(appDateFormatterProvider);
-    final isRunning = _isRunningVehicle(vehicle);
-    final statusColor = _vehicleRunningIndicatorColor(isRunning);
+    final statusColor = _vehicleMarkerColor(_vehicleMarkerStatus(vehicle));
     final isInteractive = onTap != null;
 
     return Material(
@@ -8772,7 +8842,11 @@ class _HistoryQueryDialogState extends State<_HistoryQueryDialog> {
                         ),
                       )
                       .toList(growable: false),
-                  validator: context.localizedValidator((value) => value == null ? 'Select a vehicle from live telemetry.' : null),
+                  validator: context.localizedValidator(
+                    (value) => value == null
+                        ? 'Select a vehicle from live telemetry.'
+                        : null,
+                  ),
                   onChanged: (vehicle) {
                     setState(() {
                       _selectedVehicle = vehicle;
@@ -10219,14 +10293,16 @@ class _MapOverlayStatusPanel extends StatelessWidget {
                           color: Colors.white.withValues(alpha: 0.96),
                         ),
                       const SizedBox(width: 8),
-                      Text(
-                        item.message,
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: item.kind == _MapOverlayStatusKind.loading
-                              ? const Color(0xFF141118)
-                              : Colors.white,
+                      Flexible(
+                        child: Text(
+                          item.message,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: item.kind == _MapOverlayStatusKind.loading
+                                ? const Color(0xFF141118)
+                                : Colors.white,
+                          ),
                         ),
                       ),
                     ],
@@ -10397,7 +10473,7 @@ class _VehicleMarkerGroup {
   VehicleSummary get vehicle => vehicles.first;
 }
 
-enum _VehicleMarkerStatus { running, idle, stopped, inactive, unknown }
+enum _VehicleMarkerStatus { running, stopped, inactive }
 
 class _VehicleMarker extends StatelessWidget {
   const _VehicleMarker({
@@ -10431,7 +10507,14 @@ class _VehicleMarker extends StatelessWidget {
     final motionPulse = showMotionTrail
         ? math.sin(motionProgress * math.pi)
         : 0.0;
-    final assetPath = _vehicleMarkerAssetPath(status);
+    final assetPath = liveVehicleIconAsset(
+      vehicle.vehicleTypeSlug,
+      switch (status) {
+        _VehicleMarkerStatus.running => LiveVehicleStatus.running,
+        _VehicleMarkerStatus.stopped => LiveVehicleStatus.stop,
+        _VehicleMarkerStatus.inactive => LiveVehicleStatus.inactive,
+      },
+    );
     final trailColor = _vehicleMarkerColor(_VehicleMarkerStatus.running);
 
     return MouseRegion(
@@ -11406,11 +11489,12 @@ class _AnimatedVehicleMotion {
   }
 
   VehicleSummary vehicleAt(DateTime now) {
+    final presented = effectiveLiveVehicle(vehicle, now: now);
     if (!vehicle.hasValidLocation) {
-      return vehicle;
+      return presented;
     }
 
-    return _vehicleWithAnimatedPosition(vehicle, positionAt(now));
+    return _vehicleWithAnimatedPosition(presented, positionAt(now));
   }
 }
 
@@ -11504,24 +11588,6 @@ String _buildVehicleDrawerSubtitle(
   return 'Vehicle overview';
 }
 
-String _resolveVehicleDetailsText(
-  String? preferred,
-  String fallback, {
-  String fallbackLabel = '--',
-}) {
-  final preferredText = preferred?.trim() ?? '';
-  if (preferredText.isNotEmpty) {
-    return preferredText;
-  }
-
-  final fallbackText = fallback.trim();
-  if (fallbackText.isNotEmpty) {
-    return fallbackText;
-  }
-
-  return fallbackLabel;
-}
-
 String _firstVehicleDetailValue(
   List<String?> candidates, {
   String fallback = '--',
@@ -11583,64 +11649,6 @@ String? _findVehicleDetailValue(
 
 String _normalizeVehicleDetailLookupKey(String value) {
   return value.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
-}
-
-bool _isRunningStatus(String status, {double? speed}) {
-  final normalized = _normalizeVehicleStatus(status);
-  if ((speed ?? 0) > 0) {
-    return true;
-  }
-
-  return normalized.contains('running') ||
-      normalized.contains('moving') ||
-      normalized.contains('drive');
-}
-
-Color _vehicleDetailsStatusColor(bool isRunning) {
-  return isRunning ? const Color(0xFF20B15A) : const Color(0xFF9E9E9E);
-}
-
-String _formatVehicleStatusLabel(String status, {double? speed}) {
-  final normalized = status.trim().toLowerCase();
-  if (normalized.isEmpty || normalized == 'unknown') {
-    return '--';
-  }
-
-  final normalizedStatus = _normalizeVehicleStatus(status);
-  if (_isInactiveStatus(normalizedStatus)) {
-    return switch (normalizedStatus) {
-      'no_data' => 'No Data',
-      'offline' => 'Offline',
-      'disconnected' => 'Disconnected',
-      'license_blocked' => 'License Blocked',
-      _ => 'Inactive',
-    };
-  }
-
-  if (_isRunningStatus(status, speed: speed)) {
-    return 'Running';
-  }
-
-  if (normalized.contains('stop') ||
-      normalized.contains('idle') ||
-      normalized.contains('park') ||
-      normalized.contains('halt')) {
-    return 'Stopped';
-  }
-
-  if (normalized.contains('offline')) {
-    return 'Offline';
-  }
-
-  if (normalized.contains('online') || normalized.contains('active')) {
-    return 'Stopped';
-  }
-
-  return normalized
-      .split(RegExp(r'[_\s-]+'))
-      .where((part) => part.isNotEmpty)
-      .map((part) => '${part[0].toUpperCase()}${part.substring(1)}')
-      .join(' ');
 }
 
 String _formatVehicleMetricDistance(
@@ -11782,7 +11790,8 @@ Map<String, Object?> _vehicleSensorTelemetryValues(VehicleSummary vehicle) {
     'deviceConnectionStatus': vehicle.deviceConnectionStatus,
     'lastSeenAt': vehicle.lastSeenAt,
     'updatedAt': vehicle.updatedAt,
-    'serverTime': vehicle.updatedAt,
+    'serverTime': vehicle.serverTime ?? vehicle.updatedAt,
+    'deviceTime': vehicle.deviceTime,
     'timestamp': vehicle.updatedAt,
   };
 }
@@ -12015,7 +12024,7 @@ String _vehicleCommandStatusLabel(String status) {
 }
 
 DateTime? _vehicleSensorTelemetryUpdatedAt(VehicleSummary vehicle) {
-  return vehicle.updatedAt ?? vehicle.lastSeenAt;
+  return liveVehicleReceiveTime(vehicle);
 }
 
 String _formatVehicleSensorUpdatedAt(
@@ -12030,7 +12039,7 @@ String _formatVehicleLogTime(DateTime? value, AppDateFormatter formatter) {
     return '--:--:--';
   }
 
-  return formatter.formatTime(value.toLocal());
+  return formatter.formatTimeWithSeconds(value);
 }
 
 String _formatVehicleLogDateTime(DateTime? value, AppDateFormatter formatter) {
@@ -12038,7 +12047,7 @@ String _formatVehicleLogDateTime(DateTime? value, AppDateFormatter formatter) {
     return '--';
   }
 
-  return formatter.formatDateTime(value.toLocal());
+  return formatter.formatDateTimeWithSeconds(value);
 }
 
 String _formatVehicleLogSpeed(
@@ -12163,106 +12172,30 @@ String _formatVehicleDistance(double? distanceKm, UnitFormatter uf) {
   return '${uf.distanceFromKm(distanceKm).toStringAsFixed(1)} ${uf.distanceLabel}';
 }
 
-Color _vehicleRunningIndicatorColor(bool isRunning) {
-  return isRunning ? const Color(0xFF20B15A) : const Color(0xFFC9CDD3);
-}
-
 _VehicleMarkerStatus _vehicleMarkerStatus(VehicleSummary vehicle) {
-  final status = _normalizeVehicleStatus(vehicle.status);
-  if (_isInactiveVehicle(vehicle)) {
-    return _VehicleMarkerStatus.inactive;
-  }
-  if (_isRunningVehicle(vehicle)) {
-    return _VehicleMarkerStatus.running;
-  }
-  if (status.contains('idle') ||
-      ((vehicle.ignition == true || vehicle.acc == true) &&
-          vehicle.speed <= 0)) {
-    return _VehicleMarkerStatus.idle;
-  }
-  if (status.contains('stop') ||
-      status.contains('parking') ||
-      status.contains('parked') ||
-      vehicle.speed <= 0) {
-    return _VehicleMarkerStatus.stopped;
-  }
-
-  return _VehicleMarkerStatus.unknown;
+  return switch (classifyLiveVehicle(vehicle)) {
+    LiveVehicleStatus.running => _VehicleMarkerStatus.running,
+    LiveVehicleStatus.stop => _VehicleMarkerStatus.stopped,
+    LiveVehicleStatus.inactive => _VehicleMarkerStatus.inactive,
+  };
 }
 
 Color _vehicleMarkerColor(_VehicleMarkerStatus status) {
   return switch (status) {
     _VehicleMarkerStatus.running => const Color(0xFF20B15A),
-    _VehicleMarkerStatus.idle => const Color(0xFFF59E0B),
     _VehicleMarkerStatus.stopped => const Color(0xFFEF4444),
-    _VehicleMarkerStatus.inactive => const Color(0xFF64748B),
-    _VehicleMarkerStatus.unknown => const Color(0xFF141118),
+    _VehicleMarkerStatus.inactive => const Color(0xFF9CA3AF),
   };
 }
 
-String _vehicleMarkerAssetPath(_VehicleMarkerStatus status) {
-  return status == _VehicleMarkerStatus.running
-      ? 'assets/images/vehicleicons/carGreen.png'
-      : 'assets/images/vehicleicons/carRed.png';
-}
+Color _vehicleRippleColor(_VehicleMarkerStatus status) =>
+    _vehicleMarkerColor(status);
 
-Color _vehicleRippleColor(_VehicleMarkerStatus status) {
-  return switch (status) {
-    _VehicleMarkerStatus.running => const Color(0xFF20B15A),
-    _VehicleMarkerStatus.idle => const Color(0xFFF59E0B),
-    _VehicleMarkerStatus.stopped => const Color(0xFFEF4444),
-    _VehicleMarkerStatus.inactive => const Color(0xFF64748B),
-    _VehicleMarkerStatus.unknown => const Color(0xFF141118),
-  };
-}
+bool _vehicleMarkerShowsRipple(_VehicleMarkerStatus status) =>
+    status != _VehicleMarkerStatus.inactive;
 
-bool _vehicleMarkerShowsRipple(_VehicleMarkerStatus status) {
-  return switch (status) {
-    _VehicleMarkerStatus.running ||
-    _VehicleMarkerStatus.idle ||
-    _VehicleMarkerStatus.stopped => true,
-    _VehicleMarkerStatus.inactive || _VehicleMarkerStatus.unknown => false,
-  };
-}
+bool _isRunningVehicle(VehicleSummary vehicle) =>
+    classifyLiveVehicle(vehicle) == LiveVehicleStatus.running;
 
-bool _isRunningVehicle(VehicleSummary vehicle) {
-  final status = _normalizeVehicleStatus(vehicle.status);
-  return vehicle.speed > 0 ||
-      status.contains('running') ||
-      status.contains('moving') ||
-      status.contains('drive');
-}
-
-bool _isInactiveVehicle(VehicleSummary vehicle) {
-  final status = _normalizeVehicleStatus(vehicle.status);
-  if (_isInactiveStatus(status)) {
-    return true;
-  }
-
-  final deviceStatus = vehicle.deviceConnectionStatus?.trim().toUpperCase();
-  if (deviceStatus == 'DISCONNECTED') {
-    final lastSeenAt = vehicle.lastSeenAt ?? vehicle.updatedAt;
-    if (lastSeenAt == null) {
-      return true;
-    }
-
-    final age = DateTime.now().difference(lastSeenAt);
-    return !age.isNegative && age >= _inactiveVehicleThreshold;
-  }
-
-  return false;
-}
-
-String _normalizeVehicleStatus(String status) {
-  return status.trim().toLowerCase().replaceAll(RegExp(r'[\s-]+'), '_');
-}
-
-bool _isInactiveStatus(String normalizedStatus) {
-  return const <String>{
-    'inactive',
-    'no_data',
-    'offline',
-    'disconnected',
-    'license_blocked',
-  }.contains(normalizedStatus);
-}
+bool _isInactiveVehicle(VehicleSummary vehicle) =>
+    classifyLiveVehicle(vehicle) == LiveVehicleStatus.inactive;

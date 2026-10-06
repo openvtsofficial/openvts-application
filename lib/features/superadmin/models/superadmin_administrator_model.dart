@@ -1,5 +1,8 @@
 import 'package:intl/intl.dart';
 
+import '../../../shared/models/user_role.dart';
+import '../../auth/models/current_user.dart';
+
 enum SuperadminAdministratorSortOption {
   recentLogin,
   nameAscending,
@@ -1145,6 +1148,7 @@ class SuperadminAdministratorLoginOutcome {
     this.userJson,
     this.message,
     this.redirectUrl,
+    this.settings = const {},
   });
 
   final String? accessToken;
@@ -1152,48 +1156,73 @@ class SuperadminAdministratorLoginOutcome {
   final Map<String, dynamic>? userJson;
   final String? message;
   final String? redirectUrl;
+  final Map<String, dynamic> settings;
 
   bool get hasSession =>
-      accessToken != null && accessToken!.trim().isNotEmpty && userJson != null;
+      accessToken?.trim().isNotEmpty == true &&
+      refreshToken?.trim().isNotEmpty == true &&
+      userJson != null &&
+      CurrentUser.fromJson(userJson!).id.isNotEmpty &&
+      CurrentUser.fromJson(userJson!).role == UserRole.admin;
 
   factory SuperadminAdministratorLoginOutcome.fromJson(dynamic json) {
     final map = _asMap(json);
-    final nested = _firstMap(map, const ['data', 'result', 'session']) ??
+    final nested =
+        _firstMap(map, const ['data', 'result', 'session']) ??
         const <String, dynamic>{};
-    final tokens = _firstMap(map, const ['tokens', 'auth']) ??
+    final tokens =
+        _firstMap(map, const ['tokens', 'auth']) ??
         _firstMap(nested, const ['tokens', 'auth']) ??
         const <String, dynamic>{};
-    final userMap = _firstMap(map, const ['user', 'admin', 'profile']) ??
+    final userMap =
+        _firstMap(map, const ['user', 'admin', 'profile']) ??
         _firstMap(nested, const ['user', 'admin', 'profile']);
 
     return SuperadminAdministratorLoginOutcome(
-      accessToken: _firstString(
-            map,
-            const ['accessToken', 'access_token', 'token', 'jwt'],
-          ) ??
-          _firstString(
-            tokens,
-            const ['accessToken', 'access_token', 'token', 'jwt'],
-          ),
-      refreshToken: _firstString(
-            map,
-            const ['refreshToken', 'refresh_token'],
-          ) ??
-          _firstString(
-            tokens,
-            const ['refreshToken', 'refresh_token'],
-          ),
+      accessToken:
+          _firstString(map, const [
+            'accessToken',
+            'access_token',
+            'token',
+            'jwt',
+          ]) ??
+          _firstString(nested, const [
+            'accessToken',
+            'access_token',
+            'token',
+            'jwt',
+          ]) ??
+          _firstString(tokens, const [
+            'accessToken',
+            'access_token',
+            'token',
+            'jwt',
+          ]),
+      refreshToken:
+          _firstString(map, const ['refreshToken', 'refresh_token']) ??
+          _firstString(nested, const ['refreshToken', 'refresh_token']) ??
+          _firstString(tokens, const ['refreshToken', 'refresh_token']),
       userJson: userMap == null || userMap.isEmpty ? null : userMap,
-      message: _firstString(map, const ['message', 'detail']) ??
+      settings:
+          _firstMap(map, const ['settings']) ??
+          _firstMap(nested, const ['settings']) ??
+          const {},
+      message:
+          _firstString(map, const ['message', 'detail']) ??
           _firstString(nested, const ['message', 'detail']),
-      redirectUrl: _firstString(
-            map,
-            const ['redirectUrl', 'redirect_url', 'redirect', 'url'],
-          ) ??
-          _firstString(
-            nested,
-            const ['redirectUrl', 'redirect_url', 'redirect', 'url'],
-          ),
+      redirectUrl:
+          _firstString(map, const [
+            'redirectUrl',
+            'redirect_url',
+            'redirect',
+            'url',
+          ]) ??
+          _firstString(nested, const [
+            'redirectUrl',
+            'redirect_url',
+            'redirect',
+            'url',
+          ]),
     );
   }
 }

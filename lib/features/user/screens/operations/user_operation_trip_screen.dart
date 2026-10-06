@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../shared/helpers/toast_helper.dart';
 import '../../../../shared/helpers/validation_localizations.dart';
+import '../../../../shared/widgets/open_vts_button.dart';
 import '../../../../shared/widgets/open_vts_card.dart';
 import '../../controllers/user_operations_providers.dart';
 import '../../models/user_operation_attachment.dart';
@@ -60,11 +61,12 @@ class _UserOperationTripScreenState
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(operationError(context, error)),
-                        TextButton(
+                        OpenVtsButton(
+                          label: context.operationText('Retry'),
                           onPressed: () => ref.invalidate(
                             userOperationTripProvider(widget.id),
                           ),
-                          child: Text(context.operationText('Retry')),
+                          variant: OpenVtsButtonVariant.secondary,
                         ),
                       ],
                     ),
@@ -225,7 +227,10 @@ class _UserOperationTripScreenState
                                           context.operationText('Acknowledged'),
                                         )
                                       else if (eventId != null)
-                                        TextButton.icon(
+                                        OpenVtsButton(
+                                          label: context.operationText(
+                                            'Acknowledge',
+                                          ),
                                           onPressed:
                                               _saving ||
                                                   _acknowledging.contains(
@@ -233,14 +238,9 @@ class _UserOperationTripScreenState
                                                   )
                                               ? null
                                               : () => _acknowledge(eventId),
-                                          icon: const Icon(
-                                            Icons.done_all_rounded,
-                                          ),
-                                          label: Text(
-                                            context.operationText(
-                                              'Acknowledge',
-                                            ),
-                                          ),
+                                          variant:
+                                              OpenVtsButtonVariant.secondary,
+                                          trailingIcon: Icons.done_all_rounded,
                                         ),
                                     ],
                                   ),
@@ -258,13 +258,15 @@ class _UserOperationTripScreenState
                       const SizedBox(height: 8),
                       Wrap(
                         spacing: 8,
+                        runSpacing: 8,
                         children: actions
                             .map(
-                              (action) => OutlinedButton(
+                              (action) => OpenVtsButton(
+                                label: operationLabel(context, action),
                                 onPressed: _saving || trip['version'] is! num
                                     ? null
                                     : () => _override(trip, action),
-                                child: Text(operationLabel(context, action)),
+                                variant: OpenVtsButtonVariant.secondary,
                               ),
                             )
                             .toList(),
@@ -439,21 +441,26 @@ class _ReasonDialogState extends State<_ReasonDialog> {
         decoration: InputDecoration(
           labelText: context.operationText('Reason / remark'),
         ),
-        validator: context.localizedValidator((v) => (v?.trim().length ?? 0) < 3 ? context.operationText('Enter at least 3 characters') : null),
+        validator: context.localizedValidator(
+          (v) => (v?.trim().length ?? 0) < 3
+              ? context.operationText('Enter at least 3 characters')
+              : null,
+        ),
       ),
     ),
     actions: [
-      TextButton(
+      OpenVtsButton(
+        label: context.operationText('Back'),
         onPressed: () => Navigator.pop(context),
-        child: Text(context.operationText('Back')),
+        variant: OpenVtsButtonVariant.secondary,
       ),
-      FilledButton(
+      OpenVtsButton(
+        label: context.operationText('Confirm'),
         onPressed: () {
           if (_form.currentState!.validate()) {
             Navigator.pop(context, _reason.text.trim());
           }
         },
-        child: Text(context.operationText('Confirm')),
       ),
     ],
   );

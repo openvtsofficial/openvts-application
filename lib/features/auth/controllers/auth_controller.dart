@@ -60,6 +60,17 @@ class AuthController extends StateNotifier<AuthState>
        _appPreferencesCtrl = appPreferencesCtrl,
        super(const AuthState.initial()) {
     WidgetsBinding.instance.addObserver(this);
+    _removeSessionListener = _tokenStorage.listenToSession(() {
+      if (!state.isRealSession) return;
+      final active = _tokenStorage.cachedActiveSession;
+      if (active == null ||
+          active.user.id != state.user?.id ||
+          active.role != state.role) {
+        _setUnauthenticated(
+          errorMessage: 'Your session expired. Sign in again.',
+        );
+      }
+    });
     _accessTimer = Timer.periodic(
       const Duration(seconds: 60),
       (_) => refreshAccess(),
@@ -73,6 +84,7 @@ class AuthController extends StateNotifier<AuthState>
   final DemoSessionService _demoSessionService;
   final AppLocalizationPreferencesController _appPreferencesCtrl;
   Timer? _accessTimer;
+  void Function()? _removeSessionListener;
   bool _refreshingAccess = false;
   int _generation = 0;
   bool _valid(int generation) => mounted && generation == _generation;
@@ -86,6 +98,7 @@ class AuthController extends StateNotifier<AuthState>
   void dispose() {
     _generation++;
     _accessTimer?.cancel();
+    _removeSessionListener?.call();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -101,26 +114,20 @@ class AuthController extends StateNotifier<AuthState>
     final generation = _generation;
     _refreshingAccess = true;
     try {
-      final verified =
-          user.role == UserRole.admin ||
-              user.role == UserRole.superadmin ||
-              user.role == UserRole.driver
-          ? await _authService.getProfile(user)
-          : user;
+      final verified = await _authService.getProfile(user);
       if (!_valid(generation)) return;
       final updated = await _accessService.loadAccess(verified);
-      if (_valid(generation)) state = AuthState.authenticated(updated);
+      if (_valid(generation)) _setAuthenticated(updated);
     } catch (error) {
       if (!_valid(generation)) return;
-      if (_isUnauthorized(error)) {
-        await _tokenStorage.clearSessionForRole(user.role);
-        if (_valid(generation)) {
-          _setUnauthenticated(
-            errorMessage: 'Your session expired. Sign in again.',
-          );
-        }
+      if (AuthApiError.isSessionInvalidated(error)) {
+        _setUnauthenticated(
+          errorMessage: 'Your session expired. Sign in again.',
+        );
       } else {
-        state = AuthState.authenticated(
+        // Authentication survives transport outages. Permission data must still
+        // fail closed until the next foreground/periodic verification succeeds.
+        _setAuthenticated(
           user.copyWith(access: const MobileAccess.unavailable()),
         );
       }
@@ -187,7 +194,16 @@ class AuthController extends StateNotifier<AuthState>
   }
 
   Future<void> setSession(LoginResponse response) async {
+    if (response.accessToken.trim().isEmpty ||
+        response.refreshToken.trim().isEmpty ||
+        response.user.id.isEmpty ||
+        response.user.role == UserRole.unknown) {
+      throw const ApiException(
+        message: 'The server returned an invalid account session.',
+      );
+    }
     final generation = ++_generation;
+    state = const AuthState.loading();
     try {
       await _demoModeStore.clear();
       if (!_valid(generation)) return;
@@ -200,7 +216,10 @@ class AuthController extends StateNotifier<AuthState>
       if (!_valid(generation)) {
         final current = await _tokenStorage.getActiveSession();
         if (current?.accessToken == response.accessToken) {
-          await _tokenStorage.clearSessionForRole(response.user.role);
+          await _tokenStorage.clearSessionIfCurrent(
+            current!,
+            _tokenStorage.sessionGeneration,
+          );
         }
         return;
       }
@@ -244,7 +263,7 @@ class AuthController extends StateNotifier<AuthState>
       if (!_valid(generation)) return;
       final user = await _accessService?.loadAccess(profile) ?? profile;
       if (!_valid(generation)) return;
-      state = AuthState.authenticated(user);
+      _setAuthenticated(user);
       // The current backend push-token table references User IDs, not Driver IDs.
       _mobilePushController.updateAuthenticationState(
         isAuthenticated: user.role != UserRole.driver,
@@ -252,11 +271,20 @@ class AuthController extends StateNotifier<AuthState>
       _appPreferencesCtrl.rehydrate();
     } catch (error) {
       if (!_valid(generation)) return;
-      if (_isUnauthorized(error)) {
-        await _tokenStorage.clearSessionForRole(session.role);
-      }
-      if (_valid(generation)) {
-        _setUnauthenticated(errorMessage: _friendlyLoginError(error));
+      if (AuthApiError.isSessionInvalidated(error)) {
+        _setUnauthenticated(
+          errorMessage: 'Your session expired. Sign in again.',
+        );
+      } else {
+        // A server timeout or a temporary permission error must not send a
+        // returning mobile user to Login. Cached authorization is not trusted.
+        _setAuthenticated(
+          session.user.copyWith(access: const MobileAccess.unavailable()),
+        );
+        _mobilePushController.updateAuthenticationState(
+          isAuthenticated: session.role != UserRole.driver,
+        );
+        _appPreferencesCtrl.rehydrate();
       }
     }
   }
@@ -277,13 +305,8 @@ class AuthController extends StateNotifier<AuthState>
         session.role != user.role) {
       return;
     }
-    await _tokenStorage.saveSessionForRole(
-      role: session.role,
-      accessToken: session.accessToken,
-      refreshToken: session.refreshToken,
-      currentUserJson: jsonEncode(user.toJson()),
-    );
-    if (_valid(generation)) state = AuthState.authenticated(user);
+    final updated = await _tokenStorage.updateProfileIfCurrent(session, user);
+    if (updated && _valid(generation)) _setAuthenticated(user);
   }
 
   /// The backend invalidates the old auth version on every MFA security change.
@@ -311,7 +334,7 @@ class AuthController extends StateNotifier<AuthState>
       refreshToken: refresh,
       currentUserJson: jsonEncode(user.toJson()),
     );
-    if (_valid(generation)) state = AuthState.authenticated(user);
+    if (_valid(generation)) _setAuthenticated(user);
   }
 
   Future<UserRole?> logout() => logoutActiveRole();
@@ -393,8 +416,21 @@ class AuthController extends StateNotifier<AuthState>
     _appPreferencesCtrl.rehydrate();
   }
 
+  void _setAuthenticated(CurrentUser user) {
+    final active = _tokenStorage.cachedActiveSession;
+    if (active == null ||
+        active.user.id != user.id ||
+        active.role != user.role) {
+      _setUnauthenticated(errorMessage: 'Your session expired. Sign in again.');
+      return;
+    }
+    _tokenStorage.publishVerifiedUser(user);
+    state = AuthState.authenticated(user);
+  }
+
   void _setUnauthenticated({String? errorMessage}) {
     if (!mounted) return;
+    _tokenStorage.publishVerifiedUser(null);
     state = AuthState.unauthenticated(errorMessage: errorMessage);
     _mobilePushController.updateAuthenticationState(isAuthenticated: false);
   }
@@ -412,8 +448,6 @@ class AuthController extends StateNotifier<AuthState>
     }
   }
 
-  static bool _isUnauthorized(Object error) =>
-      AuthApiError.isUnauthorized(error);
   static String _friendlyLoginError(Object error) =>
       AuthApiError.message(error);
 }

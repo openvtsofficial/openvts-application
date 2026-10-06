@@ -15,6 +15,7 @@ import '../../../../../shared/widgets/open_vts_button.dart';
 import '../../../../../shared/widgets/open_vts_card.dart';
 import '../../../../../shared/widgets/open_vts_text_field.dart';
 import '../../../controllers/admin_providers.dart';
+import '../../../models/admin_subscription_policy.dart';
 import '../../../models/admin_user_details_model.dart';
 import '../../../widgets/admin_action_gate.dart';
 
@@ -191,19 +192,20 @@ class _SummaryCard extends StatelessWidget {
               ],
             ),
           ),
-          AdminActionGate(
-            capability: 'users.update',
-            child: SizedBox(
-              height: 34,
-              child: OpenVtsButton(
-                label: context.mobileText('Renew Vehicle'),
+          if (AdminSubscriptionPolicy.allowsRenewals)
+            AdminActionGate(
+              capability: 'users.update',
+              child: SizedBox(
                 height: 34,
-                isLoading: isRenewing,
-                onPressed: onRenew,
-                trailingIcon: Icons.autorenew_rounded,
+                child: OpenVtsButton(
+                  label: context.mobileText('Renew Vehicle'),
+                  height: 34,
+                  isLoading: isRenewing,
+                  onPressed: onRenew,
+                  trailingIcon: Icons.autorenew_rounded,
+                ),
               ),
             ),
-          ),
         ],
       ),
     );

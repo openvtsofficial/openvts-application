@@ -9178,4 +9178,87 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get validationFieldSimNumber => 'Numéro de SIM';
+
+  @override
+  String get mobileDataBackup => 'Sauvegarde des données';
+
+  @override
+  String get mobileEffectiveRetention => 'Durée de conservation effective';
+
+  @override
+  String get mobileAdministratorLimit => 'Limite de l’administrateur';
+
+  @override
+  String get mobilePolicySource => 'Source de la politique';
+
+  @override
+  String mobileUseAdministratorPolicy(String value1) {
+    return 'Utiliser la politique de l’administrateur ($value1)';
+  }
+
+  @override
+  String get mobileRetentionCleanupNotice =>
+      'Le nettoyage programmé supprime la télémétrie antérieure à la période de conservation. Augmenter cette période ne restaure pas les données supprimées.';
+
+  @override
+  String mobileRetentionLimitError(String value1) {
+    return 'La période de conservation ne peut pas dépasser $value1 jours.';
+  }
+
+  @override
+  String get mobileRetentionLoadError =>
+      'Impossible de charger la conservation des données';
+
+  @override
+  String get mobileRetentionSaveError =>
+      'Impossible d’enregistrer la conservation des données';
+
+  @override
+  String get mobileRetentionSaved => 'Conservation des données mise à jour';
+
+  @override
+  String get mobileRetentionUnsupported =>
+      'Le serveur a renvoyé une politique de conservation non prise en charge. La modification est désactivée.';
+
+  @override
+  String get mobileDiscardDetailChanges =>
+      'Les modifications seront perdues. Continuer ?';
+
+  @override
+  String get mobileLiveTrackingReconnecting =>
+      'Reconnexion du suivi en direct…';
+
+  @override
+  String get mobileLastConnection => 'Dernière connexion';
+
+  @override
+  String get mobileTeamLoadError =>
+      'Impossible de charger le membre de l’équipe.';
+
+  @override
+  String get mobilePermissionsLoadError =>
+      'Impossible de charger les autorisations.';
+
+  @override
+  String get mobileActivityLoadError => 'Impossible de charger l’activité.';
+
+  @override
+  String get mobilePermissionsRetryError =>
+      'Impossible de charger ou d’enregistrer les autorisations. Veuillez réessayer.';
+
+  @override
+  String get mobilePermissionMaps => 'Cartes';
+
+  @override
+  String get mobilePermissionLandmarks => 'Repères';
+
+  @override
+  String get mobilePermissionShareTracking => 'Partager le lien de suivi';
+
+  @override
+  String get mobilePrivacyPolicyLink => 'Politique de confidentialité';
+
+  @override
+  String get mobilePageLinkError =>
+      'Impossible d’ouvrir cette page. Veuillez réessayer.';
 }

@@ -1092,6 +1092,8 @@ class UpdateUserDriverRequest {
     _putIfNotNull(payload, 'city', _optionalString(city));
     _putIfNotNull(payload, 'address', _optionalString(address));
     _putIfNotNull(payload, 'pincode', _optionalString(pincode));
+    // User Driver DTO preserves its legacy string key and value type.
+    _putIfNotNull(payload, 'isactive', isActive?.toString());
     if (attributes != null) {
       payload['attributes'] = Map<String, dynamic>.from(attributes!);
     }

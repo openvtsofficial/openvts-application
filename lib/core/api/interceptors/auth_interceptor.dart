@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+
 import '../../storage/token_storage.dart';
 import 'refresh_token_interceptor.dart';
 
@@ -7,7 +8,9 @@ class AuthInterceptor extends Interceptor {
   final TokenStorage _storage;
   @override
   void onRequest(
-      RequestOptions options, RequestInterceptorHandler handler) async {
+    RequestOptions options,
+    RequestInterceptorHandler handler,
+  ) async {
     if (!_isApiRequest(options) ||
         RefreshTokenInterceptor.isPublicAuthRequest(options.path)) {
       _removeBearer(options);
@@ -20,16 +23,23 @@ class AuthInterceptor extends Interceptor {
       if ((options.extra['authRole'] != null &&
               options.extra['authRole'] != session.role.apiValue) ||
           (options.extra['authUserId'] != null &&
-              options.extra['authUserId'] != session.user.id)) {
-        handler.reject(DioException(
+              options.extra['authUserId'] != session.user.id) ||
+          (options.extra['authSessionGeneration'] != null &&
+              options.extra['authSessionGeneration'] !=
+                  _storage.sessionGeneration)) {
+        handler.reject(
+          DioException(
             requestOptions: options,
             type: DioExceptionType.cancel,
-            message: 'Account session changed.'));
+            message: 'Account session changed.',
+          ),
+        );
         return;
       }
       options.headers['Authorization'] = 'Bearer ${session.accessToken}';
       options.extra['authRole'] = session.role.apiValue;
       options.extra['authUserId'] = session.user.id;
+      options.extra['authSessionGeneration'] = _storage.sessionGeneration;
     } else {
       _removeBearer(options);
     }
@@ -58,17 +68,23 @@ class AuthInterceptor extends Interceptor {
 
   @override
   void onResponse(
-      Response<dynamic> response, ResponseInterceptorHandler handler) {
+    Response<dynamic> response,
+    ResponseInterceptorHandler handler,
+  ) {
     final extra = response.requestOptions.extra;
     if (extra['authRole'] != null) {
       final active = _storage.cachedActiveSession;
       if (active == null ||
           active.role.apiValue != extra['authRole'] ||
-          active.user.id != extra['authUserId']) {
-        handler.reject(DioException(
+          active.user.id != extra['authUserId'] ||
+          extra['authSessionGeneration'] != _storage.sessionGeneration) {
+        handler.reject(
+          DioException(
             requestOptions: response.requestOptions,
             type: DioExceptionType.cancel,
-            message: 'Account session changed.'));
+            message: 'Account session changed.',
+          ),
+        );
         return;
       }
     }

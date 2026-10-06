@@ -1,10 +1,16 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../../core/api/api_exception.dart';
 import '../../../../../../shared/helpers/mobile_text.dart';
 import '../../../../../../shared/helpers/toast_helper.dart';
+import '../../../../../../shared/widgets/open_vts_button.dart';
+import '../../../../../../shared/widgets/open_vts_card.dart';
+import '../../../../../../shared/widgets/open_vts_error_view.dart';
+import '../../../../../../shared/widgets/open_vts_loader.dart';
 import '../../../../controllers/user_subuser_permissions_controller.dart';
+import '../../../../models/user_subuser_permissions.dart';
 
 class UserSubUserPermissionsTab extends ConsumerStatefulWidget {
   const UserSubUserPermissionsTab({super.key, required this.subUserId});
@@ -16,182 +22,212 @@ class UserSubUserPermissionsTab extends ConsumerStatefulWidget {
 
 class _UserSubUserPermissionsTabState
     extends ConsumerState<UserSubUserPermissionsTab> {
-  Map<String, dynamic>? _permissions;
-  Set<String> _features = {};
-  Set<String> _reports = {};
+  UserSubUserPermissions? _permissions;
+  Set<String> _features = {}, _reports = {};
   bool _saving = false;
   String? _error;
-  Future<void> _load() => ref
-      .read(userSubUserPermissionsControllerProvider(widget.subUserId).notifier)
-      .load();
-  void _accept(Map<String, dynamic> data) {
+
+  void _accept(UserSubUserPermissions data) {
     _permissions = data;
-    _features = (data['disabledFeatures'] as List? ?? [])
-        .map((e) => '$e')
-        .toSet();
-    _reports = (data['disabledReports'] as List? ?? [])
-        .map((e) => '$e')
-        .toSet();
+    _features = Set.from(data.disabledFeatures);
+    _reports = Set.from(data.disabledReports);
+    _error = null;
+  }
+
+  @override
+  void didUpdateWidget(covariant UserSubUserPermissionsTab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.subUserId != widget.subUserId) {
+      _permissions = null;
+      _saving = false;
+      _error = null;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final snapshot = ref.watch(
-      userSubUserPermissionsControllerProvider(widget.subUserId),
-    );
-    ref.listen(userSubUserPermissionsControllerProvider(widget.subUserId), (
-      _,
-      next,
-    ) {
-      if (next.hasValue) {
-        setState(() {
-          _accept(next.requireValue);
-          _error = null;
-        });
+    final provider = userSubUserPermissionsControllerProvider(widget.subUserId);
+    final snapshot = ref.watch(provider);
+    ref.listen(provider, (_, next) {
+      if (next.hasValue && !next.isLoading) {
+        setState(() => _accept(next.requireValue));
+      } else if (next.isLoading) {
+        // A refreshed permission snapshot or a changed manager scope replaces
+        // the draft; old account values are never displayed during loading.
+        _permissions = null;
       }
     });
-    if (snapshot.isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
+    if (snapshot.isLoading) return const OpenVtsLoader();
     if (snapshot.hasError) {
-      return Column(
-        children: [
-          Text(_message(snapshot.error!)),
-          TextButton(
-            onPressed: _load,
-            child: Text(context.mobileText('Retry')),
-          ),
-        ],
+      return OpenVtsErrorView(
+        message: _message(snapshot.error!),
+        onRetry: () => ref.read(provider.notifier).load(),
       );
     }
     if (_permissions == null) _accept(snapshot.requireValue);
-    final features = Map<String, dynamic>.from(
-      _permissions!['availableFeatures'] as Map? ?? {},
-    );
-    final reports = Map<String, dynamic>.from(
-      _permissions!['availableReports'] as Map? ?? {},
-    );
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          context.mobileText('Access permissions'),
-          style: Theme.of(context).textTheme.titleMedium,
-        ),
-        const SizedBox(height: 8),
-        Text(
-          context.mobileText(
-            'A sub user can only use features and reports available to your account. Settings and account security remain available.',
+    final data = _permissions!;
+    final changed =
+        !setEquals(_features, data.disabledFeatures) ||
+        !setEquals(_reports, data.disabledReports);
+    return OpenVtsCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            context.mobileText('Access permissions'),
+            style: Theme.of(context).textTheme.titleMedium,
           ),
-        ),
-        const SizedBox(height: 8),
-        // Preserve web-only workflow deny state when saving mobile permissions.
-        ...features.entries
-            .where((e) => e.key != 'workflow')
-            .map(
-              (e) => SwitchListTile.adaptive(
-                contentPadding: EdgeInsets.zero,
-                title: Text(_label(e.key)),
-                subtitle: e.value == true
-                    ? null
-                    : Text(
-                        context.mobileText('Restricted by your administrator'),
-                      ),
-                value: e.value == true && !_features.contains(e.key),
-                onChanged: _saving || e.value != true
-                    ? null
-                    : (enabled) => setState(() {
-                        enabled
-                            ? _features.remove(e.key)
-                            : _features.add(e.key);
-                      }),
-              ),
+          const SizedBox(height: 8),
+          Text(
+            context.mobileText(
+              'A sub user can only use features and reports available to your account. Settings and account security remain available.',
             ),
-        const Divider(),
-        Text(
-          context.mobileText('Reports'),
-          style: Theme.of(context).textTheme.titleMedium,
-        ),
-        ...reports.entries.map(
-          (e) => SwitchListTile.adaptive(
+          ),
+          const SizedBox(height: 8),
+          for (final feature in data.availableFeatures.entries.where(
+            (e) => e.key != 'workflow' && e.key != 'reports',
+          ))
+            SwitchListTile.adaptive(
+              contentPadding: EdgeInsets.zero,
+              title: Text(_label(context, feature.key)),
+              subtitle: feature.value
+                  ? null
+                  : Text(
+                      context.mobileText('Restricted by your administrator'),
+                    ),
+              value: feature.value && !_features.contains(feature.key),
+              onChanged: _saving || !feature.value
+                  ? null
+                  : (enabled) => setState(() {
+                      enabled
+                          ? _features.remove(feature.key)
+                          : _features.add(feature.key);
+                    }),
+            ),
+          const Divider(),
+          SwitchListTile.adaptive(
             contentPadding: EdgeInsets.zero,
-            title: Text(_label(e.key)),
+            title: Text(context.mobileText('Reports')),
+            subtitle: data.availableFeatures['reports'] == true
+                ? null
+                : Text(context.mobileText('Restricted by your administrator')),
             value:
-                e.value == true &&
-                !_features.contains('reports') &&
-                !_reports.contains(e.key),
-            onChanged:
-                _saving || e.value != true || _features.contains('reports')
+                data.availableFeatures['reports'] == true &&
+                !_features.contains('reports'),
+            onChanged: _saving || data.availableFeatures['reports'] != true
                 ? null
                 : (enabled) => setState(() {
-                    enabled ? _reports.remove(e.key) : _reports.add(e.key);
+                    enabled
+                        ? _features.remove('reports')
+                        : _features.add('reports');
                   }),
           ),
-        ),
-        if (_error != null)
-          Text(
-            _error!,
-            style: TextStyle(color: Theme.of(context).colorScheme.error),
+          for (final report in data.availableReports.entries)
+            SwitchListTile.adaptive(
+              contentPadding: EdgeInsets.zero,
+              title: Text(_label(context, report.key)),
+              subtitle: report.value
+                  ? null
+                  : Text(
+                      context.mobileText('Restricted by your administrator'),
+                    ),
+              value:
+                  report.value &&
+                  !_features.contains('reports') &&
+                  !_reports.contains(report.key),
+              onChanged:
+                  _saving || !report.value || _features.contains('reports')
+                  ? null
+                  : (enabled) => setState(() {
+                      enabled
+                          ? _reports.remove(report.key)
+                          : _reports.add(report.key);
+                    }),
+            ),
+          if (_error != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Text(
+                _error!,
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
+            ),
+          const SizedBox(height: 12),
+          OpenVtsButton(
+            label: context.mobileText('Save permissions'),
+            isLoading: _saving,
+            onPressed: !_saving && changed ? _save : null,
           ),
-        const SizedBox(height: 12),
-        FilledButton.icon(
-          onPressed: _saving ? null : _save,
-          icon: const Icon(Icons.save_outlined),
-          label: Text(
-            _saving
-                ? context.mobileText('Saving…')
-                : context.mobileText('Save permissions'),
+          TextButton(
+            onPressed: !_saving && changed
+                ? () => setState(() => _accept(data))
+                : null,
+            child: Text(context.mobileText('Reset')),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
   Future<void> _save() async {
+    if (_saving) return;
+    final id = widget.subUserId;
     setState(() {
       _saving = true;
       _error = null;
     });
     try {
-      await ref
-          .read(
-            userSubUserPermissionsControllerProvider(widget.subUserId).notifier,
-          )
+      final saved = await ref
+          .read(userSubUserPermissionsControllerProvider(id).notifier)
           .save(
             disabledFeatures: _features.toList(),
             disabledReports: _reports.toList(),
           );
-      if (mounted) {
+      if (mounted && id == widget.subUserId && saved) {
         ToastHelper.showSuccess(
           context.mobileText('Permissions updated'),
           context: context,
         );
       }
     } catch (e) {
-      if (mounted) setState(() => _error = _message(e));
+      if (mounted && id == widget.subUserId) {
+        setState(() => _error = _message(e));
+      }
     } finally {
-      if (mounted) setState(() => _saving = false);
+      if (mounted && id == widget.subUserId) setState(() => _saving = false);
     }
   }
 
   String _message(Object error) => error is ApiException
-      ? error.message
-      : 'Unable to load or save permissions. Please try again.';
-  String _label(String key) =>
-      const {
-        'dashboard': 'Dashboard',
-        'maps': 'Maps',
-        'landmarks': 'Landmarks',
-        'shareTrackLink': 'Share tracking link',
-        'routeOptimization': 'Operations',
-        'support': 'Support',
-        'transactions': 'Transactions',
-        'notifications': 'Notifications',
-        'vehicles': 'Vehicles',
-        'accounts': 'Accounts',
-        'reports': 'Reports',
-        'logs': 'Device logs',
-        'details': 'Vehicle details',
-      }[key] ??
-      (key.isEmpty ? '' : '${key[0].toUpperCase()}${key.substring(1)}');
+      ? (error.statusCode == 403 &&
+                error.message == 'Unable to update permissions'
+            ? context.mobileText('Unable to update permissions')
+            : error.message)
+      : context.mobileText(
+          'Unable to load or save permissions. Please try again.',
+        );
 }
+
+String _label(BuildContext context, String key) => switch (key) {
+  'dashboard' => context.mobileText('Dashboard'),
+  'maps' => context.mobileText('Maps'),
+  'landmarks' => context.mobileText('Landmarks'),
+  'shareTrackLink' => context.mobileText('Share tracking link'),
+  'routeOptimization' => context.mobileText('Operations'),
+  'support' => context.mobileText('Support'),
+  'transactions' => context.mobileText('Transactions'),
+  'notifications' => context.mobileText('Notifications'),
+  'vehicles' => context.mobileText('Vehicles'),
+  'accounts' => context.mobileText('Accounts'),
+  'reports' => context.mobileText('Reports'),
+  'distance' => context.mobileText('Distance'),
+  'driven' => context.mobileText('Driven'),
+  'overspeed' => context.mobileText('Overspeed'),
+  'geofence' => context.mobileText('Geofence'),
+  'sensor' => context.mobileText('Sensor'),
+  'alerts' => context.mobileText('Alerts'),
+  'logs' => context.mobileText('Logs'),
+  'timeline' => context.mobileText('Timeline'),
+  'details' => context.mobileText('Vehicle details'),
+  _ => key,
+};
