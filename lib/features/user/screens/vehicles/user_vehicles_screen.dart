@@ -13,47 +13,62 @@ import '../../../../shared/widgets/open_vts_loader.dart';
 import '../../../../shared/widgets/open_vts_page_scaffold.dart';
 import '../../../../shared/widgets/open_vts_search_field.dart';
 import '../../controllers/user_providers.dart';
-import '../../controllers/user_vehicles_controller.dart';
 import '../../models/user_vehicle_model.dart';
 import '../../models/user_vehicle_state.dart';
 import 'widgets/user_vehicle_card.dart';
 import 'widgets/user_vehicle_status_segment.dart';
 
-class UserVehiclesScreen extends ConsumerWidget {
+class UserVehiclesScreen extends StatelessWidget {
   const UserVehiclesScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return OpenVtsPageScaffold(
+      title: context.mobileText('Vehicles'),
+      headerMode: OpenVtsPageHeaderMode.closeable,
+      actions: const [
+        _UserVehiclesRefreshAction(),
+      ],
+      body: const _UserVehiclesBody(),
+    );
+  }
+}
+
+class _UserVehiclesRefreshAction extends ConsumerWidget {
+  const _UserVehiclesRefreshAction();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isRefreshing = ref.watch(
+      userVehiclesControllerProvider.select((s) => s.isRefreshing),
+    );
+    return Padding(
+      padding: const EdgeInsets.only(right: OpenVtsSpacing.xxs),
+      child: IconButton(
+        tooltip: context.mobileText('Refresh'),
+        onPressed: isRefreshing
+            ? null
+            : () => ref.read(userVehiclesControllerProvider.notifier).refresh(),
+        icon: isRefreshing
+            ? const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Icon(Icons.refresh_rounded, size: 18),
+      ),
+    );
+  }
+}
+
+class _UserVehiclesBody extends ConsumerWidget {
+  const _UserVehiclesBody();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(userVehiclesControllerProvider);
     final controller = ref.read(userVehiclesControllerProvider.notifier);
 
-    return OpenVtsPageScaffold(
-      title: context.mobileText('Vehicles'),
-      headerMode: OpenVtsPageHeaderMode.closeable,
-      actions: [
-        Padding(
-          padding: const EdgeInsets.only(right: OpenVtsSpacing.xxs),
-          child: IconButton(
-            tooltip: context.mobileText('Refresh'),
-            onPressed: state.isRefreshing ? null : controller.refresh,
-            icon: state.isRefreshing
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.refresh_rounded, size: 18),
-          ),
-        ),
-      ],
-      body: _buildBody(state, controller),
-    );
-  }
-
-  Widget _buildBody(
-    UserVehiclesState state,
-    UserVehiclesController controller,
-  ) {
     if (state.isLoading && state.vehicles.isEmpty) {
       return const OpenVtsLoader();
     }
@@ -66,46 +81,55 @@ class UserVehiclesScreen extends ConsumerWidget {
     }
 
     final typeOptions = _typeOptions(state.vehicles);
+    final items = state.filteredVehicles;
 
     return RefreshIndicator(
       onRefresh: controller.refresh,
-      child: ListView(
+      child: ListView.separated(
         physics: const AlwaysScrollableScrollPhysics(),
-        children: [
-          _ToolbarCard(
-            state: state,
-            typeOptions: typeOptions,
-            onSearchChanged: controller.setSearchQuery,
-            onStatusChanged: controller.setStatusFilter,
-            onTypeChanged: controller.setTypeFilter,
-            onClearFilters: controller.clearFilters,
-          ),
-          if (state.errorMessage != null) ...[
+        padding: const EdgeInsets.only(bottom: OpenVtsSpacing.lg),
+        itemCount: items.isEmpty ? 2 : items.length + 1,
+        separatorBuilder: (context, index) =>
             const SizedBox(height: OpenVtsSpacing.sm),
-            _InlineError(message: state.errorMessage!),
-          ],
-          const SizedBox(height: OpenVtsSpacing.sm),
-          if (state.filteredVehicles.isEmpty)
-            OpenVtsEmptyState(
+        itemBuilder: (context, index) {
+          if (index == 0) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _ToolbarCard(
+                  state: state,
+                  typeOptions: typeOptions,
+                  onSearchChanged: controller.setSearchQuery,
+                  onStatusChanged: controller.setStatusFilter,
+                  onTypeChanged: controller.setTypeFilter,
+                  onClearFilters: controller.clearFilters,
+                ),
+                if (state.errorMessage != null) ...[
+                  const SizedBox(height: OpenVtsSpacing.sm),
+                  _InlineError(message: state.errorMessage!),
+                ],
+              ],
+            );
+          }
+
+          if (items.isEmpty) {
+            return OpenVtsEmptyState(
               title: state.hasActiveFilters
                   ? 'No vehicles found'
                   : 'No vehicles',
               message: state.hasActiveFilters
                   ? 'Try changing the search or filters.'
                   : 'No vehicles are assigned yet.',
-            )
-          else
-            for (final vehicle in state.filteredVehicles) ...[
-              UserVehicleCard(vehicle: vehicle),
-              if (vehicle != state.filteredVehicles.last)
-                const SizedBox(height: OpenVtsSpacing.sm),
-            ],
-          const SizedBox(height: OpenVtsSpacing.lg),
-        ],
+            );
+          }
+
+          return UserVehicleCard(vehicle: items[index - 1]);
+        },
       ),
     );
   }
 }
+
 
 class _ToolbarCard extends StatelessWidget {
   const _ToolbarCard({

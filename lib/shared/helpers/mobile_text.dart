@@ -6,6 +6,7 @@ import '../../l10n/app_localizations.dart';
 import '../../l10n/app_localizations_en.dart';
 
 extension MobileText on BuildContext {
+  @pragma('vm:never-inline')
   String mobileText(String source, [Map<String, Object> values = const {}]) {
     final l10n =
         Localizations.of<AppLocalizations>(this, AppLocalizations) ??
